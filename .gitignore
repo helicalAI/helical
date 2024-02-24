@@ -1,2 +1,10 @@
 *.egg-info
 __pycache__
+.vscode
+
+# Data
+*.csv
+*.pkl
+
+# Log
+debug.log
