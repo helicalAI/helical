@@ -1,6 +1,5 @@
 import logging
 from constants.enums import LoggingType, LoggingLevel
-import sys
 import os
 
 class Logger(): 

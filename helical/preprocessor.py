@@ -2,7 +2,7 @@ import requests
 import json
 import pickle as pkl
 import pandas as pd
-from helical.services.logger import Logger
+from services.logger import Logger
 from constants.enums import LoggingType, LoggingLevel
 import logging
 
