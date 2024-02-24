@@ -1,5 +1,5 @@
 import logging
-from constants.enums import LoggingType, LoggingLevel
+from helical.constants.enums import LoggingType, LoggingLevel
 import os
 
 class Logger(): 
