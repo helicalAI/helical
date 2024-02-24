@@ -9,7 +9,7 @@ import logging
 INTERVAL = 1000
 
 class Preprocessor(Logger):
-    def __init__(self, loging_type = LoggingType.NOTSET, level = LoggingLevel.NOTSET) -> None:
+    def __init__(self, loging_type = LoggingType.CONSOLE, level = LoggingLevel.INFO) -> None:
         super().__init__(loging_type, level)
         self.log = logging.getLogger("Preprocessor")
 
