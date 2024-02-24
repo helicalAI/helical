@@ -1,6 +1,6 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
-from helical import __version__
+from helical.preprocessing import __version__
 
 setup(
     name='helical',
@@ -9,6 +9,5 @@ setup(
     url='https://github.com/helicalAI/helical-package.git',
     author='Benoit Putzeys',
     author_email='benoit@helical-ai.com',
-
-    py_modules=['helical'],
+    packages=find_packages(),
 )
