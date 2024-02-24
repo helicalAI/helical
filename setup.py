@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-from helical.preprocessing import __version__
+from helical.version import __version__
 
 setup(
     name='helical',
@@ -10,4 +10,10 @@ setup(
     author='Benoit Putzeys',
     author_email='benoit@helical-ai.com',
     packages=find_packages(),
+    install_requires=[
+        'requests',
+        'json',
+        'pickle',
+        'pandas',
+    ],  
 )
