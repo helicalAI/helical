@@ -3,7 +3,7 @@ from setuptools import setup
 from helical import __version__
 
 setup(
-    name='my_pip_package',
+    name='helical',
     version=__version__,
 
     url='https://github.com/helicalAI/helical-package.git',
