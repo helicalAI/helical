@@ -13,5 +13,8 @@ setup(
     install_requires=[
         'requests',
         'pandas',
+        'anndata',
+        'tiledbsoma',
+        'numpy'
     ],  
 )

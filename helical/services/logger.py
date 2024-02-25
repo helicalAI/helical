@@ -11,7 +11,6 @@ class Logger():
         level = level.value
         
         if log_type == LoggingType.FILE_AND_CONSOLE:
-            self._remove_log()
             logging.basicConfig(
                 format=format,
                 datefmt=datetime,
@@ -33,7 +32,6 @@ class Logger():
             )            
         
         elif log_type == LoggingType.FILE:
-            self._remove_log()
             logging.basicConfig(
                 format=format,
                 datefmt=datetime,
@@ -45,9 +43,3 @@ class Logger():
             
         else:
             logging.disable = True
-    
-    def _remove_log(self):
-        try:
-            os.remove(self.log_filename)
-        except OSError:
-            pass
