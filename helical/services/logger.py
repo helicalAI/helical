@@ -6,8 +6,8 @@ class Logger():
     def __init__(self, log_type: LoggingType, level: LoggingLevel):
         
         self.log_filename = "debug.log"
-        format = '%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s'
-        datetime = '%H:%M:%S'
+        format = '%(asctime)s.%(msecs)03d %(name)s %(levelname)s %(message)s'
+        datetime = '%Y-%m-%d,%H:%M:%S'
         level = level.value
         
         if log_type == LoggingType.FILE_AND_CONSOLE:

@@ -1,7 +1,5 @@
-from helical.preprocessor import Preprocessor
-from helical.constants.enums import LoggingLevel, LoggingType
-
+from helical.downloader import Downloader
 if __name__ == "__main__":
-    preprocessor = Preprocessor()
-    preprocessor.save_ensemble_mapping('./21iT009_051_full_data.csv', './ensemble_to_display_name_batch_macaca.pkl')
-    
+    downloader = Downloader()
+    downloader.get_ensemble_mapping('./data/21iT009_051_full_data.csv', './data/ensemble_to_display_name_batch_macaca.pkl')
+    downloader.download_via_link("./data/33l_8ep_1024t_1280.torch", "https://figshare.com/ndownloader/files/43423236")

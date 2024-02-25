@@ -5,6 +5,7 @@ __pycache__
 # Data
 *.csv
 *.pkl
+data
 
 # Log
 debug.log
