@@ -1,9 +1,10 @@
 from helical.preprocessor import Preprocessor
 from helical.services.downloader import Downloader
 from helical.constants.enums import LoggingType
-from helical.db.tiledb import TileDB
 from pathlib import Path
 from helical.models.uce import UCE
+from helical.models.sc_gpt import SCGPT
+from helical.analysis.analyser import Analyser
 
 if __name__ == "__main__":
     downloader = Downloader()
@@ -16,8 +17,9 @@ if __name__ == "__main__":
                                  mapping_path='./data/ensemble_to_display_name_batch_macaca.pkl',
                                  count_column='rcnt')
 
+    # WIP but general idea: Have different models at disposition to run inference
     UCE().run("macaca_fascicularis")
+    SCGPT().run()
 
-    TileDB().generate_tiledb_soma(input_path=Path('./data/full_cells_macaca_uce_adata.h5ad'),
-                                  tiledb_folder_name='./data/macaca',
-                                  measurement_name='RNA')
+    analyser = Analyser(Path('./data/full_cells_macaca_uce_adata.h5ad'), './data/macaca', 'RNA')
+    analyser.generate_sample()

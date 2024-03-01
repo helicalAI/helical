@@ -14,7 +14,7 @@ class TileDB(Logger):
         super().__init__(loging_type, level)
         self.log = logging.getLogger("TileDB")
     
-    def generate_tiledb_soma(self, input_path: Path, tiledb_folder_name: str, measurement_name: str):
+    def generate_tiledb_soma(self, input_path: Path, tiledb_folder_name: str, measurement_name: str) -> str:
         '''
         Generates a tiledb soma database
 
@@ -22,10 +22,14 @@ class TileDB(Logger):
             input_uri: Path to the h5ad file.
             tiledb_uri: The URI to where the database will be.
             measurement_name: The name of the measurement.
+        
+        Returns:
+            A URI to the created tiledb
         '''
         if os.path.isdir(tiledb_folder_name):
             self.log.info(f"TileDB folder: {tiledb_folder_name} exists already. Removing it...")
             shutil.rmtree(tiledb_folder_name)
 
-        tiledbsoma.io.from_h5ad(experiment_uri = tiledb_folder_name, input_path = input_path, measurement_name = measurement_name)
+        uri = tiledbsoma.io.from_h5ad(experiment_uri = tiledb_folder_name, input_path = input_path, measurement_name = measurement_name)
         self.log.info(f"Successfully created a TileDB in: {tiledb_folder_name}")
+        return uri
