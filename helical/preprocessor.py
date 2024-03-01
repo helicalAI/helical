@@ -5,8 +5,6 @@ import pickle as pkl
 import pandas as pd
 import numpy as np
 import anndata as ad
-import tiledbsoma.io
-import tiledbsoma
 
 META_COLUMN_ORDER = ["sample",
                 "snm",
@@ -31,7 +29,7 @@ class Preprocessor(Logger):
         super().__init__(loging_type, level)
         self.log = logging.getLogger("Preprocessor")
 
-    def map_ensbl_to_name(self, input_path: str, mapping_path: str, count_column: str) -> pd.DataFrame:
+    def map_ensbl_to_name(self, input_path: str, mapping_path: str) -> pd.DataFrame:
         '''
         Maps the 'Ensemble ID' to a lowerscore 'Name' via the provided mapping.
         Nan if no mapping is found.
@@ -39,8 +37,6 @@ class Preprocessor(Logger):
         Args:
             input_path: Path to the ETS csv file.
             mapping_path: Path to the mapping pickle file.
-            count_column: string. The name of the column with the counts.
-                        Examples are raw counts 'rcnt' or 'tpm'.
         
         Returns:
             A pandas dataframe representing the gene expression table.
@@ -58,11 +54,8 @@ class Preprocessor(Logger):
     
     def transform_table(self, input_path: str, output_path: str, mapping_path: str, count_column: str):
         '''
-        Tiledb SOMA expects columns to be the features. These can represent genes, proteins
+        Transform columns to be the features. These can represent genes, proteins
         or genomic regions. Rows represent observations, which are typically cells. 
-        This function transforms a dataframe with genes and raw counts in rows to the desired
-        Tiledb SOMA format.
-        TODO: What else does it do?
         
         Args:
             input_path: Path to the ETS csv file.
@@ -71,7 +64,7 @@ class Preprocessor(Logger):
             count_column: string. The name of the column with the counts.
                         Default is the raw count 'rcnt'.
         '''
-        gene_expressions = self.map_ensbl_to_name(input_path, mapping_path, count_column)
+        gene_expressions = self.map_ensbl_to_name(input_path, mapping_path)
 
         self.log.info(f"Successfully received the expression table.")
         self.log.info(f"Converting the expression table to TileDB Soma format.")
@@ -98,15 +91,4 @@ class Preprocessor(Logger):
         adata.obs['duration']= adata.obs[['batch', 'duration']].apply(lambda x: -x[1] if x[1] in [2, 9] and x[0]==1 else x[1], axis=1)
         adata.write_h5ad(output_path)
 
-        self.log.info(f"Successfully saved the expression table in AnnData h5ad format: {output_path}.")
-
-    def generate_tiledb_soma(self, input_path: str, tiledb_folder_name: str, measurement_name: str):
-        '''
-        Generates a tiledb soma database
-
-        Args:
-            input_path: Path to the h5ad file.
-            tiledb_folder_name: The name of the folder where the database will be.
-            measurement_name: The name of the measurement.
-        '''
-        tiledbsoma.io.from_h5ad(experiment_uri = tiledb_folder_name, input_path = input_path, measurement_name = measurement_name)
+        self.log.info(f"Successfully saved the expression table in AnnData h5ad format: {output_path}")
