@@ -15,6 +15,7 @@ setup(
         'pandas',
         'anndata',
         'tiledbsoma',
-        'numpy'
+        'numpy',
+        'gitpython',
     ],  
 )
