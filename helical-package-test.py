@@ -1,8 +1,9 @@
 from helical.preprocessor import Preprocessor
-from helical.downloader import Downloader
+from helical.services.downloader import Downloader
 from helical.constants.enums import LoggingType
 from helical.db.tiledb import TileDB
 from pathlib import Path
+from helical.models.uce import UCE
 
 if __name__ == "__main__":
     downloader = Downloader()
@@ -14,6 +15,9 @@ if __name__ == "__main__":
                                  output_path='./data/full_cells_macaca.h5ad',
                                  mapping_path='./data/ensemble_to_display_name_batch_macaca.pkl',
                                  count_column='rcnt')
-    TileDB().generate_tiledb_soma(input_path=Path('./data/full_cells_macaca.h5ad'),
-                                      tiledb_folder_name='./data/macaca',
-                                      measurement_name='RNA')
+
+    UCE().run("macaca_fascicularis")
+
+    TileDB().generate_tiledb_soma(input_path=Path('./data/full_cells_macaca_uce_adata.h5ad'),
+                                  tiledb_folder_name='./data/macaca',
+                                  measurement_name='RNA')

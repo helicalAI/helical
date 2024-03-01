@@ -7,7 +7,7 @@ class Logger():
         
         self.log_filename = "debug.log"
         format = '%(asctime)s.%(msecs)03d %(name)s %(levelname)s %(message)s'
-        datetime = '%Y-%m-%d,%H:%M:%S'
+        datetime = '%Y-%m-%d, %H:%M:%S'
         level = level.value
         
         if log_type == LoggingType.FILE_AND_CONSOLE:
