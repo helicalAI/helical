@@ -52,8 +52,8 @@ class UCE(HelicalBaseModel):
         '''
         Returns the embeddings after inference has been made.
         
-        Args:
-            species_name: The name of the species.
+        Returns:
+            The embeddings in a pandas dataframe.
         '''
         try:
             ADATA_DST_PATH.resolve(strict=True)
