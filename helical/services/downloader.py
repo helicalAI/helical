@@ -18,46 +18,45 @@ class Downloader(Logger):
         super().__init__(loging_type, level)
         self.log = logging.getLogger("Downloader")
 
-    def get_ensemble_mapping(self, path_to_ets_csv: Path, output: Path) -> bool:
+    def get_ensemble_mapping(self, path_to_ets_csv: Path, output: Path):
         '''
         Saves a mapping of the `Ensemble ID` to `display names`. 
         
         Args:
             path_to_ets_csv: Path to the ETS csv file.
             output: Path to where the output (.pkl) file should be saved to.
-
-        Returns:
-            bool if successfull
         '''
         try:
             df = pd.read_csv(path_to_ets_csv)
         except:
             self.log.exception(f"Failed to open the {path_to_ets_csv} file. Please provide it.")
-            return False
-       
-        genes = df['egid'].dropna().unique()
 
-        server = "https://rest.ensembl.org/lookup/id"
-        headers={ "Content-Type" : "application/json", "Accept" : "application/json"}
+        if output.is_file():
+            self.log.info(f"No mapping is done because mapping file already exists here: {output}")
 
-        ensemble_to_display_name = dict()
-        
-        self.log.info(f"Starting to download the mappings of {len(genes)} genes from {server}")
+        else:
+            genes = df['egid'].dropna().unique()
 
-        # Resetting for visualization
-        self.data_length = 0
-        self.total_length = len(genes)
+            server = "https://rest.ensembl.org/lookup/id"
+            headers={ "Content-Type" : "application/json", "Accept" : "application/json"}
 
-        for i in range(0, len(genes), INTERVAL):
-            self._display_download_progress(INTERVAL)
-            ids = {'ids':genes[i:i+INTERVAL].tolist()}
-            r = requests.post(server, headers=headers, data=json.dumps(ids))
-            decoded = r.json()
-            ensemble_to_display_name.update(decoded)
+            ensemble_to_display_name = dict()
+            
+            self.log.info(f"Starting to download the mappings of {len(genes)} genes from {server}")
 
-        pkl.dump(ensemble_to_display_name, open(output, 'wb')) 
-        self.log.info(f"Downloaded all mappings and saved to {output}")
-        return True
+            # Resetting for visualization
+            self.data_length = 0
+            self.total_length = len(genes)
+
+            for i in range(0, len(genes), INTERVAL):
+                self._display_download_progress(INTERVAL)
+                ids = {'ids':genes[i:i+INTERVAL].tolist()}
+                r = requests.post(server, headers=headers, data=json.dumps(ids))
+                decoded = r.json()
+                ensemble_to_display_name.update(decoded)
+
+            pkl.dump(ensemble_to_display_name, open(output, 'wb')) 
+            self.log.info(f"Downloaded all mappings and saved to {output}")
 
     def download_via_link(self, output: Path, link: str) -> None:
         '''

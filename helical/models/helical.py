@@ -8,6 +8,10 @@ class HelicalBaseModel(ABC, Logger):
         pass
 
     @abstractmethod
+    def process_data():
+        pass
+
+    @abstractmethod
     def run():
         pass
 

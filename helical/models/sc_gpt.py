@@ -21,6 +21,9 @@ class SCGPT(HelicalBaseModel):
         self.downloader.clone_git_repo(self.scgpt_dst_path,
                                        "https://github.com/bowang-lab/scGPT.git",
                                        "v0.2.1")
+    
+    def process_data(self):
+        pass
 
     def run(self):
         pass
