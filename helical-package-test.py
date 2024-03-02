@@ -1,10 +1,7 @@
 from helical.preprocessor import Preprocessor
 from helical.services.downloader import Downloader
-from helical.constants.enums import LoggingType
-from pathlib import Path
 from helical.models.uce import UCE
 from helical.models.sc_gpt import SCGPT
-from helical.analysis.analyser import Analyser
 
 if __name__ == "__main__":
     downloader = Downloader()
@@ -17,9 +14,9 @@ if __name__ == "__main__":
                                  mapping_path='./data/ensemble_to_display_name_batch_macaca.pkl',
                                  count_column='rcnt')
 
-    # WIP but general idea: Have different models at disposition to run inference
-    UCE().run("macaca_fascicularis")
-    SCGPT().run()
+    res = UCE().get_embeddings()
+    print(res.shape)
 
-    analyser = Analyser(Path('./data/full_cells_macaca_uce_adata.h5ad'), './data/macaca', 'RNA')
-    analyser.generate_sample()
+    # WIP but general idea: Have different models at disposition to run inference
+    # SCGPT().run()
+

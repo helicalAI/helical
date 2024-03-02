@@ -6,3 +6,7 @@ class HelicalBaseModel(ABC, Logger):
     @abstractmethod
     def run():
         pass
+
+    @abstractmethod
+    def get_embeddings():
+        pass

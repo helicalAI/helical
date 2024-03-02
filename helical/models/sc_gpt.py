@@ -28,3 +28,6 @@ class SCGPT(HelicalBaseModel):
     
     def run(self):
         pass
+
+    def get_embeddings(self):
+        pass

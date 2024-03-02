@@ -67,7 +67,7 @@ class Preprocessor(Logger):
         gene_expressions = self.map_ensbl_to_name(input_path, mapping_path)
 
         self.log.info(f"Successfully received the expression table.")
-        self.log.info(f"Converting the expression table to TileDB Soma format.")
+        self.log.info(f"Converting the expression table to AnnData format.")
 
         full_df = pd.DataFrame()
         full_obs = pd.DataFrame()
@@ -88,6 +88,8 @@ class Preprocessor(Logger):
         adata.obs = full_obs.reset_index(drop=True)
         adata.obs['subject'] = adata.obs['subject'].astype(str) # necessary for h5py
         adata.obs = adata.obs.reindex(columns=META_COLUMN_ORDER) # optional?: specify order of columns 
+
+        # error in data, 2 and 9 duration should be negative
         adata.obs['duration']= adata.obs[['batch', 'duration']].apply(lambda x: -x[1] if x[1] in [2, 9] and x[0]==1 else x[1], axis=1)
         adata.write_h5ad(output_path)
 
