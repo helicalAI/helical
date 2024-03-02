@@ -13,8 +13,10 @@ if __name__ == "__main__":
                                  output_path='./data/full_cells_macaca.h5ad',
                                  mapping_path='./data/ensemble_to_display_name_batch_macaca.pkl',
                                  count_column='rcnt')
-
-    res = UCE().get_embeddings()
+    
+    uce = UCE()
+    uce.run("macaca_fascicularis")
+    res = uce.get_embeddings()
     print(res.shape)
 
     # WIP but general idea: Have different models at disposition to run inference
