@@ -1,35 +1,38 @@
 from helical.models.helical import HelicalBaseModel
 from helical.constants.enums import LoggingType, LoggingLevel
 import logging
-from git import Repo
 import os
 import shutil 
 from pathlib import Path
 import numpy as np
 import pandas as pd
 import anndata as ad
+from helical.services.downloader import Downloader
 
-GITHUB_REPO = "https://github.com/snap-stanford/UCE.git"
-GIT_HASH = "7b31528b84e4c8e7a9717c61e3d03ff7559c61af"
 BASE_DIR = Path(os.path.dirname(__file__)).parents[1]
-MODEL_PATH = Path.joinpath(BASE_DIR, "data/33l_8ep_1024t_1280.torch")
-ADATA_PATH = Path.joinpath(BASE_DIR, "data/full_cells_macaca.h5ad")
-UCE_DST_PATH = Path.joinpath(BASE_DIR, "data/UCE")
-ADATA_DST_PATH = Path.joinpath(BASE_DIR, "data/full_cells_macaca_uce_adata.h5ad")
 
 class UCE(HelicalBaseModel):
     
     def __init__(self, logging_type = LoggingType.CONSOLE, level = LoggingLevel.INFO) -> None:
         super().__init__(logging_type, level)
         self.log = logging.getLogger("UCE-Model")
+        self.downloader = Downloader()
 
-        if UCE_DST_PATH.is_dir():
-            self.log.info(f"Folder: {UCE_DST_PATH} exists already. Removing it...")
-            shutil.rmtree(UCE_DST_PATH)
+        # paths and file names
+        self.uce_dst_path = Path.joinpath(BASE_DIR, "data/UCE")
+        self.model_path = Path.joinpath(BASE_DIR, "data/33l_8ep_1024t_1280.torch")
+        self.adata_input_path = Path.joinpath(BASE_DIR, "data/full_cells_macaca.h5ad")
+        self.adata_dst_path = Path.joinpath(BASE_DIR, "data/full_cells_macaca_uce_adata.h5ad")
 
-        self.log.info(f"Clonging UCE from GitHub: {GITHUB_REPO}")
-        repo = Repo.clone_from(GITHUB_REPO, UCE_DST_PATH)
-        repo.git.checkout(GIT_HASH)
+    def get_model(self) -> None:
+        '''
+        Gets the necessary ensemble mappings, clones the GitHub repo of the UCE and downloads the Pytorch UCE model itself.
+        '''
+        
+        self.downloader.get_ensemble_mapping(Path.joinpath(BASE_DIR, 'data/21iT009_051_full_data.csv'), 
+                                             Path.joinpath(BASE_DIR, 'data/ensemble_to_display_name_batch_macaca.pkl'))
+        self.downloader.clone_git_repo(self.uce_dst_path, "https://github.com/snap-stanford/UCE.git", "7b31528b84e4c8e7a9717c61e3d03ff7559c61af")
+        self.downloader.download_via_link(self.model_path, "https://figshare.com/ndownloader/files/43423236")
 
     def run(self, species_name: str) -> None:
         '''
@@ -41,12 +44,12 @@ class UCE(HelicalBaseModel):
         self.log.info(f"Inference started")
 
         # run from their folder
-        os.chdir(UCE_DST_PATH)
-        os.system(f"python3 eval_single_anndata.py --filter False --nlayers 33 --model_loc '{MODEL_PATH}' --adata_path '{ADATA_PATH}' --species '{species_name}'")
+        os.chdir(self.uce_dst_path)
+        os.system(f"python3 eval_single_anndata.py --filter False --nlayers 33 --model_loc '{self.model_path}' --adata_path '{self.adata_input_path}' --species '{species_name}'")
         output = Path.joinpath(BASE_DIR, "data/UCE/full_cells_macaca_uce_adata.h5ad")
         
-        self.log.info(f"Inference ran successfully. Copying resulting {output} to {ADATA_DST_PATH}")
-        shutil.copyfile(output, ADATA_DST_PATH)
+        self.log.info(f"Inference ran successfully. Copying resulting {output} to {self.adata_dst_path}")
+        shutil.copyfile(output, self.adata_dst_path)
 
     def get_embeddings(self) -> pd.DataFrame:
         '''
@@ -56,12 +59,12 @@ class UCE(HelicalBaseModel):
             The embeddings in a pandas dataframe.
         '''
         try:
-            ADATA_DST_PATH.resolve(strict=True)
+            self.adata_dst_path.resolve(strict=True)
         except FileNotFoundError:
-            self.log.info(f"File not found error. Make sure {ADATA_DST_PATH} exists.")
+            self.log.info(f"File not found error. Make sure {self.adata_dst_path} exists.")
             return np.empty
         else: 
-            self.log.info(f"Loading {ADATA_DST_PATH} to get embeddings.")
-            data = ad.read_h5ad(ADATA_DST_PATH)
+            self.log.info(f"Loading {self.adata_dst_path} to get embeddings.")
+            data = ad.read_h5ad(self.adata_dst_path)
             embeddings = data.obsm["X_uce"]
             return embeddings

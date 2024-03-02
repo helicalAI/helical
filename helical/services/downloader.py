@@ -6,6 +6,8 @@ from helical.services.logger import Logger
 from helical.constants.enums import LoggingType, LoggingLevel
 import logging
 import sys
+from pathlib import Path
+from git import Repo
 
 INTERVAL = 1000 # interval to get gene mappings
 CHUNK_SIZE = 4096 # size of individual chunks to download
@@ -16,7 +18,7 @@ class Downloader(Logger):
         super().__init__(loging_type, level)
         self.log = logging.getLogger("Downloader")
 
-    def get_ensemble_mapping(self, path_to_ets_csv: str, output: str) -> bool:
+    def get_ensemble_mapping(self, path_to_ets_csv: Path, output: Path) -> bool:
         '''
         Saves a mapping of the `Ensemble ID` to `display names`. 
         
@@ -40,7 +42,7 @@ class Downloader(Logger):
 
         ensemble_to_display_name = dict()
         
-        self.log.info(f"Starting to download the mappings of {len(genes)} genes from {server}.")
+        self.log.info(f"Starting to download the mappings of {len(genes)} genes from {server}")
 
         # Resetting for visualization
         self.data_length = 0
@@ -53,20 +55,20 @@ class Downloader(Logger):
             decoded = r.json()
             ensemble_to_display_name.update(decoded)
 
-        self.log.info(f"Downloaded all mappings and saved to {output}.")
         pkl.dump(ensemble_to_display_name, open(output, 'wb')) 
+        self.log.info(f"Downloaded all mappings and saved to {output}")
         return True
 
-    def download_via_link(self, output: str, link: str) -> None:
+    def download_via_link(self, output: Path, link: str) -> None:
         '''
         Download a file via a link. 
         
         Args:
             output: Path to the output file.
-            link: String to download the file from.
+            link: URL to download the file from.
         '''
 
-        self.log.info(f"Starting to download {link}.")
+        self.log.info(f"Starting to download {link}")
         
         with open(output, "wb") as f:
             response = requests.get(link, stream=True)
@@ -84,8 +86,27 @@ class Downloader(Logger):
                         self._display_download_progress(len(data))
                         f.write(data)
                 except:
-                    self.log.error(f"Failed downloading file from {link}.")
-        self.log.info(f"Downloaded file and saved to {output}.")
+                    self.log.error(f"Failed downloading file from {link}")
+        self.log.info(f"Downloaded file and saved to {output}")
+
+    def clone_git_repo(self, destination: Path, repo_url: str, checkout: str) -> None:
+        '''
+        Clones a git repo to a destination folder if it does not yet exist.
+        
+        Args:
+            destination: The path to where the git repo should be cloned to.
+            repo_url: The URL to do the git clone
+            checkout: The tag, branch or commit hash to checkout
+        '''
+                
+        if destination.is_dir():
+            self.log.info(f"Folder: {destination} exists already. No 'git clone' is performed.")
+
+        else:
+            self.log.info(f"Clonging {repo_url} to {destination}")
+            repo = Repo.clone_from(repo_url, destination)
+            repo.git.checkout(checkout)
+            self.log.info(f"Successfully cloned and checked out '{checkout}' of {repo_url}")
 
     def _display_download_progress(self, data_chunk_size: int) -> None:
         '''

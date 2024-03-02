@@ -1,31 +1,27 @@
 from helical.models.helical import HelicalBaseModel
 from helical.constants.enums import LoggingType, LoggingLevel
 import logging
-from git import Repo
 import os
-import shutil 
 from pathlib import Path
+from helical.services.downloader import Downloader
 
-GITHUB_REPO = "https://github.com/bowang-lab/scGPT.git"
-TAG = "v0.2.1"
 BASE_DIR = Path(os.path.dirname(__file__)).parents[1]
-SCGPT_DST_PATH = Path.joinpath(BASE_DIR, "data/SC-GPT")
-ADATA_DST_PATH = Path.joinpath(BASE_DIR, "data/full_cells_macaca_uce_adata.h5ad")
 
 class SCGPT(HelicalBaseModel):
     
     def __init__(self, logging_type = LoggingType.CONSOLE, level = LoggingLevel.INFO) -> None:
         super().__init__(logging_type, level)
-        self.log = logging.getLogger("UCE-Model")
+        self.log = logging.getLogger("scGPT-Model")
+        self.downloader = Downloader()
 
-        if SCGPT_DST_PATH.is_dir():
-            self.log.info(f"Folder: {SCGPT_DST_PATH} exists already. Removing it...")
-            shutil.rmtree(SCGPT_DST_PATH)
+        # paths and file names
+        self.scgpt_dst_path = Path.joinpath(BASE_DIR, "data/sc-GPT")
 
-        self.log.info(f"Clonging SC-GPT from GitHub: {GITHUB_REPO}")
-        repo = Repo.clone_from(GITHUB_REPO, SCGPT_DST_PATH)
-        repo.git.checkout(TAG)
-    
+    def get_model(self):
+        self.downloader.clone_git_repo(self.scgpt_dst_path,
+                                       "https://github.com/bowang-lab/scGPT.git",
+                                       "v0.2.1")
+
     def run(self):
         pass
 
