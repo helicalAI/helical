@@ -66,26 +66,29 @@ class Downloader(Logger):
             output: Path to the output file.
             link: URL to download the file from.
         '''
+       
+        if output.is_file():
+            self.log.info(f"File: {output} exists already. File is not overwritten and nothing is downloaded.")
 
-        self.log.info(f"Starting to download {link}")
-        
-        with open(output, "wb") as f:
-            response = requests.get(link, stream=True)
-            total_length = response.headers.get('content-length')
+        else:
+            self.log.info(f"Starting to download {link}")
+            with open(output, "wb") as f:
+                response = requests.get(link, stream=True)
+                total_length = response.headers.get('content-length')
 
-            # Resetting for visualization
-            self.data_length = 0
-            self.total_length = int(total_length)
+                # Resetting for visualization
+                self.data_length = 0
+                self.total_length = int(total_length)
 
-            if total_length is None: # no content length header
-                f.write(response.content)
-            else:
-                try:
-                    for data in response.iter_content(chunk_size=CHUNK_SIZE):
-                        self._display_download_progress(len(data))
-                        f.write(data)
-                except:
-                    self.log.error(f"Failed downloading file from {link}")
+                if total_length is None: # no content length header
+                    f.write(response.content)
+                else:
+                    try:
+                        for data in response.iter_content(chunk_size=CHUNK_SIZE):
+                            self._display_download_progress(len(data))
+                            f.write(data)
+                    except:
+                        self.log.error(f"Failed downloading file from {link}")
         self.log.info(f"Downloaded file and saved to {output}")
 
     def clone_git_repo(self, destination: Path, repo_url: str, checkout: str) -> None:

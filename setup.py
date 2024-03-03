@@ -17,5 +17,6 @@ setup(
         'tiledbsoma',
         'numpy',
         'gitpython',
+        'torch',
     ],  
 )
