@@ -18,5 +18,6 @@ setup(
         'numpy',
         'gitpython',
         'torch',
+        'accelerate'
     ],  
 )

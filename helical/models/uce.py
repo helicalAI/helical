@@ -9,6 +9,7 @@ import pandas as pd
 import anndata as ad
 from helical.services.downloader import Downloader
 from helical.preprocessor import Preprocessor
+import typing 
 
 BASE_DIR = Path(os.path.dirname(__file__)).parents[1]
 
@@ -54,7 +55,7 @@ class UCE(HelicalBaseModel):
                                                       'rcnt')
         return processed
 
-    def run(self, model_path: Path, adata_input: Path, species_name: str) -> Path:
+    def run(self, model_path: Path, adata_input: Path, species_name: str) -> typing.Optional[Path]:
         '''
         Runs inference with the UCE model.
         
@@ -64,7 +65,8 @@ class UCE(HelicalBaseModel):
             species_name: The name of the species.
         
         Returns:
-            A path to the h5ad data having the embeddings 
+            A path to the h5ad data having the embeddings if inference ran successfully. 
+            None otherwise.
         '''
         self.log.info(f"Inference started")
 
@@ -77,8 +79,8 @@ class UCE(HelicalBaseModel):
             shutil.copyfile(output, self.adata_dst_path)
             return self.adata_dst_path
         else:
-            self.log.error(f"Inference did not successfully.")
-            return ""
+            self.log.error(f"Inference did NOT run successfully.")
+            return None
 
 
     def get_embeddings(self, inferred_data_path: Path) -> pd.DataFrame:
