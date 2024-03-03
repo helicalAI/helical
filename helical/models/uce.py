@@ -72,10 +72,14 @@ class UCE(HelicalBaseModel):
         os.chdir(self.uce_dst_path)
         os.system(f"python3 eval_single_anndata.py --filter False --nlayers 33 --model_loc '{model_path}' --adata_path '{adata_input}' --species '{species_name}'")
         output = Path.joinpath(BASE_DIR, "data/UCE/full_cells_macaca_uce_adata.h5ad")
-        
-        self.log.info(f"Inference ran successfully. Copying resulting {output} to {self.adata_dst_path}")
-        shutil.copyfile(output, self.adata_dst_path)
-        return self.adata_dst_path
+        if output.is_file():
+            self.log.info(f"Inference ran successfully. Copying resulting {output} to {self.adata_dst_path}")
+            shutil.copyfile(output, self.adata_dst_path)
+            return self.adata_dst_path
+        else:
+            self.log.error(f"Inference did not successfully.")
+            return ""
+
 
     def get_embeddings(self, inferred_data_path: Path) -> pd.DataFrame:
         '''
