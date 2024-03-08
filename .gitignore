@@ -6,6 +6,7 @@ __pycache__
 *.csv
 *.pkl
 data
+*.sqlite3
 
 # Log
 debug.log
