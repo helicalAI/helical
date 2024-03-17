@@ -1,4 +1,4 @@
-from helical.models.uce import UCE
+from helical.models.uce.uce import UCE
 from helical.models.sc_gpt import SCGPT
 from pathlib import Path
     
