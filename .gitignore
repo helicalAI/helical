@@ -9,6 +9,8 @@ data
 *.torch
 *.pt
 *.npz
+*.arrow
+*.json
 
 # Log
 debug.log
