@@ -51,7 +51,6 @@ def load_gene_embeddings_adata(adata: AnnData, species: list, embedding_model: s
     # Ensure embeddings are available for all species
     if not (species_names_set <= available_species):
         raise ValueError(f'The following species do not have gene embeddings: {species_names_set - available_species}')
-
     # Load gene embeddings for desired species (and convert gene symbols to lower case)
     species_to_gene_symbol_to_embedding = {
         species: {
@@ -67,10 +66,8 @@ def load_gene_embeddings_adata(adata: AnnData, species: list, embedding_model: s
         for gene_symbol_to_embedding in species_to_gene_symbol_to_embedding.values()
     ])
     genes_to_use = {gene for gene in adata.var_names if gene.lower() in genes_with_embeddings}
-
     # Subset data to only use genes with embeddings
     adata = adata[:, adata.var_names.isin(genes_to_use)]
-
     # Set up dictionary mapping species to gene embedding matrix (num_genes, embedding_dim)
     species_to_gene_embeddings = {
         species_name: torch.stack([

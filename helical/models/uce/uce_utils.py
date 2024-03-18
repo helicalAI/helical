@@ -11,6 +11,7 @@ import torch
 from tqdm import tqdm
 from uce_model import TransformerModel
 from torch import nn
+import scipy
 
 class UCECollator(object):
     def __init__(self, config):
@@ -172,7 +173,11 @@ def process_data(anndata,model_config,species='human',filter_genes=False,acceler
         species=[species],
         embedding_model="ESM2")
         protein_embeddings = protein_embeddings[species]
-        expression = np.asarray(adata.X)
+        if scipy.sparse.issparse(adata.X):
+            expression = np.asarray(adata.X.todense())
+        else:
+            expression = np.asarray(adata.X)
+
 
         # print(expression.max()) # this is a nice check to make sure it's counts
         npz_folder_path = "./"
