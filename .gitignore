@@ -3,10 +3,14 @@ __pycache__
 .vscode
 
 # Data
-*.csv
-*.pkl
 data
 *.sqlite3
+*.h5ad
+*.torch
+*.pt
+*.npz
+*.arrow
+*.json
 
 # Log
 debug.log
