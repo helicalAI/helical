@@ -24,7 +24,7 @@ files_config = {
 }
 
 data_config = {
-    "adata_path": "../data/full_cells_macaca_obs_sum_v3.h5ad",
+    "adata_path": "./data/full_cells_macaca.h5ad",
     "dir": "./helical/models/uce/",
     "species": "human", #,'macaca_fascicularis',#"human",
     "filter": False,
