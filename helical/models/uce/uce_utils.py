@@ -1,6 +1,5 @@
-from gene_embeddings import load_gene_embeddings_adata
 import scanpy as sc
-from torch.utils.data import Dataset,DataLoader
+from torch.utils.data import Dataset, DataLoader
 from typing import Dict
 import torch
 import numpy as np
@@ -9,9 +8,11 @@ import pandas as pd
 import numpy as np
 import torch
 from tqdm import tqdm
-from uce_model import TransformerModel
 from torch import nn
 import scipy
+
+from helical.models.uce.gene_embeddings import load_gene_embeddings_adata
+from helical.models.uce.uce_model import TransformerModel
 
 class UCECollator(object):
     def __init__(self, config):
@@ -248,7 +249,7 @@ def get_ESM2_embeddings(files):
 
 
 ## writing a funciton to load the model 
-def load_model(model_config,all_pe):
+def load_model(model_config, all_pe):
     token_dim = model_config["token_dim"]
     emsize = 1280  # embedding dimension
     d_hid = model_config['d_hid']  # dimension of the feedforward network model in nn.TransformerEncoder
@@ -275,7 +276,7 @@ def load_model(model_config,all_pe):
 
 
 # Create a function that uses the model to get the embeddings of the genes
-def get_gene_embeddings(model, dataloader, accelerator,model_config=None):
+def get_gene_embeddings(model, dataloader, accelerator, model_config=None):
     pbar = tqdm(dataloader, disable=not accelerator.is_local_main_process)
     dataset_embeds = []
     with torch.no_grad():
