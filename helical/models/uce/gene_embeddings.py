@@ -1,35 +1,35 @@
-"""Helper functions for loading pretrained gene embeddings."""
+"""
+    Helper functions for loading pretrained gene embeddings.
+"""
+
 from pathlib import Path
 from typing import Dict, Tuple
-
 import torch
-
 from scanpy import AnnData
-import numpy as np
-import pandas as pd
 
 
-EMBEDDING_DIR = Path('./model_files/protein_embeddings')
-MODEL_TO_SPECIES_TO_GENE_EMBEDDING_PATH = {
-    'ESM2': {
-        'human': EMBEDDING_DIR / 'Homo_sapiens.GRCh38.gene_symbol_to_embedding_ESM2.pt',
-        'mouse': EMBEDDING_DIR / 'Mus_musculus.GRCm39.gene_symbol_to_embedding_ESM2.pt',
-        'frog': EMBEDDING_DIR / 'Xenopus_tropicalis.Xenopus_tropicalis_v9.1.gene_symbol_to_embedding_ESM2.pt',
-        'zebrafish': EMBEDDING_DIR / 'Danio_rerio.GRCz11.gene_symbol_to_embedding_ESM2.pt',
-        "mouse_lemur": EMBEDDING_DIR / "Microcebus_murinus.Mmur_3.0.gene_symbol_to_embedding_ESM2.pt",
-        "pig": EMBEDDING_DIR / 'Sus_scrofa.Sscrofa11.1.gene_symbol_to_embedding_ESM2.pt',
-        "macaca_fascicularis": EMBEDDING_DIR / 'Macaca_fascicularis.Macaca_fascicularis_6.0.gene_symbol_to_embedding_ESM2.pt',
-        "macaca_mulatta": EMBEDDING_DIR / 'Macaca_mulatta.Mmul_10.gene_symbol_to_embedding_ESM2.pt',
+def get_gene_embedding_paths(embedding_path: Path):
+    return {
+        'ESM2': {
+            'human': embedding_path / 'Homo_sapiens.GRCh38.gene_symbol_to_embedding_ESM2.pt',
+            'mouse': embedding_path / 'Mus_musculus.GRCm39.gene_symbol_to_embedding_ESM2.pt',
+            'frog': embedding_path / 'Xenopus_tropicalis.Xenopus_tropicalis_v9.1.gene_symbol_to_embedding_ESM2.pt',
+            'zebrafish': embedding_path / 'Danio_rerio.GRCz11.gene_symbol_to_embedding_ESM2.pt',
+            "mouse_lemur": embedding_path / "Microcebus_murinus.Mmur_3.0.gene_symbol_to_embedding_ESM2.pt",
+            "pig": embedding_path / 'Sus_scrofa.Sscrofa11.1.gene_symbol_to_embedding_ESM2.pt',
+            "macaca_fascicularis": embedding_path / 'Macaca_fascicularis.Macaca_fascicularis_6.0.gene_symbol_to_embedding_ESM2.pt',
+            "macaca_mulatta": embedding_path / 'Macaca_mulatta.Mmul_10.gene_symbol_to_embedding_ESM2.pt',
+        }
     }
-}
-
 
 #TODO Add new function to add embeddings
 # extra_species = pd.read_csv("./UCE/model_files/new_species_protein_embeddings.csv").set_index("species").to_dict()["path"]
 # MODEL_TO_SPECIES_TO_GENE_EMBEDDING_PATH["ESM2"].update(extra_species) # adds new species
 
 
-def load_gene_embeddings_adata(adata: AnnData, species: list, embedding_model: str) -> Tuple[AnnData, Dict[str, torch.FloatTensor],Dict[str, torch.FloatTensor]]:
+def load_gene_embeddings_adata(adata: AnnData, species: list, embedding_model: str, embeddings_path: Path) -> Tuple[AnnData, 
+                                                                                                                   Dict[str, torch.FloatTensor],
+                                                                                                                   Dict[str, torch.FloatTensor]]:
     """Loads gene embeddings for all the species/genes in the provided data.
 
     :param data: An AnnData object containing gene expression data for cells.
@@ -45,7 +45,8 @@ def load_gene_embeddings_adata(adata: AnnData, species: list, embedding_model: s
     species_names_set = set(species_names)
 
     # Get embedding paths for the model
-    species_to_gene_embedding_path = MODEL_TO_SPECIES_TO_GENE_EMBEDDING_PATH[embedding_model]
+    embedding_paths = get_gene_embedding_paths(embeddings_path)
+    species_to_gene_embedding_path = embedding_paths[embedding_model]
     available_species = set(species_to_gene_embedding_path)
 
     # Ensure embeddings are available for all species
@@ -77,4 +78,4 @@ def load_gene_embeddings_adata(adata: AnnData, species: list, embedding_model: s
         for species_name in species_names
     }
 
-    return adata, species_to_gene_embeddings,species_to_gene_symbol_to_embedding
+    return adata, species_to_gene_embeddings, species_to_gene_symbol_to_embedding

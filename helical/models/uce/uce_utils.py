@@ -10,6 +10,7 @@ import torch
 from tqdm import tqdm
 from torch import nn
 import scipy
+from pathlib import Path
 
 from helical.models.uce.gene_embeddings import load_gene_embeddings_adata
 from helical.models.uce.uce_model import TransformerModel
@@ -164,15 +165,16 @@ class UCEDataset(Dataset):
         
         return cell_sentences_pe, mask, longest_seq_len, cell_sentences
 
-def process_data(anndata,model_config,species='human',filter_genes=False,accelerator=None):
+def process_data(anndata, model_config, files_config, species='human', filter_genes=False, accelerator=None):
         if filter_genes:
             sc.pp.filter_genes(anndata, min_cells=10)
             # sc.pp.filter_cells(ad, min_genes=25)
         ##Filtering out the Expression Data That we do not have in the protein embeddings
-        adata, protein_embeddings,full_pe_dict = load_gene_embeddings_adata(
-        adata=anndata,
-        species=[species],
-        embedding_model="ESM2")
+        adata, protein_embeddings, full_pe_dict = load_gene_embeddings_adata(
+            adata=anndata,
+            species=[species],
+            embedding_model="ESM2",
+            embeddings_path=Path(files_config["protein_embeddings_dir"]))
         protein_embeddings = protein_embeddings[species]
         if scipy.sparse.issparse(adata.X):
             expression = np.asarray(adata.X.todense())
@@ -195,9 +197,9 @@ def process_data(anndata,model_config,species='human',filter_genes=False,acceler
         shapes_dict = {name: (num_cells, num_genes)}
         dataset_species = species
         spec_pe_genes = list(full_pe_dict[dataset_species].keys())
-        chromosome_list =  pd.read_csv("./model_files/species_chrom.csv")
+        chromosome_list =  pd.read_csv(files_config["spec_chrom_csv_path"])
         chromosome_list["spec_chrom"] = pd.Categorical(chromosome_list["species"] + "_" +  chromosome_list["chromosome"]) # add the spec_chrom list
-        with open("./model_files/species_offsets.pkl", "rb") as f:
+        with open(files_config["offset_pkl_path"], "rb") as f:
             species_to_offsets = pickle.load(f)
         offset = species_to_offsets[dataset_species]
         pe_row_idxs = torch.tensor([spec_pe_genes.index(k.lower()) + offset for k in adata.var_names]).long()
@@ -257,10 +259,13 @@ def load_model(model_config, all_pe):
     nhead = 20  # number of heads in nn.MultiheadAttention
     dropout = 0.05  # dropout probability
     output_dim = model_config['output_dim']
-    model = TransformerModel(token_dim=token_dim, d_model=emsize, nhead=nhead,
-                            d_hid=d_hid,
-                            nlayers=nlayers, dropout=dropout,
-                            output_dim=output_dim)
+    model = TransformerModel(token_dim=token_dim, 
+                             d_model=emsize, 
+                             nhead=nhead,
+                             d_hid=d_hid,
+                             nlayers=nlayers, 
+                             dropout=dropout,
+                             output_dim=output_dim)
 
     # empty_pe = torch.zeros(50000, 5120)
     empty_pe = torch.zeros(145469, 5120)

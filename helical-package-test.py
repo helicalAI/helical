@@ -1,22 +1,15 @@
 from helical.models.uce.uce import UCE
-from helical.models.sc_gpt import SCGPT
-from pathlib import Path
-    
+from uce_config import model_config, files_config, data_config
+from accelerate import Accelerator
+import anndata as ad
+
+accelerator = Accelerator(project_dir=data_config["dir"])
+
 uce = UCE()
 
-model_path = uce.get_model()
-processed_data = uce.process_data(Path('<your/absolute/path/goes/here>'))
-result = uce.run(model_path, processed_data, "macaca_fascicularis")
-embeddings = uce.get_embeddings(result)
+model_path = uce.get_model(model_config, data_config, files_config, accelerator=accelerator)
+ann_data = ad.read_h5ad("./data/full_cells_macaca.h5ad")
+data_loader = uce.process_data(ann_data)
+embeddings = uce.get_embeddings(data_loader)
 
 print(embeddings.shape)
-
-# WIP but general idea: Have different models at disposition to run inference
-# scgpt = SCGPT()
-
-# scgpt.get_model()
-# scgpt.run("macaca_fascicularis")
-# embeddings = scgpt.get_embeddings()
-
-# print(embeddings.shape)
-
