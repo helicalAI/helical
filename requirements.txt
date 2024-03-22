@@ -1,3 +1,2 @@
-drf-yasg
 uvicorn
 fastapi

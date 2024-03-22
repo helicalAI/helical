@@ -13,18 +13,26 @@ Copy the file `helical-package-test.py` into your repo. As the downloading steps
 python helical-test-package.py
 ```
 
-# Django backend
-This is still work-in-progress but you can already run django locally.
+# FastAPI - Endpoints
+This is still work-in-progress but you the idea is to use FastAPI locally to show how we can use API endpoints to access our Helical package.
 First, install the requirements with 
 ```
 pip install -r requirements.txt
 ```
-You can then go into the django folder and run these commands
+You can then run
 ```
-cd django
-python manage.py makemigrations
-python manage.py migrate
-python manage.py runserver
+python run_app.py
 ```
-In your browser, go to `http://127.0.0.1:8000/swagger/`
-To use the helical package with these endpoints in django, make sure you have the helical package installed in your environment.
+In your browser, go to `http://0.0.0.0:8000`
+
+## Docker
+You can also use docker. Note, this does not work on Apple Silicon (M1-M3). 
+First build the container:
+```
+docker build -f Dockerfile -t helical-docker .
+```
+Run by exposing the port
+```
+docke run -it -p 8000:8000 helical-docker
+```
+In the container, run the `run_app.py`.
