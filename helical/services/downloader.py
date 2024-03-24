@@ -10,7 +10,7 @@ from pathlib import Path
 from git import Repo
 
 INTERVAL = 1000 # interval to get gene mappings
-CHUNK_SIZE = 4096 # size of individual chunks to download
+CHUNK_SIZE = 8192 # size of individual chunks to download
 LOADING_BAR_LENGTH = 50 # size of the download progression bar in console
 
 class Downloader(Logger):
@@ -29,10 +29,10 @@ class Downloader(Logger):
         try:
             df = pd.read_csv(path_to_ets_csv)
         except:
-            self.log.exception(f"Failed to open the {path_to_ets_csv} file. Please provide it.")
+            self.log.exception(f"Failed to open the '{path_to_ets_csv}' file. Please provide it.")
 
         if output.is_file():
-            self.log.info(f"No mapping is done because mapping file already exists here: {output}")
+            self.log.info(f"No mapping is done because mapping file already exists here: '{output}'")
 
         else:
             genes = df['egid'].dropna().unique()
@@ -42,7 +42,7 @@ class Downloader(Logger):
 
             ensemble_to_display_name = dict()
             
-            self.log.info(f"Starting to download the mappings of {len(genes)} genes from {server}")
+            self.log.info(f"Starting to download the mappings of {len(genes)} genes from '{server}'")
 
             # Resetting for visualization
             self.data_length = 0
@@ -56,7 +56,7 @@ class Downloader(Logger):
                 ensemble_to_display_name.update(decoded)
 
             pkl.dump(ensemble_to_display_name, open(output, 'wb')) 
-            self.log.info(f"Downloaded all mappings and saved to {output}")
+            self.log.info(f"Downloaded all mappings and saved to: '{output}'")
 
     def download_via_link(self, output: Path, link: str) -> None:
         '''
@@ -68,10 +68,10 @@ class Downloader(Logger):
         '''
        
         if output.is_file():
-            self.log.info(f"File: {output} exists already. File is not overwritten and nothing is downloaded.")
+            self.log.info(f"File: '{output}' exists already. File is not overwritten and nothing is downloaded.")
 
         else:
-            self.log.info(f"Starting to download {link}")
+            self.log.info(f"Starting to download: '{link}'")
             with open(output, "wb") as f:
                 response = requests.get(link, stream=True)
                 total_length = response.headers.get('content-length')
@@ -88,8 +88,8 @@ class Downloader(Logger):
                             self._display_download_progress(len(data))
                             f.write(data)
                     except:
-                        self.log.error(f"Failed downloading file from {link}")
-        self.log.info(f"Downloaded file and saved to {output}")
+                        self.log.error(f"Failed downloading file from '{link}'")
+        self.log.info(f"File saved to: '{output}'")
 
     def clone_git_repo(self, destination: Path, repo_url: str, checkout: str) -> None:
         '''
