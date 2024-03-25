@@ -17,7 +17,7 @@ setup(
         'tiledbsoma',
         'numpy',
         'gitpython',
-        'torch',
+        'torch==2.1.2', # noticed a bug for 2.2.1
         'accelerate'
     ],  
 )
