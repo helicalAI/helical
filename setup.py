@@ -18,6 +18,8 @@ setup(
         'numpy',
         'gitpython',
         'torch==2.1.2', # noticed a bug for 2.2.1
-        'accelerate'
+        'accelerate',
+        'transformers==4.35.0', # https://stackoverflow.com/questions/77013354/modulenotfounderror-no-module-named-torch-utils-pytree
+        'loompy'
     ],  
 )

@@ -11,6 +11,13 @@ data
 *.npz
 *.arrow
 *.json
-
+*.pickle
+*.bin
+*.dataset
+*.ipynb_checkpoints
+results*
 # Log
 debug.log
+
+# Mac Files
+*.DS_Store
