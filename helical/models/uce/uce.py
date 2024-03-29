@@ -52,5 +52,4 @@ class UCE(HelicalBaseModel):
     def get_embeddings(self, dataloader: DataLoader) -> np.array:
         
         embeddings = self.run(dataloader)
-        np.savetxt("emeddings.csv", embeddings, delimiter=",")
         return embeddings
