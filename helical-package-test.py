@@ -19,9 +19,8 @@ model = uce.get_model(config["model_config"],
                       config["files_config"], 
                       accelerator=accelerator)
 
-df = pd.read_csv(Path('./out.csv'))
-ann_data = ad.AnnData(X = df)
-data_loader = uce.process_data(ann_data)
+ann_data = ad.read_h5ad(config["data_config"]["adata_path"])
+data_loader = uce.process_data(ann_data[:100])
 embeddings = uce.get_embeddings(data_loader)
 
 print(embeddings.shape)

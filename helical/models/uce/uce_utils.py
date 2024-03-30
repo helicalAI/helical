@@ -11,6 +11,7 @@ from tqdm import tqdm
 from torch import nn
 import scipy
 from pathlib import Path
+import typing
 
 from helical.models.uce.gene_embeddings import load_gene_embeddings_adata
 from helical.models.uce.uce_model import TransformerModel
@@ -235,15 +236,25 @@ def process_data(anndata, model_config, files_config, species='human', filter_ge
 
 
 
-def get_ESM2_embeddings(files):
-    # Load in ESM2 embeddings and special tokens
-    all_pe = torch.load(files['token_file'])
+def get_ESM2_embeddings(files_config: typing.Dict[str, str]) -> torch.Tensor:
+    '''
+    Loads the token file specified in the config file.
+
+    Args:
+        files_config: A dictionary with 'token_file' and 'token_dim' as keys. 
+
+    Returns:
+        The token file loaded as a torch.Tensor.
+    '''
+
+    all_pe = torch.load(files_config['token_file'])
+
+    # TODO: Why this if clause and why this magic number 143574? 
     if all_pe.shape[0] == 143574:
         torch.manual_seed(23)
-        CHROM_TENSORS = torch.normal(mean=0, std=1, size=(1895, files['token_dim']))
+        CHROM_TENSORS = torch.normal(mean=0, std=1, size=(1895, files_config['token_dim']))
         # 1895 is the total number of chromosome choices, it is hardcoded for now
-        all_pe = torch.vstack(
-            (all_pe, CHROM_TENSORS))  # Add the chrom tensors to the end
+        all_pe = torch.vstack((all_pe, CHROM_TENSORS))  # Add the chrom tensors to the end
         all_pe.requires_grad = False
 
     return all_pe
@@ -251,28 +262,30 @@ def get_ESM2_embeddings(files):
 
 
 ## writing a funciton to load the model 
-def load_model(model_config, all_pe):
-    token_dim = model_config["token_dim"]
-    emsize = 1280  # embedding dimension
-    d_hid = model_config['d_hid']  # dimension of the feedforward network model in nn.TransformerEncoder
-    nlayers = model_config['n_layers']
-    nhead = 20  # number of heads in nn.MultiheadAttention
-    dropout = 0.05  # dropout probability
-    output_dim = model_config['output_dim']
-    model = TransformerModel(token_dim=token_dim, 
-                             d_model=emsize, 
-                             nhead=nhead,
-                             d_hid=d_hid,
-                             nlayers=nlayers, 
-                             dropout=dropout,
-                             output_dim=output_dim)
+def load_model(model_config: typing.Dict[str, str], all_pe: torch.Tensor) -> TransformerModel:
+    '''
+    Load the UCE Transformer Model based on configurations from the model_config file.
+
+    Args:
+        model_config: A dictionary with 'token_dim', 'd_hid', 'n_layers', 'output_dim' and 'model_loc' as keys. 
+        all_pe: The token file loaded as a torch.Tensor.
+
+    Returns:
+        The TransformerModel.
+    '''
+    model = TransformerModel(token_dim = model_config["token_dim"], 
+                             d_model = 1280, # each cell is represented as a d-dimensional vector, where d = 1280, see UCE paper
+                             nhead = 20,  # number of heads in nn.MultiheadAttention,
+                             d_hid = model_config['d_hid'],
+                             nlayers = model_config['n_layers'], 
+                             dropout = 0.05,
+                             output_dim = model_config['output_dim'])
 
     # empty_pe = torch.zeros(50000, 5120)
     empty_pe = torch.zeros(145469, 5120)
     empty_pe.requires_grad = False
     model.pe_embedding = nn.Embedding.from_pretrained(empty_pe)
-    model.load_state_dict(torch.load(model_config['model_loc'], map_location="cpu"),
-                            strict=True)
+    model.load_state_dict(torch.load(model_config['model_loc'], map_location="cpu"), strict=True)
     if all_pe.shape[0] != 145469: 
         all_pe.requires_grad = False
         model.pe_embedding = nn.Embedding.from_pretrained(all_pe)
