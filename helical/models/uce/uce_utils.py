@@ -1,6 +1,5 @@
 import scanpy as sc
 from torch.utils.data import Dataset, DataLoader
-from typing import Dict
 import torch
 import numpy as np
 import pickle
@@ -11,11 +10,13 @@ from tqdm import tqdm
 from torch import nn
 import scipy
 from pathlib import Path
-import typing
+from typing import Dict, Tuple
+from scanpy import AnnData
 
 from helical.models.uce.gene_embeddings import load_gene_embeddings_adata
 from helical.models.uce.uce_model import TransformerModel
-
+import logging
+logger = logging.getLogger(__name__)
 class UCECollator(object):
     def __init__(self, config):
         self.pad_length = config['pad_length']
@@ -43,7 +44,8 @@ class UCECollator(object):
         return batch_sentences[:, :max_len] , mask[:, :max_len], idxs, cell_sentences
     
 class UCEDataset(Dataset):
-    def __init__(self, sorted_dataset_names,
+    def __init__(self, 
+                 sorted_dataset_names,
                  shapes_dict,
                  model_config, 
                  dataset_to_protein_embeddings,
@@ -171,59 +173,49 @@ def process_data(anndata, model_config, files_config, species='human', filter_ge
             sc.pp.filter_genes(anndata, min_cells=10)
             # sc.pp.filter_cells(ad, min_genes=25)
         ##Filtering out the Expression Data That we do not have in the protein embeddings
-        adata, protein_embeddings, full_pe_dict = load_gene_embeddings_adata(
-            adata=anndata,
-            species=[species],
-            embedding_model="ESM2",
-            embeddings_path=Path(files_config["protein_embeddings_dir"]))
-        protein_embeddings = protein_embeddings[species]
-        if scipy.sparse.issparse(adata.X):
-            expression = np.asarray(adata.X.todense())
+        filtered_adata, species_to_all_gene_symbols = load_gene_embeddings_adata(adata=anndata,
+                                                                        species=[species],
+                                                                        embedding_model="ESM2",
+                                                                        embeddings_path=Path(files_config["protein_embeddings_dir"]))
+        
+        # TODO: What about hv_genes? See orig.
+        if scipy.sparse.issparse(filtered_adata.X):
+            expression = np.asarray(filtered_adata.X.todense())
         else:
-            expression = np.asarray(adata.X)
+            expression = np.asarray(filtered_adata.X)
 
-
-        # print(expression.max()) # this is a nice check to make sure it's counts
-        npz_folder_path = "./"
         name = "test"
-        filename = npz_folder_path + f"{name}_counts.npz"
-        shape = expression.shape
-        fp = np.memmap(filename, dtype='int64', mode='w+', shape=shape)
-        fp[:] = expression[:]
-        fp.flush()
+        expression_folder_path = "./"
+        prepare_expression_counts_file(expression, name, expression_folder_path)
         
-        num_cells = adata.X.shape[0]
-        num_genes = adata.X.shape[1]
-
+        # shapes dictionary
+        num_cells = filtered_adata.X.shape[0]
+        num_genes = filtered_adata.X.shape[1]
         shapes_dict = {name: (num_cells, num_genes)}
-        dataset_species = species
-        spec_pe_genes = list(full_pe_dict[dataset_species].keys())
-        chromosome_list =  pd.read_csv(files_config["spec_chrom_csv_path"])
-        chromosome_list["spec_chrom"] = pd.Categorical(chromosome_list["species"] + "_" +  chromosome_list["chromosome"]) # add the spec_chrom list
-        with open(files_config["offset_pkl_path"], "rb") as f:
-            species_to_offsets = pickle.load(f)
-        offset = species_to_offsets[dataset_species]
-        pe_row_idxs = torch.tensor([spec_pe_genes.index(k.lower()) + offset for k in adata.var_names]).long()
-        # print(len(np.unique(pe_row_idxs)))
+
+        pe_row_idxs = get_protein_embeddings_idxs(files_config["offset_pkl_path"], species, species_to_all_gene_symbols, filtered_adata)
+        dataset_chroms, dataset_start = get_positions(Path(files_config["spec_chrom_csv_path"]), species, filtered_adata)
+
+        if not (len(dataset_chroms) == len(dataset_start) == num_genes == pe_row_idxs.shape[0]): 
+            logger.error(f'Invalid input dimensions for the UCEDataset! ' 
+                        f'dataset_chroms: {len(dataset_chroms)}, '
+                        f'dataset_start: {len(dataset_start)}, '
+                        f'num_genes: {num_genes}, '
+                        f'pe_row_idxs.shape[0]: {pe_row_idxs.shape[0]}')
+            raise AssertionError
         
-        spec_chrom = chromosome_list[chromosome_list["species"] == dataset_species].set_index("gene_symbol")
+        dataset = UCEDataset(sorted_dataset_names = [name],
+                             shapes_dict = shapes_dict,
+                             model_config = model_config,
+                             expression_counts_path = expression_folder_path,
+                             dataset_to_protein_embeddings = pe_row_idxs,
+                             datasets_to_chroms = dataset_chroms,
+                             datasets_to_starts = dataset_start
+                             )
 
-        gene_chrom = spec_chrom.loc[[k.upper() for k in adata.var_names]]
-
-        dataset_chroms = gene_chrom["spec_chrom"].cat.codes # now this is correctely indexed by species and chromosome
-        # print("Max Code:", max(dataset_chroms))
-        dataset_pos = gene_chrom["start"].values
-    
-        dataset = UCEDataset(sorted_dataset_names=['test'],
-                                shapes_dict=shapes_dict,
-                                model_config=model_config, 
-                                expression_counts_path="./",
-                                dataset_to_protein_embeddings=pe_row_idxs,
-                                datasets_to_chroms=dataset_chroms,
-                                datasets_to_starts=dataset_pos
-                                )
-
-        dataloader = DataLoader(dataset, batch_size=5, shuffle=False,
+        dataloader = DataLoader(dataset, 
+                                batch_size=5, 
+                                shuffle=False,
                                 collate_fn=dataset.collator_fn,
                                 num_workers=0)
         
@@ -234,9 +226,29 @@ def process_data(anndata, model_config, files_config, species='human', filter_ge
         #     # pbar = tqdm(dataloader)
         return dataloader
 
+def get_positions(species_chrom_csv_path: Path, species: str, adata: AnnData) -> Tuple[pd.Series, np.array]:
+    """
+    Get the chromosomes to which the genes in adata belong (encoded with cat.codes) and the start positions of the genes
+    
+    Args:
+        species_chrom_csv_path: Path to the csv file
+        species: The species for which to get the mapping
+        adata: The filtered data with the genes for which there are embeddings.
 
+    Returns:
+        A tuple with a pandas series specifying to which chromosome a gene belongs and an array with the start positions per gene.
+    """
+    genes_to_chroms_pos =  pd.read_csv(species_chrom_csv_path)
+    genes_to_chroms_pos["spec_chrom"] = pd.Categorical(genes_to_chroms_pos["species"] + "_" +  genes_to_chroms_pos["chromosome"]) # add the spec_chrom list
+    spec_gene_chrom_pos = genes_to_chroms_pos[genes_to_chroms_pos["species"] == species].set_index("gene_symbol")
+    
+    filtered_spec_gene_chrom_pos = spec_gene_chrom_pos.loc[[k.upper() for k in adata.var_names]]
+    dataset_chroms = filtered_spec_gene_chrom_pos["spec_chrom"].cat.codes
+    dataset_start = filtered_spec_gene_chrom_pos["start"].values
+    
+    return dataset_chroms, dataset_start
 
-def get_ESM2_embeddings(files_config: typing.Dict[str, str]) -> torch.Tensor:
+def get_ESM2_embeddings(files_config: Dict[str, str]) -> torch.Tensor:
     '''
     Loads the token file specified in the config file.
 
@@ -259,10 +271,51 @@ def get_ESM2_embeddings(files_config: typing.Dict[str, str]) -> torch.Tensor:
 
     return all_pe
 
+def get_protein_embeddings_idxs(offset_pkl_path: str, species: str, species_to_all_gene_symbols: Dict[str, list[str]], adata: AnnData)-> torch.tensor:
+    """
+    For a given species, look up the offset. Find the index per gene from the list of all available genes.
+    Only use the indexes of the genes for which there are embeddings (in adata).
+    Add up the index and offset for the end result.
 
+    Args:
+        offset_pkl_path: Path to the offset file
+        species: The species for which to get the offsets
+        species_to_all_gene_symbols: A dictionary with all species and their gene symbols
+        adata: The filtered data with the genes for which there are embeddings.
+    
+    Returns:
+        A tensor with the indexes of the used genes
+    """
+    with open(offset_pkl_path, "rb") as f:
+        species_to_offsets = pickle.load(f)
+    offset = species_to_offsets[species]
+    spec_all_genes = species_to_all_gene_symbols[species]
+    return torch.tensor([spec_all_genes.index(k.lower()) + offset for k in adata.var_names]).long()
 
+def prepare_expression_counts_file(expression: np.array, name: str, folder_path: str = "./") -> None:
+    '''
+    Creates a .npz file and writes the contents of the expression array into this file. 
+    This allows handling arrays that are too large to fit entirely in memory. 
+    The array is stored on disk, but it can be accessed and manipulated like a regular in-memory array. 
+    Changes made to the array are written directly to disk.
+
+    Args:
+        expression: The array to write to the file
+        name: The prefix of the file eventually called {name}_counts.npz
+        folder_path: The folder path of the npz file
+    '''
+    filename = folder_path + f"{name}_counts.npz"
+    try:
+        shape = expression.shape
+        fp = np.memmap(filename, dtype='int64', mode='w+', shape=shape)
+        fp[:] = expression[:]
+        fp.flush()
+    except:
+        logger.error(f"Error during preparation of npz file {filename}.")
+        raise Exception
+    
 ## writing a funciton to load the model 
-def load_model(model_config: typing.Dict[str, str], all_pe: torch.Tensor) -> TransformerModel:
+def load_model(model_config: Dict[str, str], all_pe: torch.Tensor) -> TransformerModel:
     '''
     Load the UCE Transformer Model based on configurations from the model_config file.
 
@@ -274,7 +327,7 @@ def load_model(model_config: typing.Dict[str, str], all_pe: torch.Tensor) -> Tra
         The TransformerModel.
     '''
     model = TransformerModel(token_dim = model_config["token_dim"], 
-                             d_model = 1280, # each cell is represented as a d-dimensional vector, where d = 1280, see UCE paper
+                             d_model = 1280, # each cell is represented as a d-dimensional vector, where d = 1280, see UCE paper. TODO: Can we use `output_dim` from the model_config?
                              nhead = 20,  # number of heads in nn.MultiheadAttention,
                              d_hid = model_config['d_hid'],
                              nlayers = model_config['n_layers'], 
@@ -286,12 +339,18 @@ def load_model(model_config: typing.Dict[str, str], all_pe: torch.Tensor) -> Tra
     empty_pe.requires_grad = False
     model.pe_embedding = nn.Embedding.from_pretrained(empty_pe)
     model.load_state_dict(torch.load(model_config['model_loc'], map_location="cpu"), strict=True)
+
+    # TODO: Why load the protein embeddings from the `all_tokens.torch` file, pass it to this function but never use it?
+    # Cause in the lines above, we populate model.pe_embeddings with the empty_pe and this if clause will be true with the
+    # `all_tokens.torch` file
+    # From the original, this was the comment:
+    # This will make sure that you don't overwrite the tokens in case you're embedding species from the training data
+    # We avoid doing that just in case the random seeds are different across different versions. 
     if all_pe.shape[0] != 145469: 
         all_pe.requires_grad = False
         model.pe_embedding = nn.Embedding.from_pretrained(all_pe)
     
     return model
-
 
 # Create a function that uses the model to get the embeddings of the genes
 def get_gene_embeddings(model, dataloader, accelerator, model_config=None):

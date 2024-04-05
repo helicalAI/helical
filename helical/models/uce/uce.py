@@ -11,12 +11,17 @@ from helical.models.uce.uce_utils import get_ESM2_embeddings, load_model, proces
 
 class UCE(HelicalBaseModel):
     
-    def __init__(self, logging_type = LoggingType.CONSOLE, level = LoggingLevel.INFO) -> None:
+    def __init__(self,
+                 model_config, 
+                 data_config, 
+                 files_config, 
+                 accelerator=None, 
+                 logging_type = LoggingType.CONSOLE, 
+                 level = LoggingLevel.INFO) -> None:
+        
         super().__init__(logging_type, level)
         self.log = logging.getLogger("UCE-Model")
         self.downloader = Downloader()
-
-    def get_model(self, model_config, data_config, files_config, accelerator=None) -> TransformerModel:
 
         self.model_config = model_config
         self.data_config = data_config
@@ -33,6 +38,7 @@ class UCE(HelicalBaseModel):
         if accelerator is not None:
            self.model = accelerator.prepare(self.model)
 
+    def get_model(self) -> TransformerModel:        
         return self.model
 
     def process_data(self, data: AnnData, species="macaca_fascicularis") -> DataLoader:
