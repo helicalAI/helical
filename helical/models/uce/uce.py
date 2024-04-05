@@ -42,12 +42,12 @@ class UCE(HelicalBaseModel):
         return self.model
 
     def process_data(self, data: AnnData, species="macaca_fascicularis") -> DataLoader:
-        loader = process_data(data, 
+        data_loader = process_data(data, 
                               model_config=self.model_config, 
                               files_config=self.files_config,
                               species=species, 
                               accelerator=self.accelerator)
-        return loader
+        return data_loader
 
     def run(self, dataloader: DataLoader) -> np.array:
         

@@ -16,7 +16,7 @@ from helical.models.uce.uce_dataset import UCEDataset
 
 logger = logging.getLogger(__name__)
 
-def process_data(anndata, model_config, files_config, species='human', filter_genes=False, accelerator=None):
+def process_data(anndata, model_config, files_config, species='human', filter_genes=False, accelerator=None) -> DataLoader:
         if filter_genes:
             sc.pp.filter_genes(anndata, min_cells=10)
             # sc.pp.filter_cells(ad, min_genes=25)
@@ -28,13 +28,13 @@ def process_data(anndata, model_config, files_config, species='human', filter_ge
         
         # TODO: What about hv_genes? See orig.
         if scipy.sparse.issparse(filtered_adata.X):
-            expression = np.asarray(filtered_adata.X.todense())
+            gene_expression = np.asarray(filtered_adata.X.todense())
         else:
-            expression = np.asarray(filtered_adata.X)
+            gene_expression = np.asarray(filtered_adata.X)
 
         name = "test"
-        expression_folder_path = "./"
-        prepare_expression_counts_file(expression, name, expression_folder_path)
+        gene_expression_folder_path = "./"
+        prepare_expression_counts_file(gene_expression, name, gene_expression_folder_path)
         
         # shapes dictionary
         num_cells = filtered_adata.X.shape[0]
@@ -55,27 +55,27 @@ def process_data(anndata, model_config, files_config, species='human', filter_ge
         dataset = UCEDataset(sorted_dataset_names = [name],
                              shapes_dict = shapes_dict,
                              model_config = model_config,
-                             expression_counts_path = expression_folder_path,
+                             expression_counts_path = gene_expression_folder_path,
                              dataset_to_protein_embeddings = pe_row_idxs,
                              datasets_to_chroms = dataset_chroms,
                              datasets_to_starts = dataset_start
                              )
-
+        batch_size = 5
         dataloader = DataLoader(dataset, 
-                                batch_size=5, 
+                                batch_size=batch_size, 
                                 shuffle=False,
                                 collate_fn=dataset.collator_fn,
                                 num_workers=0)
         
+        logger.info(f'UCEDataset and DataLoader prepared. Setting batch_size={batch_size} for inference.')
+
         if accelerator is not None:
             dataloader = accelerator.prepare(dataloader)
-        #     # pbar = tqdm(dataloader, disable=not accelerator.is_local_main_process)
-        # else:
-        #     # pbar = tqdm(dataloader)
+
         return dataloader
 
 def get_positions(species_chrom_csv_path: Path, species: str, adata: sc.AnnData) -> Tuple[pd.Series, np.array]:
-    """
+    '''
     Get the chromosomes to which the genes in adata belong (encoded with cat.codes) and the start positions of the genes
     
     Args:
@@ -85,7 +85,7 @@ def get_positions(species_chrom_csv_path: Path, species: str, adata: sc.AnnData)
 
     Returns:
         A tuple with a pandas series specifying to which chromosome a gene belongs and an array with the start positions per gene.
-    """
+    '''
     genes_to_chroms_pos =  pd.read_csv(species_chrom_csv_path)
     genes_to_chroms_pos["spec_chrom"] = pd.Categorical(genes_to_chroms_pos["species"] + "_" +  genes_to_chroms_pos["chromosome"]) # add the spec_chrom list
     spec_gene_chrom_pos = genes_to_chroms_pos[genes_to_chroms_pos["species"] == species].set_index("gene_symbol")
@@ -120,7 +120,7 @@ def get_ESM2_embeddings(files_config: Dict[str, str]) -> torch.Tensor:
     return all_pe
 
 def get_protein_embeddings_idxs(offset_pkl_path: str, species: str, species_to_all_gene_symbols: Dict[str, list[str]], adata: sc.AnnData)-> torch.tensor:
-    """
+    '''
     For a given species, look up the offset. Find the index per gene from the list of all available genes.
     Only use the indexes of the genes for which there are embeddings (in adata).
     Add up the index and offset for the end result.
@@ -133,14 +133,14 @@ def get_protein_embeddings_idxs(offset_pkl_path: str, species: str, species_to_a
     
     Returns:
         A tensor with the indexes of the used genes
-    """
+    '''
     with open(offset_pkl_path, "rb") as f:
         species_to_offsets = pickle.load(f)
     offset = species_to_offsets[species]
     spec_all_genes = species_to_all_gene_symbols[species]
     return torch.tensor([spec_all_genes.index(k.lower()) + offset for k in adata.var_names]).long()
 
-def prepare_expression_counts_file(expression: np.array, name: str, folder_path: str = "./") -> None:
+def prepare_expression_counts_file(gene_expression: np.array, name: str, folder_path: str = "./") -> None:
     '''
     Creates a .npz file and writes the contents of the expression array into this file. 
     This allows handling arrays that are too large to fit entirely in memory. 
@@ -154,10 +154,11 @@ def prepare_expression_counts_file(expression: np.array, name: str, folder_path:
     '''
     filename = folder_path + f"{name}_counts.npz"
     try:
-        shape = expression.shape
+        shape = gene_expression.shape
         fp = np.memmap(filename, dtype='int64', mode='w+', shape=shape)
-        fp[:] = expression[:]
+        fp[:] = gene_expression[:]
         fp.flush()
+        logger.info(f"Passed the gene expressions (with shape={shape}) to {filename}")
     except:
         logger.error(f"Error during preparation of npz file {filename}.")
         raise Exception
@@ -202,8 +203,12 @@ def load_model(model_config: Dict[str, str], all_pe: torch.Tensor) -> Transforme
 
 # Create a function that uses the model to get the embeddings of the genes
 def get_gene_embeddings(model, dataloader, accelerator, model_config=None):
+
+    # disable progress bar if not the main process
     pbar = tqdm(dataloader, disable=not accelerator.is_local_main_process)
     dataset_embeds = []
+    
+    # disabling gradient calculation for inference
     with torch.no_grad():
         for batch in pbar:
             batch_sentences, mask, idxs = batch[0], batch[1], batch[2]
@@ -212,15 +217,13 @@ def get_gene_embeddings(model, dataloader, accelerator, model_config=None):
                 batch_sentences = model.module.pe_embedding(batch_sentences.long())
             else:
                 batch_sentences = model.pe_embedding(batch_sentences.long())
-            batch_sentences = torch.nn.functional.normalize(batch_sentences,
-                                                      dim=2)  # Normalize token outputs now
+            batch_sentences = torch.nn.functional.normalize(batch_sentences, dim=2)  # normalize token outputs
             _, embedding = model.forward(batch_sentences, mask=mask)
+            
             # Fix for duplicates in last batch
             accelerator.wait_for_everyone()
             embeddings = accelerator.gather_for_metrics((embedding))
             if accelerator.is_main_process:
                 dataset_embeds.append(embeddings.detach().cpu().numpy())
 
-            ##Onlye 1 batch
-            # break
     return np.vstack(dataset_embeds)
