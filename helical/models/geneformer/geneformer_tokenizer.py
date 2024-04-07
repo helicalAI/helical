@@ -229,9 +229,7 @@ class TranscriptomeTokenizer:
         if var_exists:
             filter_pass_loc = np.where([i == 1 for i in adata.obs["filter_pass"]])[0]
         elif not var_exists:
-            print(
-                f"Fil;e has no column attribute 'filter_pass'; tokenizing all cells."
-            )
+            logger.info("Anndata has no column attribute 'filter_pass'; tokenizing all cells.")
             filter_pass_loc = np.array([i for i in range(adata.shape[0])])
 
         tokenized_cells = []
@@ -291,9 +289,7 @@ class TranscriptomeTokenizer:
             if var_exists:
                 filter_pass_loc = np.where([i == 1 for i in data.ca["filter_pass"]])[0]
             elif not var_exists:
-                print(
-                    f"{loom_file_path} has no column attribute 'filter_pass'; tokenizing all cells."
-                )
+                logger.info(f"{loom_file_path} has no column attribute 'filter_pass'; tokenizing all cells.")
                 filter_pass_loc = np.array([i for i in range(data.shape[1])])
 
             # scan through .loom files and tokenize cells

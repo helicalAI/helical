@@ -158,7 +158,7 @@ def prepare_expression_counts_file(gene_expression: np.array, name: str, folder_
         fp = np.memmap(filename, dtype='int64', mode='w+', shape=shape)
         fp[:] = gene_expression[:]
         fp.flush()
-        logger.info(f"Passed the gene expressions (with shape={shape}) to {filename}")
+        logger.info(f"Passed the gene expressions (with shape={shape} and max gene count data {gene_expression.max()}) to {filename}")
     except:
         logger.error(f"Error during preparation of npz file {filename}.")
         raise Exception
