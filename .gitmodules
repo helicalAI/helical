@@ -1,0 +1,3 @@
+[submodule "helical/models/scgpt/scGPT"]
+	path = helical/models/scgpt/scGPT
+	url = https://github.com/helicalAI/scGPT.git
