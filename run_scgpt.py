@@ -8,7 +8,7 @@ with open('./scgpt_config.json') as f:
 scgpt = SCGPT(config["model_config"],
           config["data_config"])
 
-data_loader = scgpt.process_data()
+scgpt.process_data()
 embeddings = scgpt.get_embeddings()
 
 print(embeddings.shape)

@@ -16,7 +16,6 @@
 #  2. [Generate scGPT embeddings for each cell](#generate-the-cell-embeddings)
 
 import os
-from pathlib import Path
 import scanpy as sc
 import sys
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -27,7 +26,6 @@ import numpy as np
 
 import scgpt as scg
 import logging
-logger = logging.getLogger(__name__)
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -58,20 +56,19 @@ class SCGPT(HelicalBaseModel):
            self.model = accelerator.prepare(self.model)
     
     def get_embeddings(self) -> np.array:
-        
+        self.log.info(f"Inference started")
         # The extracted embedding is stored in the `X_scGPT` field of `obsm` in AnnData.
         # for local development, only get embeddings for the first 100 entries
         return scg.tasks.embed_data(
             self.adata[:100],
             self.model_config["model_dir"],
+            self.model_config,
             gene_col=self.data_config['gene_column_name'],
-            batch_size=64,
+            batch_size=self.model_config["batch_size"],
         )
     
     def process_data(self):
         
-        N_HVG = 1800
-
         self.adata.var[self.data_config['gene_column_name']] = self.adata.var.index.values
 
         # Preprocess the dataset and select `N_HVG` highly variable genes for downstream analysis.
@@ -79,7 +76,7 @@ class SCGPT(HelicalBaseModel):
         sc.pp.log1p(self.adata)
 
         # highly variable genes
-        sc.pp.highly_variable_genes(self.adata, n_top_genes=N_HVG, flavor='seurat_v3')
+        sc.pp.highly_variable_genes(self.adata, n_top_genes=self.data_config['n_top_genes'], flavor=self.data_config['flavor'])
         self.adata = self.adata[:, self.adata.var['highly_variable']]
 
     def get_model(self):
