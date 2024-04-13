@@ -10,7 +10,7 @@ data
 *.pt
 *.npz
 *.arrow
-*.json
+
 *.pickle
 *.bin
 *.dataset
