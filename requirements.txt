@@ -1,11 +1,10 @@
 requests
 pandas
 anndata
-tiledbsoma
 numpy
 gitpython
-torch==2.0.0 # noticed a bug for 2.2.1
+torch==2.0.0
 accelerate
-transformers==4.35.0 # https://stackoverflow.com/questions/77013354/modulenotfounderror-no-module-named-torch-utils-pytree
+transformers==4.35.0
 loompy
 datasets
