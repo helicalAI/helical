@@ -1,7 +1,6 @@
 from helical.models.helical import HelicalBaseModel
 from helical.constants.enums import LoggingType, LoggingLevel
 import logging
-import os
 from pathlib import Path
 import numpy as np
 from anndata import AnnData
@@ -46,7 +45,7 @@ class Geneformer(HelicalBaseModel):
         self.tk = TranscriptomeTokenizer({"cell_type": "cell_type"}, nproc=4,gene_median_file=files_config['gene_median_file'], token_dictionary_file=files_config['token_dictionary_file'],)
         return self.model
 
-    def process_data(self, data: AnnData, species="human") -> DataLoader:    
+    def process_data(self, data: AnnData) -> DataLoader:    
         tokenized_cells, cell_metadata =  self.tk.tokenize_anndata(data)
         tokenized_dataset = self.tk.create_dataset(tokenized_cells, cell_metadata, use_generator=False)
         output_dir = "/tmp"

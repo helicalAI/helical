@@ -2,6 +2,10 @@
 ## Prerequisites
 
 We recommend using a conda environment with `Pyhton 3.11.8`.
+```
+conda create --name helical-package python=3.11.8
+conda activate helical-package
+```
 Install the `helical-package`:
 
 ```

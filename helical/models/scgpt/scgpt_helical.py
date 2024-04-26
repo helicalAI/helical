@@ -23,7 +23,7 @@ sys.path.insert(0, f"{dir_path}/scGPT")
 from helical.models.helical import HelicalBaseModel
 from helical.constants.enums import LoggingType, LoggingLevel
 import numpy as np
-
+from anndata import AnnData
 import scgpt as scg
 import logging
 
@@ -47,10 +47,6 @@ class SCGPT(HelicalBaseModel):
         # self.model =  load_model(self.model_config, self.embeddings)
         # self.model = self.model.eval()
         
-        # Load the Pancreas dataset (download it from [here](https://figshare.com/ndownloader/files/24539828)), and we set the columns storing gene name columns, 
-        # batch key and cell type key (optional, this is for evaluation).
-        self.adata = sc.read_h5ad(self.data_config["adata_path"])
-
         self.accelerator = accelerator
         if accelerator is not None:
            self.model = accelerator.prepare(self.model)
@@ -60,15 +56,15 @@ class SCGPT(HelicalBaseModel):
         # The extracted embedding is stored in the `X_scGPT` field of `obsm` in AnnData.
         # for local development, only get embeddings for the first 100 entries
         return scg.tasks.embed_data(
-            self.adata[:100],
+            self.adata,
             self.model_config["model_dir"],
             self.model_config,
             gene_col=self.data_config['gene_column_name'],
             batch_size=self.model_config["batch_size"],
         )
     
-    def process_data(self):
-        
+    def process_data(self, adata: AnnData):
+        self.adata = adata
         self.adata.var[self.data_config['gene_column_name']] = self.adata.var.index.values
 
         # Preprocess the dataset and select `N_HVG` highly variable genes for downstream analysis.
