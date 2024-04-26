@@ -51,7 +51,7 @@ class Geneformer(HelicalBaseModel):
         output_dir = "/tmp"
         output_prefix = "tmp"
         output_path = (Path(output_dir) / output_prefix).with_suffix(".dataset")
-        tokenized_dataset.save_to_disk(output_path)
+        # tokenized_dataset.save_to_disk(output_path)
         return tokenized_dataset
         
     def run(self, dataset: Dataset) -> np.array:
