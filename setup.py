@@ -20,6 +20,8 @@ setup(
         'accelerate',
         'transformers==4.35.0',
         'loompy',
-        'datasets'
+        'scib',
+        'datasets',
+        'torchtext==0.15.1'
     ],  
 )
