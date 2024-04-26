@@ -7,7 +7,7 @@ with open('./scgpt_config.json') as f:
 
 scgpt = scGPT(config["model_config"],
           config["data_config"])
-adata = ad.read_h5ad("./data/human_pancreas_norm_complexBatch.h5ad")
+adata = ad.read_h5ad("./data/10k_pbmcs_proc.h5ad")
 scgpt.process_data(adata[:100])
 embeddings = scgpt.get_embeddings()
 
