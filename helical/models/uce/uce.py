@@ -21,14 +21,14 @@ class UCE(HelicalBaseModel):
         
         super().__init__(logging_type, level)
         self.log = logging.getLogger("UCE-Model")
-        self.downloader = Downloader()
+        # self.downloader = Downloader()
 
         self.model_config = model_config
         self.data_config = data_config
         self.files_config = files_config
 
-        self.downloader.download_via_link(Path(self.model_config["model_loc"]), "https://figshare.com/ndownloader/files/42706576")
-        self.downloader.download_via_link(Path(self.files_config["token_file"]), "https://figshare.com/ndownloader/files/42706585")
+        # self.downloader.download_via_link(Path(self.model_config["model_loc"]), "https://figshare.com/ndownloader/files/42706576")
+        # self.downloader.download_via_link(Path(self.files_config["token_file"]), "https://figshare.com/ndownloader/files/42706585")
 
         self.embeddings = get_ESM2_embeddings(self.files_config)
         self.model =  load_model(self.model_config, self.embeddings)
