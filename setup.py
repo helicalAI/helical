@@ -22,6 +22,7 @@ setup(
         'loompy',
         'scib',
         'datasets',
+        'ipython',
         'torchtext==0.15.1'
     ],  
 )
