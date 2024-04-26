@@ -1,5 +1,4 @@
-from helical.models.uce.uce import UCE
-
+from helical.models.uce.model import UCE
 import json
 from accelerate import Accelerator
 import anndata as ad

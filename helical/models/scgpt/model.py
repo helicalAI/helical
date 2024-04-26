@@ -30,7 +30,7 @@ import logging
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-class SCGPT(HelicalBaseModel):
+class scGPT(HelicalBaseModel):
     def __init__(self,
                  model_config, 
                  data_config,

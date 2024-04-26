@@ -1,5 +1,4 @@
-from helical.models.geneformer.geneformer import Geneformer
-
+from helical.models.geneformer.model import Geneformer
 import json
 from accelerate import Accelerator
 import anndata as ad

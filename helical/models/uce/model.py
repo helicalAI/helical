@@ -2,11 +2,11 @@ import logging
 import numpy as np
 from anndata import AnnData
 from torch.utils.data import DataLoader
-from pathlib import Path
+# from pathlib import Path
 from helical.models.uce.uce_model import TransformerModel
 from helical.models.helical import HelicalBaseModel
 from helical.constants.enums import LoggingType, LoggingLevel
-from helical.services.downloader import Downloader
+# from helical.services.downloader import Downloader
 from helical.models.uce.uce_utils import get_ESM2_embeddings, load_model, process_data, get_gene_embeddings
 
 class UCE(HelicalBaseModel):
