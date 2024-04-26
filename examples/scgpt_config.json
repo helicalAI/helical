@@ -1,6 +1,6 @@
 {
     "model_config": {
-        "model_dir": "./helical/models/scgpt/scGPT/save/scGPT_CP",
+        "model_dir": "./data/scgpt/scGPT_CP",
         "batch_size": 64,
         "data_source": "/scratch/ssd004/datasets/cellxgene/scb_strict/human",
         "save_dir": "/scratch/ssd004/datasets/cellxgene/save/cellxgene_census_human-Dec18-13-52-2023",
@@ -59,7 +59,6 @@
     },
 
     "data_config": {
-        "adata_path": "./helical/models/scgpt/scGPT/data/human_pancreas_norm_complexBatch.h5ad",
         "gene_column_name": "gene_col",
         "n_top_genes": 1800,
         "flavor": "seurat_v3"

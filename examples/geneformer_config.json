@@ -1,6 +1,6 @@
 {
     "model_config" : {
-        "model_directory": "./helical/models/geneformer/model_files/geneformer-12L-30M",
+        "model_directory": "./data/geneformer/model_files/geneformer-12L-30M",
         "batch_size": 5,
         "emb_layer" : -1,
         "emb_mode":"cell",
@@ -8,8 +8,8 @@
     },
 
     "files_config": {
-        "token_dictionary_file": "./helical/models/geneformer/model_files/token_dictionary.pkl",
-        "gene_median_file": "./helical/models/geneformer/model_files/gene_median_dictionary.pkl"
+        "token_dictionary_file": "./data/geneformer/model_files/token_dictionary.pkl",
+        "gene_median_file": "./data/geneformer/model_files/gene_median_dictionary.pkl"
     },
 
     "data_config": {

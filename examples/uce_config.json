@@ -1,6 +1,6 @@
 {
     "model_config": {
-        "model_loc": "./helical/models/uce/model_files/4layer_model.torch",
+        "model_loc": "./data/uce/model_files/4layer_model.torch",
         "batch_size": 5,
         "pad_length": 1536,
         "pad_token_idx": 0,
@@ -18,15 +18,15 @@
     },
 
     "files_config": {
-        "spec_chrom_csv_path": "./helical/models/uce/model_files/species_chrom.csv",
-        "token_file": "./helical/models/uce/model_files/all_tokens.torch",
-        "protein_embeddings_dir": "./helical/models/uce/model_files/protein_embeddings/",
-        "offset_pkl_path": "./helical/models/uce/model_files/species_offsets.pkl"
+        "spec_chrom_csv_path": "./data/uce/model_files/species_chrom.csv",
+        "token_file": "./data/uce/model_files/all_tokens.torch",
+        "protein_embeddings_dir": "./data/uce/model_files/protein_embeddings/",
+        "offset_pkl_path": "./data/uce/model_files/species_offsets.pkl"
     },
 
     "data_config": {
         "adata_path": "./data/10k_pbmcs_proc.h5ad",
-        "dir": "./helical/models/uce/",
+        "dir": "./data/uce/",
         "species": "human",
         "filter": false,
         "skip": true

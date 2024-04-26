@@ -17,9 +17,9 @@ model = geneformer.get_model(config["model_config"],
                              accelerator=accelerator)
 
 ann_data = ad.read_h5ad("./data/10k_pbmcs_proc.h5ad")
-mappings = pkl.load(open('./helical/models/geneformer/human_gene_to_ensemble_id.pkl', 'rb'))
+mappings = pkl.load(open('./data/geneformer/human_gene_to_ensemble_id.pkl', 'rb'))
 ann_data.var['ensembl_id'] = ann_data.var['gene_symbols'].apply(lambda x: mappings.get(x,{"id":None})['id'])
-dataset = geneformer.process_data(ann_data[:100], species=config["data_config"]["species"])
+dataset = geneformer.process_data(ann_data[:100])
 embeddings = geneformer.get_embeddings(dataset)
 
 print(embeddings.shape)
