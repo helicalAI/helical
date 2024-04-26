@@ -13,7 +13,7 @@ uce = UCE(config["model_config"],
           config["files_config"],
           accelerator=accelerator)
 
-ann_data = ad.read_h5ad(config["data_config"]["adata_path"])
+ann_data = ad.read_h5ad("./data/10k_pbmcs_proc.h5ad")
 data_loader = uce.process_data(ann_data[:100])
 embeddings = uce.get_embeddings(data_loader)
 

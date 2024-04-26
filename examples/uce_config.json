@@ -25,7 +25,6 @@
     },
 
     "data_config": {
-        "adata_path": "./data/10k_pbmcs_proc.h5ad",
         "dir": "./data/uce/",
         "species": "human",
         "filter": false,
