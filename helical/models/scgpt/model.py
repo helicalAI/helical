@@ -74,9 +74,3 @@ class scGPT(HelicalBaseModel):
         # highly variable genes
         sc.pp.highly_variable_genes(self.adata, n_top_genes=self.data_config['n_top_genes'], flavor=self.data_config['flavor'])
         self.adata = self.adata[:, self.adata.var['highly_variable']]
-
-    def get_model(self):
-        pass
-
-    def run(self):
-        pass

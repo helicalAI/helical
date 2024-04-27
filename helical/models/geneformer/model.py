@@ -13,11 +13,17 @@ from datasets import Dataset
 
 class Geneformer(HelicalBaseModel):
     
-    def __init__(self, logging_type = LoggingType.CONSOLE, level = LoggingLevel.INFO) -> None:
+    def __init__(self, 
+                 model_config,
+                 data_config, 
+                 files_config, 
+                 accelerator=None, 
+                 logging_type = LoggingType.CONSOLE, 
+                 level = LoggingLevel.INFO) -> None:
+        
         super().__init__(logging_type, level)
         self.log = logging.getLogger("Geneformer-Model")
 
-    def get_model(self, model_config, data_config, files_config, accelerator=None):
         self.model_config = model_config
         self.data_config = data_config
         self.files_config = files_config
@@ -43,7 +49,6 @@ class Geneformer(HelicalBaseModel):
         self.pad_token_id = self.gene_token_dict.get("<pad>")
 
         self.tk = TranscriptomeTokenizer({"cell_type": "cell_type"}, nproc=4,gene_median_file=files_config['gene_median_file'], token_dictionary_file=files_config['token_dictionary_file'],)
-        return self.model
 
     def process_data(self, data: AnnData) -> DataLoader:    
         tokenized_cells, cell_metadata =  self.tk.tokenize_anndata(data)
@@ -53,8 +58,8 @@ class Geneformer(HelicalBaseModel):
         output_path = (Path(output_dir) / output_prefix).with_suffix(".dataset")
         # tokenized_dataset.save_to_disk(output_path)
         return tokenized_dataset
-        
-    def run(self, dataset: Dataset) -> np.array:
+
+    def get_embeddings(self, dataset:Dataset) -> np.array:
         self.log.info(f"Inference started")
         embeddings = get_embs(
             self.model,
@@ -66,7 +71,3 @@ class Geneformer(HelicalBaseModel):
             self.device
         )
         return embeddings.cpu().detach().numpy()
-
-    def get_embeddings(self, dataset:Dataset) -> np.array:
-        embeddings = self.run(dataset)
-        return embeddings

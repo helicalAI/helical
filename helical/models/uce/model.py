@@ -38,9 +38,6 @@ class UCE(HelicalBaseModel):
         if accelerator is not None:
            self.model = accelerator.prepare(self.model)
 
-    def get_model(self) -> TransformerModel:        
-        return self.model
-
     def process_data(self, data: AnnData, species="macaca_fascicularis") -> DataLoader:
         data_loader = process_data(data, 
                               model_config=self.model_config, 
@@ -49,13 +46,7 @@ class UCE(HelicalBaseModel):
                               accelerator=self.accelerator)
         return data_loader
 
-    def run(self, dataloader: DataLoader) -> np.array:
-        
+    def get_embeddings(self, dataloader: DataLoader) -> np.array:
         self.log.info(f"Inference started")
         embeddings = get_gene_embeddings(self.model, dataloader, self.accelerator)
-        return embeddings
-
-    def get_embeddings(self, dataloader: DataLoader) -> np.array:
-        
-        embeddings = self.run(dataloader)
         return embeddings
