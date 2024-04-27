@@ -15,6 +15,7 @@ setup(
         'pandas==2.2.2',
         'anndata==0.10.7',
         'numpy==1.26.4',
+        'scikit-learn==1.2.2',
         'gitpython==3.1.43',
         'torch==2.0.0',
         'accelerate==0.29.3',
