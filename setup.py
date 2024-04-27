@@ -23,6 +23,7 @@ setup(
         'scib==1.1.5',
         'datasets==2.14.7',
         'ipython==8.24.0',
-        'torchtext==0.15.1'
+        'torchtext==0.15.1',
+        'ipykernel==6.29.3'
     ],  
 )
