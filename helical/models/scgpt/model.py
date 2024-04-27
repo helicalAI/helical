@@ -26,6 +26,7 @@ import numpy as np
 from anndata import AnnData
 import scgpt as scg
 import logging
+import json
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -41,8 +42,11 @@ class scGPT(HelicalBaseModel):
         super().__init__(logging_type, level)
         self.log = logging.getLogger("scGPT-Model")
 
+        with open(data_config) as f:
+            config = json.load(f)
+
         self.model_dir = model_dir
-        self.data_config = data_config
+        self.data_config = config
 
         self.accelerator = accelerator
         if accelerator is not None:
