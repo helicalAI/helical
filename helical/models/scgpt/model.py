@@ -32,7 +32,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 
 class scGPT(HelicalBaseModel):
     def __init__(self,
-                 model_config, 
+                 model_dir,
                  data_config,
                  accelerator=None, 
                  logging_type = LoggingType.CONSOLE, 
@@ -41,12 +41,9 @@ class scGPT(HelicalBaseModel):
         super().__init__(logging_type, level)
         self.log = logging.getLogger("scGPT-Model")
 
-        self.model_config = model_config
+        self.model_dir = model_dir
         self.data_config = data_config
 
-        # self.model =  load_model(self.model_config, self.embeddings)
-        # self.model = self.model.eval()
-        
         self.accelerator = accelerator
         if accelerator is not None:
            self.model = accelerator.prepare(self.model)
@@ -57,20 +54,18 @@ class scGPT(HelicalBaseModel):
         # for local development, only get embeddings for the first 100 entries
         return scg.tasks.embed_data(
             self.adata,
-            self.model_config["model_dir"],
-            self.model_config,
-            gene_col=self.data_config['gene_column_name'],
-            batch_size=self.model_config["batch_size"],
+            self.model_dir,
+            gene_col=self.data_config['scgpt']['gene_column_name'],
         )
     
     def process_data(self, adata: AnnData):
         self.adata = adata
-        self.adata.var[self.data_config['gene_column_name']] = self.adata.var.index.values
+        self.adata.var[self.data_config['scgpt']['gene_column_name']] = self.adata.var.index.values
 
         # Preprocess the dataset and select `N_HVG` highly variable genes for downstream analysis.
         sc.pp.normalize_total(self.adata, target_sum=1e4)
         sc.pp.log1p(self.adata)
 
         # highly variable genes
-        sc.pp.highly_variable_genes(self.adata, n_top_genes=self.data_config['n_top_genes'], flavor=self.data_config['flavor'])
+        sc.pp.highly_variable_genes(self.adata, n_top_genes=self.data_config['scgpt']['n_top_genes'], flavor=self.data_config['scgpt']['flavor'])
         self.adata = self.adata[:, self.adata.var['highly_variable']]
