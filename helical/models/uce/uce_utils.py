@@ -16,8 +16,10 @@ from helical.models.uce.uce_dataset import UCEDataset
 
 logger = logging.getLogger(__name__)
 
-def process_data(anndata, model_config, files_config, species='human', filter_genes=False, accelerator=None) -> DataLoader:
-        if filter_genes:
+def process_data(anndata, model_config, files_config, data_config, accelerator=None) -> DataLoader:
+        species = data_config["species"]
+        
+        if data_config["uce"]["filter_genes"]:
             sc.pp.filter_genes(anndata, min_cells=10)
             # sc.pp.filter_cells(ad, min_genes=25)
         ##Filtering out the Expression Data That we do not have in the protein embeddings
@@ -60,7 +62,7 @@ def process_data(anndata, model_config, files_config, species='human', filter_ge
                              datasets_to_chroms = dataset_chroms,
                              datasets_to_starts = dataset_start
                              )
-        batch_size = 5
+        batch_size = model_config["batch_size"]
         dataloader = DataLoader(dataset, 
                                 batch_size=batch_size, 
                                 shuffle=False,
@@ -96,7 +98,7 @@ def get_positions(species_chrom_csv_path: Path, species: str, adata: sc.AnnData)
     
     return dataset_chroms, dataset_start
 
-def get_ESM2_embeddings(files_config: Dict[str, str]) -> torch.Tensor:
+def get_ESM2_embeddings(token_file: Union[Path, str], token_dim: int) -> torch.Tensor:
     '''
     Loads the token file specified in the config file.
 
@@ -107,12 +109,12 @@ def get_ESM2_embeddings(files_config: Dict[str, str]) -> torch.Tensor:
         The token file loaded as a torch.Tensor.
     '''
 
-    all_pe = torch.load(files_config['token_file'])
+    all_pe = torch.load(token_file)
 
     # TODO: Why this if clause and why this magic number 143574? 
     if all_pe.shape[0] == 143574:
         torch.manual_seed(23)
-        CHROM_TENSORS = torch.normal(mean=0, std=1, size=(1895, files_config['token_dim']))
+        CHROM_TENSORS = torch.normal(mean=0, std=1, size=(1895, token_dim))
         # 1895 is the total number of chromosome choices, it is hardcoded for now
         all_pe = torch.vstack((all_pe, CHROM_TENSORS))  # Add the chrom tensors to the end
         all_pe.requires_grad = False

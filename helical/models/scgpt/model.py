@@ -27,6 +27,8 @@ from anndata import AnnData
 import scgpt as scg
 import logging
 import json
+from typing import Union
+from pathlib import Path
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -34,19 +36,13 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 class scGPT(HelicalBaseModel):
     def __init__(self,
                  model_dir,
-                 data_config,
                  accelerator=None, 
                  logging_type = LoggingType.CONSOLE, 
                  level = LoggingLevel.INFO) -> None:
         
         super().__init__(logging_type, level)
         self.log = logging.getLogger("scGPT-Model")
-
-        with open(data_config) as f:
-            config = json.load(f)
-
         self.model_dir = model_dir
-        self.data_config = config
 
         self.accelerator = accelerator
         if accelerator is not None:
@@ -62,7 +58,12 @@ class scGPT(HelicalBaseModel):
             gene_col=self.data_config['scgpt']['gene_column_name'],
         )
     
-    def process_data(self, adata: AnnData):
+    def process_data(self, adata: AnnData, data_config_path: Union[str, Path]):
+
+        with open(data_config_path) as f:
+            config = json.load(f)
+
+        self.data_config = config
         self.adata = adata
         self.adata.var[self.data_config['scgpt']['gene_column_name']] = self.adata.var.index.values
 

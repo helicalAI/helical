@@ -1,16 +1,9 @@
 from helical.models.uce.model import UCE
-import json
-from accelerate import Accelerator
 import anndata as ad
 
-with open('./uce_config.json') as f:
-    config = json.load(f)
-
-accelerator = Accelerator(project_dir=config["data_config"]["dir"])
-uce = UCE("./data/uce/4layer_model.torch", config["data_config"], config["files_config"], accelerator=accelerator)
-
+uce = UCE("./data/uce/4layer_model.torch")
 ann_data = ad.read_h5ad("./data/10k_pbmcs_proc.h5ad")
-data_loader = uce.process_data(ann_data[:100])
+data_loader = uce.process_data(ann_data[:100], "./data/config.json")
 embeddings = uce.get_embeddings(data_loader)
 
 print(embeddings.shape)
