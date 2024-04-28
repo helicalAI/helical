@@ -25,7 +25,7 @@ class UCE(HelicalBaseModel):
         # self.downloader = Downloader()
 
         # load model configs via model_dir input
-        self.model_dir = model_dir
+        self.model_dir = Path(model_dir)
         with open(self.model_dir / "args.json", "r") as f:
             model_config = json.load(f)
 
