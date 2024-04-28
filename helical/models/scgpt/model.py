@@ -43,7 +43,7 @@ class scGPT(HelicalBaseModel):
         
         super().__init__(logging_type, level)
         self.log = logging.getLogger("scGPT-Model")
-        self.model_dir = model_dir
+        self.model_dir = Path(model_dir)
 
         # TODO
         # if use_accelerator:
