@@ -10,56 +10,81 @@ from transformers import BertForMaskedLM
 from helical.models.geneformer.geneformer_utils import get_embs,quant_layers
 from helical.models.geneformer.geneformer_tokenizer import TranscriptomeTokenizer
 from datasets import Dataset
+import json
+from accelerate import Accelerator
+from typing import Union
+import pickle as pkl
 
 class Geneformer(HelicalBaseModel):
     
     def __init__(self, 
-                 model_config,
-                 data_config, 
-                 files_config, 
-                 accelerator=None, 
+                 model_dir,
+                 use_accelerator=True, 
                  logging_type = LoggingType.CONSOLE, 
                  level = LoggingLevel.INFO) -> None:
         
         super().__init__(logging_type, level)
         self.log = logging.getLogger("Geneformer-Model")
 
+        # load model configs via model_dir input
+        self.model_dir = Path(model_dir)
+        with open(self.model_dir / "args.json", "r") as f:
+            model_config = json.load(f)
+
         self.model_config = model_config
-        self.data_config = data_config
-        self.files_config = files_config
         self.device = model_config['device']
 
-        self.model =  BertForMaskedLM.from_pretrained(model_config['model_directory'], output_hidden_states=True, output_attentions=False)
+        self.model =  BertForMaskedLM.from_pretrained(self.model_dir / model_config['model_name'], output_hidden_states=True, output_attentions=False)
         self.model.eval()#.to("cuda:0")
         self.model = self.model.to(self.device)
 
         self.layer_to_quant = quant_layers(self.model) + model_config['emb_layer']
-        self.accelerator = accelerator
         self.emb_mode = model_config["emb_mode"]
         self.forward_batch_size = model_config["batch_size"]
         
-        if accelerator is not None:
-           self.model = accelerator.prepare(self.model)
-        
+        if use_accelerator:
+            self.accelerator = Accelerator(project_dir=self.model_dir, cpu=self.model_config["accelerator"]["cpu"])
+            self.model = self.accelerator.prepare(self.model)
+        else:
+            self.accelerator = None
+
+    def process_data(self, data: AnnData, data_config_path: Union[str, Path]) -> DataLoader:    
+
+        with open(data_config_path) as f:
+            config = json.load(f)
+        self.data_config = config
+
+        files_config = {
+            "mapping_path": self.model_dir / "human_gene_to_ensemble_id.pkl",
+            "gene_median_path": self.model_dir / "gene_median_dictionary.pkl",
+            "token_path": self.model_dir / "token_dictionary.pkl"
+        }
+
+        mappings = pkl.load(open(files_config["mapping_path"], 'rb'))
+        data.var['ensembl_id'] = data.var['gene_symbols'].apply(lambda x: mappings.get(x,{"id":None})['id'])
+
         # load token dictionary (Ensembl IDs:token)
-        with open(files_config['token_dictionary_file'], "rb") as f:
+        with open(files_config["token_path"], "rb") as f:
             self.gene_token_dict = pickle.load(f)
 
         self.token_gene_dict = {v: k for k, v in self.gene_token_dict.items()}
         self.pad_token_id = self.gene_token_dict.get("<pad>")
 
-        self.tk = TranscriptomeTokenizer({"cell_type": "cell_type"}, nproc=4,gene_median_file=files_config['gene_median_file'], token_dictionary_file=files_config['token_dictionary_file'],)
+        self.tk = TranscriptomeTokenizer({"cell_type": "cell_type"}, 
+                                         nproc=self.data_config["geneformer"]["nproc"], 
+                                         gene_median_file = files_config["gene_median_path"], 
+                                         token_dictionary_file = files_config["token_path"])
 
-    def process_data(self, data: AnnData) -> DataLoader:    
         tokenized_cells, cell_metadata =  self.tk.tokenize_anndata(data)
         tokenized_dataset = self.tk.create_dataset(tokenized_cells, cell_metadata, use_generator=False)
-        output_dir = "/tmp"
-        output_prefix = "tmp"
-        output_path = (Path(output_dir) / output_prefix).with_suffix(".dataset")
-        # tokenized_dataset.save_to_disk(output_path)
+        
+        output_path = self.data_config["geneformer"].get("tokenized_dataset_output_path")
+        if output_path:
+            output_path = Path(output_path).with_suffix(".dataset")
+            tokenized_dataset.save_to_disk(output_path)
         return tokenized_dataset
 
-    def get_embeddings(self, dataset:Dataset) -> np.array:
+    def get_embeddings(self, dataset: Dataset) -> np.array:
         self.log.info(f"Inference started")
         embeddings = get_embs(
             self.model,

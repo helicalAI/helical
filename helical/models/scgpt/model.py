@@ -29,6 +29,7 @@ import logging
 import json
 from typing import Union
 from pathlib import Path
+# from accelerate import Accelerator
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -36,7 +37,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 class scGPT(HelicalBaseModel):
     def __init__(self,
                  model_dir,
-                 accelerator=None, 
+                 use_accelerator=True, 
                  logging_type = LoggingType.CONSOLE, 
                  level = LoggingLevel.INFO) -> None:
         
@@ -44,10 +45,13 @@ class scGPT(HelicalBaseModel):
         self.log = logging.getLogger("scGPT-Model")
         self.model_dir = model_dir
 
-        self.accelerator = accelerator
-        if accelerator is not None:
-           self.model = accelerator.prepare(self.model)
-    
+        # TODO
+        # if use_accelerator:
+        #     self.accelerator = Accelerator(project_dir=self.model_dir, cpu=self.model_config["accelerator"]["cpu"])
+        #     self.model = self.accelerator.prepare(self.model)
+        # else:
+        #     self.accelerator = None
+
     def get_embeddings(self) -> np.array:
         self.log.info(f"Inference started")
         # The extracted embedding is stored in the `X_scGPT` field of `obsm` in AnnData.

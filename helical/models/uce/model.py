@@ -15,7 +15,7 @@ from accelerate import Accelerator
 class UCE(HelicalBaseModel):
     
     def __init__(self,
-                 model_path, 
+                 model_dir, 
                  use_accelerator=True, 
                  logging_type = LoggingType.CONSOLE, 
                  level = LoggingLevel.INFO) -> None:
@@ -25,22 +25,22 @@ class UCE(HelicalBaseModel):
         # self.downloader = Downloader()
 
         # load model configs via model_dir input
-        self.model_dir = Path(model_path).parent
+        self.model_dir = model_dir
         with open(self.model_dir / "args.json", "r") as f:
-            model_configs = json.load(f)
+            model_config = json.load(f)
 
-        self.model_config = model_configs
-    
+        self.model_config = model_config
         # self.downloader.download_via_link(Path(self.model_config["model_loc"]), "https://figshare.com/ndownloader/files/42706576")
         # self.downloader.download_via_link(Path(self.files_config["token_file"]), "https://figshare.com/ndownloader/files/42706585")
 
         token_file = self.model_dir / "all_tokens.torch"
+        model_path = self.model_dir / "4layer_model.torch"
         self.embeddings = get_ESM2_embeddings(token_file, self.model_config["token_dim"])
         self.model =  load_model(model_path, self.model_config, self.embeddings)
         self.model = self.model.eval()
 
         if use_accelerator:
-            self.accelerator = Accelerator(project_dir=self.model_dir)
+            self.accelerator = Accelerator(project_dir=self.model_dir, cpu=self.model_config["accelerator"]["cpu"])
             self.model = self.accelerator.prepare(self.model)
         else:
             self.accelerator = None
