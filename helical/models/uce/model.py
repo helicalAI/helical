@@ -2,7 +2,8 @@ import logging
 import numpy as np
 from anndata import AnnData
 from torch.utils.data import DataLoader
-# from pathlib import Path
+import json
+from pathlib import Path
 from helical.models.uce.uce_model import TransformerModel
 from helical.models.helical import HelicalBaseModel
 from helical.constants.enums import LoggingType, LoggingLevel
@@ -12,7 +13,7 @@ from helical.models.uce.uce_utils import get_ESM2_embeddings, load_model, proces
 class UCE(HelicalBaseModel):
     
     def __init__(self,
-                 model_config, 
+                 model_path, 
                  data_config, 
                  files_config, 
                  accelerator=None, 
@@ -23,7 +24,11 @@ class UCE(HelicalBaseModel):
         self.log = logging.getLogger("UCE-Model")
         # self.downloader = Downloader()
 
-        self.model_config = model_config
+        model_dir = Path(model_path).parent
+        with open(model_dir / "args.json", "r") as f:
+            model_configs = json.load(f)
+
+        self.model_config = model_configs
         self.data_config = data_config
         self.files_config = files_config
 
@@ -31,7 +36,7 @@ class UCE(HelicalBaseModel):
         # self.downloader.download_via_link(Path(self.files_config["token_file"]), "https://figshare.com/ndownloader/files/42706585")
 
         self.embeddings = get_ESM2_embeddings(self.files_config)
-        self.model =  load_model(self.model_config, self.embeddings)
+        self.model =  load_model(model_path, self.model_config, self.embeddings)
         self.model = self.model.eval()
 
         self.accelerator = accelerator
