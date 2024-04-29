@@ -10,10 +10,9 @@ setup(
     author='Benoit Putzeys, Maxime Allard',
     author_email='benoit@helical-ai.com, maxime@helical-ai.com',
     packages=find_packages(),
-    package_dir={'helical': 'helical'},
     data_files=[('', ['helical/models/uce/args.json']), 
-                ('', ['helical/models/scgpt/args.json']),
-                ('', ['helical/models/geneformer/args.json'])
+                ('helical/models/scgpt', ['helical/models/scgpt/args.json']),
+                ('helical/models/geneformer', ['helical/models/geneformer/args.json'])
                 ],
     install_requires=[
         'requests==2.31.0',
