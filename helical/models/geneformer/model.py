@@ -1,5 +1,4 @@
 from helical.models.helical import HelicalBaseModel
-from helical.constants.enums import LoggingType, LoggingLevel
 import logging
 from pathlib import Path
 import numpy as np
@@ -11,43 +10,25 @@ from helical.models.geneformer.geneformer_utils import get_embs,quant_layers
 from helical.models.geneformer.geneformer_tokenizer import TranscriptomeTokenizer
 from datasets import Dataset
 import json
-from accelerate import Accelerator
 from typing import Union
 import pickle as pkl
 
 class Geneformer(HelicalBaseModel):
     
-    def __init__(self, 
-                 model_dir,
-                 use_accelerator=True, 
-                 logging_type = LoggingType.CONSOLE, 
-                 level = LoggingLevel.INFO) -> None:
+    def __init__(self, model_dir, model_args_path: Path = Path(__file__).parent.resolve() / "args.json", use_accelerator=True) -> None:
         
-        super().__init__(logging_type, level)
+        super().__init__(model_dir, model_args_path)
         self.log = logging.getLogger("Geneformer-Model")
+        self.device = self.model_config['device']
 
-        # load model configs via model_dir input
-        self.model_dir = Path(model_dir)
-        with open(self.model_dir / "args.json", "r") as f:
-            model_config = json.load(f)
-
-        self.model_config = model_config
-        self.device = model_config['device']
-
-        self.model =  BertForMaskedLM.from_pretrained(self.model_dir / model_config['model_name'], output_hidden_states=True, output_attentions=False)
+        self.model =  BertForMaskedLM.from_pretrained(self.model_dir / self.model_config['model_name'], output_hidden_states=True, output_attentions=False)
         self.model.eval()#.to("cuda:0")
         self.model = self.model.to(self.device)
 
-        self.layer_to_quant = quant_layers(self.model) + model_config['emb_layer']
-        self.emb_mode = model_config["emb_mode"]
-        self.forward_batch_size = model_config["batch_size"]
+        self.layer_to_quant = quant_layers(self.model) + self.model_config['emb_layer']
+        self.emb_mode = self.model_config["emb_mode"]
+        self.forward_batch_size = self.model_config["batch_size"]
         
-        if use_accelerator:
-            self.accelerator = Accelerator(project_dir=self.model_dir, cpu=self.model_config["accelerator"]["cpu"])
-            self.model = self.accelerator.prepare(self.model)
-        else:
-            self.accelerator = None
-
     def process_data(self, data: AnnData, data_config_path: Union[str, Path]) -> DataLoader:    
 
         with open(data_config_path) as f:

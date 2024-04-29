@@ -29,21 +29,16 @@ import logging
 import json
 from typing import Union
 from pathlib import Path
-# from accelerate import Accelerator
+from accelerate import Accelerator
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 class scGPT(HelicalBaseModel):
-    def __init__(self,
-                 model_dir,
-                 use_accelerator=True, 
-                 logging_type = LoggingType.CONSOLE, 
-                 level = LoggingLevel.INFO) -> None:
-        
-        super().__init__(logging_type, level)
+    def __init__(self, model_dir, model_args_path: Path = Path(__file__).parent.resolve() / "args.json", use_accelerator=False) -> None:
+                
+        super().__init__(model_dir, model_args_path)
         self.log = logging.getLogger("scGPT-Model")
-        self.model_dir = Path(model_dir)
 
         # TODO
         # if use_accelerator:
@@ -59,6 +54,7 @@ class scGPT(HelicalBaseModel):
         return scg.tasks.embed_data(
             self.adata,
             self.model_dir,
+            self.model_config,
             gene_col=self.data_config['scgpt']['gene_column_name'],
         )
     

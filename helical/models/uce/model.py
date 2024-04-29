@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 from helical.models.uce.uce_model import TransformerModel
 from helical.models.helical import HelicalBaseModel
-from helical.constants.enums import LoggingType, LoggingLevel
 # from helical.services.downloader import Downloader
 from helical.models.uce.uce_utils import get_ESM2_embeddings, load_model, process_data, get_gene_embeddings
 from typing import Union
@@ -14,22 +13,12 @@ from accelerate import Accelerator
 
 class UCE(HelicalBaseModel):
     
-    def __init__(self,
-                 model_dir, 
-                 use_accelerator=True, 
-                 logging_type = LoggingType.CONSOLE, 
-                 level = LoggingLevel.INFO) -> None:
+    def __init__(self, model_dir, model_args_path: Path = Path(__file__).parent.resolve() / "args.json", use_accelerator=True) -> None:
         
-        super().__init__(logging_type, level)
+        super().__init__(model_dir, model_args_path)
         self.log = logging.getLogger("UCE-Model")
         # self.downloader = Downloader()
 
-        # load model configs via model_dir input
-        self.model_dir = Path(model_dir)
-        with open(self.model_dir / "args.json", "r") as f:
-            model_config = json.load(f)
-
-        self.model_config = model_config
         # self.downloader.download_via_link(Path(self.model_config["model_loc"]), "https://figshare.com/ndownloader/files/42706576")
         # self.downloader.download_via_link(Path(self.files_config["token_file"]), "https://figshare.com/ndownloader/files/42706585")
 
