@@ -10,7 +10,7 @@ setup(
     author='Benoit Putzeys, Maxime Allard',
     author_email='benoit@helical-ai.com, maxime@helical-ai.com',
     packages=find_packages(),
-    data_files=[('helical/models/*/args.json')]
+    data_files=['', ('helical/models/*/args.json')]
     install_requires=[
         'requests==2.31.0',
         'pandas==2.2.2',
