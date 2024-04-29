@@ -11,8 +11,8 @@ setup(
     author_email='benoit@helical-ai.com, maxime@helical-ai.com',
     packages=find_packages(),
     data_files=[('helical/models/uce/', ['helical/models/uce/args.json']), 
-                ('helical/models/scgpt/', ['helical/models/uce/scgpt.json']),
-                ('helical/models/geneformer/', ['helical/models/uce/geneformer.json'])
+                ('helical/models/scgpt/', ['helical/models/uce/args.json']),
+                ('helical/models/geneformer/', ['helical/models/uce/args.json'])
                 ],
     install_requires=[
         'requests==2.31.0',
