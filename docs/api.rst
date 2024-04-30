@@ -3,6 +3,8 @@ API documentation
 
 .. autosummary::
    :toctree: _autosummary
-   :recursive:
 
-   helical.models
+   helical.models.helical.HelicalBaseModel
+   helical.models.uce.model.UCE
+   helical.models.geneformer.model.Geneformer
+   helical.models.scgpt.model

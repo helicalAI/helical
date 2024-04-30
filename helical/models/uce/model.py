@@ -14,6 +14,22 @@ from accelerate import Accelerator
 class UCE(HelicalBaseModel):
     
     def __init__(self, model_dir, model_args_path: Path = Path(__file__).parent.resolve() / "args.json", use_accelerator=True) -> None:
+
+        """Initializes the UCE class
+
+        Parameters
+        ----------
+        model_dir : str
+            The path to the model directory
+        model_args_path : Path, optional
+            The path to the model arguments file. Default is the args.json file in the same directory.
+        use_accelerator : bool, default=True
+            Whether to use the accelerator class from Huggingface
+
+        Returns
+        -------
+        None
+        """
         
         super().__init__(model_dir, model_args_path)
         self.log = logging.getLogger("UCE-Model")
@@ -35,6 +51,20 @@ class UCE(HelicalBaseModel):
             self.accelerator = None
 
     def process_data(self, data: AnnData, data_config_path: Union[str, Path]) -> DataLoader:
+        """Processes the data for the UCE model
+
+        Parameters 
+        ----------
+        data : AnnData
+            The AnnData object containing the data to be processed
+        data_config_path : Union[str, Path]
+            The path to the data configuration file
+
+        Returns
+        -------
+        DataLoader
+            The DataLoader object containing the processed data
+        """
         
         with open(data_config_path) as f:
             config = json.load(f)
@@ -54,6 +84,18 @@ class UCE(HelicalBaseModel):
         return data_loader
 
     def get_embeddings(self, dataloader: DataLoader) -> np.array:
+        """Gets the gene embeddings from the UCE model
+
+        Parameters
+        ----------
+        dataloader : DataLoader
+            The DataLoader object containing the processed data
+
+        Returns
+        -------
+        np.array
+            The gene embeddings in the form of a numpy array
+        """
         self.log.info(f"Inference started")
         embeddings = get_gene_embeddings(self.model, dataloader, self.accelerator)
         return embeddings
