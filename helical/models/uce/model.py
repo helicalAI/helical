@@ -4,7 +4,7 @@ from anndata import AnnData
 from torch.utils.data import DataLoader
 import json
 from pathlib import Path
-from helical.models.uce.uce_model import TransformerModel
+from helical.models.uce.uce_config import UCEConfig
 from helical.models.helical import HelicalBaseModel
 # from helical.services.downloader import Downloader
 from helical.models.uce.uce_utils import get_ESM2_embeddings, load_model, process_data, get_gene_embeddings
@@ -12,10 +12,13 @@ from typing import Union
 from accelerate import Accelerator
 
 class UCE(HelicalBaseModel):
-    
-    def __init__(self, model_dir, model_args_path: Path = Path(__file__).parent.resolve() / "args.json", use_accelerator=True) -> None:
+    default_config = UCEConfig()
+
+    def __init__(self, model_dir, model_config: UCEConfig = default_config) -> None:
         
-        super().__init__(model_dir, model_args_path)
+        super().__init__()
+        self.model_config = model_config
+        self.model_dir = Path(model_dir)
         self.log = logging.getLogger("UCE-Model")
         # self.downloader = Downloader()
 
@@ -24,12 +27,12 @@ class UCE(HelicalBaseModel):
 
         token_file = self.model_dir / "all_tokens.torch"
         model_path = self.model_dir / "4layer_model.torch"
-        self.embeddings = get_ESM2_embeddings(token_file, self.model_config["token_dim"])
+        self.embeddings = get_ESM2_embeddings(token_file, self.model_config.token_dim)
         self.model =  load_model(model_path, self.model_config, self.embeddings)
         self.model = self.model.eval()
 
-        if use_accelerator:
-            self.accelerator = Accelerator(project_dir=self.model_dir, cpu=self.model_config["accelerator"]["cpu"])
+        if self.model_config.accelerator:
+            self.accelerator = Accelerator(project_dir=self.model_dir, cpu=self.model_config.accelerator["cpu"])
             self.model = self.accelerator.prepare(self.model)
         else:
             self.accelerator = None

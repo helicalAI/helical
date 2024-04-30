@@ -21,7 +21,7 @@ import sys
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, f"{dir_path}/scGPT")
 from helical.models.helical import HelicalBaseModel
-from helical.constants.enums import LoggingType, LoggingLevel
+from helical.models.scgpt.scgpt_config import scGPTConfig
 import numpy as np
 from anndata import AnnData
 import scgpt as scg
@@ -35,17 +35,20 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 class scGPT(HelicalBaseModel):
-    def __init__(self, model_dir, model_args_path: Path = Path(__file__).parent.resolve() / "args.json", use_accelerator=False) -> None:
+    default_config = scGPTConfig()
+
+    def __init__(self, model_dir, model_config: scGPTConfig = default_config) -> None:
                 
-        super().__init__(model_dir, model_args_path)
+        super().__init__()
+        self.model_config = model_config.config
+        self.model_dir = Path(model_dir)
         self.log = logging.getLogger("scGPT-Model")
 
-        # TODO
-        # if use_accelerator:
-        #     self.accelerator = Accelerator(project_dir=self.model_dir, cpu=self.model_config["accelerator"]["cpu"])
-        #     self.model = self.accelerator.prepare(self.model)
-        # else:
-        #     self.accelerator = None
+        if self.model_config["accelerator"]:
+            self.accelerator = Accelerator(project_dir=self.model_dir, cpu=self.model_config["accelerator"]["cpu"])
+            self.model = self.accelerator.prepare(self.model)
+        else:
+            self.accelerator = None
 
     def get_embeddings(self) -> np.array:
         self.log.info(f"Inference started")
