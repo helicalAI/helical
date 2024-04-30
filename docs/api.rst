@@ -1,5 +1,8 @@
-API Reference
-=============
+API documentation
+=================
 
-.. automodule:: helical.models
-    :members:
+.. autosummary::
+   :toctree: _autosummary
+   :recursive:
+
+   helical
