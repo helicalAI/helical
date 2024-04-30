@@ -4,12 +4,12 @@
 
 title: Helical Documentation
 author: Helical Team
-logo: logo1.png
+logo: docs/logo1.png
 
 # Force re-execution of notebooks on each build.
 # See https://jupyterbook.org/content/execute.html
 execute:
-  execute_notebooks: force
+  execute_notebooks: false
 
 # Define the name of the latex output file for PDF builds
 latex:
@@ -66,6 +66,8 @@ sphinx:
           "bmat": ["\\left[\\begin{array}"]
           "emat": ["\\end{array}\\right]"]
     autosummary_generate: True
+    napoleon_numpy_docstring: True
+    napoleon_include_init_with_doc: True
         
   extra_extensions:
     - sphinx.ext.intersphinx
@@ -76,4 +78,5 @@ sphinx:
     - sphinx.ext.autodoc
     - 'sphinx.ext.viewcode'
     - 'sphinx.ext.autosummary'
+    - sphinx.ext.napoleon
     

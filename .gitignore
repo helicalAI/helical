@@ -25,3 +25,6 @@ debug.log
 
 /docs/conf.py
 /docs/_build
+/docs/_autosummary
+_build
+/docs/source

@@ -7,6 +7,24 @@ from helical.constants.enums import LoggingType, LoggingLevel
 class HelicalBaseModel(ABC, Logger):
     
     def __init__(self, model_dir: str, model_args_path: Path, logging_type = LoggingType.CONSOLE, level = LoggingLevel.INFO):
+        """ Initializes the HelicalBaseModel class 
+
+        Parameters
+        ----------
+        model_dir : str
+            The path to the model directory
+        model_args_path : Path
+            The path to the model arguments file
+        logging_type : LoggingType
+            The logging type
+        level : LoggingLevel
+            The logging level
+
+        Returns
+        -------
+        None
+
+        """
 
         super().__init__(logging_type, level)
         with open(model_args_path, "r") as f:
