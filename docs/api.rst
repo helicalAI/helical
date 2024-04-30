@@ -5,4 +5,4 @@ API documentation
    :toctree: _autosummary
    :recursive:
 
-   helical
+   helical.models
