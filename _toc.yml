@@ -7,7 +7,7 @@ parts:
 - caption: Helical Package
   chapters:
   - file: README
-- caption: Documentation 📚
+- caption: Helical API Documentation 📚
   chapters:
   - file: docs/api
 - caption: Tutorials🪄

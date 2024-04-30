@@ -4,7 +4,6 @@ from pathlib import Path
 import numpy as np
 from anndata import AnnData
 import pickle
-from torch.utils.data import DataLoader
 from transformers import BertForMaskedLM
 from helical.models.geneformer.geneformer_utils import get_embs,quant_layers
 from helical.models.geneformer.geneformer_tokenizer import TranscriptomeTokenizer
@@ -18,6 +17,19 @@ class Geneformer(HelicalBaseModel):
     default_config = GeneformerConfig()
 
     def __init__(self, model_dir, model_config: GeneformerConfig = default_config) -> None:
+        """Initializes the Geneformer class
+
+        Parameters
+        ----------
+        model_dir : str
+            The path to the model directory 
+        model_config : GeneformerConfig, optional
+            The model configration
+
+        Returns
+        -------
+        None
+        """
         
         super().__init__()
         self.model_config = model_config
@@ -39,7 +51,23 @@ class Geneformer(HelicalBaseModel):
         else:
             self.accelerator = None
 
-    def process_data(self, data: AnnData, data_config_path: Union[str, Path]) -> DataLoader:    
+    def process_data(self, data: AnnData, data_config_path: Union[str, Path], save_to_disk=False) -> Dataset:   
+        """Processes the data for the UCE model
+
+        Parameters 
+        ----------
+        data : AnnData
+            The AnnData object containing the data to be processed
+        data_config_path : Union[str, Path]
+            The path to the data configuration file
+        save_to_disk : bool, default=False
+            Whether to save the tokenized dataset to disk
+
+        Returns
+        -------
+        Dataset
+            The tokenized dataset in the form of a Hugginface Dataset object
+        """ 
 
         with open(data_config_path) as f:
             config = json.load(f)
@@ -70,12 +98,25 @@ class Geneformer(HelicalBaseModel):
         tokenized_dataset = self.tk.create_dataset(tokenized_cells, cell_metadata, use_generator=False)
         
         output_path = self.data_config["geneformer"].get("tokenized_dataset_output_path")
-        if output_path:
+        if output_path and save_to_disk:
             output_path = Path(output_path).with_suffix(".dataset")
             tokenized_dataset.save_to_disk(output_path)
         return tokenized_dataset
 
     def get_embeddings(self, dataset: Dataset) -> np.array:
+        """Gets the gene embeddings from the Geneformer model   
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The tokenized dataset containing the processed data
+
+        Returns
+        -------
+        np.array
+            The gene embeddings in the form of a numpy array
+        """
+        
         self.log.info(f"Inference started")
         embeddings = get_embs(
             self.model,
