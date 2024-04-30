@@ -1,4 +1,20 @@
 # Helical Package
+
+To start the docs please install the requirements:
+
+```
+cd docs
+pip install -r requirements.txt
+```
+
+Then go back into the root folder and compile the code:
+
+```
+SPHINX_APIDOC_OPTIONS=members,show-inheritance sphinx-apidoc -f -d 0 -o docs/source ./
+jupyter-book build ./   
+
+```
+And then you should be able to open the docs in ./build/html/index.html .
 ## Prerequisites
 
 We recommend using a conda environment with `Pyhton 3.11.8`.
