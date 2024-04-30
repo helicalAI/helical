@@ -30,7 +30,7 @@ class UCE(HelicalBaseModel):
         """
         
         super().__init__()
-        self.model_config = model_config
+        self.model_config = model_config.config
         self.model_dir = Path(model_dir)
         self.log = logging.getLogger("UCE-Model")
         # self.downloader = Downloader()
@@ -40,12 +40,12 @@ class UCE(HelicalBaseModel):
 
         token_file = self.model_dir / "all_tokens.torch"
         model_path = self.model_dir / "4layer_model.torch"
-        self.embeddings = get_ESM2_embeddings(token_file, self.model_config.token_dim)
+        self.embeddings = get_ESM2_embeddings(token_file, self.model_config["token_dim"])
         self.model =  load_model(model_path, self.model_config, self.embeddings)
         self.model = self.model.eval()
 
-        if self.model_config.accelerator:
-            self.accelerator = Accelerator(project_dir=self.model_dir, cpu=self.model_config.accelerator["cpu"])
+        if self.model_config["accelerator"]:
+            self.accelerator = Accelerator(project_dir=self.model_dir, cpu=self.model_config["accelerator"]["cpu"])
             self.model = self.accelerator.prepare(self.model)
         else:
             self.accelerator = None

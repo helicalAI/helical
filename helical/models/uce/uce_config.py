@@ -18,19 +18,20 @@ class UCEConfig():
                  multi_gpu: bool = False,
                  accelerator: Optional[dict] = {"cpu": True}
                 ):
-
-        self.batch_size = batch_size,
-        self.pad_length = pad_length,
-        self.pad_token_idx = pad_token_idx,
-        self.chrom_token_left_idx = chrom_token_left_idx,
-        self.chrom_token_right_idx = chrom_token_right_idx,
-        self.cls_token_idx = cls_token_idx,
-        self.CHROM_TOKEN_OFFSET = CHROM_TOKEN_OFFSET,
-        self.sample_size = sample_size,
-        self.CXG = CXG,
-        self.n_layers = n_layers,
-        self.output_dim = output_dim,
-        self.d_hid = d_hid,
-        self.token_dim = token_dim,
-        self.multi_gpu = multi_gpu,
-        self.accelerator = accelerator
+        self.config = {
+            "batch_size": batch_size,
+            "pad_length": pad_length,
+            "pad_token_idx": pad_token_idx,
+            "chrom_token_left_idx": chrom_token_left_idx,
+            "chrom_token_right_idx": chrom_token_right_idx,
+            "cls_token_idx": cls_token_idx,
+            "CHROM_TOKEN_OFFSET": CHROM_TOKEN_OFFSET,
+            "sample_size": sample_size,
+            "CXG": CXG,
+            "n_layers": n_layers,
+            "output_dim": output_dim,
+            "d_hid": d_hid,
+            "token_dim": token_dim,
+            "multi_gpu": multi_gpu,
+            "accelerator": accelerator,
+        }
