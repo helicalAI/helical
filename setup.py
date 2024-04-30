@@ -1,5 +1,5 @@
 from setuptools import setup, find_packages
-
+import glob
 from helical.version import __version__
 
 setup(
@@ -10,10 +10,7 @@ setup(
     author='Benoit Putzeys, Maxime Allard',
     author_email='benoit@helical-ai.com, maxime@helical-ai.com',
     packages=find_packages(),
-    # data_files=[('helical/models/uce', ['helical/models/uce/args.json']), 
-    #             ('helical/models/scgpt', ['helical/models/scgpt/args.json']),
-    #             ('helical/models/geneformer', ['helical/models/geneformer/args.json'])
-    #             ],
+    data_files=glob.glob('helical/models/*/args.json'),
     install_requires=[
         'requests==2.31.0',
         'pandas==2.2.2',
