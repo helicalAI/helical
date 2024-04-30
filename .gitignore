@@ -22,3 +22,6 @@ debug.log
 
 # Mac Files
 *.DS_Store
+
+/docs/conf.py
+/docs/_build
