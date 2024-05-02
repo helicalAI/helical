@@ -1,4 +1,4 @@
-helical.models.scgpt
+﻿helical.models.scgpt
 ====================
 
 .. automodule:: helical.models.scgpt
@@ -28,4 +28,5 @@ helical.models.scgpt
    :recursive:
 
    helical.models.scgpt.model
+   helical.models.scgpt.scgpt_config
 

@@ -13,7 +13,7 @@ parts:
 - caption: Tutorials🪄
   chapters:
   - file : examples/reference_mapping
-  - file : examples/uce_example
+  - file : examples/uce_custom_configs_example
   - file : examples/geneformer_example
 
 # - caption: Basic examples 🪄

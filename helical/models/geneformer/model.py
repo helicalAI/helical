@@ -80,6 +80,7 @@ class Geneformer(HelicalBaseModel):
         }
 
         mappings = pkl.load(open(files_config["mapping_path"], 'rb'))
+        
         data.var['ensembl_id'] = data.var['gene_symbols'].apply(lambda x: mappings.get(x,{"id":None})['id'])
 
         # load token dictionary (Ensembl IDs:token)
@@ -116,7 +117,7 @@ class Geneformer(HelicalBaseModel):
         np.array
             The gene embeddings in the form of a numpy array
         """
-        
+
         self.log.info(f"Inference started")
         embeddings = get_embs(
             self.model,

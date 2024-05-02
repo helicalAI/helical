@@ -211,10 +211,10 @@ class TranscriptomeTokenizer:
         norm_factor_vector = np.array(
             [
                 self.gene_median_dict[i]
-                for i in adata.var["ensembl_id"][coding_miRNA_loc]
+                for i in adata.var["ensembl_id"].iloc[coding_miRNA_loc]
             ]
         )
-        coding_miRNA_ids = adata.var["ensembl_id"][coding_miRNA_loc]
+        coding_miRNA_ids = adata.var["ensembl_id"].iloc[coding_miRNA_loc]
         coding_miRNA_tokens = np.array(
             [self.gene_token_dict[i] for i in coding_miRNA_ids]
         )
@@ -229,7 +229,7 @@ class TranscriptomeTokenizer:
         if var_exists:
             filter_pass_loc = np.where([i == 1 for i in adata.obs["filter_pass"]])[0]
         elif not var_exists:
-            logger.info("Anndata has no column attribute 'filter_pass'; tokenizing all cells.")
+            # logger.info("Anndata has no column attribute 'filter_pass'; tokenizing all cells.")
             filter_pass_loc = np.array([i for i in range(adata.shape[0])])
 
         tokenized_cells = []

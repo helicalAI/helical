@@ -24,6 +24,8 @@ setup(
         'datasets==2.14.7',
         'ipython==8.24.0',
         'torchtext==0.15.1',
-        'ipykernel==6.29.3'
+        'ipykernel==6.29.3',
+        'IProgress==0.4',
+        "ipywidgets==8.1.2"
     ],  
 )
