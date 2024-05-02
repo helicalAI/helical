@@ -8,7 +8,9 @@ build:
   jobs:
     pre_build:
       # Generate on-the-fly Sphinx configuration from Jupyter Book's _config.yml
-      - "jupyter-book config sphinx docs/"
+      - "SPHINX_APIDOC_OPTIONS=members,show-inheritance sphinx-apidoc -f -d 0 -o docs/source ./"
+      - "jupyter-book config sphinx ./"
+
 
 python:
    install:
