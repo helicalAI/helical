@@ -2,6 +2,8 @@ import logging
 import numpy as np
 from anndata import AnnData
 from torch.utils.data import DataLoader
+from helical import CACHE_DIR_HELICAL
+import os
 import json
 from pathlib import Path
 from helical.models.uce.uce_config import UCEConfig
@@ -10,11 +12,12 @@ from helical.models.helical import HelicalBaseModel
 from helical.models.uce.uce_utils import get_ESM2_embeddings, load_model, process_data, get_gene_embeddings
 from typing import Union
 from accelerate import Accelerator
+from helical.services.downloader import Downloader
 
 class UCE(HelicalBaseModel):
     default_config = UCEConfig()
 
-    def __init__(self, model_dir, model_config: UCEConfig = default_config) -> None:
+    def __init__(self, model_dir: str = None, model_config: UCEConfig = default_config) -> None:
         """Initializes the UCE class
 
         Parameters
@@ -31,12 +34,21 @@ class UCE(HelicalBaseModel):
         
         super().__init__()
         self.model_config = model_config.config
-        self.model_dir = Path(model_dir)
         self.log = logging.getLogger("UCE-Model")
-        # self.downloader = Downloader()
+        self.downloader = Downloader()
+        
+        if model_dir is None:
+            self.downloader.download_via_name("uce/4layer_model.torch")
+            self.downloader.download_via_name("uce/all_tokens.torch")
+            self.downloader.download_via_name("uce/species_chrom.csv")
+            self.downloader.download_via_name("uce/species_offsets.pkl")
+            self.downloader.download_via_name("uce/protein_embeddings/Homo_sapiens.GRCh38.gene_symbol_to_embedding_ESM2.pt")
+            self.downloader.download_via_name("uce/protein_embeddings/Macaca_fascicularis.Macaca_fascicularis_6.0.gene_symbol_to_embedding_ESM2.pt")
+            self.model_dir = Path(os.path.join(self.downloader.CACHE_DIR_HELICAL,'uce'))
+        else:
+            self.model_dir = Path(model_dir)
+        
 
-        # self.downloader.download_via_link(Path(self.model_config["model_loc"]), "https://figshare.com/ndownloader/files/42706576")
-        # self.downloader.download_via_link(Path(self.files_config["token_file"]), "https://figshare.com/ndownloader/files/42706585")
 
         token_file = self.model_dir / "all_tokens.torch"
         model_path = self.model_dir / "4layer_model.torch"

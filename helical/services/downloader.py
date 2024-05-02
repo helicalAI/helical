@@ -5,6 +5,7 @@ import pandas as pd
 from helical.services.logger import Logger
 from helical.constants.enums import LoggingType, LoggingLevel
 import logging
+import os
 import sys
 from pathlib import Path
 from git import Repo
@@ -12,11 +13,11 @@ from git import Repo
 INTERVAL = 1000 # interval to get gene mappings
 CHUNK_SIZE = 8192 # size of individual chunks to download
 LOADING_BAR_LENGTH = 50 # size of the download progression bar in console
-
 class Downloader(Logger):
     def __init__(self, loging_type = LoggingType.CONSOLE, level = LoggingLevel.INFO) -> None:
         super().__init__(loging_type, level)
         self.log = logging.getLogger("Downloader")
+        self.CACHE_DIR_HELICAL = os.path.join(str(Path.home()),'.cache/helical/models')
 
     def get_ensemble_mapping(self, path_to_ets_csv: Path, output: Path):
         '''
@@ -121,3 +122,43 @@ class Downloader(Logger):
         done = int(LOADING_BAR_LENGTH * self.data_length / self.total_length)
         sys.stdout.write("\r[%s%s]" % ('=' * done, ' ' * (LOADING_BAR_LENGTH-done)) )    
         sys.stdout.flush()
+
+    def download_via_name(self, name: str) -> None:
+        '''
+        Download a file via a link. 
+        
+        Args:
+            output: Path to the output file.
+            link: URL to download the file from.
+        '''
+        main_link = "https://helicalpublicdata.blob.core.windows.net/helicalpackage/data"
+        CACHE_DIR_HELICAL = Path(self.CACHE_DIR_HELICAL)
+        output = os.path.join(CACHE_DIR_HELICAL,name)
+
+        link = f"{main_link}/{name}"
+        if not os.path.exists(os.path.dirname(output)):
+            os.makedirs(os.path.dirname(output),exist_ok=True)
+
+        if Path(output).is_file():
+            self.log.info(f"File: '{output}' exists already. File is not overwritten and nothing is downloaded.")
+
+        else:
+            self.log.info(f"Starting to download: '{link}'")
+            with open(output, "wb") as f:
+                response = requests.get(link, stream=True)
+                total_length = response.headers.get('content-length')
+
+                # Resetting for visualization
+                self.data_length = 0
+                self.total_length = int(total_length)
+
+                if total_length is None: # no content length header
+                    f.write(response.content)
+                else:
+                    try:
+                        for data in response.iter_content(chunk_size=CHUNK_SIZE):
+                            self._display_download_progress(len(data))
+                            f.write(data)
+                    except:
+                        self.log.error(f"Failed downloading file from '{link}'")
+        self.log.info(f"File saved to: '{output}'")

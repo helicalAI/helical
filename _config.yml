@@ -5,24 +5,23 @@
 title: Helical Documentation
 author: Helical Team
 copyright: "2024"
-logo: docs/logo_small.png
+logo: docs/official_logo_small.png
 
 # Force re-execution of notebooks on each build.
 # See https://jupyterbook.org/content/execute.html
 execute:
   execute_notebooks: false
 
-# HTML-specific settings
-html:
-  favicon                   : docs/logo_small_fav.png  # A path to a favicon image
-  use_edit_page_button      : false  # Whether to add an "edit this page" button to pages. If `true`, repository information in repository: must be filled in
-  use_repository_button     : false  # Whether to add a link to your repository button
-  use_issues_button         : false  # Whether to add an "open an issue" button
-  use_multitoc_numbering    : true   # Continuous numbering across parts/chapters
-  extra_footer              : ""  # Will be displayed underneath the footer.
-  google_analytics_id       : ""  # A GA id that can be used to track book views.
-  home_page_in_navbar       : true  # Whether to include your home page in the left Navigation Bar
-  # baseurl                   : ""  # The base URL where your book will be hosted. Used for creating image previews and social links. e.g.: https://mypage.com/mybook/
+# # HTML-specific settings
+# html:
+#   use_edit_page_button      : false  # Whether to add an "edit this page" button to pages. If `true`, repository information in repository: must be filled in
+#   use_repository_button     : false  # Whether to add a link to your repository button
+#   use_issues_button         : false  # Whether to add an "open an issue" button
+#   use_multitoc_numbering    : true   # Continuous numbering across parts/chapters
+#   extra_footer              : ""  # Will be displayed underneath the footer.
+#   google_analytics_id       : ""  # A GA id that can be used to track book views.
+#   home_page_in_navbar       : true  # Whether to include your home page in the left Navigation Bar
+#   # baseurl                   : ""  # The base URL where your book will be hosted. Used for creating image previews and social links. e.g.: https://mypage.com/mybook/
 
 # Define the name of the latex output file for PDF builds
 latex:
@@ -42,11 +41,16 @@ repository:
 # Add GitHub buttons to your book
 # See https://jupyterbook.org/customize/config.html#add-a-link-to-your-repository
 html:
+  favicon: docs/official_logo_fav.png  # A path to a favicon image
   use_issues_button: true
   use_repository_button: true
 
 sphinx:
   config:
+    # html_style : 'my_theme.css'
+    # html_static_path: ['docs/_static']  
+    # html_extra_path: ['./docs/_static']
+    # html_css_files: ['my_theme.css']
     intersphinx_mapping:
       ebp:
         - "https://executablebooks.org/en/latest/"

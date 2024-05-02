@@ -30,6 +30,7 @@ import json
 from typing import Union
 from pathlib import Path
 from accelerate import Accelerator
+from helical.services.downloader import Downloader
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -37,11 +38,19 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 class scGPT(HelicalBaseModel):
     default_config = scGPTConfig()
 
-    def __init__(self, model_dir, model_config: scGPTConfig = default_config) -> None:
+    def __init__(self, model_dir=None, model_config: scGPTConfig = default_config) -> None:
                 
         super().__init__()
         self.model_config = model_config.config
-        self.model_dir = Path(model_dir)
+        self.downloader = Downloader()
+        
+        if model_dir is None:
+            self.downloader.download_via_name("scgpt/scGPT_CP/vocab.json")
+            self.downloader.download_via_name("scgpt/scGPT_CP/best_model.pt")
+            self.model_dir = Path(os.path.join(self.downloader.CACHE_DIR_HELICAL,'scgpt/scGPT_CP'))
+        else:
+            self.model_dir = Path(model_dir)
+
         self.log = logging.getLogger("scGPT-Model")
 
         if self.model_config["accelerator"]:

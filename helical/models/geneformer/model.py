@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 import numpy as np
 from anndata import AnnData
+import os
 import pickle
 from transformers import BertForMaskedLM
 from helical.models.geneformer.geneformer_utils import get_embs,quant_layers
@@ -13,10 +14,11 @@ import json
 from typing import Union
 from accelerate import Accelerator
 import pickle as pkl
+from helical.services.downloader import Downloader
 class Geneformer(HelicalBaseModel):
     default_config = GeneformerConfig()
 
-    def __init__(self, model_dir, model_config: GeneformerConfig = default_config) -> None:
+    def __init__(self, model_dir=None, model_config: GeneformerConfig = default_config) -> None:
         """Initializes the Geneformer class
 
         Parameters
@@ -33,7 +35,19 @@ class Geneformer(HelicalBaseModel):
         
         super().__init__()
         self.model_config = model_config
-        self.model_dir = Path(model_dir)
+        self.downloader = Downloader()
+
+        if model_dir is None:
+            self.downloader.download_via_name("geneformer/gene_median_dictionary.pkl")
+            self.downloader.download_via_name("geneformer/human_gene_to_ensemble_id.pkl")
+            self.downloader.download_via_name("geneformer/token_dictionary.pkl")
+            self.downloader.download_via_name("geneformer/geneformer-12L-30M/config.json")
+            self.downloader.download_via_name("geneformer/geneformer-12L-30M/pytorch_model.bin")
+            self.downloader.download_via_name("geneformer/geneformer-12L-30M/training_args.bin")
+            self.model_dir = Path(os.path.join(self.downloader.CACHE_DIR_HELICAL,'geneformer'))
+        else:
+            self.model_dir = Path(model_dir)
+
         self.log = logging.getLogger("Geneformer-Model")
         self.device = self.model_config.device
 
