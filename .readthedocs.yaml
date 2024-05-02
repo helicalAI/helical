@@ -11,6 +11,10 @@ build:
       - "SPHINX_APIDOC_OPTIONS=members,show-inheritance sphinx-apidoc -f -d 0 -o docs/source ./"
       - "jupyter-book config sphinx ./"
 
+sphinx:
+  builder: html
+  configuration: ./conf.py
+  fail_on_warning: false
 
 python:
    install:
