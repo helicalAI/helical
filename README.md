@@ -1,4 +1,3 @@
-# Helical
 <div align="center">
   <img src="https://github.com/helicalAI/helical-package/blob/main/assets/logo%2Bname.png" alt="Logo" width="304" height="110">
 </div>
