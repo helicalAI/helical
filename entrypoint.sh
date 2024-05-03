@@ -1,3 +1,3 @@
 #!/bin/sh -l
 
-python ./examples/run_geneformer.py
+python3 examples/run_geneformer.py
