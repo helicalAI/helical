@@ -12,11 +12,8 @@ Install the `helical-package`:
 ```
 pip install --upgrade --no-deps --force-reinstall git+https://github.com/helicalAI/helical-package.git
 ```
-Download the zipped `data` folder from [here](https://drive.google.com/drive/folders/1F7QKiwiI7WL-w0LnqwFTy5zSYIOq35VW?usp=sharing). Unzip it and place it in the `examples` folder.
-You can then run:
-- `run_geneformer.py`
-- `run_scgpt.py`
-- `run_uce.py`
+You can then run the files in the `examples` folder.
+
 
 ## Documentation
 To start the docs please install the requirements:
