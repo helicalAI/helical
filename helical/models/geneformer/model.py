@@ -10,8 +10,7 @@ from helical.models.geneformer.geneformer_utils import get_embs,quant_layers
 from helical.models.geneformer.geneformer_tokenizer import TranscriptomeTokenizer
 from helical.models.geneformer.geneformer_config import GeneformerConfig
 from datasets import Dataset
-import json
-from typing import Union
+from typing import Optional
 from accelerate import Accelerator
 import pickle as pkl
 from helical.services.downloader import Downloader
@@ -65,7 +64,7 @@ class Geneformer(HelicalBaseModel):
         else:
             self.accelerator = None
 
-    def process_data(self, data: AnnData, data_config_path: Union[str, Path], save_to_disk=False) -> Dataset:   
+    def process_data(self, data: AnnData,  nproc: int = 4, output_path: Optional[str] = None) -> Dataset:   
         """Processes the data for the UCE model
 
         Parameters 
@@ -82,10 +81,6 @@ class Geneformer(HelicalBaseModel):
         Dataset
             The tokenized dataset in the form of a Hugginface Dataset object
         """ 
-
-        with open(data_config_path) as f:
-            config = json.load(f)
-        self.data_config = config
 
         files_config = {
             "mapping_path": self.model_dir / "human_gene_to_ensemble_id.pkl",
@@ -105,15 +100,14 @@ class Geneformer(HelicalBaseModel):
         self.pad_token_id = self.gene_token_dict.get("<pad>")
 
         self.tk = TranscriptomeTokenizer({"cell_type": "cell_type"}, 
-                                         nproc=self.data_config["geneformer"]["nproc"], 
+                                         nproc=nproc, 
                                          gene_median_file = files_config["gene_median_path"], 
                                          token_dictionary_file = files_config["token_path"])
 
         tokenized_cells, cell_metadata =  self.tk.tokenize_anndata(data)
         tokenized_dataset = self.tk.create_dataset(tokenized_cells, cell_metadata, use_generator=False)
         
-        output_path = self.data_config["geneformer"].get("tokenized_dataset_output_path")
-        if output_path and save_to_disk:
+        if output_path:
             output_path = Path(output_path).with_suffix(".dataset")
             tokenized_dataset.save_to_disk(output_path)
         return tokenized_dataset
