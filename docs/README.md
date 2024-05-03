@@ -1,10 +1,4 @@
-<div align="center">
-  <img src="docs/assets/logo_name.png" alt="Logo" width="304" height="110">
-</div>
-
-![image](docs/assets/logo_name.png)
-
-```{image} docs/assets/logo_name.png
+```{image} assets/logo_name.png
 :alt: "Logo"
 :width: 400px
 :align: center
