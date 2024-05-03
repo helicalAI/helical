@@ -15,4 +15,4 @@ jobs:
 
       - name: Run script inside Docker container
         run: |
-          docker run --rm myimage /bin/bash -c "./entrypoint.sh"
+          docker run --rm myimage
