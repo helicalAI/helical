@@ -36,7 +36,7 @@ git clone https://github.com/helicalAI/helical-package.git
 Within this folder, open the `example` notebook of your choice. We recommend starting with reference_mapping.ipynb
 
 ### RNA models:
-- Embedding generation & benchmarking with Geneformer & UCE
+- reference_mapping.ipynb: Generate embeddingings with geneforme & UCE and compare the outcomes.
 - Coming soon: scGPT, SCimilarity, scVI
 
 ### DNA models:
