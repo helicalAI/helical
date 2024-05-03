@@ -1,6 +1,10 @@
 # Helical Package
 
-![Logo](https://github.com/helicalAI/helical-package/blob/main/assets/logo1.png)
+
+
+<div align="center">
+  <img src="https://github.com/helicalAI/helical-package/blob/main/assets/logo1.png" alt="Logo" width="150" height="150">
+</div>
 
 ## Prerequisites
 
