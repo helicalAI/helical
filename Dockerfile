@@ -15,10 +15,7 @@ COPY requirements.txt /usr/local/helical
 RUN pip install -r requirements.txt
 RUN pip install git+https://github.com/helicalAI/helical.git
 COPY examples /usr/local/helical/examples
-COPY entrypoint.sh /usr/local/helical
-
-# Make the shell script executable
-RUN chmod +x entrypoint.sh
+COPY run_all.py /usr/local/helical/
 
 # Define the entry point for the container
-ENTRYPOINT ["/usr/local/helical/entrypoint.sh"]
+CMD [ "python3", "./run_all.py" ]
