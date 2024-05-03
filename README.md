@@ -21,7 +21,7 @@ conda create --name helical-package python=3.11.8
 conda activate helical-package
 ```
 ```
-pip install --upgrade --no-deps --force-reinstall git+https://github.com/helicalAI/helical.git
+pip install --upgrade --force-reinstall git+https://github.com/helicalAI/helical.git
 ```
 
 We recommend using `Pyhton 3.11.8`.
