@@ -14,7 +14,7 @@ WORKDIR /usr/local/helical
 COPY requirements.txt /usr/local/helical
 RUN pip install -r requirements.txt
 RUN pip install git+https://github.com/helicalAI/helical.git
-COPY examples /usr/local/helical
+COPY examples /usr/local/helical/examples
 COPY entrypoint.sh /usr/local/helical
 
 # Make the shell script executable
