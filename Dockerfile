@@ -11,11 +11,12 @@ RUN apt-get update -y \
 
 WORKDIR /usr/local/helical
 
-COPY requirements.txt /usr/local/helical
+COPY . /usr/local/helical
 RUN pip install -r requirements.txt
 RUN pip install git+https://github.com/helicalAI/helical.git
-COPY examples /usr/local/helical/examples
-COPY run_all.py /usr/local/helical/
 
-# Define the command to run
-CMD [ "python3", "run_all.py" ]
+# Make the shell script executable
+RUN chmod +x entrypoint.sh
+
+# Define the entry point for the container
+ENTRYPOINT ["/usr/local/helical/entrypoint.sh"]
