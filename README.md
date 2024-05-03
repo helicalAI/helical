@@ -7,8 +7,8 @@
 Helical provides a framework for and gathers state-of-the-art pre-trained bio foundation models on genomics and transcriptomics modalities.
 
 Helical simplifies the entire application lifecycle when building with bio foundation models. You will be able to:
-Leverage the latest bio foundation models through our easy-to-use python package
-Run example notebooks on key downstream tasks from examples
+- Leverage the latest bio foundation models through our easy-to-use python package
+- Run example notebooks on key downstream tasks from examples
 
 We will update this repo on a bi-weekly basis with new models, benchmarks, modalities and functions - so stay tuned.
 Let’s build the most exciting AI-for-Bio community together!
