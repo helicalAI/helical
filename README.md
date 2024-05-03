@@ -34,10 +34,10 @@ You can look directly into the example folder above, look into our [documentatio
 ```
 git clone https://github.com/helicalAI/helical.git
 ```
-Within the `example` folder, open the notebook of your choice. We recommend starting with `Genefromer-vs-UCE.ipynb`
+Within the `example` folder, open the notebook of your choice. We recommend starting with `Geneformer-vs-UCE.ipynb`
 
 ### RNA models:
-- `Genefromer-vs-UCE.ipynb`: Generate embeddingings with geneforme & UCE and compare the outcomes.
+- `Geneformer-vs-UCE.ipynb`: Zero-Shot Reference Mapping with Geneformer & UCE and compare the outcomes.
 - Coming soon: new models such as scGPT, SCimilarity, scVI; benchmarking scripts; new use cases; others
 
 ### DNA models:
@@ -58,4 +58,15 @@ If you are (or plan to) working with bio foundation models s.a. Geneformer or UC
 We will continuously upload the latest model, publish benchmarks and make our code more efficient.
 
 # Citation
-WIP
+
+Please use this BibTeX to cite this repository in your publications:
+
+```
+@misc{helical,
+  author = {Maxime Allard, Benoit Putzeys, Rick Schneider, Mathieu Klop},
+  title = {Helical Python Package},
+  year = {2024},
+  publisher = {GitHub},
+  journal = {GitHub Repository},
+  howpublished = {\url{https://github.com/helicalAI/helical}},
+}

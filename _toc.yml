@@ -9,9 +9,9 @@ parts:
   - file: docs/api
 - caption: Tutorials🪄
   chapters:
-  - file : examples/reference_mapping
+  - file : examples/Geneformer-vs-UCE
   - file : examples/uce_custom_configs_example
-  - file : examples/geneformer_example
+  # - file : examples/geneformer_example
 
 # - caption: Basic examples 🪄
 #   chapters:
