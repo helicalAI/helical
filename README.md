@@ -29,7 +29,7 @@ pip install --upgrade --force-reinstall git+https://github.com/helicalAI/helical
 
 To run examples, be sure to have installed the Helical package (see Installation) and that it is up-to-date.
 
-You can look directly into the example folder above, look into our documentation for step-by-step guides or directly clone the repository using:
+You can look directly into the example folder above, look into our [documentation](https://helical.readthedocs.io/) for step-by-step guides or directly clone the repository using:
 ```
 git clone https://github.com/helicalAI/helical.git
 ```
@@ -43,7 +43,7 @@ Within the `example` folder, open the notebook of your choice. We recommend star
 - Coming soon: new models such as Nucleotide Transformer; others
 
 # Stuck somewhere ? Other ideas ?
-We are eager to help you and interact with you through our slack channel #xxx in the BiB slack. 
+We are eager to help you and interact with you. Reach out via rick@helical-ai.com. 
 You can also open github issues here.
 
 # Why should I use Helical & what to expect in the future?
