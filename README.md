@@ -1,7 +1,6 @@
 <div align="center">
-  <img src="https://github.com/helicalAI/helical-package/blob/main/assets/logo%2Bname.png" alt="Logo" width="304" height="110">
+  <img src="docs/assets/logo_name.png" alt="Logo" width="304" height="110">
 </div>
-
 ## What is Helical ?
 
 Helical provides a framework for and gathers state-of-the-art pre-trained bio foundation models on genomics and transcriptomics modalities.

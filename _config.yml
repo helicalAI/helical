@@ -5,7 +5,7 @@
 title: Helical Documentation
 author: Helical Team
 copyright: "2024"
-logo: docs/official_logo_small.png
+logo: docs/assets/official_logo_small.png
 
 # Force re-execution of notebooks on each build.
 # See https://jupyterbook.org/content/execute.html
@@ -41,7 +41,7 @@ repository:
 # Add GitHub buttons to your book
 # See https://jupyterbook.org/customize/config.html#add-a-link-to-your-repository
 html:
-  favicon: docs/official_logo_fav.png  # A path to a favicon image
+  favicon: docs/assets/official_logo_fav.png  # A path to a favicon image
   use_issues_button: true
   use_repository_button: true
 
