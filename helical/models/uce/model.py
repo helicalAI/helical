@@ -62,7 +62,10 @@ class UCE(HelicalBaseModel):
         else:
             self.accelerator = None
 
-    def process_data(self, data: AnnData, data_config_path: Union[str, Path]) -> DataLoader:
+    def process_data(self, data: AnnData, 
+                     species: str = "human", 
+                     filter_genes: bool = False, 
+                     embedding_model: str = "ESM2" ) -> DataLoader:
         """Processes the data for the UCE model
 
         Parameters 
@@ -78,10 +81,6 @@ class UCE(HelicalBaseModel):
             The DataLoader object containing the processed data
         """
         
-        with open(data_config_path) as f:
-            config = json.load(f)
-        self.data_config = config
-
         files_config = {
             "spec_chrom_csv_path": self.model_dir / "species_chrom.csv",
             "protein_embeddings_dir": self.model_dir / "protein_embeddings/",
@@ -91,7 +90,9 @@ class UCE(HelicalBaseModel):
         data_loader = process_data(data, 
                               model_config=self.model_config, 
                               files_config=files_config,
-                              data_config=self.data_config,
+                              species=species,
+                              filter_genes=filter_genes,
+                              embedding_model=embedding_model,
                               accelerator=self.accelerator)
         return data_loader
 
