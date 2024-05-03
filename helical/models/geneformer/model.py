@@ -81,7 +81,6 @@ class Geneformer(HelicalBaseModel):
         Dataset
             The tokenized dataset in the form of a Hugginface Dataset object
         """ 
-
         files_config = {
             "mapping_path": self.model_dir / "human_gene_to_ensemble_id.pkl",
             "gene_median_path": self.model_dir / "gene_median_dictionary.pkl",
@@ -125,6 +124,7 @@ class Geneformer(HelicalBaseModel):
         np.array
             The gene embeddings in the form of a numpy array
         """
+        print("HERE")
 
         self.log.info(f"Inference started")
         embeddings = get_embs(
