@@ -45,13 +45,27 @@ Within this folder, open the `example` notebook of your choice. We recommend sta
 ### DNA models:
 - Coming soon: Nucleotide Transformer
 
+# Stuck somewhere ? Other ideas ?
+We are eager to help you and interact with you through our slack channel #xxx in the BiB slack. 
+You can also open github issues here.
+
+# Why should I use Helical & what to expect in the future?
+If you are (or plan to) working with bio foundation models s.a. Geneformer or UCE on RNA and DNA data, Helical will be your best buddy! We provide and improve on:
+- Up-to-date model library
+- A unified API for all models
+- User-facing abstractions tailored to computational biologists, researchers & AI developers
+- Innovative use case and application examples and ideas
+- Efficient data processing & code-base
+
+We will continuously upload the latest model, publish benchmarks and make our code more efficient.
+
+# Citation
+Please use this BibTeX to cite this repository in your publications:
 
 
 
 
-
-
-
+# OLD
 
 
 
