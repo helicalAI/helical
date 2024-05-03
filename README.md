@@ -1,5 +1,7 @@
 # Helical Package
 
+![Logo](https://github.com/helicalAI/helical-package/blob/main/assets/logo1.png)
+
 ## Prerequisites
 
 We recommend using a conda environment with `Pyhton 3.11.8`.
