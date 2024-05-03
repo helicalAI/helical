@@ -131,7 +131,7 @@ class Downloader(Logger):
             output: Path to the output file.
             link: URL to download the file from.
         '''
-        main_link = "https://helicalpublicdata.blob.core.windows.net/helicalpackage/data"
+        main_link = "https://helicalpackage.blob.core.windows.net/helicalpackage/data"
         CACHE_DIR_HELICAL = Path(self.CACHE_DIR_HELICAL)
         output = os.path.join(CACHE_DIR_HELICAL,name)
 
