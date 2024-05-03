@@ -59,7 +59,7 @@ class scGPT(HelicalBaseModel):
         else:
             self.accelerator = None
 
-    def get_embeddings(self, gene_column_name: str = "gene_col") -> np.array:
+    def get_embeddings(self) -> np.array:
         self.log.info(f"Inference started")
         # The extracted embedding is stored in the `X_scGPT` field of `obsm` in AnnData.
         # for local development, only get embeddings for the first 100 entries
@@ -67,13 +67,18 @@ class scGPT(HelicalBaseModel):
             self.adata,
             self.model_dir,
             self.model_config,
-            gene_col=gene_column_name,
+            gene_col=self.gene_column_name,
         )
     
-    def process_data(self, adata: AnnData, n_top_genes: int = 1800, flavor: str = "seurat_v3"):
-
+    def process_data(self, 
+                     adata: AnnData, 
+                     gene_column_name: str = "gene_col", 
+                     n_top_genes: int = 1800, 
+                     flavor: str = "seurat_v3"):
+        
+        self.gene_column_name = gene_column_name
         self.adata = adata
-        self.adata.var[self.data_config['scgpt']['gene_column_name']] = self.adata.var.index.values
+        self.adata.var[self.gene_column_name] = self.adata.var.index.values
 
         # Preprocess the dataset and select `N_HVG` highly variable genes for downstream analysis.
         sc.pp.normalize_total(self.adata, target_sum=1e4)
