@@ -17,5 +17,5 @@ RUN pip install git+https://github.com/helicalAI/helical.git
 COPY examples /usr/local/helical/examples
 COPY run_all.py /usr/local/helical/
 
-# Define the entry point for the container
-CMD [ "python3", "./run_all.py" ]
+# Define the command to run
+CMD [ "python3", "run_all.py" ]
