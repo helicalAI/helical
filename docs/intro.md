@@ -1,4 +1,4 @@
-```{image} https://github.com/helicalAI/helical/blob/release/docs/assets/logo_name.png
+```{image} assets/logo_name.png
 :alt: "Logo"
 :width: 400px
 :align: center
