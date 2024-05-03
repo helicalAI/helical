@@ -1,0 +1,10 @@
+requests
+pandas
+anndata
+numpy
+gitpython
+torch==2.0.0
+accelerate
+transformers==4.35.0
+loompy
+datasets

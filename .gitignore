@@ -1,0 +1,29 @@
+*.egg-info
+__pycache__
+.vscode
+
+# Data
+*.sqlite3
+*.h5ad
+*.torch
+*.pt
+*.npz
+*.arrow
+*zip
+
+*.pickle
+*.bin
+*.dataset
+*.ipynb_checkpoints
+results*
+# Log
+debug.log
+
+# Mac Files
+*.DS_Store
+
+/docs/conf.py
+/docs/_build
+/docs/_autosummary
+_build
+/docs/source

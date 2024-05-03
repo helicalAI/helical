@@ -1,0 +1,99 @@
+# Book settings
+# Learn more at https://jupyterbook.org/customize/config.html
+# Comprehensive example: https://github.com/executablebooks/jupyter-book/blob/master/docs/_config.yml
+
+title: Helical Documentation
+author: Helical Team
+copyright: "2024"
+logo: docs/official_logo_small.png
+
+# Force re-execution of notebooks on each build.
+# See https://jupyterbook.org/content/execute.html
+execute:
+  execute_notebooks: false
+
+# # HTML-specific settings
+# html:
+#   use_edit_page_button      : false  # Whether to add an "edit this page" button to pages. If `true`, repository information in repository: must be filled in
+#   use_repository_button     : false  # Whether to add a link to your repository button
+#   use_issues_button         : false  # Whether to add an "open an issue" button
+#   use_multitoc_numbering    : true   # Continuous numbering across parts/chapters
+#   extra_footer              : ""  # Will be displayed underneath the footer.
+#   google_analytics_id       : ""  # A GA id that can be used to track book views.
+#   home_page_in_navbar       : true  # Whether to include your home page in the left Navigation Bar
+#   # baseurl                   : ""  # The base URL where your book will be hosted. Used for creating image previews and social links. e.g.: https://mypage.com/mybook/
+
+# Define the name of the latex output file for PDF builds
+latex:
+  latex_documents:
+    targetname: book.tex
+
+# Add a bibtex file so that we can create citations
+bibtex_bibfiles:
+  - references.bib
+
+# Information about where the book exists on the web
+repository:
+  url: https://github.com/helicalAI/helical  # Online location of your book
+  path_to_book: docs  # Optional path to your book, relative to the repository root
+  branch: main  # Which branch of the repository should be used when creating links (optional)
+
+# Add GitHub buttons to your book
+# See https://jupyterbook.org/customize/config.html#add-a-link-to-your-repository
+html:
+  favicon: docs/official_logo_fav.png  # A path to a favicon image
+  use_issues_button: true
+  use_repository_button: true
+
+sphinx:
+  config:
+    # html_style : 'my_theme.css'
+    # html_static_path: ['docs/_static']  
+    # html_extra_path: ['./docs/_static']
+    # html_css_files: ['my_theme.css']
+    intersphinx_mapping:
+      ebp:
+        - "https://executablebooks.org/en/latest/"
+        - null
+      myst-parser:
+        - "https://myst-parser.readthedocs.io/en/latest/"
+        - null
+      myst-nb:
+        - "https://myst-nb.readthedocs.io/en/latest/"
+        - null
+      sphinx:
+        - "https://www.sphinx-doc.org/en/master"
+        - null
+      nbformat:
+        - "https://nbformat.readthedocs.io/en/latest"
+        - null
+      sd:
+        - "https://sphinx-design.readthedocs.io/en/latest"
+        - null
+      sphinxproof:
+        - "https://sphinx-proof.readthedocs.io/en/latest/"
+        - null
+    hoverxref_intersphinx:
+     - "sphinxproof"
+    mathjax3_config:
+      tex:
+        macros:
+          "N": "\\mathbb{N}"
+          "floor": ["\\lfloor#1\\rfloor", 1]
+          "bmat": ["\\left[\\begin{array}"]
+          "emat": ["\\end{array}\\right]"]
+    autosummary_generate: True
+    napoleon_numpy_docstring: True
+    napoleon_include_init_with_doc: True
+        
+  extra_extensions:
+    - sphinx.ext.intersphinx
+    - sphinx_inline_tabs
+    - sphinx_proof
+    - sphinx_examples
+    - hoverxref.extension
+    - sphinx.ext.autodoc
+    - 'sphinx.ext.viewcode'
+    - 'sphinx.ext.autosummary'
+    - sphinx.ext.napoleon
+    

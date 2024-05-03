@@ -1,0 +1,27 @@
+# Table of contents
+# Learn more at https://jupyterbook.org/customize/toc.html
+
+format: jb-book
+root: README
+parts:
+- caption: Helical API Documentation 📚
+  chapters:
+  - file: docs/api
+- caption: Tutorials🪄
+  chapters:
+  - file : examples/reference_mapping
+  - file : examples/uce_custom_configs_example
+  - file : examples/geneformer_example
+
+# - caption: Basic examples 🪄
+#   chapters:
+#   - file: markdown
+#   - file: notebooks
+#   - file: markdown-notebooks
+# - caption: Cool extensions 🕶️
+#   chapters:
+#   - file: intersphinx
+#   - file: sphinx-examples
+#   - file: sphinx-hoverxref
+#   - file: sphinx-proof
+
