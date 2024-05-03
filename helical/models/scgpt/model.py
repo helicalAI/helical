@@ -26,8 +26,7 @@ import numpy as np
 from anndata import AnnData
 import scgpt as scg
 import logging
-import json
-from typing import Union
+from typing import Optional, Literal
 from pathlib import Path
 from accelerate import Accelerator
 from helical.services.downloader import Downloader
@@ -38,8 +37,21 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 class scGPT(HelicalBaseModel):
     default_config = scGPTConfig()
 
-    def __init__(self, model_dir=None, model_config: scGPTConfig = default_config) -> None:
-                
+    def __init__(self, model_dir: Optional[str] = None, model_config: scGPTConfig = default_config) -> None:
+        """Initializes the scGPT class
+
+        Parameters
+        ----------
+        model_dir : str, optional, default = None
+            The path to the model directory. None by default, which will download the model if not present.
+        model_config : scGPTConfig, optional, default = default_config
+            The model configuration.
+
+        Returns
+        -------
+        None
+        """
+          
         super().__init__()
         self.model_config = model_config.config
         self.downloader = Downloader()
@@ -60,6 +72,13 @@ class scGPT(HelicalBaseModel):
             self.accelerator = None
 
     def get_embeddings(self) -> np.array:
+        """Gets the gene embeddings
+        
+        Returns
+        -------
+        np.array
+            The gene embeddings in the form of a numpy array
+        """
         self.log.info(f"Inference started")
         # The extracted embedding is stored in the `X_scGPT` field of `obsm` in AnnData.
         # for local development, only get embeddings for the first 100 entries
@@ -74,8 +93,26 @@ class scGPT(HelicalBaseModel):
                      adata: AnnData, 
                      gene_column_name: str = "gene_col", 
                      n_top_genes: int = 1800, 
-                     flavor: str = "seurat_v3"):
-        
+                     flavor: Literal["seurat", "cell_ranger", "seurat_v3", "seurat_v3_paper"] = "seurat_v3") -> None:
+        """Processes the data for the scGPT model
+
+        Parameters 
+        ----------
+        data : AnnData
+            The AnnData object containing the data to be processed
+        gene_column_name: str, optional, default = "gene_col"
+            The name of the column containing the genes in the data.
+        n_top_genes: int, optional, default = 1800
+            Number of highly-variable genes to keep. Mandatory if flavor='seurat_v3'.
+        flavor: Literal["seurat", "cell_ranger", "seurat_v3", "seurat_v3_paper"], optional, default = "seurat_v3",
+            Choose the flavor for identifying highly variable genes. 
+            For the dispersion based methods in their default workflows, 
+            Seurat passes the cutoffs whereas Cell Ranger passes n_top_genes.
+
+        Returns
+        -------
+        None
+        """
         self.gene_column_name = gene_column_name
         self.adata = adata
         self.adata.var[self.gene_column_name] = self.adata.var.index.values

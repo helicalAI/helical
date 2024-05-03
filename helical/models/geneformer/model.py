@@ -17,14 +17,14 @@ from helical.services.downloader import Downloader
 class Geneformer(HelicalBaseModel):
     default_config = GeneformerConfig()
 
-    def __init__(self, model_dir=None, model_config: GeneformerConfig = default_config) -> None:
+    def __init__(self, model_dir: Optional[str] = None, model_config: GeneformerConfig = default_config) -> None:
         """Initializes the Geneformer class
 
         Parameters
         ----------
-        model_dir : str
-            The path to the model directory 
-        model_config : GeneformerConfig, optional
+        model_dir : str, optional, default = None
+            The path to the model directory. None by default, which will download the model if not present.
+        model_config : GeneformerConfig, optional, default = default_config
             The model configration
 
         Returns
@@ -71,10 +71,10 @@ class Geneformer(HelicalBaseModel):
         ----------
         data : AnnData
             The AnnData object containing the data to be processed
-        data_config_path : Union[str, Path]
-            The path to the data configuration file
-        save_to_disk : bool, default=False
-            Whether to save the tokenized dataset to disk
+        nproc : int, optional, default = 4
+            Number of processes to use for dataset mapping
+        output_path : str, default = None
+            Whether to save the tokenized dataset to the specified output_path
 
         Returns
         -------

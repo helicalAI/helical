@@ -4,27 +4,24 @@ from anndata import AnnData
 from torch.utils.data import DataLoader
 from helical import CACHE_DIR_HELICAL
 import os
-import json
 from pathlib import Path
 from helical.models.uce.uce_config import UCEConfig
 from helical.models.helical import HelicalBaseModel
-# from helical.services.downloader import Downloader
 from helical.models.uce.uce_utils import get_ESM2_embeddings, load_model, process_data, get_gene_embeddings
-from typing import Union
 from accelerate import Accelerator
 from helical.services.downloader import Downloader
-
+from typing import Optional
 class UCE(HelicalBaseModel):
     default_config = UCEConfig()
 
-    def __init__(self, model_dir: str = None, model_config: UCEConfig = default_config) -> None:
+    def __init__(self, model_dir: Optional[str] = None, model_config: UCEConfig = default_config) -> None:
         """Initializes the UCE class
 
         Parameters
         ----------
-        model_dir : str
-            The path to the model directory
-        model_config : UCEConfig, optional
+        model_dir : str, optional, default = None
+            The path to the model directory. None by default, which will download the model if not present.
+        model_config : UCEConfig, optional, default = default_config
             The model configuration.
 
         Returns
@@ -72,8 +69,12 @@ class UCE(HelicalBaseModel):
         ----------
         data : AnnData
             The AnnData object containing the data to be processed
-        data_config_path : Union[str, Path]
-            The path to the data configuration file
+        species: str, optional, default = "human"
+            The species of the data. 
+        filter_genes: bool, optional, default = False
+            Wheter to filter genes or not.
+        embedding_model: str, optional, default = "ESM2"
+            The name of the gene embedding model.
 
         Returns
         -------
