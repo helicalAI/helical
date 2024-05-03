@@ -15,32 +15,33 @@ Let’s build the most exciting AI-for-Bio community together!
 
 ## Installation
 
-We recommend installing Helical within a conda environment with the commands below (run them in your terminal):
+We recommend installing Helical within a conda environment with the commands below (run them in your terminal) - this step is optional:
 ```
 conda create --name helical-package python=3.11.8
 conda activate helical-package
 ```
+To install the Helical package, you can run the command below:
 ```
 pip install --upgrade --force-reinstall git+https://github.com/helicalAI/helical.git
 ```
 
-We recommend using `Pyhton 3.11.8`.
 
 ## Demo & Use Cases
 
 To run examples, be sure to have installed the Helical package (see Installation) and that it is up-to-date.
-In you terminal, navigate to the folder of your choice and clone the github repo with the command below:
+
+You can look directly into the example folder above, look into our documentation for step-by-step guides or directly clone the repository using:
 ```
 git clone https://github.com/helicalAI/helical.git
 ```
-Within this folder, open the `example` notebook of your choice. We recommend starting with reference_mapping.ipynb
+Within the `example` folder, open the notebook of your choice. We recommend starting with `Genefromer-vs-UCE.ipynb`
 
 ### RNA models:
-- reference_mapping.ipynb: Generate embeddingings with geneforme & UCE and compare the outcomes.
-- Coming soon: scGPT, SCimilarity, scVI
+- `Genefromer-vs-UCE.ipynb`: Generate embeddingings with geneforme & UCE and compare the outcomes.
+- Coming soon: new models such as scGPT, SCimilarity, scVI; benchmarking scripts; new use cases; others
 
 ### DNA models:
-- Coming soon: Nucleotide Transformer
+- Coming soon: new models such as Nucleotide Transformer; others
 
 # Stuck somewhere ? Other ideas ?
 We are eager to help you and interact with you through our slack channel #xxx in the BiB slack. 
@@ -57,4 +58,4 @@ If you are (or plan to) working with bio foundation models s.a. Geneformer or UC
 We will continuously upload the latest model, publish benchmarks and make our code more efficient.
 
 # Citation
-Please use this BibTeX to cite this repository in your publications:
+WIP
