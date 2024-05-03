@@ -1,0 +1,19 @@
+name: Weekly Pipeline
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Run every Sunday at midnight (UTC)
+
+jobs:
+  build:
+    runs_on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Build Docker image
+        run: docker build -t myimage .
+
+      - name: Run script inside Docker container
+        run: |
+          docker run --rm myimage /bin/bash -c "./entrypoint.sh"
