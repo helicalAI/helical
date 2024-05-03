@@ -31,7 +31,7 @@ We recommend using `Pyhton 3.11.8`.
 To run examples, be sure to have installed the Helical package (see Installation) and that it is up-to-date.
 In you terminal, navigate to the folder of your choice and clone the github repo with the command below:
 ```
-git clone https://github.com/helicalAI/helical-package.git
+git clone https://github.com/helicalAI/helical.git
 ```
 Within this folder, open the `example` notebook of your choice. We recommend starting with reference_mapping.ipynb
 
