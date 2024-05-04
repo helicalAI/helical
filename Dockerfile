@@ -13,7 +13,6 @@ WORKDIR /usr/local/helical
 
 COPY . /usr/local/helical
 RUN pip install -r requirements.txt
-RUN pip install git+https://github.com/helicalAI/helical-package.git
 
 # Make the shell script executable
 RUN chmod +x entrypoint.sh
