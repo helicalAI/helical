@@ -12,7 +12,7 @@ RUN apt-get update -y \
 WORKDIR /usr/local/helical
 
 COPY . /usr/local/helical
-RUN pip install -r requirements.txt
+RUN pip install .
 
 # Make the shell script executable
 RUN chmod +x entrypoint.sh
