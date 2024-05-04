@@ -18,6 +18,7 @@ class Downloader(Logger):
         super().__init__(loging_type, level)
         self.log = logging.getLogger("Downloader")
         self.CACHE_DIR_HELICAL = os.path.join(str(Path.home()),'.cache/helical/models')
+        self.display = True
 
     def get_ensemble_mapping(self, path_to_ets_csv: Path, output: Path):
         '''
@@ -50,7 +51,8 @@ class Downloader(Logger):
             self.total_length = len(genes)
 
             for i in range(0, len(genes), INTERVAL):
-                self._display_download_progress(INTERVAL)
+                if self.display: 
+                    self._display_download_progress(INTERVAL)
                 ids = {'ids':genes[i:i+INTERVAL].tolist()}
                 r = requests.post(server, headers=headers, data=json.dumps(ids))
                 decoded = r.json()
@@ -86,7 +88,8 @@ class Downloader(Logger):
                 else:
                     try:
                         for data in response.iter_content(chunk_size=CHUNK_SIZE):
-                            self._display_download_progress(len(data))
+                            if self.display: 
+                                self._display_download_progress(len(data))
                             f.write(data)
                     except:
                         self.log.error(f"Failed downloading file from '{link}'")
@@ -157,7 +160,8 @@ class Downloader(Logger):
                 else:
                     try:
                         for data in response.iter_content(chunk_size=CHUNK_SIZE):
-                            self._display_download_progress(len(data))
+                            if self.display: 
+                                self._display_download_progress(len(data))
                             f.write(data)
                     except:
                         self.log.error(f"Failed downloading file from '{link}'")

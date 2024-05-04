@@ -1,8 +1,8 @@
 name: Weekly Pipeline
 
-on:
-  schedule:
-    - cron: '0 1 * * 1'  # Run every Monday at 1:00 AM (UTC)
+on: [push]
+  # schedule:
+  #   - cron: '0 1 * * 1'  # Run every Monday at 1:00 AM (UTC)
     
 jobs:
   build:
