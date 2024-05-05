@@ -14,7 +14,7 @@ Helical simplifies the entire application lifecycle when building with bio found
 We will update this repo on a bi-weekly basis with new models, benchmarks, modalities and functions - so stay tuned.
 Let’s build the most exciting AI-for-Bio community together!
 
-## Installation
+## Installationn
 
 We recommend installing Helical within a conda environment with the commands below (run them in your terminal) - this step is optional:
 ```
