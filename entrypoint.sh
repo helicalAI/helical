@@ -1,2 +1,2 @@
 #!/bin/bash
-python3 run_all.py
+python3 ci/run_all.py
