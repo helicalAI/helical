@@ -1,4 +1,4 @@
-helical.models
+﻿helical.models
 ==============
 
 .. automodule:: helical.models
