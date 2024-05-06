@@ -6,7 +6,8 @@ root: README
 parts:
 - caption: Helical API Documentation 📚
   chapters:
-  - file: docs/api
+  - file: docs/Geneformer.rst
+  - file: docs/UCE.rst
 - caption: Tutorials🪄
   chapters:
   - file : examples/reference_mapping

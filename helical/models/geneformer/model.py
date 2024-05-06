@@ -14,24 +14,42 @@ from typing import Optional
 from accelerate import Accelerator
 import pickle as pkl
 from helical.services.downloader import Downloader
+
 class Geneformer(HelicalBaseModel):
+    """Geneformer Model. 
+    The Geneformer Model is a transformer-based model that can be used to extract gene embeddings from single-cell RNA-seq data. 
+
+    Example
+    -------
+    >>> from helical.models import Geneformer
+    >>> import anndata as ad
+    >>> model_config=GeneformerConfig(batch_size=10)
+    >>> geneformer = Geneformer(model_config=model_config)
+    >>> ann_data = ad.read_h5ad("./data/10k_pbmcs_proc.h5ad")
+    >>> dataset = geneformer.process_data(ann_data[:100])
+    >>> embeddings = geneformer.get_embeddings(dataset)
+
+    
+   
+    Parameters
+    ----------
+    model_dir : str, optional, default = None
+        The path to the model directory. None by default, which will download the model if not present.
+    model_config : GeneformerConfig, optional, default = default_config
+        The model configration
+
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    It has been published in this `Nature Paper <https://www.nature.com/articles/s41586-023-06139-9.epdf?sharing_token=u_5LUGVkd3A8zR-f73lU59RgN0jAjWel9jnR3ZoTv0N2UB4yyXENUK50s6uqjXH69sDxh4Z3J4plYCKlVME-W2WSuRiS96vx6t5ex2-krVDS46JkoVvAvJyWtYXIyj74pDWn_DutZq1oAlDaxfvBpUfSKDdBPJ8SKlTId8uT47M%3D>`_. 
+    We use the implementation from the `Geneformer <https://huggingface.co/ctheodoris/Geneformer/tree/main>`_ repository.
+
+    """
     default_config = GeneformerConfig()
-
     def __init__(self, model_dir: Optional[str] = None, model_config: GeneformerConfig = default_config) -> None:
-        """Initializes the Geneformer class
-
-        Parameters
-        ----------
-        model_dir : str, optional, default = None
-            The path to the model directory. None by default, which will download the model if not present.
-        model_config : GeneformerConfig, optional, default = default_config
-            The model configration
-
-        Returns
-        -------
-        None
-        """
-        
         super().__init__()
         self.model_config = model_config
         self.downloader = Downloader()
