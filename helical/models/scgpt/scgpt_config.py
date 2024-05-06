@@ -1,5 +1,124 @@
 from typing import Optional
 class scGPTConfig():
+    """
+    Configuration class to use the scGPT Model.
+    
+    Parameters
+    ----------
+    data_source : str, optional, default = "/scratch/ssd004/datasets/cellxgene/scb_strict/human"
+        The data source
+    save_dir : str, optional, default = "/scratch/ssd004/datasets/cellxgene/save/cellxgene_census_human-Dec18-13-52-2023"
+        The save directory
+    load_model : str, optional, default = "/scratch/ssd004/datasets/cellxgene/save/scGPT_human"
+        The model to load
+    n_hvg : int, optional, default = None
+        The number of highly variable genes
+    valid_size_or_ratio : float, optional, default = 0.003
+        The validation size or ratio
+    dist_backend : str, optional, default = "nccl"
+        The distributed backend
+    grad_accu_steps : int, optional, default = 1
+        The gradient accumulation steps
+    pad_token : str, optional, default = "<pad>"
+        The padding token
+    input_style : str, optional, default = "binned"
+        The input style
+    input_emb_style : str, optional, default = "continuous"
+        The input embedding style
+    n_bins : int, optional, default = 51
+        The number of bins
+    max_seq_len : int, optional, default = 1200
+        The maximum sequence length
+    training_tasks : str, optional, default = "both"
+        The training tasks
+    dist_url : str, optional, default = "tcp://gpu183.cluster.local:54165"
+        The distributed URL
+    mask_ratio : list, optional, default = [0.25,0.5,0.75]
+        The mask ratio
+    trunc_by_sample : bool, optional, default = True   
+        Whether to truncate by sample
+    vocab_path : str, optional, default = "/scratch/ssd004/datasets/cellxgene/scFormer/scformer/tokenizer/default_census_vocab.json"
+        The vocabulary path
+    rank : int, optional, default = 0
+        The rank
+    batch_size : int, optional, default = 24
+        The batch size
+    eval_batch_size : int, optional, default = 48
+        The evaluation batch size
+    epochs : int, optional, default = 10
+        The number of epochs
+    lr : float, optional, default = 0.0001
+        The learning rate
+    scheduler_interval : int, optional, default = 100
+        The scheduler interval
+    scheduler_factor : float, optional, default = 0.99
+        The scheduler factor
+    warmup_ratio_or_step : float, optional, default = 10000.0
+        The warmup ratio or step
+    no_cls : bool, optional, default = False
+        Whether to use the classification token
+    no_cce : bool, optional, default = True
+        Whether to use the cross-entropy loss
+    fp16 : bool, optional, default = True
+        Whether to use fp16
+    fast_transformer : bool, optional, default = True
+        Whether to use the fast transformer
+    annotation_source : str, optional, default = "/scratch/ssd004/datasets/cellxgene/tabula_sapiens/parquet/"
+        The annotation source
+    annotation_valid_size_or_ratio : float, optional, default = 0.1
+        The annotation validation size or ratio
+    nlayers : int, optional, default = 12
+        The number of layers
+    nheads : int, optional, default = 8
+        The number of heads
+    embsize : int, optional, default = 512
+        The embedding size
+    d_hid : int, optional, default = 512
+        The hidden dimension
+    dropout : float, optional, default = 0.2
+        The dropout
+    n_layers_cls : int, optional, default = 3
+        The number of classification layers
+    annote_max_seq_len : int, optional, default = 5000
+        The annotation maximum sequence length
+    log_interval : int, optional, default = 500
+        The logging interval
+    save_interval : int, optional, default = 1000
+        The save interval
+    mask_value : int, optional, default = -1
+        The mask value
+    pad_value : int, optional, default = -2
+        The padding value
+    USE_CLS : bool, optional, default = True
+        Whether to use the classification token
+    USE_CCE : bool, optional, default = False
+        Whether to use the cross-entropy loss
+    MVC : bool, optional, default = True
+        Whether to use the MVC
+    USE_GENERATIVE_TRAINING : bool, optional, default = True   
+        Whether to use generative training
+    world_size : int, optional, default = 8
+        The world size
+    distributed : bool, optional, default = True
+        Whether to use distributed training
+    local_rank : int, optional, default = 0
+        The local rank
+    gpu : int, optional, default = 0
+        The GPU
+    accelerator : dict, optional, default = None
+        The accelerator configuration
+
+    Returns
+    -------
+    scGPTConfig 
+       The scGPT configuration object
+
+    Notes
+    -----
+    This configuration contains all the dwfault parameteres that have been used in the original scGPT repository.
+
+    """
+
     def __init__(
             self, 
             data_source: str = "/scratch/ssd004/datasets/cellxgene/scb_strict/human",
@@ -108,3 +227,4 @@ class scGPTConfig():
             "gpu" : gpu,
             "accelerator": accelerator
             }
+        
