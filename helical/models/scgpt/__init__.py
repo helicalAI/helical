@@ -13,7 +13,8 @@ if not logger.hasHandlers() or len(logger.handlers) == 0:
     )
     handler.setFormatter(formatter)
     logger.addHandler(handler)
-
+    
+from .model import scGPT,scGPTConfig
 from . import model_dir, tokenizer, scbank, utils, tasks
 from .data_collator import DataCollator
 from .data_sampler import SubsetsBatchSampler
