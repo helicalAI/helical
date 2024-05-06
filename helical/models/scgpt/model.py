@@ -32,9 +32,20 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 class scGPT(HelicalBaseModel):
     default_config = scGPTConfig()
+    """scGPT Model. 
+        The scGPT Model is a transformer-based model that can be used to extract gene embeddings from single-cell RNA-seq data.
 
-    def __init__(self, model_dir: Optional[str] = None, model_config: scGPTConfig = default_config) -> None:
-        """Initializes the scGPT class
+
+        Example
+        -------
+        >>> from helical.models import scGPT,scGPTConfig
+        >>> import anndata as ad
+        >>> model_config=scGPTConfig(batch_size=10)
+        >>> scgpt = scGPT(model_config=model_config)
+        >>> ann_data = ad.read_h5ad("./data/10k_pbmcs_proc.h5ad")
+        >>> dataset = scgpt.process_data(ann_data[:100])
+        >>> embeddings = scgpt.get_embeddings(dataset)
+
 
         Parameters
         ----------
@@ -46,7 +57,14 @@ class scGPT(HelicalBaseModel):
         Returns
         -------
         None
+
+        Notes
+        -----
+        We use the implementation from this `repository <https://github.com/bowang-lab/scGPT>`_ , which comes from the original authors. You can find the description of the method in this `paper <https://www.nature.com/articles/s41592-024-02201-0>`_.
         """
+
+    def __init__(self, model_dir: Optional[str] = None, model_config: scGPTConfig = default_config) -> None:
+        
           
         super().__init__()
         self.model_config = model_config.config

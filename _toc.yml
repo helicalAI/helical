@@ -8,6 +8,7 @@ parts:
   chapters:
   - file: docs/Geneformer.rst
   - file: docs/UCE.rst
+  - file: docs/scGPT.rst
 - caption: Tutorials🪄
   chapters:
   - file : examples/reference_mapping

@@ -19,7 +19,7 @@ class UCE(HelicalBaseModel):
 
         Example
         -------
-        >>> from helical.models import UCE
+        >>> from helical.models import UCE,UCEConfig
         >>> import anndata as ad
         >>> model_config=UCEConfig(batch_size=10)
         >>> uce = UCE(model_config=model_config)
