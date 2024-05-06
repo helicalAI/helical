@@ -46,7 +46,7 @@ Within this folder, open the `example` notebook of your choice. We recommend sta
 - Coming soon: Nucleotide Transformer
 
 # Stuck somewhere ? Other ideas ?
-We are eager to help you and interact with you through our slack channel #xxx in the BiB slack. 
+We are eager to help you and interact with you. Reach out via support@helical-ai.com. 
 You can also open github issues here.
 
 # Why should I use Helical & what to expect in the future?
