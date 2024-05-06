@@ -21,7 +21,7 @@ class Geneformer(HelicalBaseModel):
 
     Example
     -------
-    >>> from helical.models import Geneformer
+    >>> from helical.models import Geneformer,GeneformerConfig
     >>> import anndata as ad
     >>> model_config=GeneformerConfig(batch_size=10)
     >>> geneformer = Geneformer(model_config=model_config)
