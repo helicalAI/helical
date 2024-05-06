@@ -1,8 +1,8 @@
 scGPT
 =================
 
-.. currentmodule:: helical.models.scgpt
-.. automodule:: helical.models.scgpt
+.. currentmodule:: helical.models.scgpt.model
+.. automodule:: helical.models.scgpt.model
 
 .. autosummary::
    :toctree: _autosummary
