@@ -19,7 +19,6 @@ import os
 import scanpy as sc
 from helical.models.helical import HelicalBaseModel
 from helical.models.scgpt.scgpt_config import scGPTConfig
-from helical.models.scgpt.tasks.cell_emb import embed_data
 import numpy as np
 from anndata import AnnData
 import logging
@@ -27,6 +26,7 @@ from typing import Optional, Literal
 from pathlib import Path
 from accelerate import Accelerator
 from helical.services.downloader import Downloader
+from helical.models.scgpt.scgpt_utils import load_model, get_embedding
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
@@ -78,14 +78,17 @@ class scGPT(HelicalBaseModel):
             self.model_dir = Path(model_dir)
 
         self.log = logging.getLogger("scGPT-Model")
-
+        
+        self.model,self.vocab = load_model(self.model_dir,self.model_config,device=self.model_config["device"],use_fast_transformer=False)
+        
         if self.model_config["accelerator"]:
             self.accelerator = Accelerator(project_dir=self.model_dir, cpu=self.model_config["accelerator"]["cpu"])
             self.model = self.accelerator.prepare(self.model)
         else:
             self.accelerator = None
 
-    def get_embeddings(self) -> np.array:
+        
+    def get_embeddings(self,data: AnnData) -> np.array:
         """Gets the gene embeddings
         
         Returns
@@ -96,18 +99,21 @@ class scGPT(HelicalBaseModel):
         self.log.info(f"Inference started")
         # The extracted embedding is stored in the `X_scGPT` field of `obsm` in AnnData.
         # for local development, only get embeddings for the first 100 entries
-        return embed_data(
-            self.adata,
-            self.model_dir,
-            self.model_config,
-            gene_col=self.gene_column_name,
-        )
+
+        embeddings = get_embedding(data,
+            model = self.model,
+            vocab = self.vocab,
+            batch_size=self.model_config["batch_size"],
+            model_configs=self.model_config,
+            gene_col=self.gene_column_name)
+        
+        return embeddings
     
     def process_data(self, 
                      adata: AnnData, 
                      gene_column_name: str = "gene_col", 
                      n_top_genes: int = 1800, 
-                     flavor: Literal["seurat", "cell_ranger", "seurat_v3", "seurat_v3_paper"] = "seurat_v3") -> None:
+                     flavor: Literal["seurat", "cell_ranger", "seurat_v3", "seurat_v3_paper"] = "seurat_v3") -> AnnData:
         """Processes the data for the scGPT model
 
         Parameters 
@@ -125,7 +131,8 @@ class scGPT(HelicalBaseModel):
 
         Returns
         -------
-        None
+        AnnData
+            The processed AnnData object
         """
         self.gene_column_name = gene_column_name
         self.adata = adata
@@ -138,3 +145,4 @@ class scGPT(HelicalBaseModel):
         # highly variable genes
         sc.pp.highly_variable_genes(self.adata, n_top_genes=n_top_genes, flavor=flavor)
         self.adata = self.adata[:, self.adata.var['highly_variable']]
+        return self.adata
