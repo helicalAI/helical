@@ -20,13 +20,13 @@ def process_data(anndata,
                  model_config, 
                  files_config, 
                  species: str, 
-                 filter_genes: bool, 
+                 filter_genes_min_cell: int, 
                  embedding_model: str,
                  accelerator=None) -> DataLoader:
         
         
-        if filter_genes:
-            sc.pp.filter_genes(anndata, min_cells=10)
+        if filter_genes_min_cell is not None:
+            sc.pp.filter_genes(anndata, min_cells=filter_genes_min_cell)
             # sc.pp.filter_cells(ad, min_genes=25)
         ##Filtering out the Expression Data That we do not have in the protein embeddings
         filtered_adata, species_to_all_gene_symbols = load_gene_embeddings_adata(adata=anndata,

@@ -59,6 +59,18 @@ If you are (or plan to) working with bio foundation models s.a. Geneformer or UC
 
 We will continuously upload the latest model, publish benchmarks and make our code more efficient.
 
+# Acknowledgements
+
+A lot of our models have been published by talend authors developing these exciting technologies. We sincerely thank the authors of the following open-source projects:
+
+- [scGPT](https://github.com/bowang-lab/scGPT/)
+- [Geneformer](https://huggingface.co/ctheodoris/Geneformer)
+- [UCE](https://github.com/snap-stanford/UCE)
+- [anndata](https://github.com/scverse/anndata)
+- [scanpy](https://github.com/scverse/scanpy)
+- [transformers](https://github.com/huggingface/transformers)
+
+
 # Citation
 
 Please use this BibTeX to cite this repository in your publications:
