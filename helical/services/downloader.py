@@ -8,10 +8,11 @@ import logging
 import os
 import sys
 from pathlib import Path
+from tqdm import tqdm
 from git import Repo
 
 INTERVAL = 1000 # interval to get gene mappings
-CHUNK_SIZE = 8192 # size of individual chunks to download
+CHUNK_SIZE = 1024 * 1024 * 10 #8192 # size of individual chunks to download
 LOADING_BAR_LENGTH = 50 # size of the download progression bar in console
 class Downloader(Logger):
     def __init__(self, loging_type = LoggingType.CONSOLE, level = LoggingLevel.INFO) -> None:
@@ -159,10 +160,12 @@ class Downloader(Logger):
                     f.write(response.content)
                 else:
                     try:
-                        for data in response.iter_content(chunk_size=CHUNK_SIZE):
-                            if self.display: 
-                                self._display_download_progress(len(data))
+                        # for data in response.iter_content(chunk_size=CHUNK_SIZE):
+                        pbar = tqdm(total=int(self.total_length), unit="B", unit_scale=True)
+                        for data in tqdm(response.iter_content(chunk_size=CHUNK_SIZE)):
+                            # self._display_download_progress(len(data))
                             f.write(data)
+                            pbar.update(len(data))
                     except:
                         self.log.error(f"Failed downloading file from '{link}'")
         self.log.info(f"File saved to: '{output}'")

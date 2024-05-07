@@ -51,20 +51,30 @@ class UCE(HelicalBaseModel):
         self.downloader = Downloader()
         
         if model_dir is None:
-            self.downloader.download_via_name("uce/4layer_model.torch")
+            
             self.downloader.download_via_name("uce/all_tokens.torch")
             self.downloader.download_via_name("uce/species_chrom.csv")
             self.downloader.download_via_name("uce/species_offsets.pkl")
             self.downloader.download_via_name("uce/protein_embeddings/Homo_sapiens.GRCh38.gene_symbol_to_embedding_ESM2.pt")
             self.downloader.download_via_name("uce/protein_embeddings/Macaca_fascicularis.Macaca_fascicularis_6.0.gene_symbol_to_embedding_ESM2.pt")
             self.model_dir = Path(os.path.join(self.downloader.CACHE_DIR_HELICAL,'uce'))
+            
+            if self.model_config['n_layers']==33:
+                self.downloader.download_via_name("uce/33l_8ep_1024t_1280.torch")
+                model_path = self.model_dir / "33l_8ep_1024t_1280.torch"
+            elif self.model_config['n_layers']==4:
+                self.downloader.download_via_name("uce/4layer_model.torch")
+                model_path = self.model_dir / "4layer_model.torch"
+            else:
+                raise("Currently you have to chose between 'n_layers'= 4 or 33 to load a pre-trained model.")
+            
+           
         else:
             self.model_dir = Path(model_dir)
         
 
 
         token_file = self.model_dir / "all_tokens.torch"
-        model_path = self.model_dir / "4layer_model.torch"
         self.embeddings = get_ESM2_embeddings(token_file, self.model_config["token_dim"])
         self.model =  load_model(model_path, self.model_config, self.embeddings)
         self.model = self.model.eval()
