@@ -3,8 +3,7 @@
 :width: 400px
 :align: center
 ```
-
-## What is Helical ?
+# What is Helical ?
 
 Helical provides a framework for and gathers state-of-the-art pre-trained bio foundation models on genomics and transcriptomics modalities.
 
@@ -45,11 +44,11 @@ Within the `example` folder, open the notebook of your choice. We recommend star
 ### DNA models:
 - Coming soon: new models such as Nucleotide Transformer; others
 
-# Stuck somewhere ? Other ideas ?
-We are eager to help you and interact with you. Reach out via rick@helical-ai.com. 
+## Stuck somewhere ? Other ideas ?
+We are eager to help you and interact with you. Reach out via support@helical-ai.com. 
 You can also open github issues here.
 
-# Why should I use Helical & what to expect in the future?
+## Why should I use Helical & what to expect in the future?
 If you are (or plan to) working with bio foundation models s.a. Geneformer or UCE on RNA and DNA data, Helical will be your best buddy! We provide and improve on:
 - Up-to-date model library
 - A unified API for all models
@@ -59,7 +58,8 @@ If you are (or plan to) working with bio foundation models s.a. Geneformer or UC
 
 We will continuously upload the latest model, publish benchmarks and make our code more efficient.
 
-# Acknowledgements
+
+## Acknowledgements
 
 A lot of our models have been published by talend authors developing these exciting technologies. We sincerely thank the authors of the following open-source projects:
 
@@ -70,8 +70,7 @@ A lot of our models have been published by talend authors developing these excit
 - [scanpy](https://github.com/scverse/scanpy)
 - [transformers](https://github.com/huggingface/transformers)
 
-
-# Citation
+## Citation
 
 Please use this BibTeX to cite this repository in your publications:
 

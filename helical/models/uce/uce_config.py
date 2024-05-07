@@ -24,7 +24,7 @@ class UCEConfig():
     CXG : bool, optional, default = True
         Whether to use CXG or not
     n_layers : int, optional, default = 4
-        The number of layers
+        The number of layers. Currently the two pre-trained models available have either 4 layers or 33 layers.
     output_dim : int, optional, default = 1280
         The output dimension
     d_hid : int, optional, default = 5120
