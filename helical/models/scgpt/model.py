@@ -34,6 +34,7 @@ class scGPT(HelicalBaseModel):
     default_config = scGPTConfig()
     """scGPT Model. 
         The scGPT Model is a transformer-based model that can be used to extract gene embeddings from single-cell RNA-seq data.
+        Currently we load the continous pre-training model from the scGPT repository as default model which works best on zero-shot tasks.
 
 
         Example
@@ -105,13 +106,16 @@ class scGPT(HelicalBaseModel):
             vocab = self.vocab,
             batch_size=self.model_config["batch_size"],
             model_configs=self.model_config,
-            gene_col=self.gene_column_name)
+            gene_col=self.gene_column_name,
+            device=self.model_config["device"])
+
         
         return embeddings
     
     def process_data(self, 
                      adata: AnnData, 
-                     gene_column_name: str = "gene_col", 
+                     gene_column_name: str = "gene_symbols", 
+                     fine_tuning: bool = False,
                      n_top_genes: int = 1800, 
                      flavor: Literal["seurat", "cell_ranger", "seurat_v3", "seurat_v3_paper"] = "seurat_v3") -> AnnData:
         """Processes the data for the scGPT model
@@ -119,12 +123,16 @@ class scGPT(HelicalBaseModel):
         Parameters 
         ----------
         data : AnnData
-            The AnnData object containing the data to be processed
-        gene_column_name: str, optional, default = "gene_col"
+            The AnnData object containing the data to be processed. 
+            The Anndata requires the expression counts as the data matrix and the column with the gene symbols is defined by the argument gene_column_name.
+        gene_column_name: str, optional, default = "gene_symbols"
             The name of the column containing the genes in the data.
+        fine_tuning: bool, optional, default = False
+            If you intend to use the data to fine-tune the model on a downstream task, set this to True.
         n_top_genes: int, optional, default = 1800
-            Number of highly-variable genes to keep. Mandatory if flavor='seurat_v3'.
+           Only taken into account if you use the dataset for fine-tuning the model. Number of highly-variable genes to keep. Mandatory if flavor='seurat_v3'.
         flavor: Literal["seurat", "cell_ranger", "seurat_v3", "seurat_v3_paper"], optional, default = "seurat_v3",
+            Only taken into account if you use the dataset for fine-tuning the model.
             Choose the flavor for identifying highly variable genes. 
             For the dispersion based methods in their default workflows, 
             Seurat passes the cutoffs whereas Cell Ranger passes n_top_genes.
@@ -136,13 +144,14 @@ class scGPT(HelicalBaseModel):
         """
         self.gene_column_name = gene_column_name
         self.adata = adata
-        self.adata.var[self.gene_column_name] = self.adata.var.index.values
+        # self.adata.var[self.gene_column_name] = self.adata.var.index.values
 
-        # Preprocess the dataset and select `N_HVG` highly variable genes for downstream analysis.
-        sc.pp.normalize_total(self.adata, target_sum=1e4)
-        sc.pp.log1p(self.adata)
+        if fine_tuning:
+            # Preprocess the dataset and select `N_HVG` highly variable genes for downstream analysis.
+            sc.pp.normalize_total(self.adata, target_sum=1e4)
+            sc.pp.log1p(self.adata)
 
-        # highly variable genes
-        sc.pp.highly_variable_genes(self.adata, n_top_genes=n_top_genes, flavor=flavor)
-        self.adata = self.adata[:, self.adata.var['highly_variable']]
+            # highly variable genes
+            sc.pp.highly_variable_genes(self.adata, n_top_genes=n_top_genes, flavor=flavor)
+            self.adata = self.adata[:, self.adata.var['highly_variable']]
         return self.adata
