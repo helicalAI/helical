@@ -82,22 +82,31 @@ class Geneformer(HelicalBaseModel):
         else:
             self.accelerator = None
 
-    def process_data(self, data: AnnData,  nproc: int = 4, output_path: Optional[str] = None) -> Dataset:   
+    def process_data(self, data: AnnData,  nproc: int = 4,use_gene_symbols=True, output_path: Optional[str] = None) -> Dataset:   
         """Processes the data for the UCE model
 
         Parameters 
         ----------
         data : AnnData
-            The AnnData object containing the data to be processed
+            The AnnData object containing the data to be processed. It is important to note that the Geneformer uses Ensembl IDs to identify genes.
+            The input AnnData object should have a column named 'ensembl_id' or a column with the gene symbols called 'gene_symbols'. 
+            Should you use the gene symbols, please set the use_gene_symbols parameter to True.
+            Currently the Geneformer only supports human genes.
+
+            If you already have the ensembl_id column, you can skip the mapping step.
         nproc : int, optional, default = 4
-            Number of processes to use for dataset mapping
+            Number of processes to use for dataset processing.
+        use_gene_symbols : bool, default = True
+            Set this boolean to True if you want to use gene symbols instead of Ensembl IDs. We will map the gene symbols to Ensembl IDs with a mapping taken from the `Ensembl Website <https://www.ensembl.org/`_.
         output_path : str, default = None
-            Whether to save the tokenized dataset to the specified output_path
+            Whether to save the tokenized dataset to the specified output_path.
+
 
         Returns
         -------
         Dataset
-            The tokenized dataset in the form of a Hugginface Dataset object
+            The tokenized dataset in the form of a Hugginface Dataset object.
+            
         """ 
         files_config = {
             "mapping_path": self.model_dir / "human_gene_to_ensemble_id.pkl",
@@ -105,9 +114,9 @@ class Geneformer(HelicalBaseModel):
             "token_path": self.model_dir / "token_dictionary.pkl"
         }
 
-        mappings = pkl.load(open(files_config["mapping_path"], 'rb'))
-        
-        data.var['ensembl_id'] = data.var['gene_symbols'].apply(lambda x: mappings.get(x,{"id":None})['id'])
+        if use_gene_symbols:
+            mappings = pkl.load(open(files_config["mapping_path"], 'rb'))
+            data.var['ensembl_id'] = data.var['gene_symbols'].apply(lambda x: mappings.get(x,{"id":None})['id'])
 
         # load token dictionary (Ensembl IDs:token)
         with open(files_config["token_path"], "rb") as f:

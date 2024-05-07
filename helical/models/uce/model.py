@@ -76,20 +76,21 @@ class UCE(HelicalBaseModel):
 
     def process_data(self, data: AnnData, 
                      species: str = "human", 
-                     filter_genes: bool = False, 
+                     filter_genes_min_cell: int = None, 
                      embedding_model: str = "ESM2" ) -> DataLoader:
-        """Processes the data for the UCE model
+        """Processes the data for the Universal Cell Embedding model
 
         Parameters 
         ----------
         data : AnnData
-            The AnnData object containing the data to be processed
+            The AnnData object containing the data to be processed. 
+            The UCE model requires the gene expression data as input and the gene symbols as variable names (i.e. as adata.var_names).
         species: str, optional, default = "human"
-            The species of the data. 
-        filter_genes: bool, optional, default = False
-            Wheter to filter genes or not.
+            The species of the data.  Currently we support "human" and "macaca_fascicularis" but more embeddings will come soon.
+        filter_genes_min_cell: int, default = None
+            Filter threshold that defines how many times a gene should occur in all the cells.
         embedding_model: str, optional, default = "ESM2"
-            The name of the gene embedding model.
+            The name of the gene embedding model. The current option is only ESM2.
 
         Returns
         -------
@@ -107,7 +108,7 @@ class UCE(HelicalBaseModel):
                               model_config=self.model_config, 
                               files_config=files_config,
                               species=species,
-                              filter_genes=filter_genes,
+                              filter_genes_min_cell=filter_genes_min_cell,
                               embedding_model=embedding_model,
                               accelerator=self.accelerator)
         return data_loader
