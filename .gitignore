@@ -3,7 +3,7 @@ __pycache__
 .vscode
 
 # Data
-data*
+data/*
 *.sqlite3
 *.h5ad
 *.torch
@@ -28,3 +28,6 @@ debug.log
 /docs/_autosummary
 _build
 /docs/source
+
+# From unit tests
+ci/tests/test_output

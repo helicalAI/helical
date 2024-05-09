@@ -18,4 +18,4 @@ RUN pip install .
 RUN chmod +x entrypoint.sh
 
 # Define the entry point for the container
-ENTRYPOINT ["/usr/local/helical/entrypoint.sh"]
+ENTRYPOINT ["/bin/bash"]
