@@ -12,10 +12,10 @@ from torch.utils.data import DataLoader, SequentialSampler
 from tqdm import tqdm
 
 
-from scgpt.data_collator import DataCollator
-from scgpt.model import TransformerModel
-from scgpt.tokenizer import GeneVocab
-from scgpt.utils import load_pretrained
+from .data_collator import DataCollator
+from .model_dir import TransformerModel
+from .tokenizer import GeneVocab
+from .utils import load_pretrained
 
 from scgpt.tasks.cell_emb import get_batch_cell_embeddings
 
