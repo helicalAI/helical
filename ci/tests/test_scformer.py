@@ -1,5 +1,4 @@
-from helical.models.scgpt.model import scGPT
-from scgpt import __version__
+from helical.models.scgpt import __version__
 
 
 def test_version():

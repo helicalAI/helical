@@ -17,14 +17,11 @@
 
 import os
 import scanpy as sc
-import sys
-dir_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.insert(0, f"{dir_path}/scGPT")
 from helical.models.helical import HelicalBaseModel
 from helical.models.scgpt.scgpt_config import scGPTConfig
+from helical.models.scgpt.tasks.cell_emb import embed_data
 import numpy as np
 from anndata import AnnData
-import scgpt as scg
 import logging
 from typing import Optional, Literal
 from pathlib import Path
@@ -32,7 +29,6 @@ from accelerate import Accelerator
 from helical.services.downloader import Downloader
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
-dir_path = os.path.dirname(os.path.realpath(__file__))
 
 class scGPT(HelicalBaseModel):
     default_config = scGPTConfig()
@@ -82,7 +78,7 @@ class scGPT(HelicalBaseModel):
         self.log.info(f"Inference started")
         # The extracted embedding is stored in the `X_scGPT` field of `obsm` in AnnData.
         # for local development, only get embeddings for the first 100 entries
-        return scg.tasks.embed_data(
+        return embed_data(
             self.adata,
             self.model_dir,
             self.model_config,

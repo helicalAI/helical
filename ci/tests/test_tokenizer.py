@@ -1,6 +1,5 @@
-from helical.models.scgpt.model import scGPT
 from pathlib import Path
-from scgpt.tokenizer import GeneVocab, get_default_gene_vocab
+from helical.models.scgpt.tokenizer import GeneVocab, get_default_gene_vocab
 
 
 def test_gene_vocab():

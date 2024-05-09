@@ -1,7 +1,6 @@
 from typing import Sequence
-from helical.models.scgpt.model import scGPT
-from scgpt.data_sampler import SubsetSequentialSampler, SubsetsBatchSampler
-from scgpt.utils import set_seed
+from helical.models.scgpt.data_sampler import SubsetSequentialSampler, SubsetsBatchSampler
+from helical.models.scgpt.utils import set_seed
 
 set_seed(1)
 

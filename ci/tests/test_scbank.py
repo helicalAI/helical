@@ -7,11 +7,10 @@ from scipy.sparse import csr_matrix
 from datasets import Dataset
 from anndata import AnnData
 import os
-from helical.models.scgpt.model import scGPT
 import shutil
 
-from scgpt.tokenizer import GeneVocab
-from scgpt.scbank import DataBank, DataTable, MetaInfo, Setting
+from helical.models.scgpt.tokenizer import GeneVocab
+from helical.models.scgpt.scbank import DataBank, DataTable, MetaInfo, Setting
 
 tmp_dir = tempfile.gettempdir()
 dir_path = os.path.dirname(os.path.realpath(__file__))
