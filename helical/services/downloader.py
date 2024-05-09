@@ -9,6 +9,7 @@ import os
 import sys
 from pathlib import Path
 from tqdm import tqdm
+from azure.storage.blob import  BlobClient
 from git import Repo
 
 INTERVAL = 1000 # interval to get gene mappings
@@ -124,7 +125,7 @@ class Downloader(Logger):
         sys.stdout.write("\r[%s%s]" % ('=' * done, ' ' * (LOADING_BAR_LENGTH-done)) )    
         sys.stdout.flush()
 
-    def download_via_name(self, name: str) -> None:
+    def download_via_name_v0(self, name: str) -> None:
         '''
         Download a file via a link. 
         
@@ -165,4 +166,48 @@ class Downloader(Logger):
                             pbar.update(len(data))
                     except:
                         self.log.error(f"Failed downloading file from '{link}'")
+        self.log.info(f"File saved to: '{output}'")
+
+
+    def download_via_name(self, name: str) -> None:
+        '''
+        Download a file via a link. 
+        
+        Args:
+            output: Path to the output file.
+            link: URL to download the file from.
+        '''
+
+        main_link = "https://helicalpackage.blob.core.windows.net/helicalpackage/data"
+        CACHE_DIR_HELICAL = Path(self.CACHE_DIR_HELICAL)
+        output = os.path.join(CACHE_DIR_HELICAL,name)
+        azure_logger = "azure.core.pipeline.policies.http_logging_policy"
+        logging.getLogger(azure_logger).setLevel(logging.WARNING)
+
+        blob_url = f"{main_link}/{name}"
+
+        # Create a BlobClient object for the specified blob
+        blob_client = BlobClient.from_blob_url(blob_url,max_single_get_size=1024*1024*32,max_chunk_get_size=1024*1024*4,session=self.session)
+        
+
+        if not os.path.exists(os.path.dirname(output)):
+            os.makedirs(os.path.dirname(output),exist_ok=True)
+
+        if Path(output).is_file():
+            self.log.info(f"File: '{output}' exists already. File is not overwritten and nothing is downloaded.")
+
+        else:
+            self.log.info(f"Starting to download: '{blob_url}'")
+            # Resetting for visualization
+            self.data_length = 0
+            total_length = blob_client.get_blob_properties().size
+            pbar = tqdm(total=total_length, unit='B', unit_scale=True, desc='Downloading')
+            def progress_callback(bytes_transferred,total_bytes):
+                pbar.update(bytes_transferred-pbar.n)
+            try:
+                with open(output, "wb") as sample_blob:
+                    download_stream = blob_client.download_blob(max_concurrency=100,progress_hook=progress_callback)
+                    sample_blob.write(download_stream.readall())
+            except:
+                self.log.error(f"Failed downloading file from '{blob_url}'")
         self.log.info(f"File saved to: '{output}'")
