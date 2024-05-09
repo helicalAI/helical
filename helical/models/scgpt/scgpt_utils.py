@@ -17,7 +17,7 @@ from .model_dir import TransformerModel
 from .tokenizer import GeneVocab
 from .utils import load_pretrained
 
-from scgpt.tasks.cell_emb import get_batch_cell_embeddings
+from helical.models.scgpt.tasks.cell_emb import get_batch_cell_embeddings
 
 
 
@@ -80,7 +80,6 @@ def get_embedding(
     batch_size=64,
     obs_to_save: Optional[list] = None,
     device: Union[str, torch.device] = "cuda",
-    use_fast_transformer: bool = True,
     return_new_adata: bool = False,
 ) -> AnnData:
     """

@@ -97,7 +97,7 @@ class scGPT(HelicalBaseModel):
         np.array
             The gene embeddings in the form of a numpy array
         """
-        self.log.info(f"Inference started")
+        self.log.info(f"Inference started:")
         # The extracted embedding is stored in the `X_scGPT` field of `obsm` in AnnData.
         # for local development, only get embeddings for the first 100 entries
 

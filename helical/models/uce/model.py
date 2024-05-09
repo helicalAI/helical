@@ -2,7 +2,6 @@ import logging
 import numpy as np
 from anndata import AnnData
 from torch.utils.data import DataLoader
-from helical import CACHE_DIR_HELICAL
 import os
 from pathlib import Path
 from helical.models.uce.uce_config import UCEConfig
