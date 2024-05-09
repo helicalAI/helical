@@ -20,6 +20,12 @@ class Downloader(Logger):
         super().__init__(loging_type, level)
         self.log = logging.getLogger("Downloader")
         self.CACHE_DIR_HELICAL = os.path.join(str(Path.home()),'.cache/helical/models')
+        # manually create a requests session
+        self.session = requests.Session()
+        # set an adapter with the required pool size
+        adapter = requests.adapters.HTTPAdapter(pool_maxsize=100,pool_connections=100)
+        # mount the adapter to the session
+        self.session.mount('https://', adapter)
 
     def get_ensemble_mapping(self, path_to_ets_csv: Path, output: Path):
         '''
