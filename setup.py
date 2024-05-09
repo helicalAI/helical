@@ -28,6 +28,7 @@ setup(
         'IProgress==0.4',
         "ipywidgets==8.1.2",
         'azure-identity==1.16.0',
-        'azure-storage-blob==12.19.1'
+        'azure-storage-blob==12.19.1',
+        'azure-core==1.30.1'
     ],  
 )
