@@ -80,13 +80,13 @@ class UCEDataset(Dataset):
                                         size=self.config["sample_size"], p=weights,
                                         replace=True)
 
-            choosen_chrom = chroms[choice_idx] # get the sampled genes chromosomes
+            choosen_chrom = chroms.iloc[choice_idx] # get the sampled genes chromosomes
             # order the genes by chromosome
             chrom_sort = np.argsort(choosen_chrom)  
             choice_idx = choice_idx[chrom_sort]
 
             # sort the genes by start
-            new_chrom = chroms[choice_idx]
+            new_chrom = chroms.iloc[choice_idx]
             choosen_starts = starts[choice_idx]
 
             ordered_choice_idx = np.full((self.config["pad_length"]),
