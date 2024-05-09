@@ -2,7 +2,8 @@
   <img src="https://github.com/helicalAI/helical-package/blob/main/assets/logo%2Bname.png" alt="Logo" width="304" height="110">
 </div>
 
-## What is Helical ?
+
+# What is Helical ?
 
 Helical provides a framework for and gathers state-of-the-art pre-trained bio foundation models on genomics and transcriptomics modalities.
 
@@ -45,11 +46,11 @@ Within this folder, open the `example` notebook of your choice. We recommend sta
 ### DNA models:
 - Coming soon: Nucleotide Transformer
 
-# Stuck somewhere ? Other ideas ?
-We are eager to help you and interact with you through our slack channel #xxx in the BiB slack. 
+## Stuck somewhere ? Other ideas ?
+We are eager to help you and interact with you. Reach out via support@helical-ai.com. 
 You can also open github issues here.
 
-# Why should I use Helical & what to expect in the future?
+## Why should I use Helical & what to expect in the future?
 If you are (or plan to) working with bio foundation models s.a. Geneformer or UCE on RNA and DNA data, Helical will be your best buddy! We provide and improve on:
 - Up-to-date model library
 - A unified API for all models
@@ -59,7 +60,20 @@ If you are (or plan to) working with bio foundation models s.a. Geneformer or UC
 
 We will continuously upload the latest model, publish benchmarks and make our code more efficient.
 
-# Citation
+
+## Acknowledgements
+
+A lot of our models have been published by talend authors developing these exciting technologies. We sincerely thank the authors of the following open-source projects:
+
+- [scGPT](https://github.com/bowang-lab/scGPT/)
+- [Geneformer](https://huggingface.co/ctheodoris/Geneformer)
+- [UCE](https://github.com/snap-stanford/UCE)
+- [anndata](https://github.com/scverse/anndata)
+- [scanpy](https://github.com/scverse/scanpy)
+- [transformers](https://github.com/huggingface/transformers)
+
+## Citation
+
 Please use this BibTeX to cite this repository in your publications:
 
 

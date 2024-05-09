@@ -3,9 +3,7 @@ from helical.services.logger import Logger
 from helical.constants.enums import LoggingType, LoggingLevel
 
 class HelicalBaseModel(ABC, Logger):
-    
-    def __init__(self, logging_type = LoggingType.CONSOLE, level = LoggingLevel.INFO):
-        """ Initializes the HelicalBaseModel class 
+    """Helical Base Model Class which serves as the base class for all models in the helical package. Each new model should be a subclass of this class.
 
         Parameters
         ----------
@@ -19,6 +17,8 @@ class HelicalBaseModel(ABC, Logger):
         None
 
         """
+    
+    def __init__(self, logging_type = LoggingType.CONSOLE, level = LoggingLevel.INFO):
 
         super().__init__(logging_type, level)
 

@@ -51,6 +51,7 @@ sphinx:
     # html_static_path: ['docs/_static']  
     # html_extra_path: ['./docs/_static']
     # html_css_files: ['my_theme.css']
+    add_module_names: False
     intersphinx_mapping:
       ebp:
         - "https://executablebooks.org/en/latest/"
@@ -84,7 +85,7 @@ sphinx:
           "emat": ["\\end{array}\\right]"]
     autosummary_generate: True
     napoleon_numpy_docstring: True
-    napoleon_include_init_with_doc: True
+    napoleon_include_init_with_doc: False
         
   extra_extensions:
     - sphinx.ext.intersphinx
@@ -93,7 +94,7 @@ sphinx:
     - sphinx_examples
     - hoverxref.extension
     - sphinx.ext.autodoc
-    - 'sphinx.ext.viewcode'
-    - 'sphinx.ext.autosummary'
+    - sphinx.ext.viewcode
+    - sphinx.ext.autosummary
     - sphinx.ext.napoleon
     
