@@ -1,5 +1,6 @@
 # from helical.models.scgpt.model import scGPT, scGPTConfig
 from helical.models.geneformer.model import Geneformer, GeneformerConfig
+from helical.models.scgpt.model import scGPTConfig, scGPT
 from helical.models.uce.model import UCE, UCEConfig
 from helical.services.downloader import Downloader
 import anndata as ad
@@ -30,13 +31,12 @@ downloader.download_via_name("uce/protein_embeddings/Homo_sapiens.GRCh38.gene_sy
 downloader.download_via_name("uce/protein_embeddings/Macaca_fascicularis.Macaca_fascicularis_6.0.gene_symbol_to_embedding_ESM2.pt")
 uce_model_dir = Path(os.path.join(downloader.CACHE_DIR_HELICAL,'uce'))
 
-# SCGPT, skipped because submodule which cannot be installed if private repo
-# model_config = scGPTConfig(batch_size=10)
-# scgpt = scGPT(model_dir = scgpt_model_dir, model_config = model_config)
-# adata = ad.read_h5ad("10k_pbmcs_proc.h5ad")
-# scgpt.process_data(adata[:5])
-# embeddings = scgpt.get_embeddings()
-# print(f"scGPT embeddings shape: {embeddings.shape}")
+model_config = scGPTConfig(batch_size=10)
+scgpt = scGPT(model_dir = scgpt_model_dir, model_config = model_config)
+adata = ad.read_h5ad("10k_pbmcs_proc.h5ad")
+scgpt.process_data(adata[:5])
+embeddings = scgpt.get_embeddings()
+print(f"scGPT embeddings shape: {embeddings.shape}")
 
 # Geneformer
 model_config=GeneformerConfig(batch_size=10)
