@@ -21,9 +21,9 @@ save_path.mkdir(parents=True, exist_ok=True)
 
 
 def clear_files(directory: Path):
-    """helper function to clear files in a dir"""
-    for f in directory.iterdir():       
-        f.unlink()
+    """Helper function to clear files in a dir by removing and creating it again."""
+    shutil.rmtree(directory)
+    directory.mkdir(parents=True, exist_ok=True)
 
 
 def test_empty_databank():
