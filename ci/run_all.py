@@ -8,7 +8,7 @@ import os
 
 downloader = Downloader()
 downloader.display = False
-downloader.download_via_link(Path("./10k_pbmcs_proc.h5ad"), "https://helicalpublicdata.blob.core.windows.net/helicalpackage/data/10k_pbmcs_proc.h5ad")
+downloader.download_via_link(Path("./10k_pbmcs_proc.h5ad"), "https://helicalpackage.blob.core.windows.net/helicalpackage/data/10k_pbmcs_proc.h5ad")
 
 downloader.download_via_name("scgpt/scGPT_CP/vocab.json")
 downloader.download_via_name("scgpt/scGPT_CP/best_model.pt")
