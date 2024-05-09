@@ -1,8 +1,6 @@
 name: CI Pipeline
 
-on:
-  pull_request:
-    branches: [main]
+on: [push]
 
 jobs:
   build:
@@ -12,9 +10,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Build Docker image
-        run: docker build -t myimage .
-
-      - name: Run script inside Docker container
+      - name: setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.11 #install the python needed
+          - name: Install dependencies
+          run: |
+            python -m pip install --upgrade pip
+            pip install .
+      - name: execute py script # run file
         run: |
-          docker run --rm myimage
+          python ci/run_all.py
