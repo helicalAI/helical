@@ -16,7 +16,6 @@ tmp_dir = tempfile.gettempdir()
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 save_path = Path(dir_path) / "test_output"
-shutil.rmtree(save_path)
 save_path.mkdir(parents=True, exist_ok=True)
 
 
