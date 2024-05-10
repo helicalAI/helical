@@ -204,6 +204,7 @@ class Downloader(Logger):
 
         if not os.path.exists(os.path.dirname(output)):
             os.makedirs(os.path.dirname(output),exist_ok=True)
+            self.log.info(f"Creating Folder {os.path.dirname(output)}")
 
         if Path(output).is_file():
             self.log.info(f"File: '{output}' exists already. File is not overwritten and nothing is downloaded.")
