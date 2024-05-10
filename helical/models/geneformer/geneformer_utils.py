@@ -75,17 +75,23 @@ def get_embs(
             )
         print("Here2",flush=True)
         embs_i = outputs.hidden_states[layer_to_quant]
-
+        
+        print("Here12",flush=True)
         if emb_mode == "cell":
             mean_embs = mean_nonpadding_embs(embs_i, original_lens)
             embs_list.append(mean_embs)
         elif emb_mode == "gene":
                 embs_list.append(embs_i)
 
+        print("Here12",flush=True)
         overall_max_len = max(overall_max_len, max_len)
+        print("Here12",flush=True)
         del outputs
+        print("Here12",flush=True)
         del minibatch
+        print("Here12",flush=True)
         del input_data_minibatch
+        print("Here12",flush=True)
         del embs_i
         print("Here1")
 

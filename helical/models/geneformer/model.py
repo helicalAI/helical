@@ -151,9 +151,7 @@ class Geneformer(HelicalBaseModel):
         np.array
             The gene embeddings in the form of a numpy array
         """
-        print("Here1",flush=True)
         self.log.info(f"Inference started")
-        print("Here2",True)
         embeddings = get_embs(
             self.model,
             dataset,
