@@ -33,7 +33,7 @@ def main():
     downloader.download_via_name("uce/species_offsets.pkl")
     downloader.download_via_name("uce/protein_embeddings/Homo_sapiens.GRCh38.gene_symbol_to_embedding_ESM2.pt")
     downloader.download_via_name("uce/protein_embeddings/Macaca_fascicularis.Macaca_fascicularis_6.0.gene_symbol_to_embedding_ESM2.pt")
-    uce_model_dir = Path(os.path.join(downloader.CACHE_DIR_HELICAL,'uce'))
+    
 
     model_config = scGPTConfig(batch_size=10)
     scgpt = scGPT(model_dir = scgpt_model_dir, model_config = model_config)
@@ -41,6 +41,7 @@ def main():
     data = scgpt.process_data(adata[:10])
     embeddings = scgpt.get_embeddings(data)
     print(f"scGPT embeddings shape: {embeddings.shape}")
+    del model_config, scgpt, adata,embeddings
 
     # Geneformer
     model_config=GeneformerConfig(batch_size=10)
@@ -49,6 +50,7 @@ def main():
     dataset = geneformer.process_data(ann_data[:5])
     embeddings = geneformer.get_embeddings(dataset)
     print(f"Geneformer embeddings shape: {embeddings.shape}")
+    del model_config, geneformer, ann_data,embeddings
 
     # UCE
     model_config=UCEConfig(batch_size=10)
@@ -64,6 +66,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
