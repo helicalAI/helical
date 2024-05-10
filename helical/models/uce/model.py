@@ -70,6 +70,12 @@ class UCE(HelicalBaseModel):
            
         else:
             self.model_dir = Path(model_dir)
+            if self.model_config['n_layers']==33:
+                model_path = self.model_dir / "33l_8ep_1024t_1280.torch"
+            elif self.model_config['n_layers']==4:
+                model_path = self.model_dir / "4layer_model.torch"
+            else:
+                raise("Currently you have to chose between 'n_layers'= 4 or 33 to load a pre-trained model.")
         
 
 

@@ -33,6 +33,7 @@ def main():
     downloader.download_via_name("uce/species_offsets.pkl")
     downloader.download_via_name("uce/protein_embeddings/Homo_sapiens.GRCh38.gene_symbol_to_embedding_ESM2.pt")
     downloader.download_via_name("uce/protein_embeddings/Macaca_fascicularis.Macaca_fascicularis_6.0.gene_symbol_to_embedding_ESM2.pt")
+    uce_model_dir = Path(os.path.join(downloader.CACHE_DIR_HELICAL,'uce'))
     
 
 
@@ -65,7 +66,7 @@ def main():
     # UCE
     print(f"Loading UCE")
     model_config=UCEConfig(batch_size=10)
-    uce = UCE(model_config=model_config)
+    uce = UCE(model_dir=uce_model_dir,model_config=model_config)
     print(f"Loading UCE Done")
     ann_data = ad.read_h5ad("10k_pbmcs_proc.h5ad")
     print(f"Processing Data")
