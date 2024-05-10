@@ -93,10 +93,11 @@ def get_embs(
         del input_data_minibatch
         print("Here12",flush=True)
         del embs_i
-        print("Here1")
+        print("Here1",flush=True)
 
         # torch.cuda.empty_cache()
 
+    print("Here23",flush=True)
     if emb_mode == "cell":
         embs_stack = torch.cat(embs_list, dim=0)
     elif emb_mode == "gene":
@@ -108,7 +109,7 @@ def get_embs(
             1,
             pad_3d_tensor,
         )
-    print("Here2")
+    print("Here23",flush=True)
     return embs_stack
 
 
