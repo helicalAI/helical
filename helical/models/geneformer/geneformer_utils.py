@@ -88,6 +88,7 @@ def get_embs(
         del minibatch
         del input_data_minibatch
         del embs_i
+        print("Here1")
 
         # torch.cuda.empty_cache()
 
@@ -102,7 +103,7 @@ def get_embs(
             1,
             pad_3d_tensor,
         )
-
+    print("Here2")
     return embs_stack
 
 
