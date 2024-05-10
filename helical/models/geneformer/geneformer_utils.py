@@ -67,37 +67,27 @@ def get_embs(
         input_data_minibatch = pad_tensor_list(
             input_data_minibatch, max_len, pad_token_id, model_input_size
         ).to(device)
-        print("Here12",flush=True)
         with torch.no_grad():
             outputs = model(
                 input_ids=input_data_minibatch,
                 attention_mask=gen_attention_mask(minibatch),
             )
-        print("Here2",flush=True)
         embs_i = outputs.hidden_states[layer_to_quant]
         
-        print("Here12",flush=True)
         if emb_mode == "cell":
             mean_embs = mean_nonpadding_embs(embs_i, original_lens)
             embs_list.append(mean_embs)
         elif emb_mode == "gene":
                 embs_list.append(embs_i)
 
-        print("Here12",flush=True)
         overall_max_len = max(overall_max_len, max_len)
-        print("Here12",flush=True)
         del outputs
-        print("Here12",flush=True)
         del minibatch
-        print("Here12",flush=True)
         del input_data_minibatch
-        print("Here12",flush=True)
         del embs_i
-        print("Here1",flush=True)
 
         # torch.cuda.empty_cache()
 
-    print("Here23",flush=True)
     if emb_mode == "cell":
         embs_stack = torch.cat(embs_list, dim=0)
     elif emb_mode == "gene":
@@ -109,7 +99,6 @@ def get_embs(
             1,
             pad_3d_tensor,
         )
-    print("Here23",flush=True)
     return embs_stack
 
 

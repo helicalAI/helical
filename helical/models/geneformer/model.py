@@ -161,5 +161,6 @@ class Geneformer(HelicalBaseModel):
             self.forward_batch_size,
             self.device
         )
-        print("Done Embeddings")
-        return embeddings.cpu().detach().numpy()
+        print("Done Embeddings",flush=True)
+        # return embeddings.cpu().detach().numpy()
+        return embeddings.cpu().numpy()

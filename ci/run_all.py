@@ -60,11 +60,11 @@ def main():
     dataset = geneformer.process_data(ann_data[:5])
     print(f"Processing Data Done")
     embeddings = geneformer.get_embeddings(dataset)
-    print(f"Geneformer embeddings shape: {embeddings.shape}")
+    print(f"Geneformer embeddings shape: {embeddings.shape}",flush=True)
     del model_config, geneformer, ann_data,embeddings
 
     # UCE
-    print(f"Loading UCE")
+    print(f"Loading UCE",flush=True)
     model_config=UCEConfig(batch_size=10)
     uce = UCE(model_dir=uce_model_dir,model_config=model_config)
     print(f"Loading UCE Done")
