@@ -35,28 +35,42 @@ def main():
     downloader.download_via_name("uce/protein_embeddings/Macaca_fascicularis.Macaca_fascicularis_6.0.gene_symbol_to_embedding_ESM2.pt")
     
 
+
+    print(f"Loading scGPT")
     model_config = scGPTConfig(batch_size=10)
     scgpt = scGPT(model_dir = scgpt_model_dir, model_config = model_config)
+    print(f"Loading scGPT Done")
     adata = ad.read_h5ad("10k_pbmcs_proc.h5ad")
+    print(f"Processing Data")
     data = scgpt.process_data(adata[:10])
+    print(f"Processing Data Done")
     embeddings = scgpt.get_embeddings(data)
+    
     print(f"scGPT embeddings shape: {embeddings.shape}")
     del model_config, scgpt, adata,embeddings
 
     # Geneformer
+    print(f"Loading Geneformer")
     model_config=GeneformerConfig(batch_size=10)
     geneformer = Geneformer(model_dir = geneformer_model_dir, model_config=model_config)
+    print("Loading Geneformer Done")
     ann_data = ad.read_h5ad("10k_pbmcs_proc.h5ad")
+    print(f"Processing Data")
     dataset = geneformer.process_data(ann_data[:5])
+    print(f"Processing Data Done")
     embeddings = geneformer.get_embeddings(dataset)
     print(f"Geneformer embeddings shape: {embeddings.shape}")
     del model_config, geneformer, ann_data,embeddings
 
     # UCE
+    print(f"Loading UCE")
     model_config=UCEConfig(batch_size=10)
     uce = UCE(model_config=model_config)
+    print(f"Loading UCE Done")
     ann_data = ad.read_h5ad("10k_pbmcs_proc.h5ad")
+    print(f"Processing Data")
     data_loader = uce.process_data(ann_data[:5])
+    print(f"Processing Data Done")
     embeddings = uce.get_embeddings(data_loader)
     print(f"UCE embeddings shape: {embeddings.shape}")
 
