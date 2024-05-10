@@ -27,13 +27,13 @@ def main():
     downloader.download_via_name("geneformer/geneformer-12L-30M/training_args.bin")
     geneformer_model_dir = Path(os.path.join(downloader.CACHE_DIR_HELICAL,'geneformer'))
 
-    downloader.download_via_name("uce/4layer_model.torch")
-    downloader.download_via_name("uce/all_tokens.torch")
-    downloader.download_via_name("uce/species_chrom.csv")
-    downloader.download_via_name("uce/species_offsets.pkl")
-    downloader.download_via_name("uce/protein_embeddings/Homo_sapiens.GRCh38.gene_symbol_to_embedding_ESM2.pt")
-    downloader.download_via_name("uce/protein_embeddings/Macaca_fascicularis.Macaca_fascicularis_6.0.gene_symbol_to_embedding_ESM2.pt")
-    uce_model_dir = Path(os.path.join(downloader.CACHE_DIR_HELICAL,'uce'))
+    # downloader.download_via_name("uce/4layer_model.torch")
+    # downloader.download_via_name("uce/all_tokens.torch")
+    # downloader.download_via_name("uce/species_chrom.csv")
+    # downloader.download_via_name("uce/species_offsets.pkl")
+    # downloader.download_via_name("uce/protein_embeddings/Homo_sapiens.GRCh38.gene_symbol_to_embedding_ESM2.pt")
+    # downloader.download_via_name("uce/protein_embeddings/Macaca_fascicularis.Macaca_fascicularis_6.0.gene_symbol_to_embedding_ESM2.pt")
+    # uce_model_dir = Path(os.path.join(downloader.CACHE_DIR_HELICAL,'uce'))
     
 
 

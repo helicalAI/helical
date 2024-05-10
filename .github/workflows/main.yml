@@ -23,7 +23,10 @@ jobs:
       - name: Execute unittests
         run: |
           pytest ci/
-      - name: Execute all models
+      - name: Execute Geneformer and scGPT
         run: |
           python ci/run_all.py
+      - name: Execute UCE
+        run: |
+          python ci/run_uce.py
         
