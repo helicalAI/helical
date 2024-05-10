@@ -48,7 +48,7 @@ class UCE(HelicalBaseModel):
         self.model_config = model_config.config
         self.log = logging.getLogger("UCE-Model")
         self.downloader = Downloader()
-        
+        print("Start UCE",flush=True)
         if model_dir is None:
             
             self.downloader.download_via_name("uce/all_tokens.torch")
@@ -80,8 +80,11 @@ class UCE(HelicalBaseModel):
 
 
         token_file = self.model_dir / "all_tokens.torch"
+        print("Start Embeddings",flush=True)
         self.embeddings = get_ESM2_embeddings(token_file, self.model_config["token_dim"])
+        print("Embeddings Loaded",flush=True)
         self.model =  load_model(model_path, self.model_config, self.embeddings)
+        print("Model Loaded",flush=True)
         self.model = self.model.eval()
 
         if self.model_config["accelerator"]:
@@ -89,6 +92,7 @@ class UCE(HelicalBaseModel):
             self.model = self.accelerator.prepare(self.model)
         else:
             self.accelerator = None
+        print("Accelerator done",flush=True)
 
     def process_data(self, data: AnnData, 
                      species: str = "human", 
