@@ -49,14 +49,11 @@ def get_embs(
     silent=False,
     
 ):
-    print("Here3",flush=True)
     model_input_size = get_model_input_size(model)
-    print("Here4",flush=True)
     total_batch_length = len(filtered_input_data)
 
     embs_list = []
     overall_max_len = 0
-    print("Here2",flush=True)
     for i in trange(0, total_batch_length, forward_batch_size, leave=(not silent)):
         max_range = min(i + forward_batch_size, total_batch_length)
 
@@ -70,13 +67,13 @@ def get_embs(
         input_data_minibatch = pad_tensor_list(
             input_data_minibatch, max_len, pad_token_id, model_input_size
         ).to(device)
-
+        print("Here12",flush=True)
         with torch.no_grad():
             outputs = model(
                 input_ids=input_data_minibatch,
                 attention_mask=gen_attention_mask(minibatch),
             )
-
+        print("Here2",flush=True)
         embs_i = outputs.hidden_states[layer_to_quant]
 
         if emb_mode == "cell":
