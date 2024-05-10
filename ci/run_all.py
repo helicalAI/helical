@@ -34,8 +34,8 @@ uce_model_dir = Path(os.path.join(downloader.CACHE_DIR_HELICAL,'uce'))
 model_config = scGPTConfig(batch_size=10)
 scgpt = scGPT(model_dir = scgpt_model_dir, model_config = model_config)
 adata = ad.read_h5ad("10k_pbmcs_proc.h5ad")
-scgpt.process_data(adata[:10])
-embeddings = scgpt.get_embeddings()
+data = scgpt.process_data(adata[:10])
+embeddings = scgpt.get_embeddings(data)
 print(f"scGPT embeddings shape: {embeddings.shape}")
 
 # Geneformer

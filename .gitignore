@@ -4,6 +4,7 @@ __pycache__
 
 # Data
 data/*
+examples/data/*
 *.sqlite3
 *.h5ad
 *.torch
