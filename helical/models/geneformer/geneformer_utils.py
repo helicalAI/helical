@@ -49,12 +49,14 @@ def get_embs(
     silent=False,
     
 ):
+    print("Here3",flush=True)
     model_input_size = get_model_input_size(model)
+    print("Here4",flush=True)
     total_batch_length = len(filtered_input_data)
 
     embs_list = []
     overall_max_len = 0
-
+    print("Here2",flush=True)
     for i in trange(0, total_batch_length, forward_batch_size, leave=(not silent)):
         max_range = min(i + forward_batch_size, total_batch_length)
 
