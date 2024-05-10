@@ -48,7 +48,7 @@ print(f"Geneformer embeddings shape: {embeddings.shape}")
 
 # UCE
 model_config=UCEConfig(batch_size=10)
-uce = UCE(model_dir = uce_model_dir, model_config=model_config)
+uce = UCE(model_config=model_config)
 ann_data = ad.read_h5ad("10k_pbmcs_proc.h5ad")
 data_loader = uce.process_data(ann_data[:5])
 embeddings = uce.get_embeddings(data_loader)
