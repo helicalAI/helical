@@ -21,7 +21,7 @@ def main():
 
     #UCE
     print(f"Loading UCE",flush=True)
-    model_config=UCEConfig(batch_size=10)
+    model_config=UCEConfig(batch_size=1)
     uce = UCE(model_dir=uce_model_dir,model_config=model_config)
     print(f"Loading UCE Done",flush=True)
     ann_data = ad.read_h5ad("10k_pbmcs_proc.h5ad")
