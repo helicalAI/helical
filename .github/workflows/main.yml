@@ -29,3 +29,9 @@ jobs:
       - name: Execute scGPT
         run: |
           python examples/run_scgpt.py
+      - name: Execute Geneformer
+        run: |
+          python examples/run_geneformer.py
+      - name: Execute UCE
+        run: |
+          python examples/run_uce.py
