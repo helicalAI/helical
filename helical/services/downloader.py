@@ -17,10 +17,9 @@ INTERVAL = 1000 # interval to get gene mappings
 CHUNK_SIZE = 1024 * 1024 * 10 #8192 # size of individual chunks to download
 LOADING_BAR_LENGTH = 50 # size of the download progression bar in console
 class Downloader(Logger):
-    def __init__(self, loging_type = LoggingType.CONSOLE, level = LoggingLevel.ERROR) -> None:
+    def __init__(self, loging_type = LoggingType.CONSOLE, level = LoggingLevel.INFO) -> None:
         super().__init__(loging_type, level)
         self.log = logging.getLogger("Downloader")
-        self.log.propagate = False
         self.CACHE_DIR_HELICAL = os.path.join(str(Path.home()),'.cache/helical/models')
         self.display = True
 
@@ -186,15 +185,15 @@ class Downloader(Logger):
         Download a file via a link. 
         
         Args:
-            output: Path to the output file.
-            link: URL to download the file from.
+            name (str): The name of the file to be downloaded.
+        
+        Returns:
+            None
         '''
 
         main_link = "https://helicalpackage.blob.core.windows.net/helicalpackage/data"
         CACHE_DIR_HELICAL = Path(self.CACHE_DIR_HELICAL)
         output = os.path.join(CACHE_DIR_HELICAL,name)
-        azure_logger = "azure.core.pipeline.policies.http_logging_policy"
-        logging.getLogger(azure_logger).setLevel(logging.WARNING)
 
         blob_url = f"{main_link}/{name}"
 
@@ -211,16 +210,47 @@ class Downloader(Logger):
 
         else:
             self.log.info(f"Starting to download: '{blob_url}'")
-            # Resetting for visualization
-            self.data_length = 0
-            total_length = blob_client.get_blob_properties().size
-            pbar = tqdm(total=total_length, unit='B', unit_scale=True, desc='Downloading')
-            def progress_callback(bytes_transferred,total_bytes):
-                pbar.update(bytes_transferred-pbar.n)
-            try:
-                with open(output, "wb") as sample_blob:
-                    download_stream = blob_client.download_blob(max_concurrency=100,progress_hook=progress_callback)
-                    sample_blob.write(download_stream.readall())
-            except:
-                self.log.error(f"Failed downloading file from '{blob_url}'")
+            # disabling logging info messages from Azure package as there are too many
+            logging.disable(logging.INFO)
+            self.display_azure_download_progress(blob_client, blob_url, output)
+            logging.disable(logging.NOTSET)
+            
         self.log.info(f"File saved to: '{output}'")
+
+    def display_azure_download_progress(self, blob_client: BlobClient, blob_url: str, output: Path) -> None:
+        """
+        Displays the progress of an Azure blob download and saves the downloaded file.
+
+        Args:
+            blob_client (BlobClient): The BlobClient object used to download the blob.
+            blob_url (str): The URL of the blob to be downloaded.
+            output (Path): The path where the downloaded file will be saved.
+
+        Returns:
+            None
+        """
+        # Resetting for visualization
+        self.data_length = 0
+        total_length = blob_client.get_blob_properties().size
+
+        # handle displaying download progress or not
+        if self.display:
+            pbar = tqdm(total=total_length, unit='B', unit_scale=True, desc='Downloading')
+            def progress_callback(bytes_transferred, total_bytes):
+                pbar.update(bytes_transferred-pbar.n)
+        else:
+            pbar = None
+            def progress_callback(bytes_transferred, total_bytes):
+                pass
+
+        # actual download
+        try:
+            with open(output, "wb") as sample_blob:
+                download_stream = blob_client.download_blob(max_concurrency=100,progress_hook=progress_callback)
+
+                sample_blob.write(download_stream.readall())
+        except:
+            self.log.error(f"Failed downloading file from '{blob_url}'")
+        
+        if self.display:
+            pbar.close()
