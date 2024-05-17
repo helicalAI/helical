@@ -26,4 +26,6 @@ jobs:
       - name: Download all files
         run: |
           python ci/download_all.py
-
+      - name: Execute scGPT
+        run: |
+          python examples/run_scgpt.py
