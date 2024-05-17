@@ -2,7 +2,7 @@
 # Learn more at https://jupyterbook.org/customize/toc.html
 
 format: jb-book
-root: README
+root: docs/intro
 parts:
 - caption: Helical API Documentation 📚
   chapters:
@@ -11,9 +11,9 @@ parts:
   - file: docs/scGPT.rst
 - caption: Tutorials🪄
   chapters:
-  - file : examples/reference_mapping
+  - file : examples/Geneformer-vs-UCE
   - file : examples/uce_custom_configs_example
-  - file : examples/geneformer_example
+  # - file : examples/geneformer_example
 
 # - caption: Basic examples 🪄
 #   chapters:

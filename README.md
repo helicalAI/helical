@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://github.com/helicalAI/helical-package/blob/main/assets/logo%2Bname.png" alt="Logo" width="304" height="110">
+  <img src="docs/assets/logo_name.png" alt="Logo" width="304" height="110">
 </div>
 
 
@@ -8,43 +8,41 @@
 Helical provides a framework for and gathers state-of-the-art pre-trained bio foundation models on genomics and transcriptomics modalities.
 
 Helical simplifies the entire application lifecycle when building with bio foundation models. You will be able to:
-Leverage the latest bio foundation models through our easy-to-use python package
-Run example notebooks on key downstream tasks from examples
-
-Helical is backed by the main deep learning and bio libraries, such as [xxx].
+- Leverage the latest bio foundation models through our easy-to-use python package
+- Run example notebooks on key downstream tasks from examples
 
 We will update this repo on a bi-weekly basis with new models, benchmarks, modalities and functions - so stay tuned.
-Let’s build the most exciting AI-for-Bio community together !
+Let’s build the most exciting AI-for-Bio community together!
 
 ## Installation
 
-We recommend installing Helical within a conda environment with the commands below (run them in your terminal):
+We recommend installing Helical within a conda environment with the commands below (run them in your terminal) - this step is optional:
 ```
 conda create --name helical-package python=3.11.8
 conda activate helical-package
 ```
+To install the Helical package, you can run the command below:
 ```
-pip install --upgrade --no-deps --force-reinstall git+https://github.com/helicalAI/helical-package.git
+pip install --upgrade --force-reinstall git+https://github.com/helicalAI/helical.git
 ```
 
-We recommend using `Pyhton 3.11.8`.
 
 ## Demo & Use Cases
 
 To run examples, be sure to have installed the Helical package (see Installation) and that it is up-to-date.
-In you terminal, navigate to the folder of your choice and clone the github repo with the command below:
-```
-git clone https://github.com/helicalAI/helical-package.git
-```
 
-Within this folder, open the `example` notebook of your choice. We recommend starting with reference_mapping_rick.ipynb
+You can look directly into the example folder above, look into our [documentation](https://helical.readthedocs.io/) for step-by-step guides or directly clone the repository using:
+```
+git clone https://github.com/helicalAI/helical.git
+```
+Within the `example` folder, open the notebook of your choice. We recommend starting with `Geneformer-vs-UCE.ipynb`
 
 ### RNA models:
-- Embedding generation & benchmarking with Geneformer & UCE
-- Coming soon: scGPT, SCimilarity, scVI
+- `Geneformer-vs-UCE.ipynb`: Zero-Shot Reference Mapping with Geneformer & UCE and compare the outcomes.
+- Coming soon: new models such as scGPT, SCimilarity, scVI; benchmarking scripts; new use cases; others
 
 ### DNA models:
-- Coming soon: Nucleotide Transformer
+- Coming soon: new models such as Nucleotide Transformer; others
 
 ## Stuck somewhere ? Other ideas ?
 We are eager to help you and interact with you. Reach out via support@helical-ai.com. 
@@ -76,52 +74,12 @@ A lot of our models have been published by talend authors developing these excit
 
 Please use this BibTeX to cite this repository in your publications:
 
-
-Test
-
-# OLD
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-We recommend using a conda environment with `Pyhton 3.11.8`.
 ```
-conda create --name helical-package python=3.11.8
-conda activate helical-package
-```
-Install the `helical-package`:
-
-```
-pip install --upgrade --no-deps --force-reinstall git+https://github.com/helicalAI/helical-package.git
-```
-You can then run the files in the `examples` folder.
-
-
-## Documentation
-To start the docs please install the requirements:
-
-```
-cd docs
-pip install -r requirements.txt
-```
-
-Then go back into the root folder and compile the code:
-
-```
-SPHINX_APIDOC_OPTIONS=members,show-inheritance sphinx-apidoc -f -d 0 -o docs/source ./
-jupyter-book build ./   
-
-```
-And then you should be able to open the docs in ./build/html/index.html .
+@misc{helical,
+  author = {Maxime Allard, Benoit Putzeys, Rick Schneider, Mathieu Klop},
+  title = {Helical Python Package},
+  year = {2024},
+  publisher = {GitHub},
+  journal = {GitHub Repository},
+  howpublished = {\url{https://github.com/helicalAI/helical}},
+}
