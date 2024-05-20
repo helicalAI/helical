@@ -20,12 +20,13 @@ jobs:
             python -m pip install --upgrade pip
             pip install -r requirements-dev.txt
             pip install .
-      - name: Execute unittests
-        run: |
-          pytest ci/
+      # First download before tests as they make use of the downloaded files 
       - name: Download all files
         run: |
           python ci/download_all.py
+      - name: Execute unittests
+        run: |
+          pytest ci/
       - name: Execute scGPT
         run: |
           python examples/run_scgpt.py
