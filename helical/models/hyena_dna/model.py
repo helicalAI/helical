@@ -13,20 +13,20 @@ from typing import Optional
 
 class HyenaDNA(HelicalBaseModel):
     """HyenaDNA model."""
-    default_config = HyenaDNAConfig()
+    default_configurer = HyenaDNAConfig()
 
-    def __init__(self, model_dir: Optional[str] = None, model_config: HyenaDNAConfig = default_config) -> None:    
+    def __init__(self, model_dir: Optional[str] = None, configurer: HyenaDNAConfig = default_configurer) -> None:    
         super().__init__()
-        self.model_config = model_config.config
+        self.config = configurer.config
         self.log = logging.getLogger("Hyena-DNA-Model")
         
         if model_dir is None: 
             self.downloader = Downloader()
-            model_path = f"hyena_dna/{self.model_config['model_name']}.ckpt"
+            model_path = f"hyena_dna/{self.config['model_name']}.ckpt"
             self.downloader.download_via_name(model_path)
             self.model_path = Path(os.path.join(self.downloader.CACHE_DIR_HELICAL, model_path))
         else:
-            self.model_path = Path(os.path.join(model_dir, f"{self.model_config['model_name']}.ckpt"))
+            self.model_path = Path(os.path.join(model_dir, f"{self.config['model_name']}.ckpt"))
         
         
 
