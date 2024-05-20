@@ -1,12 +1,11 @@
 from helical.models.hyena_dna.model import HyenaDNA,HyenaDNAConfig
 import pytest
-import pytest
 
 @pytest.mark.parametrize("model_name, d_model, d_inner", [
     ("hyenadna-tiny-1k-seqlen", 128, 512),
     ("hyenadna-tiny-1k-seqlen-d256", 256, 1024)
 ])
-def test_hyena_dna__ok(model_name, d_model, d_inner):
+def test_hyena_dna__valid_model_names(model_name, d_model, d_inner):
     """
     Test case for the HyenaDNA class initialization.
 
@@ -24,7 +23,7 @@ def test_hyena_dna__ok(model_name, d_model, d_inner):
 @pytest.mark.parametrize("model_name", [
     ("wrong_name")
 ])
-def test_hyena_dna__nok(model_name):
+def test_hyena_dna__invalid_model_names(model_name):
     """
     Test case when an invalid model name is provided.
     Verifies that a ValueError is raised when an invalid model name is passed to the HyenaDNAConfig constructor.

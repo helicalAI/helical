@@ -1,10 +1,13 @@
 from typing import Optional
+from typing import Literal
 
 class UCEConfig():
     """Configuration class to use the Universal Cell-Embedding Model.
     
     Parameters
     ----------
+    model_name : Literal["33l_8ep_1024t_1280", "4layer_model"], optional, default = "4layer_model"
+        The model name
     batch_size : int, optional, default = 5
         The batch size
     pad_length : int, optional, default = 1536
@@ -42,6 +45,7 @@ class UCEConfig():
         The UCE configuration object
     """
     def __init__(self,
+                 model_name: Literal["33l_8ep_1024t_1280", "4layer_model"] = "4layer_model",
                  batch_size: int = 5,
                  pad_length: int = 1536,
                  pad_token_idx: int = 0,
@@ -51,14 +55,28 @@ class UCEConfig():
                  CHROM_TOKEN_OFFSET: int = 143574,
                  sample_size: int = 1024,
                  CXG: bool = True,
-                 n_layers: int = 4,
                  output_dim: int = 1280,
                  d_hid: int = 5120,
                  token_dim: int = 5120,
                  multi_gpu: bool = False,
                  accelerator: Optional[dict] = {"cpu": True}
                 ):
+        
+        # model specific parameters
+        self.model_map = {
+            "33l_8ep_1024t_1280": {
+                'n_layers': 33,
+            },
+            "4layer_model": {
+                'n_layers': 4,
+            }
+        }
+
+        if model_name not in self.model_map:
+            raise ValueError(f"Model name {model_name} not found in available models: {self.model_map.keys()}")
+
         self.config = {
+            "model_name": model_name,
             "batch_size": batch_size,
             "pad_length": pad_length,
             "pad_token_idx": pad_token_idx,
@@ -68,7 +86,7 @@ class UCEConfig():
             "CHROM_TOKEN_OFFSET": CHROM_TOKEN_OFFSET,
             "sample_size": sample_size,
             "CXG": CXG,
-            "n_layers": n_layers,
+            "n_layers": self.model_map[model_name]['n_layers'],
             "output_dim": output_dim,
             "d_hid": d_hid,
             "token_dim": token_dim,

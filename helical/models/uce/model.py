@@ -30,7 +30,7 @@ class UCE(HelicalBaseModel):
         ----------
         model_dir : str, optional, default = None
             The path to the model directory. None by default, which will download the model if not present.
-        model_config : UCEConfig, optional, default = default_config
+        configurer : UCEConfig, optional, default = default_configurer
             The model configuration.
 
         Returns
@@ -41,54 +41,38 @@ class UCE(HelicalBaseModel):
         -----
         The Universal Cell Embedding Papers has been published on `BioRxiv <https://www.biorxiv.org/content/10.1101/2023.11.28.568918v1>`_ and it is built on top of `SATURN <https://www.nature.com/articles/s41592-024-02191-z>`_ published in Nature.
         """
-    default_config = UCEConfig()
+    default_configurer = UCEConfig()
 
-    def __init__(self, model_dir: Optional[str] = None, model_config: UCEConfig = default_config) -> None:    
+    def __init__(self, model_dir: Optional[str] = None, configurer: UCEConfig = default_configurer) -> None:    
         super().__init__()
-        self.model_config = model_config.config
+        self.config = configurer.config
         self.log = logging.getLogger("UCE-Model")
         self.downloader = Downloader()
+        
         if model_dir is None:
-            
             self.downloader.download_via_name("uce/all_tokens.torch")
+            self.downloader.download_via_name(f"uce/{self.config['model_name']}.torch")
             self.downloader.download_via_name("uce/species_chrom.csv")
             self.downloader.download_via_name("uce/species_offsets.pkl")
             self.downloader.download_via_name("uce/protein_embeddings/Homo_sapiens.GRCh38.gene_symbol_to_embedding_ESM2.pt")
             self.downloader.download_via_name("uce/protein_embeddings/Macaca_fascicularis.Macaca_fascicularis_6.0.gene_symbol_to_embedding_ESM2.pt")
             self.model_dir = Path(os.path.join(self.downloader.CACHE_DIR_HELICAL,'uce'))
-            
-            if self.model_config['n_layers']==33:
-                self.downloader.download_via_name("uce/33l_8ep_1024t_1280.torch")
-                model_path = self.model_dir / "33l_8ep_1024t_1280.torch"
-            elif self.model_config['n_layers']==4:
-                self.downloader.download_via_name("uce/4layer_model.torch")
-                model_path = self.model_dir / "4layer_model.torch"
-            else:
-                raise("Currently you have to chose between 'n_layers'= 4 or 33 to load a pre-trained model.")
-            
            
         else:
             self.model_dir = Path(model_dir)
-            if self.model_config['n_layers']==33:
-                model_path = self.model_dir / "33l_8ep_1024t_1280.torch"
-            elif self.model_config['n_layers']==4:
-                model_path = self.model_dir / "4layer_model.torch"
-            else:
-                raise("Currently you have to chose between 'n_layers'= 4 or 33 to load a pre-trained model.")
         
-
-
+        model_path = self.model_dir / f"{self.config['model_name']}.torch"
         token_file = self.model_dir / "all_tokens.torch"
-        self.embeddings = get_ESM2_embeddings(token_file, self.model_config["token_dim"])
-        self.model =  load_model(model_path, self.model_config, self.embeddings)
+        self.embeddings = get_ESM2_embeddings(token_file, self.config["token_dim"])
+        self.model =  load_model(model_path, self.config, self.embeddings)
         self.model = self.model.eval()
 
-        if self.model_config["accelerator"]:
-            self.accelerator = Accelerator(project_dir=self.model_dir, cpu=self.model_config["accelerator"]["cpu"])
+        if self.config["accelerator"]:
+            self.accelerator = Accelerator(project_dir=self.model_dir, cpu=self.config["accelerator"]["cpu"])
             self.model = self.accelerator.prepare(self.model)
         else:
             self.accelerator = None
-        print("Accelerator done",flush=True)
+        self.log.info(f"Model finished initializing.")
 
     def process_data(self, data: AnnData, 
                      species: str = "human", 
@@ -121,7 +105,7 @@ class UCE(HelicalBaseModel):
         }
 
         data_loader = process_data(data, 
-                              model_config=self.model_config, 
+                              model_config=self.config, 
                               files_config=files_config,
                               species=species,
                               filter_genes_min_cell=filter_genes_min_cell,
