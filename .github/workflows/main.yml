@@ -18,8 +18,8 @@ jobs:
       - name: Install dependencies
         run: |
             python -m pip install --upgrade pip
+            pip install -r requirements-dev.txt
             pip install .
-        #pip install -r requirements.txt
             
       # First download before tests as they make use of the downloaded files 
       - name: Download all files
