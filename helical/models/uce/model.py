@@ -2,14 +2,10 @@ import logging
 import numpy as np
 from anndata import AnnData
 from torch.utils.data import DataLoader
-import os
-from pathlib import Path
 from helical.models.uce.uce_config import UCEConfig
 from helical.models.helical import HelicalBaseModel
 from helical.models.uce.uce_utils import get_ESM2_embeddings, load_model, process_data, get_gene_embeddings
 from accelerate import Accelerator
-from helical.services.downloader import Downloader
-from typing import Optional
 
 class UCE(HelicalBaseModel):
     """Universal Cell Embedding Model. This model reads in single-cell RNA-seq data and outputs gene embeddings. 
@@ -18,18 +14,16 @@ class UCE(HelicalBaseModel):
 
         Example
         -------
-        >>> from helical.models import UCE,UCEConfig
+        >>> from helical.models import UCE, UCEConfig
         >>> import anndata as ad
-        >>> model_config=UCEConfig(batch_size=10)
-        >>> uce = UCE(model_config=model_config)
+        >>> configurer=UCEConfig(batch_size=10)
+        >>> uce = UCE(configurer=configurer)
         >>> ann_data = ad.read_h5ad("./data/10k_pbmcs_proc.h5ad")
         >>> dataset = uce.process_data(ann_data[:100])
         >>> embeddings = uce.get_embeddings(dataset)
 
         Parameters
         ----------
-        model_dir : str, optional, default = None
-            The path to the model directory. None by default, which will download the model if not present.
         configurer : UCEConfig, optional, default = default_configurer
             The model configuration.
 
@@ -43,28 +37,15 @@ class UCE(HelicalBaseModel):
         """
     default_configurer = UCEConfig()
 
-    def __init__(self, model_dir: Optional[str] = None, configurer: UCEConfig = default_configurer) -> None:    
+    def __init__(self, configurer: UCEConfig = default_configurer) -> None:    
         super().__init__()
         self.config = configurer.config
         self.log = logging.getLogger("UCE-Model")
-        self.downloader = Downloader()
-        
-        if model_dir is None:
-            self.downloader.download_via_name("uce/all_tokens.torch")
-            self.downloader.download_via_name(f"uce/{self.config['model_name']}.torch")
-            self.downloader.download_via_name("uce/species_chrom.csv")
-            self.downloader.download_via_name("uce/species_offsets.pkl")
-            self.downloader.download_via_name("uce/protein_embeddings/Homo_sapiens.GRCh38.gene_symbol_to_embedding_ESM2.pt")
-            self.downloader.download_via_name("uce/protein_embeddings/Macaca_fascicularis.Macaca_fascicularis_6.0.gene_symbol_to_embedding_ESM2.pt")
-            self.model_dir = Path(os.path.join(self.downloader.CACHE_DIR_HELICAL,'uce'))
-           
-        else:
-            self.model_dir = Path(model_dir)
-        
-        model_path = self.model_dir / f"{self.config['model_name']}.torch"
-        token_file = self.model_dir / "all_tokens.torch"
-        self.embeddings = get_ESM2_embeddings(token_file, self.config["token_dim"])
-        self.model =  load_model(model_path, self.config, self.embeddings)
+
+        self.model_dir = self.config['model_path'].parent
+
+        self.embeddings = get_ESM2_embeddings(self.config["token_file_path"], self.config["token_dim"])
+        self.model =  load_model(self.config['model_path'], self.config, self.embeddings)
         self.model = self.model.eval()
 
         if self.config["accelerator"]:

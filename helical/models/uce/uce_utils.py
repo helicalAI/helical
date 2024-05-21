@@ -172,12 +172,12 @@ def prepare_expression_counts_file(gene_expression: np.array, name: str, folder_
         raise Exception
     
 ## writing a funciton to load the model 
-def load_model(model_dir: Union[str, Path], model_config: Dict[str, str], all_pe: torch.Tensor) -> TransformerModel:
+def load_model(model_path: Union[str, Path], model_config: Dict[str, str], all_pe: torch.Tensor) -> TransformerModel:
     '''
     Load the UCE Transformer Model based on configurations from the model_config file.
 
     Args:
-        model_dir: A path to the model to load
+        model_path: A path to the model to load
         model_config: A dictionary with 'token_dim', 'd_hid', 'n_layers' and 'output_dim' as keys. 
         all_pe: The token file loaded as a torch.Tensor.
 
@@ -196,7 +196,7 @@ def load_model(model_dir: Union[str, Path], model_config: Dict[str, str], all_pe
     empty_pe = torch.zeros(145469, 5120)
     empty_pe.requires_grad = False
     model.pe_embedding = torch.nn.Embedding.from_pretrained(empty_pe)
-    model.load_state_dict(torch.load(model_dir, map_location="cpu"), strict=True)
+    model.load_state_dict(torch.load(model_path, map_location="cpu"), strict=True)
 
     # TODO: Why load the protein embeddings from the `all_tokens.torch` file, pass it to this function but never use it?
     # Cause in the lines above, we populate model.pe_embeddings with the empty_pe and this if clause will be true with the
