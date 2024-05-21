@@ -17,6 +17,7 @@ setup(
         'scikit-learn==1.2.2',
         'gitpython==3.1.43',
         'torch==2.3.0',
+        'torchvision==0.18.0',
         'accelerate==0.29.3',
         'transformers==4.26.1',
         'loompy==3.0.7',
