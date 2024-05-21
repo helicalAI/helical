@@ -71,10 +71,12 @@ class HyenaDNAConfig():
             "hyenadna-tiny-1k-seqlen": {
                 'd_model': 128,
                 'd_inner': 512,
+                'max_length': 1024,
             },
             "hyenadna-tiny-1k-seqlen-d256": {
                 'd_model': 256,
                 'd_inner': 1024,
+                'max_length': 1024, # TODO double check this
             }
         }
 
@@ -97,7 +99,8 @@ class HyenaDNAConfig():
             "residual_in_fp32": residual_in_fp32,
             "pad_vocab_size_multiple": pad_vocab_size_multiple,
             "return_hidden_state": return_hidden_state,
-            "layer": layer
+            "layer": layer,
+            "max_length": self.model_map[model_name]['max_length']
         }
 
 

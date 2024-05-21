@@ -18,7 +18,7 @@ setup(
         'gitpython==3.1.43',
         'torch==2.3.0',
         'accelerate==0.29.3',
-        'transformers==4.35.0',
+        'transformers==4.26.1',
         'loompy==3.0.7',
         'scib==1.1.5',
         'datasets==2.14.7',

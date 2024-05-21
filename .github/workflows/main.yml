@@ -36,3 +36,6 @@ jobs:
       - name: Execute UCE
         run: |
           python examples/run_uce.py
+      - name: Execute Hyena
+        run: |
+          python examples/run_hyena_dna.py

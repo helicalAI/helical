@@ -4,7 +4,6 @@ import torch
 from transformers import PreTrainedModel
 import re
 from .standalone_hyenadna import HyenaDNAModel
-from .standalone_hyenadna import CharacterTokenizer
 
 # helper 1
 def inject_substring(orig_str):
