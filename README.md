@@ -5,13 +5,13 @@
 
 # What is Helical ?
 
-Helical provides a framework for and gathers state-of-the-art pre-trained bio foundation models on genomics and transcriptomics modalities.
+Helical provides a framework for state-of-the-art pre-trained bio foundation models on genomics and transcriptomics modalities.
 
 Helical simplifies the entire application lifecycle when building with bio foundation models. You will be able to:
 - Leverage the latest bio foundation models through our easy-to-use python package
 - Run example notebooks on key downstream tasks from examples
 
-We will update this repo on a bi-weekly basis with new models, benchmarks, modalities and functions - so stay tuned.
+We will update this repo on a regular basis with new models, benchmarks, modalities and functions - so stay tuned.
 Let’s build the most exciting AI-for-Bio community together!
 
 ## Installation
@@ -26,23 +26,30 @@ To install the Helical package, you can run the command below:
 pip install --upgrade --force-reinstall git+https://github.com/helicalAI/helical.git
 ```
 
+## Installation
+### RNA models:
+- [Geneformer](https://helical.readthedocs.io/en/latest/docs/Geneformer.html)
+- [scGPT](https://helical.readthedocs.io/en/latest/docs/scGPT.html)
+- [Universal Cell Embedding (UCE)](https://helical.readthedocs.io/en/latest/docs/UCE.html)
+
+### DNA models:
+- Coming soon
+
 
 ## Demo & Use Cases
 
 To run examples, be sure to have installed the Helical package (see Installation) and that it is up-to-date.
 
-You can look directly into the example folder above, look into our [documentation](https://helical.readthedocs.io/) for step-by-step guides or directly clone the repository using:
+You can look directly into the example folder above and download the script of your choice, look into our [documentation](https://helical.readthedocs.io/) for step-by-step guides or directly clone the repository using:
 ```
 git clone https://github.com/helicalAI/helical.git
 ```
-Within the `example` folder, open the notebook of your choice. We recommend starting with `Geneformer-vs-UCE.ipynb`
+Within the `example` folder, open the notebook of your choice. We recommend starting with `Quick-Start_Tutorial.ipynb`
 
-### RNA models:
+### Current Examples:
+- `Quick-Start_Tutorial.ipynb`: A tutorial to quickly get used to the helical package and enbironment.
 - `Geneformer-vs-UCE.ipynb`: Zero-Shot Reference Mapping with Geneformer & UCE and compare the outcomes.
 - Coming soon: new models such as scGPT, SCimilarity, scVI; benchmarking scripts; new use cases; others
-
-### DNA models:
-- Coming soon: new models such as Nucleotide Transformer; others
 
 ## Stuck somewhere ? Other ideas ?
 We are eager to help you and interact with you. Reach out via support@helical-ai.com. 
