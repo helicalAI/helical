@@ -1,4 +1,4 @@
-from helical.models.hyena_dna.model import HyenaDNA,HyenaDNAConfig
-config = HyenaDNAConfig(model_name="hyenadna-tiny-1k-seqlen-d256")
-model = HyenaDNA(model_config=config)   
+from helical.models.hyena_dna.model import HyenaDNA, HyenaDNAConfig
+hyena_config = HyenaDNAConfig(model_name = "hyenadna-tiny-1k-seqlen-d256")
+model = HyenaDNA(configurer = hyena_config)   
 print("Done")
