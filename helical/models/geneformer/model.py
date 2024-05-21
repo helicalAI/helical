@@ -13,7 +13,6 @@ from datasets import Dataset
 from typing import Optional
 from accelerate import Accelerator
 import pickle as pkl
-from helical.services.downloader import Downloader
 
 class Geneformer(HelicalBaseModel):
     """Geneformer Model. 
@@ -23,8 +22,8 @@ class Geneformer(HelicalBaseModel):
     -------
     >>> from helical.models import Geneformer,GeneformerConfig
     >>> import anndata as ad
-    >>> model_config=GeneformerConfig(batch_size=10)
-    >>> geneformer = Geneformer(model_config=model_config)
+    >>> geneformer_config=GeneformerConfig(batch_size=10)
+    >>> geneformer = Geneformer(configurer=geneformer_config)
     >>> ann_data = ad.read_h5ad("./data/10k_pbmcs_proc.h5ad")
     >>> dataset = geneformer.process_data(ann_data[:100])
     >>> embeddings = geneformer.get_embeddings(dataset)
@@ -33,9 +32,7 @@ class Geneformer(HelicalBaseModel):
    
     Parameters
     ----------
-    model_dir : str, optional, default = None
-        The path to the model directory. None by default, which will download the model if not present.
-    model_config : GeneformerConfig, optional, default = default_config
+    configurer : GeneformerConfig, optional, default = default_configurer
         The model configration
 
     Returns
@@ -48,36 +45,24 @@ class Geneformer(HelicalBaseModel):
     We use the implementation from the `Geneformer <https://huggingface.co/ctheodoris/Geneformer/tree/main>`_ repository.
 
     """
-    default_config = GeneformerConfig()
-    def __init__(self, model_dir: Optional[str] = None, model_config: GeneformerConfig = default_config) -> None:
+    default_configurer = GeneformerConfig()
+    def __init__(self, configurer: GeneformerConfig = default_configurer) -> None:
         super().__init__()
-        self.model_config = model_config
-        self.downloader = Downloader()
-
-        if model_dir is None:
-            self.downloader.download_via_name("geneformer/gene_median_dictionary.pkl")
-            self.downloader.download_via_name("geneformer/human_gene_to_ensemble_id.pkl")
-            self.downloader.download_via_name("geneformer/token_dictionary.pkl")
-            self.downloader.download_via_name("geneformer/geneformer-12L-30M/config.json")
-            self.downloader.download_via_name("geneformer/geneformer-12L-30M/pytorch_model.bin")
-            self.downloader.download_via_name("geneformer/geneformer-12L-30M/training_args.bin")
-            self.model_dir = Path(os.path.join(self.downloader.CACHE_DIR_HELICAL,'geneformer'))
-        else:
-            self.model_dir = Path(model_dir)
+        self.config = configurer
 
         self.log = logging.getLogger("Geneformer-Model")
-        self.device = self.model_config.device
+        self.device = self.config.device
 
-        self.model =  BertForMaskedLM.from_pretrained(self.model_dir / self.model_config.model_name, output_hidden_states=True, output_attentions=False)
+        self.model =  BertForMaskedLM.from_pretrained(self.config.model_dir / self.config.model_name, output_hidden_states=True, output_attentions=False)
         self.model.eval()#.to("cuda:0")
         self.model = self.model.to(self.device)
 
-        self.layer_to_quant = quant_layers(self.model) + self.model_config.emb_layer
-        self.emb_mode = self.model_config.emb_mode
-        self.forward_batch_size = self.model_config.batch_size
+        self.layer_to_quant = quant_layers(self.model) + self.config.emb_layer
+        self.emb_mode = self.config.emb_mode
+        self.forward_batch_size = self.config.batch_size
         
-        if self.model_config.accelerator:
-            self.accelerator = Accelerator(project_dir=self.model_dir, cpu=self.model_config.accelerator["cpu"])
+        if self.config.accelerator:
+            self.accelerator = Accelerator(project_dir=self.config.model_dir, cpu=self.config.accelerator["cpu"])
             self.model = self.accelerator.prepare(self.model)
         else:
             self.accelerator = None
@@ -109,9 +94,9 @@ class Geneformer(HelicalBaseModel):
             
         """ 
         files_config = {
-            "mapping_path": self.model_dir / "human_gene_to_ensemble_id.pkl",
-            "gene_median_path": self.model_dir / "gene_median_dictionary.pkl",
-            "token_path": self.model_dir / "token_dictionary.pkl"
+            "mapping_path": self.config.model_dir / "human_gene_to_ensemble_id.pkl",
+            "gene_median_path": self.config.model_dir / "gene_median_dictionary.pkl",
+            "token_path": self.config.model_dir / "token_dictionary.pkl"
         }
 
         if use_gene_symbols:
