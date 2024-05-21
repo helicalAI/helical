@@ -33,5 +33,6 @@ setup(
         'azure-core==1.30.1',
         'einops==0.8.0',
         'omegaconf==2.3.0',
+        'numpy==1.26.4',
     ],  
 )
