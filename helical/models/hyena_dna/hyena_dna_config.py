@@ -1,4 +1,7 @@
 from typing import Literal
+from pathlib import Path
+from helical.services.downloader import Downloader
+import os
 class HyenaDNAConfig():
     """
     Configuration class for Hyena DNA model.
@@ -78,8 +81,11 @@ class HyenaDNAConfig():
         if model_name not in self.model_map:
             raise ValueError(f"Model name {model_name} not found in available models: {self.model_map.keys()}")
 
+        downloader = Downloader()
+        downloader.download_via_name(f"hyena_dna/{model_name}.ckpt")
+
         self.config = {
-            "model_name": model_name,
+            "model_path": Path(os.path.join(downloader.CACHE_DIR_HELICAL, f"hyena_dna/{model_name}.ckpt")),
             "d_model": self.model_map[model_name]['d_model'],
             "n_layer": n_layer,
             "d_inner": self.model_map[model_name]['d_inner'],
