@@ -18,7 +18,7 @@ class UCE(HelicalBaseModel):
         >>> import anndata as ad
         >>> configurer=UCEConfig(batch_size=10)
         >>> uce = UCE(configurer=configurer)
-        >>> ann_data = ad.read_h5ad("./data/10k_pbmcs_proc.h5ad")
+        >>> ann_data = ad.read_h5ad("./10k_pbmcs_proc.h5ad")
         >>> dataset = uce.process_data(ann_data[:100])
         >>> embeddings = uce.get_embeddings(dataset)
 
