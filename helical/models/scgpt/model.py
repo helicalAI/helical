@@ -1,20 +1,3 @@
-# This tutorial covers the zero-shot integration with continual pre-trained scGPT. 
-# This particular workflow works for scRNA-seq datasets without fine-tuning (or any extensive training) of scGPT.
-# Continual pre-trained scGPT (scGPT_CP) is a model that inherits the pre-trained scGPT whole-human model checkpoint, 
-# and is further supervised by extra cell type labels (using the [Tabula Sapiens](https://tabula-sapiens-portal.ds.czbiohub.org/) dataset) 
-# during the continual pre-training stage. We observed that the scGPT_CP model can achieve comparable or better zero-shot performance 
-# on cell embedding related tasks compared to the original checkpoint, especially on datasets with observable technical batch effects.
-# This tutorial will show how to use the latent space of scGPT to integrate scRNA-seq datasets. 
-# We use the `scGPT_CP` model to provide embeddings out of the box. 
-# You may download it from [here](https://drive.google.com/drive/folders/1_GROJTzXiAV8HB4imruOTk6PEGuNOcgB).
-
-# We will use the [scIB](https://www.nature.com/articles/s41592-021-01336-8) pancreas dataset as an example. 
-# This dataset is publicly accessible via [here](https://figshare.com/ndownloader/files/24539828). You may place the dataset under `data` directory at the outer level.
-
-# The zero-shot integration workflow is as follows:
-#  1. [Load and pre-process the dataset](#prepare-the-datasets)
-#  2. [Generate scGPT embeddings for each cell](#generate-the-cell-embeddings)
-
 import os
 import scanpy as sc
 from helical.models.helical import HelicalBaseModel
@@ -22,16 +5,14 @@ from helical.models.scgpt.scgpt_config import scGPTConfig
 import numpy as np
 from anndata import AnnData
 import logging
-from typing import Optional, Literal
-from pathlib import Path
+from typing import Literal
 from accelerate import Accelerator
-from helical.services.downloader import Downloader
 from helical.models.scgpt.scgpt_utils import load_model, get_embedding
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 class scGPT(HelicalBaseModel):
-    default_config = scGPTConfig()
+    configurer = scGPTConfig()
     """scGPT Model. 
         The scGPT Model is a transformer-based model that can be used to extract gene embeddings from single-cell RNA-seq data.
         Currently we load the continous pre-training model from the scGPT repository as default model which works best on zero-shot tasks.
@@ -41,8 +22,8 @@ class scGPT(HelicalBaseModel):
         -------
         >>> from helical.models import scGPT,scGPTConfig
         >>> import anndata as ad
-        >>> model_config=scGPTConfig(batch_size=10)
-        >>> scgpt = scGPT(model_config=model_config)
+        >>> scgpt_config=scGPTConfig(batch_size=10)
+        >>> scgpt = scGPT(configurer=scgpt_config)
         >>> ann_data = ad.read_h5ad("./data/10k_pbmcs_proc.h5ad")
         >>> dataset = scgpt.process_data(ann_data[:100])
         >>> embeddings = scgpt.get_embeddings(dataset)
@@ -50,9 +31,7 @@ class scGPT(HelicalBaseModel):
 
         Parameters
         ----------
-        model_dir : str, optional, default = None
-            The path to the model directory. None by default, which will download the model if not present.
-        model_config : scGPTConfig, optional, default = default_config
+        configurer : scGPTConfig, optional, default = configurer
             The model configuration.
 
         Returns
@@ -64,26 +43,16 @@ class scGPT(HelicalBaseModel):
         We use the implementation from this `repository <https://github.com/bowang-lab/scGPT>`_ , which comes from the original authors. You can find the description of the method in this `paper <https://www.nature.com/articles/s41592-024-02201-0>`_.
         """
 
-    def __init__(self, model_dir: Optional[str] = None, model_config: scGPTConfig = default_config) -> None:
-        
+    def __init__(self, configurer: scGPTConfig = configurer) -> None:
           
         super().__init__()
-        self.model_config = model_config.config
-        self.downloader = Downloader()
-        
-        if model_dir is None:
-            self.downloader.download_via_name("scgpt/scGPT_CP/vocab.json")
-            self.downloader.download_via_name("scgpt/scGPT_CP/best_model.pt")
-            self.model_dir = Path(os.path.join(self.downloader.CACHE_DIR_HELICAL,'scgpt/scGPT_CP'))
-        else:
-            self.model_dir = Path(model_dir)
-
+        self.config = configurer.config
         self.log = logging.getLogger("scGPT-Model")
         
-        self.model,self.vocab = load_model(self.model_dir,self.model_config,device=self.model_config["device"],use_fast_transformer=False)
+        self.model, self.vocab = load_model(self.config)
         
-        if self.model_config["accelerator"]:
-            self.accelerator = Accelerator(project_dir=self.model_dir, cpu=self.model_config["accelerator"]["cpu"])
+        if self.config["accelerator"]:
+            self.accelerator = Accelerator(project_dir=self.config["model_path"].parent, cpu=self.config["accelerator"]["cpu"])
             self.model = self.accelerator.prepare(self.model)
         else:
             self.accelerator = None
@@ -104,10 +73,10 @@ class scGPT(HelicalBaseModel):
         embeddings = get_embedding(data,
             model = self.model,
             vocab = self.vocab,
-            batch_size=self.model_config["batch_size"],
-            model_configs=self.model_config,
+            batch_size=self.config["batch_size"],
+            model_configs=self.config,
             gene_col=self.gene_column_name,
-            device=self.model_config["device"])
+            device=self.config["device"])
 
         
         return embeddings

@@ -1,6 +1,3 @@
-import json
-import os
-from pathlib import Path
 from typing import Optional, Union
 from os import PathLike
 
@@ -8,27 +5,22 @@ import numpy as np
 import scanpy as sc
 import torch
 from anndata import AnnData
-from torch.utils.data import DataLoader, SequentialSampler
-from tqdm import tqdm
 
 
-from .data_collator import DataCollator
 from .model_dir import TransformerModel
 from .tokenizer import GeneVocab
 from .utils import load_pretrained
-
+from helical.models.scgpt.scgpt_config import scGPTConfig
 from helical.models.scgpt.tasks.cell_emb import get_batch_cell_embeddings
 
 
 
-def load_model(model_dir,model_configs,device='cpu',use_fast_transformer=False):
+def load_model(model_configs: scGPTConfig):
 
     # LOAD MODEL
-    model_dir = Path(model_dir)
+    model_dir = model_configs["model_path"].parent
     vocab_file = model_dir / "vocab.json"
-    model_file = model_dir / "best_model.pt"
-    pad_token = "<pad>"
-    special_tokens = [pad_token, "<cls>", "<eoc>"]
+    special_tokens = [model_configs["pad_token"], "<cls>", "<eoc>"]
 
     # vocabulary
     vocab = GeneVocab.from_file(vocab_file)
@@ -38,7 +30,7 @@ def load_model(model_dir,model_configs,device='cpu',use_fast_transformer=False):
 
     # Binning will be applied after tokenization. A possible way to do is to use the unified way of binning in the data collator.
 
-    vocab.set_default_index(vocab["<pad>"])
+    vocab.set_default_index(vocab[model_configs["pad_token"]])
 
     model = TransformerModel(
         ntoken=len(vocab),
@@ -57,18 +49,15 @@ def load_model(model_dir,model_configs,device='cpu',use_fast_transformer=False):
         use_batch_labels=False,
         domain_spec_batchnorm=False,
         explicit_zero_prob=False,
-        use_fast_transformer=use_fast_transformer,
+        use_fast_transformer=model_configs["use_fast_transformer"],
         fast_transformer_backend="flash",
         pre_norm=False,
     )
 
-    load_pretrained(model, torch.load(model_file, map_location=device), verbose=False)
-    model.to(device)
+    load_pretrained(model, torch.load(model_configs["model_path"], map_location = model_configs["device"]), verbose = False)
+    model.to(model_configs["device"])
     model.eval()
-    return model,vocab
-
-
-
+    return model, vocab
 
 def get_embedding(
     adata_or_file: Union[AnnData, PathLike],

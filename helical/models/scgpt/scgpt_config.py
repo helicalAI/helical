@@ -1,4 +1,7 @@
 from typing import Optional
+from helical.services.downloader import Downloader
+from pathlib import Path
+import os
 class scGPTConfig():
     """
     Configuration class to use the scGPT Model.
@@ -33,7 +36,8 @@ class scGPTConfig():
         The accelerator configuration
     device : str, optional, default = "cpu"
         The device to use. Either use "cuda" or "cpu"
-
+    use_fast_transformer : bool, optional, default = False
+        Wheter to use fast transformer or nots
 
     Returns
     -------
@@ -62,10 +66,17 @@ class scGPTConfig():
             world_size: int = 8,
             accelerator: Optional[dict] = None,
             device: str = "cpu",
+            use_fast_transformer: bool = False,
             ):
         
+        model_name = 'best_model' # TODO: Include more models
+        downloader = Downloader()
+        downloader.download_via_name("scgpt/scGPT_CP/vocab.json")
+        downloader.download_via_name(f"scgpt/scGPT_CP/{model_name}.pt")
+        model_path = Path(os.path.join(downloader.CACHE_DIR_HELICAL, 'scgpt/scGPT_CP', f'{model_name}.pt'))
 
         self.config = {
+            "model_path": model_path,
             "pad_token": pad_token,
             "batch_size": batch_size,
             "fast_transformer": fast_transformer,
@@ -79,5 +90,6 @@ class scGPTConfig():
             "pad_value": pad_value,
             "world_size": world_size,
             "accelerator": accelerator,
-            "device": device
+            "device": device,
+            "use_fast_transformer": use_fast_transformer,
             }
