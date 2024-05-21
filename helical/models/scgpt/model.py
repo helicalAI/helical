@@ -12,7 +12,6 @@ from helical.models.scgpt.scgpt_utils import load_model, get_embedding
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 class scGPT(HelicalBaseModel):
-    configurer = scGPTConfig()
     """scGPT Model. 
         The scGPT Model is a transformer-based model that can be used to extract gene embeddings from single-cell RNA-seq data.
         Currently we load the continous pre-training model from the scGPT repository as default model which works best on zero-shot tasks.
@@ -42,6 +41,7 @@ class scGPT(HelicalBaseModel):
         -----
         We use the implementation from this `repository <https://github.com/bowang-lab/scGPT>`_ , which comes from the original authors. You can find the description of the method in this `paper <https://www.nature.com/articles/s41592-024-02201-0>`_.
         """
+    configurer = scGPTConfig()
 
     def __init__(self, configurer: scGPTConfig = configurer) -> None:
           
