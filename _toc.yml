@@ -13,6 +13,7 @@ parts:
 - caption: Tutorials🪄
   chapters:
   - file : examples/Geneformer-vs-UCE
+  - file: examples/Quick-Start_Tutorial
   # - file : examples/geneformer_example
 
 # - caption: Basic examples 🪄
