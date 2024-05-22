@@ -14,13 +14,13 @@ from azure.core.pipeline.transport import RequestsTransport
 from git import Repo
 from helical.constants.paths import CACHE_DIR_HELICAL
 
+LOGGER = logging.getLogger(__name__)
 INTERVAL = 1000 # interval to get gene mappings
 CHUNK_SIZE = 1024 * 1024 * 10 #8192 # size of individual chunks to download
 LOADING_BAR_LENGTH = 50 # size of the download progression bar in console
 class Downloader(Logger):
     def __init__(self, loging_type = LoggingType.CONSOLE, level = LoggingLevel.INFO) -> None:
         super().__init__(loging_type, level)
-        self.log = logging.getLogger("Downloader")
         self.display = True
 
         # manually create a requests session
@@ -41,10 +41,10 @@ class Downloader(Logger):
         try:
             df = pd.read_csv(path_to_ets_csv)
         except:
-            self.log.exception(f"Failed to open the '{path_to_ets_csv}' file. Please provide it.")
+            LOGGER.exception(f"Failed to open the '{path_to_ets_csv}' file. Please provide it.")
 
         if output.is_file():
-            self.log.info(f"No mapping is done because mapping file already exists here: '{output}'")
+            LOGGER.info(f"No mapping is done because mapping file already exists here: '{output}'")
 
         else:
             genes = df['egid'].dropna().unique()
@@ -54,7 +54,7 @@ class Downloader(Logger):
 
             ensemble_to_display_name = dict()
             
-            self.log.info(f"Starting to download the mappings of {len(genes)} genes from '{server}'")
+            LOGGER.info(f"Starting to download the mappings of {len(genes)} genes from '{server}'")
 
             # Resetting for visualization
             self.data_length = 0
@@ -69,7 +69,7 @@ class Downloader(Logger):
                 ensemble_to_display_name.update(decoded)
 
             pkl.dump(ensemble_to_display_name, open(output, 'wb')) 
-            self.log.info(f"Downloaded all mappings and saved to: '{output}'")
+            LOGGER.info(f"Downloaded all mappings and saved to: '{output}'")
 
     def download_via_link(self, output: Path, link: str) -> None:
         '''
@@ -81,10 +81,10 @@ class Downloader(Logger):
         '''
        
         if output.is_file():
-            self.log.info(f"File: '{output}' exists already. File is not overwritten and nothing is downloaded.")
+            LOGGER.info(f"File: '{output}' exists already. File is not overwritten and nothing is downloaded.")
 
         else:
-            self.log.info(f"Starting to download: '{link}'")
+            LOGGER.info(f"Starting to download: '{link}'")
             with open(output, "wb") as f:
                 response = requests.get(link, stream=True)
                 total_length = response.headers.get('content-length')
@@ -102,8 +102,8 @@ class Downloader(Logger):
                                 self._display_download_progress(len(data))
                             f.write(data)
                     except:
-                        self.log.error(f"Failed downloading file from '{link}'")
-        self.log.info(f"File saved to: '{output}'")
+                        LOGGER.error(f"Failed downloading file from '{link}'")
+        LOGGER.info(f"File saved to: '{output}'")
 
     def clone_git_repo(self, destination: Path, repo_url: str, checkout: str) -> None:
         '''
@@ -116,13 +116,13 @@ class Downloader(Logger):
         '''
                 
         if destination.is_dir():
-            self.log.info(f"Folder: {destination} exists already. No 'git clone' is performed.")
+            LOGGER.info(f"Folder: {destination} exists already. No 'git clone' is performed.")
 
         else:
-            self.log.info(f"Clonging {repo_url} to {destination}")
+            LOGGER.info(f"Clonging {repo_url} to {destination}")
             repo = Repo.clone_from(repo_url, destination)
             repo.git.checkout(checkout)
-            self.log.info(f"Successfully cloned and checked out '{checkout}' of {repo_url}")
+            LOGGER.info(f"Successfully cloned and checked out '{checkout}' of {repo_url}")
 
     def _display_download_progress(self, data_chunk_size: int) -> None:
         '''
@@ -152,10 +152,10 @@ class Downloader(Logger):
             os.makedirs(os.path.dirname(output),exist_ok=True)
 
         if Path(output).is_file():
-            self.log.info(f"File: '{output}' exists already. File is not overwritten and nothing is downloaded.")
+            LOGGER.info(f"File: '{output}' exists already. File is not overwritten and nothing is downloaded.")
 
         else:
-            self.log.info(f"Starting to download: '{link}'")
+            LOGGER.info(f"Starting to download: '{link}'")
             with open(output, "wb") as f:
                 response = requests.get(link, stream=True)
                 total_length = response.headers.get('content-length')
@@ -175,8 +175,8 @@ class Downloader(Logger):
                             f.write(data)
                             pbar.update(len(data))
                     except:
-                        self.log.error(f"Failed downloading file from '{link}'")
-        self.log.info(f"File saved to: '{output}'")
+                        LOGGER.error(f"Failed downloading file from '{link}'")
+        LOGGER.info(f"File saved to: '{output}'")
 
 
     def download_via_name(self, name: str) -> None:
@@ -201,19 +201,19 @@ class Downloader(Logger):
 
         if not os.path.exists(os.path.dirname(output)):
             os.makedirs(os.path.dirname(output),exist_ok=True)
-            self.log.info(f"Creating Folder {os.path.dirname(output)}")
+            LOGGER.info(f"Creating Folder {os.path.dirname(output)}")
 
         if Path(output).is_file():
-            self.log.info(f"File: '{output}' exists already. File is not overwritten and nothing is downloaded.")
+            LOGGER.info(f"File: '{output}' exists already. File is not overwritten and nothing is downloaded.")
 
         else:
-            self.log.info(f"Starting to download: '{blob_url}'")
+            LOGGER.info(f"Starting to download: '{blob_url}'")
             # disabling logging info messages from Azure package as there are too many
             logging.disable(logging.INFO)
             self.display_azure_download_progress(blob_client, blob_url, output)
             logging.disable(logging.NOTSET)
             
-        self.log.info(f"File saved to: '{output}'")
+        LOGGER.info(f"File saved to: '{output}'")
 
     def display_azure_download_progress(self, blob_client: BlobClient, blob_url: str, output: Path) -> None:
         """
@@ -248,7 +248,7 @@ class Downloader(Logger):
 
                 sample_blob.write(download_stream.readall())
         except:
-            self.log.error(f"Failed downloading file from '{blob_url}'")
+            LOGGER.error(f"Failed downloading file from '{blob_url}'")
         
         if self.display:
             pbar.close()

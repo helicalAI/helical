@@ -14,6 +14,7 @@ from typing import Optional
 from accelerate import Accelerator
 import pickle as pkl
 
+LOGGER = logging.getLogger(__name__)
 class Geneformer(HelicalBaseModel):
     """Geneformer Model. 
     The Geneformer Model is a transformer-based model that can be used to extract gene embeddings from single-cell RNA-seq data. 
@@ -50,7 +51,6 @@ class Geneformer(HelicalBaseModel):
         super().__init__()
         self.config = configurer
 
-        self.log = logging.getLogger("Geneformer-Model")
         self.device = self.config.device
 
         downloader = Downloader()
@@ -70,7 +70,8 @@ class Geneformer(HelicalBaseModel):
             self.model = self.accelerator.prepare(self.model)
         else:
             self.accelerator = None
-
+        LOGGER.info(f"Model finished initializing.")
+        
     def process_data(self, data: AnnData,  nproc: int = 4,use_gene_symbols=True, output_path: Optional[str] = None) -> Dataset:   
         """Processes the data for the UCE model
 
@@ -140,7 +141,7 @@ class Geneformer(HelicalBaseModel):
         np.array
             The gene embeddings in the form of a numpy array
         """
-        self.log.info(f"Inference started")
+        LOGGER.info(f"Inference started:")
         embeddings = get_embs(
             self.model,
             dataset,

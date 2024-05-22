@@ -6,6 +6,7 @@ from helical.models.hyena_dna.pretrained_model import HyenaDNAPreTrainedModel
 import torch
 from .standalone_hyenadna import CharacterTokenizer
 from helical.services.downloader import Downloader
+LOGGER = logging.getLogger(__name__)
 
 class HyenaDNA(HelicalBaseModel):
     """HyenaDNA model."""
@@ -14,7 +15,6 @@ class HyenaDNA(HelicalBaseModel):
     def __init__(self, configurer: HyenaDNAConfig = default_configurer) -> None:    
         super().__init__()
         self.config = configurer.config
-        self.log = logging.getLogger("Hyena-DNA-Model")
 
         downloader = Downloader()
         for file in self.config["list_of_files_to_download"]:
@@ -35,7 +35,7 @@ class HyenaDNA(HelicalBaseModel):
         # prep model and forward
         self.model.to(self.device)
         self.model.eval()
-
+        LOGGER.info(f"Model finished initializing.")
 
     def process_data(self, sequence):
 
@@ -48,5 +48,6 @@ class HyenaDNA(HelicalBaseModel):
         return tok_seq
 
     def get_embeddings(self, tok_seq):
+        LOGGER.info(f"Inference started")
         with torch.inference_mode():
             return self.model(tok_seq)

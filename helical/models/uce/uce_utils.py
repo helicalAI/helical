@@ -14,7 +14,7 @@ from helical.models.uce.gene_embeddings import load_gene_embeddings_adata
 from helical.models.uce.uce_model import TransformerModel
 from helical.models.uce.uce_dataset import UCEDataset
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 def process_data(anndata, 
                  model_config, 
@@ -53,7 +53,7 @@ def process_data(anndata,
         dataset_chroms, dataset_start = get_positions(Path(files_config["spec_chrom_csv_path"]), species, filtered_adata)
 
         if not (len(dataset_chroms) == len(dataset_start) == num_genes == pe_row_idxs.shape[0]): 
-            logger.error(f'Invalid input dimensions for the UCEDataset! ' 
+            LOGGER.error(f'Invalid input dimensions for the UCEDataset! ' 
                         f'dataset_chroms: {len(dataset_chroms)}, '
                         f'dataset_start: {len(dataset_start)}, '
                         f'num_genes: {num_genes}, '
@@ -75,7 +75,7 @@ def process_data(anndata,
                                 collate_fn=dataset.collator_fn,
                                 num_workers=0)
         
-        logger.info(f'UCE Dataset and DataLoader prepared. Setting batch_size={batch_size} for inference.')
+        LOGGER.info(f'UCE Dataset and DataLoader prepared. Setting batch_size={batch_size} for inference.')
 
         if accelerator is not None:
             dataloader = accelerator.prepare(dataloader)
@@ -166,9 +166,9 @@ def prepare_expression_counts_file(gene_expression: np.array, name: str, folder_
         fp = np.memmap(filename, dtype='int64', mode='w+', shape=shape)
         fp[:] = gene_expression[:]
         fp.flush()
-        logger.info(f"Passed the gene expressions (with shape={shape} and max gene count data {gene_expression.max()}) to {filename}")
+        LOGGER.info(f"Passed the gene expressions (with shape={shape} and max gene count data {gene_expression.max()}) to {filename}")
     except:
-        logger.error(f"Error during preparation of npz file {filename}.")
+        LOGGER.error(f"Error during preparation of npz file {filename}.")
         raise Exception
     
 ## writing a funciton to load the model 

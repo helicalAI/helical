@@ -10,6 +10,7 @@ from accelerate import Accelerator
 from helical.models.scgpt.scgpt_utils import load_model, get_embedding
 from helical.services.downloader import Downloader
 
+LOGGER = logging.getLogger(__name__)
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 class scGPT(HelicalBaseModel):
@@ -48,7 +49,6 @@ class scGPT(HelicalBaseModel):
           
         super().__init__()
         self.config = configurer.config
-        self.log = logging.getLogger("scGPT-Model")
         
         downloader = Downloader()
         for file in self.config["list_of_files_to_download"]:
@@ -61,9 +61,9 @@ class scGPT(HelicalBaseModel):
             self.model = self.accelerator.prepare(self.model)
         else:
             self.accelerator = None
-
+        LOGGER.info(f"Model finished initializing.")
         
-    def get_embeddings(self,data: AnnData) -> np.array:
+    def get_embeddings(self, data: AnnData) -> np.array:
         """Gets the gene embeddings
         
         Returns
@@ -71,7 +71,7 @@ class scGPT(HelicalBaseModel):
         np.array
             The gene embeddings in the form of a numpy array
         """
-        self.log.info(f"Inference started:")
+        LOGGER.info(f"Inference started:")
         # The extracted embedding is stored in the `X_scGPT` field of `obsm` in AnnData.
         # for local development, only get embeddings for the first 100 entries
 
@@ -82,7 +82,6 @@ class scGPT(HelicalBaseModel):
             model_configs=self.config,
             gene_col=self.gene_column_name,
             device=self.config["device"])
-
         
         return embeddings
     

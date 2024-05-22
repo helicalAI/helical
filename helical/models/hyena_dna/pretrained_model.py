@@ -4,6 +4,9 @@ import torch
 from transformers import PreTrainedModel
 import re
 from .standalone_hyenadna import HyenaDNAModel
+import logging 
+
+LOGGER = logging.getLogger(__name__)
 
 # helper 1
 def inject_substring(orig_str):
@@ -82,6 +85,6 @@ class HyenaDNAPreTrainedModel(PreTrainedModel):
 
         # scratch model has now been updated
         scratch_model.load_state_dict(state_dict)
-        print("Loaded pretrained weights ok!")
+        LOGGER.info("Loaded pretrained weights ok!")
         return scratch_model
     
