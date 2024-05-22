@@ -80,18 +80,18 @@ class HyenaDNA(HelicalBaseModel):
 
         """
         tok_seq = self.tokenizer(sequence)
-        tok_seq = tok_seq["input_ids"]  # grab ids
+        tok_seq_input_ids = tok_seq["input_ids"]  # grab ids
         
         # place on device, convert to tensor
-        tok_seq = torch.LongTensor(tok_seq).unsqueeze(0)  # unsqueeze for batch dim
-        tok_seq = tok_seq.to(self.device)
-        return tok_seq
+        tensor = torch.LongTensor(tok_seq_input_ids).unsqueeze(0)  # unsqueeze for batch dim
+        tensor = tensor.to(self.device)
+        return tensor
 
-    def get_embeddings(self, tok_seq: torch.Tensor) -> torch.Tensor:
+    def get_embeddings(self, tensor: torch.Tensor) -> torch.Tensor:
         """Get the embeddings for the tokenized sequence.
 
         Args:
-            tok_seq: torch.Tensor
+            tensor: torch.Tensor
                 The tokenized sequence.
 
         Returns:
@@ -100,4 +100,4 @@ class HyenaDNA(HelicalBaseModel):
         """
         LOGGER.info(f"Inference started")
         with torch.inference_mode():
-            return self.model(tok_seq)
+            return self.model(tensor)
