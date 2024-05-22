@@ -33,7 +33,7 @@ pip install --upgrade --force-reinstall git+https://github.com/helicalAI/helical
 - [Universal Cell Embedding (UCE)](https://helical.readthedocs.io/en/latest/docs/UCE.html)
 
 ### DNA models:
-- Coming soon
+- [HyenaDNA](https://helical.readthedocs.io/en/latest/docs/hyena_dna.html)
 
 
 ## Demo & Use Cases
@@ -73,6 +73,7 @@ A lot of our models have been published by talend authors developing these excit
 - [scGPT](https://github.com/bowang-lab/scGPT/)
 - [Geneformer](https://huggingface.co/ctheodoris/Geneformer)
 - [UCE](https://github.com/snap-stanford/UCE)
+- [HyenaDNA](https://github.com/HazyResearch/hyena-dna)
 - [anndata](https://github.com/scverse/anndata)
 - [scanpy](https://github.com/scverse/scanpy)
 - [transformers](https://github.com/huggingface/transformers)

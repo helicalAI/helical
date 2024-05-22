@@ -38,11 +38,14 @@ git clone https://github.com/helicalAI/helical.git
 Within the `example` folder, open the notebook of your choice. We recommend starting with `Geneformer-vs-UCE.ipynb`
 
 ### RNA models:
+- [Geneformer](https://helical.readthedocs.io/en/latest/docs/Geneformer.html)
+- [scGPT](https://helical.readthedocs.io/en/latest/docs/scGPT.html)
+- [Universal Cell Embedding (UCE)](https://helical.readthedocs.io/en/latest/docs/UCE.html)
 - `Geneformer-vs-UCE.ipynb`: Zero-Shot Reference Mapping with Geneformer & UCE and compare the outcomes.
 - Coming soon: new models such as scGPT, SCimilarity, scVI; benchmarking scripts; new use cases; others
 
 ### DNA models:
-- Coming soon: new models such as Nucleotide Transformer; others
+- [HyenaDNA](https://helical.readthedocs.io/en/latest/docs/hyena_dna.html)
 
 ## Stuck somewhere ? Other ideas ?
 We are eager to help you and interact with you. Reach out via support@helical-ai.com. 
@@ -66,6 +69,7 @@ A lot of our models have been published by talend authors developing these excit
 - [scGPT](https://github.com/bowang-lab/scGPT/)
 - [Geneformer](https://huggingface.co/ctheodoris/Geneformer)
 - [UCE](https://github.com/snap-stanford/UCE)
+- [HyenaDNA](https://github.com/HazyResearch/hyena-dna)
 - [anndata](https://github.com/scverse/anndata)
 - [scanpy](https://github.com/scverse/scanpy)
 - [transformers](https://github.com/huggingface/transformers)
