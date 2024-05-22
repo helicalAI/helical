@@ -1,4 +1,4 @@
-﻿helical.models.uce
+helical.models.uce
 ==================
 
 .. automodule:: helical.models.uce

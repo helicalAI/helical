@@ -1,4 +1,4 @@
-helical.constants
+﻿helical.constants
 =================
 
 .. automodule:: helical.constants
@@ -28,4 +28,5 @@ helical.constants
    :recursive:
 
    helical.constants.enums
+   helical.constants.paths
 

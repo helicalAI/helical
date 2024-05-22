@@ -9,6 +9,7 @@ parts:
   - file: docs/Geneformer.rst
   - file: docs/UCE.rst
   - file: docs/scGPT.rst
+  - file: docs/hyena_dna.rst
 - caption: Tutorials🪄
   chapters:
   - file : examples/Geneformer-vs-UCE

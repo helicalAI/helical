@@ -29,6 +29,7 @@
 
    helical.models.geneformer
    helical.models.helical
+   helical.models.hyena_dna
    helical.models.scgpt
    helical.models.uce
 

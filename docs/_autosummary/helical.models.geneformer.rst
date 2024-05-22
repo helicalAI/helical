@@ -1,4 +1,4 @@
-﻿helical.models.geneformer
+helical.models.geneformer
 =========================
 
 .. automodule:: helical.models.geneformer
