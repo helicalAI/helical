@@ -5,6 +5,7 @@ from helical.models.helical import HelicalBaseModel
 from helical.models.hyena_dna.pretrained_model import HyenaDNAPreTrainedModel
 import torch
 from .standalone_hyenadna import CharacterTokenizer
+from helical.services.downloader import Downloader
 
 class HyenaDNA(HelicalBaseModel):
     """HyenaDNA model."""
@@ -14,7 +15,11 @@ class HyenaDNA(HelicalBaseModel):
         super().__init__()
         self.config = configurer.config
         self.log = logging.getLogger("Hyena-DNA-Model")
-        
+
+        downloader = Downloader()
+        for file in self.config["list_of_files_to_download"]:
+            downloader.download_via_name(file)
+
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         self.model = HyenaDNAPreTrainedModel().from_pretrained(self.config)

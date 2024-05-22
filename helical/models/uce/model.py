@@ -6,6 +6,7 @@ from helical.models.uce.uce_config import UCEConfig
 from helical.models.helical import HelicalBaseModel
 from helical.models.uce.uce_utils import get_ESM2_embeddings, load_model, process_data, get_gene_embeddings
 from accelerate import Accelerator
+from helical.services.downloader import Downloader
 
 class UCE(HelicalBaseModel):
     """Universal Cell Embedding Model. This model reads in single-cell RNA-seq data and outputs gene embeddings. 
@@ -41,6 +42,10 @@ class UCE(HelicalBaseModel):
         super().__init__()
         self.config = configurer.config
         self.log = logging.getLogger("UCE-Model")
+
+        downloader = Downloader()
+        for file in self.config["list_of_files_to_download"]:
+            downloader.download_via_name(file)
 
         self.model_dir = self.config['model_path'].parent
 

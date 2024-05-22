@@ -1,7 +1,6 @@
 from typing import Optional
 from typing import Literal
-from helical.services.downloader import Downloader
-import os
+from helical.constants.paths import CACHE_DIR_HELICAL
 from pathlib import Path
 class UCEConfig():
     """Configuration class to use the Universal Cell-Embedding Model.
@@ -77,17 +76,19 @@ class UCEConfig():
         if model_name not in self.model_map:
             raise ValueError(f"Model name {model_name} not found in available models: {self.model_map.keys()}.")
 
-        downloader = Downloader()
-        downloader.download_via_name("uce/all_tokens.torch")
-        downloader.download_via_name(f"uce/{model_name}.torch")
-        downloader.download_via_name("uce/species_chrom.csv")
-        downloader.download_via_name("uce/species_offsets.pkl")
-        downloader.download_via_name("uce/protein_embeddings/Homo_sapiens.GRCh38.gene_symbol_to_embedding_ESM2.pt")
-        downloader.download_via_name("uce/protein_embeddings/Macaca_fascicularis.Macaca_fascicularis_6.0.gene_symbol_to_embedding_ESM2.pt")
-        model_path = Path(os.path.join(downloader.CACHE_DIR_HELICAL, 'uce', f"{model_name}.torch"))
+        list_of_files_to_download = [
+                                     "uce/all_tokens.torch",
+                                     f"uce/{model_name}.torch",
+                                     "uce/species_chrom.csv",
+                                     "uce/species_offsets.pkl",
+                                     "uce/protein_embeddings/Homo_sapiens.GRCh38.gene_symbol_to_embedding_ESM2.pt",
+                                     "uce/protein_embeddings/Macaca_fascicularis.Macaca_fascicularis_6.0.gene_symbol_to_embedding_ESM2.pt",
+                                     ]
+        model_path = Path(CACHE_DIR_HELICAL, 'uce', f"{model_name}.torch")
                     
         self.config = {
             "model_path": model_path,
+            "list_of_files_to_download": list_of_files_to_download,
             "batch_size": batch_size,
             "pad_length": pad_length,
             "pad_token_idx": pad_token_idx,

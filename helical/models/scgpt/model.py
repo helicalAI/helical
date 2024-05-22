@@ -8,6 +8,7 @@ import logging
 from typing import Literal
 from accelerate import Accelerator
 from helical.models.scgpt.scgpt_utils import load_model, get_embedding
+from helical.services.downloader import Downloader
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
@@ -49,6 +50,10 @@ class scGPT(HelicalBaseModel):
         self.config = configurer.config
         self.log = logging.getLogger("scGPT-Model")
         
+        downloader = Downloader()
+        for file in self.config["list_of_files_to_download"]:
+            downloader.download_via_name(file)
+
         self.model, self.vocab = load_model(self.config)
         
         if self.config["accelerator"]:

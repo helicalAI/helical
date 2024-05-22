@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 import numpy as np
 from anndata import AnnData
-import os
+from helical.services.downloader import Downloader
 import pickle
 from transformers import BertForMaskedLM
 from helical.models.geneformer.geneformer_utils import get_embs,quant_layers
@@ -52,6 +52,10 @@ class Geneformer(HelicalBaseModel):
 
         self.log = logging.getLogger("Geneformer-Model")
         self.device = self.config.device
+
+        downloader = Downloader()
+        for file in self.config.list_of_files_to_download:
+            downloader.download_via_name(file)
 
         self.model =  BertForMaskedLM.from_pretrained(self.config.model_dir / self.config.model_name, output_hidden_states=True, output_attentions=False)
         self.model.eval()#.to("cuda:0")

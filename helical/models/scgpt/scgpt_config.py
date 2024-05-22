@@ -1,7 +1,7 @@
 from typing import Optional
-from helical.services.downloader import Downloader
+from helical.constants.paths import CACHE_DIR_HELICAL
 from pathlib import Path
-import os
+
 class scGPTConfig():
     """
     Configuration class to use the scGPT Model.
@@ -70,13 +70,15 @@ class scGPTConfig():
             ):
         
         model_name = 'best_model' # TODO: Include more models
-        downloader = Downloader()
-        downloader.download_via_name("scgpt/scGPT_CP/vocab.json")
-        downloader.download_via_name(f"scgpt/scGPT_CP/{model_name}.pt")
-        model_path = Path(os.path.join(downloader.CACHE_DIR_HELICAL, 'scgpt/scGPT_CP', f'{model_name}.pt'))
+        list_of_files_to_download = [
+                                "scgpt/scGPT_CP/vocab.json",
+                                f"scgpt/scGPT_CP/{model_name}.pt",
+                                ]
+        model_path = Path(CACHE_DIR_HELICAL, 'scgpt/scGPT_CP', f'{model_name}.pt')
 
         self.config = {
             "model_path": model_path,
+            "list_of_files_to_download": list_of_files_to_download,
             "pad_token": pad_token,
             "batch_size": batch_size,
             "fast_transformer": fast_transformer,

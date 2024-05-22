@@ -12,6 +12,7 @@ from tqdm import tqdm
 from azure.storage.blob import  BlobClient
 from azure.core.pipeline.transport import RequestsTransport
 from git import Repo
+from helical.constants.paths import CACHE_DIR_HELICAL
 
 INTERVAL = 1000 # interval to get gene mappings
 CHUNK_SIZE = 1024 * 1024 * 10 #8192 # size of individual chunks to download
@@ -20,7 +21,6 @@ class Downloader(Logger):
     def __init__(self, loging_type = LoggingType.CONSOLE, level = LoggingLevel.INFO) -> None:
         super().__init__(loging_type, level)
         self.log = logging.getLogger("Downloader")
-        self.CACHE_DIR_HELICAL = os.path.join(str(Path.home()),'.cache/helical/models')
         self.display = True
 
         # manually create a requests session
@@ -145,8 +145,7 @@ class Downloader(Logger):
             link: URL to download the file from.
         '''
         main_link = "https://helicalpackage.blob.core.windows.net/helicalpackage/data"
-        CACHE_DIR_HELICAL = Path(self.CACHE_DIR_HELICAL)
-        output = os.path.join(CACHE_DIR_HELICAL,name)
+        output = os.path.join(CACHE_DIR_HELICAL, name)
 
         link = f"{main_link}/{name}"
         if not os.path.exists(os.path.dirname(output)):
@@ -192,8 +191,7 @@ class Downloader(Logger):
         '''
 
         main_link = "https://helicalpackage.blob.core.windows.net/helicalpackage/data"
-        CACHE_DIR_HELICAL = Path(self.CACHE_DIR_HELICAL)
-        output = os.path.join(CACHE_DIR_HELICAL,name)
+        output = os.path.join(CACHE_DIR_HELICAL, name)
 
         blob_url = f"{main_link}/{name}"
 

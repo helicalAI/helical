@@ -1,7 +1,6 @@
 from typing import Optional
-from helical.services.downloader import Downloader
 from pathlib import Path
-import os
+from helical.constants.paths import CACHE_DIR_HELICAL
 
 class GeneformerConfig():
     """Configuration class to use the Geneformer Model.
@@ -35,16 +34,17 @@ class GeneformerConfig():
             ):
         
         model_name = "geneformer-12L-30M"
-
-        downloader = Downloader()
-        downloader.download_via_name("geneformer/gene_median_dictionary.pkl")
-        downloader.download_via_name("geneformer/human_gene_to_ensemble_id.pkl")
-        downloader.download_via_name("geneformer/token_dictionary.pkl")
-        downloader.download_via_name(f"geneformer/{model_name}/config.json")
-        downloader.download_via_name(f"geneformer/{model_name}/pytorch_model.bin")
-        downloader.download_via_name(f"geneformer/{model_name}/training_args.bin")
         
-        self.model_dir = Path(os.path.join(downloader.CACHE_DIR_HELICAL, 'geneformer'))
+        self.list_of_files_to_download = [
+            "geneformer/gene_median_dictionary.pkl",
+            "geneformer/human_gene_to_ensemble_id.pkl",
+            "geneformer/token_dictionary.pkl",
+            f"geneformer/{model_name}/config.json",
+            f"geneformer/{model_name}/pytorch_model.bin",
+            f"geneformer/{model_name}/training_args.bin",
+            ]
+
+        self.model_dir = Path(CACHE_DIR_HELICAL, 'geneformer')
         self.model_name = model_name
         self.batch_size = batch_size
         self.emb_layer = emb_layer
