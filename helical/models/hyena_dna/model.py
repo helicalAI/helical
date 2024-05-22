@@ -9,7 +9,35 @@ from helical.services.downloader import Downloader
 LOGGER = logging.getLogger(__name__)
 
 class HyenaDNA(HelicalBaseModel):
-    """HyenaDNA model."""
+    """HyenaDNA model.
+    This class represents the HyenaDNA model, which is a long-range genomic foundation model pretrained on context lengths of up to 1 million tokens at single nucleotide resolution.
+    
+    Example
+    -------
+    >>> from helical.models.hyena_dna.model import HyenaDNA, HyenaDNAConfig
+    >>> hyena_config = HyenaDNAConfig(model_name = "hyenadna-tiny-1k-seqlen-d256")
+    >>> model = HyenaDNA(configurer = hyena_config)   
+    >>> sequence = 'ACTG' * int(1024/4)
+    >>> tokenized_sequence = model.process_data(sequence)
+    >>> embeddings = model.get_embeddings(tokenized_sequence)
+    >>> print(embeddings.shape)
+
+    Parameters
+    ----------
+        default_configurer : HyenaDNAConfig, optional, default = default_configurer
+            The model configuration.
+    
+    Returns
+    -------
+    None
+
+    Notes
+    -----
+    The link to the paper can be found `here <https://arxiv.org/abs/2306.15794>`_. 
+    We use the implementation from the `hyena-dna <https://github.com/HazyResearch/hyena-dna>`_ repository.
+
+    """
+
     default_configurer = HyenaDNAConfig()
 
     def __init__(self, configurer: HyenaDNAConfig = default_configurer) -> None:    
@@ -37,8 +65,20 @@ class HyenaDNA(HelicalBaseModel):
         self.model.eval()
         LOGGER.info(f"Model finished initializing.")
 
-    def process_data(self, sequence):
+    def process_data(self, sequence: str) -> torch.Tensor:
+        """Process the input DNA sequence.
 
+        Parameters 
+        ----------
+            sequence: str
+                The input DNA sequence to be processed.
+
+        Returns
+        -------
+            torch.Tensor
+                The processed tokenized sequence.
+
+        """
         tok_seq = self.tokenizer(sequence)
         tok_seq = tok_seq["input_ids"]  # grab ids
         
@@ -47,7 +87,17 @@ class HyenaDNA(HelicalBaseModel):
         tok_seq = tok_seq.to(self.device)
         return tok_seq
 
-    def get_embeddings(self, tok_seq):
+    def get_embeddings(self, tok_seq: torch.Tensor) -> torch.Tensor:
+        """Get the embeddings for the tokenized sequence.
+
+        Args:
+            tok_seq: torch.Tensor
+                The tokenized sequence.
+
+        Returns:
+            torch.Tensor: The embeddings for the tokenized sequence.
+
+        """
         LOGGER.info(f"Inference started")
         with torch.inference_mode():
             return self.model(tok_seq)

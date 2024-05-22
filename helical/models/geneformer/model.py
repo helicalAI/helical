@@ -29,8 +29,6 @@ class Geneformer(HelicalBaseModel):
     >>> dataset = geneformer.process_data(ann_data[:100])
     >>> embeddings = geneformer.get_embeddings(dataset)
 
-    
-   
     Parameters
     ----------
     configurer : GeneformerConfig, optional, default = default_configurer

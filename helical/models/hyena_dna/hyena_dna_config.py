@@ -75,7 +75,7 @@ class HyenaDNAConfig():
             "hyenadna-tiny-1k-seqlen-d256": {
                 'd_model': 256,
                 'd_inner': 1024,
-                'max_length': 1024, # TODO double check this
+                'max_length': 1024, # TODO double check this and include more models
             }
         }
 
