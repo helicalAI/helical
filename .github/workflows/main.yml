@@ -32,7 +32,7 @@ jobs:
 
       - name: Execute unittests
         run: |
-          pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=helical ci/ | tee pytest-coverage.txt  
+          pytest --cov-branch --cov=helical ci/ | tee pytest-coverage.txt  
                
       # Does not seem to work but would be nice to have
       # - name: Pytest coverage comment
