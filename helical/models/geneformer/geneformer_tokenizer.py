@@ -49,7 +49,7 @@ import scipy.sparse as sp
 from datasets import Dataset
 
 warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 GENE_MEDIAN_FILE = Path(__file__).parent / "gene_median_dictionary.pkl"
 TOKEN_DICTIONARY_FILE = Path(__file__).parent / "token_dictionary.pkl"
@@ -179,7 +179,7 @@ class TranscriptomeTokenizer:
         )
         for file_path in data_directory.glob(f"*.{file_format}"):
             file_found = 1
-            print(f"Tokenizing {file_path}")
+            LOGGER.info(f"Tokenizing {file_path}")
             file_tokenized_cells, file_cell_metadata = tokenize_file_fn(file_path)
             tokenized_cells += file_tokenized_cells
             if self.custom_attr_name_dict is not None:
@@ -191,7 +191,7 @@ class TranscriptomeTokenizer:
                 cell_metadata = None
 
         if file_found == 0:
-            logger.error(
+            LOGGER.error(
                 f"No .{file_format} files found in directory {data_directory}."
             )
             raise
@@ -229,7 +229,7 @@ class TranscriptomeTokenizer:
         if var_exists:
             filter_pass_loc = np.where([i == 1 for i in adata.obs["filter_pass"]])[0]
         elif not var_exists:
-            # logger.info("Anndata has no column attribute 'filter_pass'; tokenizing all cells.")
+            # LOGGER.info("Anndata has no column attribute 'filter_pass'; tokenizing all cells.")
             filter_pass_loc = np.array([i for i in range(adata.shape[0])])
 
         tokenized_cells = []
@@ -289,7 +289,7 @@ class TranscriptomeTokenizer:
             if var_exists:
                 filter_pass_loc = np.where([i == 1 for i in data.ca["filter_pass"]])[0]
             elif not var_exists:
-                logger.info(f"{loom_file_path} has no column attribute 'filter_pass'; tokenizing all cells.")
+                LOGGER.info(f"{loom_file_path} has no column attribute 'filter_pass'; tokenizing all cells.")
                 filter_pass_loc = np.array([i for i in range(data.shape[1])])
 
             # scan through .loom files and tokenize cells
@@ -330,7 +330,7 @@ class TranscriptomeTokenizer:
         use_generator=False,
         keep_uncropped_input_ids=False,
     ):
-        print("Creating dataset.")
+        LOGGER.info("Creating dataset.")
         # create dict for dataset creation
         dataset_dict = {"input_ids": tokenized_cells}
         if self.custom_attr_name_dict is not None:
