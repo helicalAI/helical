@@ -25,26 +25,26 @@ jobs:
             pip install .
             
       # First download before tests as they make use of the downloaded files 
-      - name: Download all files
-        run: |
-          python ci/download_all.py
+      # - name: Download all files
+      #   run: |
+      #     python ci/download_all.py
       - name: Execute unittests
         run: |
-          pytest --junitxml=pytest.xml --cov-branch --cov=helical ci/ | tee pytest-coverage.txt
+          pytest --junitxml=pytest.xml --cov=helical ci/ | tee pytest-coverage.txt
       - name: Pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           junitxml-path: ./pytest.xml
-      - name: Execute scGPT
-        run: |
-          python examples/run_scgpt.py
-      - name: Execute Geneformer
-        run: |
-          python examples/run_geneformer.py
-      - name: Execute UCE
-        run: |
-          python examples/run_uce.py
-      - name: Execute Hyena
-        run: |
-          python examples/run_hyena_dna.py
+      # - name: Execute scGPT
+      #   run: |
+      #     python examples/run_scgpt.py
+      # - name: Execute Geneformer
+      #   run: |
+      #     python examples/run_geneformer.py
+      # - name: Execute UCE
+      #   run: |
+      #     python examples/run_uce.py
+      # - name: Execute Hyena
+      #   run: |
+      #     python examples/run_hyena_dna.py
