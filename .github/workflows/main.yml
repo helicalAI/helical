@@ -28,9 +28,9 @@ jobs:
       - name: Download all files
         run: |
           python ci/download_all.py
-      # - name: Execute unittests
-      #   run: |
-      #     pytest ci/
+      - name: Execute unittests
+        run: |
+          pytest ci/
       - name: Execute scGPT
         run: |
           python examples/run_scgpt.py
