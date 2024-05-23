@@ -34,7 +34,7 @@ jobs:
 
       - name: Execute unittests
         run: |
-          pytest --cov-report "xml:coverage.xml" --cov-branch --cov=helical ci/ --cov-report=term
+          pytest --cov-report "xml:coverage.xml" --cov-branch --cov-report=term-missing:skip-covered --cov=helical ci/ --cov-report=term
                
       - name: Pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main
