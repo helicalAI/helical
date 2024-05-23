@@ -31,8 +31,8 @@ jobs:
           python ci/download_all.py
       - name: Execute unittests
         run: |
-          pytest --cov-branch --cov=helical ci/
-          
+          pytest --cov-branch --cov=. ci/ --cov-report=term
+               
       # Does not seem to work but would be nice to have
       # - name: Pytest coverage comment
       #   uses: MishaKav/pytest-coverage-comment@main
