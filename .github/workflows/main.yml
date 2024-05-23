@@ -20,10 +20,10 @@ jobs:
           python-version: 3.11.8
           cache: 'pip' # caching pip dependencies
 
-      - name: Cache download files
+      - name: Cache UCE downloaded files
         uses: actions/cache@v3
         with:
-          path: /home/runner/.cache/helical
+          path: /home/runner/.cache/helical/models/uce
           key: ${{ runner.os }}-downloads-${{ hashFiles('**/ci/download_all.py') }}
 
       - name: Install dependencies
@@ -36,11 +36,6 @@ jobs:
       - name: Download all files
         run: |
           python ci/download_all.py
-
-      - name: DEBUG
-        run: |
-          ls -ltr /home/runner/.cache/helical
-
 
       - name: Execute unittests
         run: |
