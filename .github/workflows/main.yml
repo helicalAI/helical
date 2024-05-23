@@ -31,12 +31,15 @@ jobs:
           python ci/download_all.py
       - name: Execute unittests
         run: |
-          pytest --junitxml=pytest.xml --cov=helical ci/ | tee pytest-coverage.txt
-      - name: Pytest coverage comment
-        uses: MishaKav/pytest-coverage-comment@main
-        with:
-          pytest-coverage-path: ./pytest-coverage.txt
-          junitxml-path: ./pytest.xml
+          pytest --cov-branch --cov=helical ci/
+          
+      # Does not seem to work but would be nice to have
+      # - name: Pytest coverage comment
+      #   uses: MishaKav/pytest-coverage-comment@main
+      #   with:
+      #     pytest-coverage-path: ./pytest-coverage.txt
+      #     junitxml-path: ./pytest.xml
+
       # - name: Execute scGPT
       #   run: |
       #     python examples/run_scgpt.py
