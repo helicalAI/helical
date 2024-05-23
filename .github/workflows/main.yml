@@ -18,17 +18,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.11.8
-          # cache: 'pip' # caching pip dependencies
-
-      - name: Cache UCE downloaded files
-        uses: actions/cache@v3
-        with:
-          path: /home/runner/.cache/helical/models/uce
-          key: ${{ runner.os }}-downloads-${{ hashFiles('**/ci/download_all.py') }}
+          cache: 'pip' # caching pip dependencies
 
       - name: Install dependencies
         run: |
-            python -m pip install --upgrade pip
             pip install -r requirements-dev.txt
             pip install .
             
@@ -39,14 +32,12 @@ jobs:
 
       - name: Execute unittests
         run: |
-          pytest --cov-branch --cov=helical ci/ --cov-report=term
+          pytest --cov-report "xml:coverage.xml" --cov-branch --cov=helical ci/ --cov-report=term
                
-      # Does not seem to work but would be nice to have
-      # - name: Pytest coverage comment
-      #   uses: MishaKav/pytest-coverage-comment@main
-      #   with:
-      #     pytest-coverage-path: ./pytest-coverage.txt
-      #     junitxml-path: ./pytest.xml
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-xml-coverage-path: ./coverage.xml
 
       # - name: Execute scGPT
       #   run: |
