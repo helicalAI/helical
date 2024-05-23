@@ -9,8 +9,6 @@ jobs:
   build:
   
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
     timeout-minutes: 60 
     steps:
       - name: Checkout repository
@@ -34,12 +32,14 @@ jobs:
 
       - name: Execute unittests
         run: |
-          pytest --cov-report "xml:coverage.xml" --cov-branch --cov-report=term-missing:skip-covered --cov=helical ci/ --cov-report=term
+          pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=helical ci/ | tee pytest-coverage.txt  
                
-      - name: Pytest coverage comment
-        uses: MishaKav/pytest-coverage-comment@main
-        with:
-          pytest-xml-coverage-path: ./coverage.xml
+      # Does not seem to work but would be nice to have
+      # - name: Pytest coverage comment
+      #   uses: MishaKav/pytest-coverage-comment@main
+      #   with:
+      #     pytest-coverage-path: ./pytest-coverage.txt
+      #     junitxml-path: ./pytest.xml
 
       # - name: Execute scGPT
       #   run: |
