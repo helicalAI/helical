@@ -2,21 +2,21 @@
 
 ## Model Details
 
-**Model Name:** Universal Cell Embedding (UCE) v1.0  
-**Model Version:** 1.0  
+**Model Name:** Universal Cell Embedding (UCE) v1.0\
+**Model Version:** 1.0\
 **Model Description:** A large pre-trained model for creating universal representations of cell types across species. The model performs tasks such as cell type annotation, hypothesis generation, and integrating diverse single-cell datasets.
 
 ## Model Developers
 
-**Developed By:** Yanay Rosen, Yusuf Roohani, Ayush Agarwal, Leon Samotorčan, Tabula Sapiens Consortium, Stephen R. Quake, Jure Leskovec  
-**Contact Information:** jure@cs.stanford.edu, quake@stanford.edu  
-**License:** MIT License
+**Developed By:** Yanay Rosen, Yusuf Roohani, Ayush Agarwal, Leon Samotorčan, Tabula Sapiens Consortium, Stephen R. Quake, Jure Leskovec\
+**Contact Information:** jure@cs.stanford.edu, quake@stanford.edu\  
+**License:** MIT License\
 
 ## Model Type
 
-**Architecture:** Transformer-based  
-**Domain:** Cell Biology, Bioinformatics  
-**Input Data:** Single-cell transcriptomics data
+**Architecture:** Transformer-based\
+**Domain:** Cell Biology, Bioinformatics\
+**Input Data:** Single-cell transcriptomics data\
 
 ## Model Purpose
 

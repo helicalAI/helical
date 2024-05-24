@@ -1,6 +1,10 @@
 Geneformer
 =================
 
+
+.. include:: ./model_cards/geneformer.md
+   :parser: myst_parser.sphinx_
+
 .. currentmodule:: helical.models.geneformer
 .. automodule:: helical.models.geneformer
 

@@ -2,21 +2,21 @@
 
 ## Model Details
 
-**Model Name:** scGPT  
-**Model Version:** 1.0  
+**Model Name:** scGPT  \
+**Model Version:** 1.0  \
 **Model Description:** scGPT is a generative pre-trained transformer model for single-cell multi-omics analysis. It is designed to perform various tasks, including cell type annotation, multi-batch integration, multi-omic integration, perturbation response prediction, and gene network inference. The model is pre-trained on extensive single-cell RNA sequencing data to build a foundational understanding of cellular biology.
 
 ## Model Developers
 
-**Developed By:** Haotian Cui, Chloe Wang, Hassaan Maan, Kuan Pang, Fengning Luo, Nan Duan, Bo Wang  
-**Contact Information:** Bo Wang (bowang@vectorinstitute.ai)  
-**License:** MIT License
+**Developed By:** Haotian Cui, Chloe Wang, Hassaan Maan, Kuan Pang, Fengning Luo, Nan Duan, Bo Wang  \
+**Contact Information:** Bo Wang (bowang@vectorinstitute.ai)  \
+**License:** MIT License \
 
 ## Model Type
 
-**Architecture:** Transformer-based  
-**Domain:** Cell Biology, Bioinformatics  
-**Languages:** Single-cell transcriptomics data
+**Architecture:** Transformer-based  \
+**Domain:** Cell Biology, Bioinformatics  \
+**Languages:** Single-cell transcriptomics data\
 
 ## Model Purpose
 
