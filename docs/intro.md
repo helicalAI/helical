@@ -74,6 +74,16 @@ A lot of our models have been published by talend authors developing these excit
 - [scanpy](https://github.com/scverse/scanpy)
 - [transformers](https://github.com/huggingface/transformers)
 
+### Licenses
+
+You can find the Licenses for each model implementation in the model repositories:
+
+- [scGPT](helical/models/scgpt/LICENSE)
+- [Geneformer](helical/models/geneformer/LICENSE)
+- [UCE](helical/models/uce/LICENSE)
+- [HyenaDNA](helical/models/hyena_dna/LICENSE)
+
+
 ## Citation
 
 Please use this BibTeX to cite this repository in your publications:
