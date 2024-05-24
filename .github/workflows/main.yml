@@ -32,7 +32,7 @@ jobs:
 
       - name: Execute unittests
         run: |
-          pytest --cov-report=html:html_cov --cov-branch --cov=helical ci/
+          pytest --cov-report=html:html_cov --cov-branch --cov-report term --cov=helical ci/
       
       - name: Upload coverage report
         uses: actions/upload-artifact@v2
@@ -47,18 +47,18 @@ jobs:
       #     pytest-coverage-path: ./pytest-coverage.txt
       #     junitxml-path: ./pytest.xml
 
-      # - name: Execute scGPT
-      #   run: |
-      #     python examples/run_scgpt.py
+      - name: Execute scGPT
+        run: |
+          python examples/run_scgpt.py
 
-      # - name: Execute Geneformer
-      #   run: |
-      #     python examples/run_geneformer.py
+      - name: Execute Geneformer
+        run: |
+          python examples/run_geneformer.py
 
-      # - name: Execute UCE
-      #   run: |
-      #     python examples/run_uce.py
+      - name: Execute UCE
+        run: |
+          python examples/run_uce.py
 
-      # - name: Execute Hyena
-      #   run: |
-      #     python examples/run_hyena_dna.py
+      - name: Execute Hyena
+        run: |
+          python examples/run_hyena_dna.py
