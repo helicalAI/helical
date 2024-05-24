@@ -109,9 +109,7 @@ class Geneformer(HelicalBaseModel):
         # load token dictionary (Ensembl IDs:token)
         with open(files_config["token_path"], "rb") as f:
             self.gene_token_dict = pickle.load(f)
-
-        self.token_gene_dict = {v: k for k, v in self.gene_token_dict.items()}
-        self.pad_token_id = self.gene_token_dict.get("<pad>")
+            self.pad_token_id = self.gene_token_dict.get("<pad>")
 
         self.tk = TranscriptomeTokenizer({"cell_type": "cell_type"}, 
                                          nproc=nproc, 
