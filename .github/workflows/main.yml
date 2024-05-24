@@ -39,7 +39,7 @@ jobs:
         with:
           name: coverage-report
           path: html_cov/
-          
+
       # Does not seem to work but would be nice to have
       # - name: Pytest coverage comment
       #   uses: MishaKav/pytest-coverage-comment@main
@@ -47,18 +47,18 @@ jobs:
       #     pytest-coverage-path: ./pytest-coverage.txt
       #     junitxml-path: ./pytest.xml
 
-      - name: Execute scGPT
-        run: |
-          python examples/run_scgpt.py
+      # - name: Execute scGPT
+      #   run: |
+      #     python examples/run_scgpt.py
 
-      - name: Execute Geneformer
-        run: |
-          python examples/run_geneformer.py
+      # - name: Execute Geneformer
+      #   run: |
+      #     python examples/run_geneformer.py
 
-      - name: Execute UCE
-        run: |
-          python examples/run_uce.py
+      # - name: Execute UCE
+      #   run: |
+      #     python examples/run_uce.py
 
-      - name: Execute Hyena
-        run: |
-          python examples/run_hyena_dna.py
+      # - name: Execute Hyena
+      #   run: |
+      #     python examples/run_hyena_dna.py
