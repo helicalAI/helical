@@ -49,20 +49,22 @@ class HyenaDNAConfig():
             fused_mlp: bool = False,   
             fused_dropout_add_ln: bool = True,
             residual_in_fp32: bool = True,
+            checkpoint_mixer: bool = False,
+            checkpoint_mlp: bool = False,
             pad_vocab_size_multiple: int = 8,
             return_hidden_state: bool = True,
             layer: dict = {
-                "_name_": "hyena",
-                "emb_dim": 5,
-                "filter_order": 64,
-                "local_order": 3,
-                "l_max": 1026,
-                "modulate": True,
-                "w": 10,
-                "lr": 6e-4,
-                "wd": 0.0,
-                "lr_pos_emb": 0.0
-            }
+                    "_name_": "hyena",
+                    "emb_dim": 5,
+                    "filter_order": 64,
+                    "local_order": 3,
+                    "l_max": 1026,
+                    "modulate": True,
+                    "w": 10,
+                    "lr": 6e-4,
+                    "wd": 0.0,
+                    "lr_pos_emb": 0.0
+                },
         ):
         
         # model specific parameters
@@ -70,13 +72,13 @@ class HyenaDNAConfig():
             "hyenadna-tiny-1k-seqlen": {
                 'd_model': 128,
                 'd_inner': 512,
-                'max_length': 1024,
+                'max_length': 1024, # for max_length see https://github.com/HazyResearch/hyena-dna/blob/main/huggingface.py
             },
             "hyenadna-tiny-1k-seqlen-d256": {
                 'd_model': 256,
                 'd_inner': 1024,
-                'max_length': 1024, # TODO double check this and include more models
-            }
+                'max_length': 1024
+            },
         }
 
         if model_name not in self.model_map:
@@ -96,6 +98,8 @@ class HyenaDNAConfig():
             "fused_mlp": fused_mlp,
             "fused_dropout_add_ln": fused_dropout_add_ln,
             "residual_in_fp32": residual_in_fp32,
+            "checkpoint_mixer": checkpoint_mixer,
+            "checkpoint_mlp": checkpoint_mlp,
             "pad_vocab_size_multiple": pad_vocab_size_multiple,
             "return_hidden_state": return_hidden_state,
             "layer": layer,
