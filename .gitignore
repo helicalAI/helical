@@ -12,6 +12,7 @@ examples/data/*
 *.npz
 *.arrow
 *zip
+*.npy
 
 *.pickle
 *.bin
