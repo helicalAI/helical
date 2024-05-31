@@ -6,3 +6,4 @@ sphinx-examples
 sphinx-proof
 sphinx-hoverxref
 numpydoc
+m2r
