@@ -32,8 +32,8 @@ class scGPTConfig():
         The padding value
     world_size : int, optional, default = 8
         The world size
-    accelerator : dict, optional, default = None
-        The accelerator configuration
+    accelerator : bool, optional, default = False
+        The accelerator configuration. By default same device as model.
     device : str, optional, default = "cpu"
         The device to use. Either use "cuda" or "cpu"
     use_fast_transformer : bool, optional, default = False
@@ -64,7 +64,7 @@ class scGPTConfig():
             mask_value: int = -1,
             pad_value: int = -2,
             world_size: int = 8,
-            accelerator: Optional[dict] = None,
+            accelerator: Optional[bool] = False,
             device: str = "cpu",
             use_fast_transformer: bool = False,
             ):

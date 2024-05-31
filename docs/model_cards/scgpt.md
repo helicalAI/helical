@@ -16,7 +16,7 @@
 
 **Architecture:** Transformer-based  \
 **Domain:** Cell Biology, Bioinformatics  \
-**Languages:** Single-cell transcriptomics data\
+**Languages:** Single-cell transcriptomics data \
 
 ## Model Purpose
 

@@ -48,13 +48,13 @@ class UCE(HelicalBaseModel):
             downloader.download_via_name(file)
 
         self.model_dir = self.config['model_path'].parent
-
+        self.device = self.config["device"]
         self.embeddings = get_ESM2_embeddings(self.config["token_file_path"], self.config["token_dim"])
         self.model =  load_model(self.config['model_path'], self.config, self.embeddings)
-        self.model = self.model.eval()
+        self.model = self.model.eval().to(self.device)
 
-        if self.config["accelerator"]:
-            self.accelerator = Accelerator(project_dir=self.model_dir, cpu=self.config["accelerator"]["cpu"])
+        if self.config["accelerator"] or self.device=='cuda':
+            self.accelerator = Accelerator(project_dir=self.model_dir)#, cpu=self.config["accelerator"]["cpu"])
             self.model = self.accelerator.prepare(self.model)
         else:
             self.accelerator = None

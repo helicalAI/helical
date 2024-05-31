@@ -15,8 +15,8 @@ class GeneformerConfig():
         The embedding mode
     device : str, optional, default = "cpu"
         The device to use. Either use "cuda" or "cpu"
-    accelerator : dict, optional, default = {"cpu": True}
-        The accelerator configuration
+    accelerator : bool, optional, default = False
+        The accelerator configuration. By default same device as model.
 
     Returns
     -------
@@ -30,7 +30,7 @@ class GeneformerConfig():
             emb_layer: int = -1,
             emb_mode: str = "cell",
             device: str = "cpu",
-            accelerator: Optional[dict] = {"cpu": True}
+            accelerator: Optional[bool] = False
             ):
         
         model_name = "geneformer-12L-30M"

@@ -57,7 +57,7 @@ class scGPT(HelicalBaseModel):
         self.model, self.vocab = load_model(self.config)
         
         if self.config["accelerator"]:
-            self.accelerator = Accelerator(project_dir=self.config["model_path"].parent, cpu=self.config["accelerator"]["cpu"])
+            self.accelerator = Accelerator(project_dir=self.config["model_path"].parent)
             self.model = self.accelerator.prepare(self.model)
         else:
             self.accelerator = None

@@ -214,7 +214,10 @@ def load_model(model_path: Union[str, Path], model_config: Dict[str, str], all_p
 def get_gene_embeddings(model, dataloader, accelerator, model_config=None):
 
     # disable progress bar if not the main process
-    pbar = tqdm(dataloader, disable=not accelerator.is_local_main_process)
+    if accelerator is not None:
+        pbar = tqdm(dataloader, disable=not accelerator.is_local_main_process)
+    else:
+        pbar = tqdm(dataloader)
     dataset_embeds = []
     
     # disabling gradient calculation for inference
@@ -230,9 +233,12 @@ def get_gene_embeddings(model, dataloader, accelerator, model_config=None):
             _, embedding = model.forward(batch_sentences, mask=mask)
             
             # Fix for duplicates in last batch
-            accelerator.wait_for_everyone()
-            embeddings = accelerator.gather_for_metrics((embedding))
-            if accelerator.is_main_process:
+            if accelerator is not None:
+                accelerator.wait_for_everyone()
+                embeddings = accelerator.gather_for_metrics((embedding))
+                if accelerator.is_main_process:
+                    dataset_embeds.append(embeddings.detach().cpu().numpy())
+            else:
                 dataset_embeds.append(embeddings.detach().cpu().numpy())
 
     return np.vstack(dataset_embeds)
