@@ -54,7 +54,7 @@ class UCE(HelicalBaseModel):
         self.model = self.model.eval()
 
         if self.config["accelerator"]:
-            self.accelerator = Accelerator(project_dir=self.model_dir, cpu=self.config["accelerator"]["cpu"])
+            self.accelerator = Accelerator(project_dir=self.model_dir)#, cpu=self.config["accelerator"]["cpu"])
             self.model = self.accelerator.prepare(self.model)
         else:
             self.accelerator = None

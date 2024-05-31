@@ -37,9 +37,9 @@ class UCEConfig():
         The token dimension
     multi_gpu : bool, optional, default = False
         Whether to use multiple GPUs or not
-    accelerator : dict, optional, default = {"cpu": True}
-        The accelerator configuration
-
+    accelerator : bool, optional, default = False
+        The accelerator configuration. By default same device as model.
+        
     Returns
     -------
     UCEConfig
@@ -60,7 +60,7 @@ class UCEConfig():
                  d_hid: int = 5120,
                  token_dim: int = 5120,
                  multi_gpu: bool = False,
-                 accelerator: Optional[dict] = {"cpu": True}
+                 accelerator: Optional[bool] = False
                 ):
         
         # model specific parameters

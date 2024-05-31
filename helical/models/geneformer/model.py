@@ -64,13 +64,13 @@ class Geneformer(HelicalBaseModel):
         self.forward_batch_size = self.config.batch_size
         
         if self.config.accelerator:
-            self.accelerator = Accelerator(project_dir=self.config.model_dir, cpu=self.config.accelerator["cpu"])
+            self.accelerator = Accelerator(project_dir=self.config.model_dir)
             self.model = self.accelerator.prepare(self.model)
         else:
             self.accelerator = None
         LOGGER.info(f"Model finished initializing.")
         
-    def process_data(self, data: AnnData,  nproc: int = 4,use_gene_symbols=True, output_path: Optional[str] = None) -> Dataset:   
+    def process_data(self, data: AnnData,  nproc: int = 1,use_gene_symbols=True, output_path: Optional[str] = None) -> Dataset:   
         """Processes the data for the UCE model
 
         Parameters 
@@ -82,7 +82,7 @@ class Geneformer(HelicalBaseModel):
             Currently the Geneformer only supports human genes.
 
             If you already have the ensembl_id column, you can skip the mapping step.
-        nproc : int, optional, default = 4
+        nproc : int, optional, default = 1
             Number of processes to use for dataset processing.
         use_gene_symbols : bool, default = True
             Set this boolean to True if you want to use gene symbols instead of Ensembl IDs. We will map the gene symbols to Ensembl IDs with a mapping taken from the `Ensembl Website <https://www.ensembl.org/`_.
