@@ -60,7 +60,7 @@ def get_embs(
         minibatch = filtered_input_data.select([i for i in range(i, max_range)])
 
         max_len = int(max(minibatch["length"]))
-        original_lens = torch.tensor(minibatch["length"])
+        original_lens = torch.tensor(minibatch["length"],device=device)
         minibatch.set_format(type="torch",device=device)
 
         input_data_minibatch = minibatch["input_ids"]
