@@ -239,6 +239,6 @@ def get_gene_embeddings(model, dataloader, accelerator, model_config=None):
                 if accelerator.is_main_process:
                     dataset_embeds.append(embeddings.detach().cpu().numpy())
             else:
-                dataset_embeds.append(embeddings.detach().cpu().numpy())
+                dataset_embeds.append(embedding.detach().cpu().numpy())
 
     return np.vstack(dataset_embeds)
