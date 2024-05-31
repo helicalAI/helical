@@ -14,7 +14,6 @@ from anndata import AnnData
 import scib
 from matplotlib import pyplot as plt
 from matplotlib import axes
-from IPython import get_ipython
 
 from .. import logger
 
@@ -58,19 +57,6 @@ def category_str2int(category_strs: List[str]) -> List[int]:
     name2id = {name: i for i, name in enumerate(set_category_strs)}
     return [name2id[name] for name in category_strs]
 
-
-def isnotebook() -> bool:
-    """check whether excuting in jupyter notebook."""
-    try:
-        shell = get_ipython().__class__.__name__
-        if shell == "ZMQInteractiveShell":
-            return True  # Jupyter notebook or qtconsole
-        elif shell == "TerminalInteractiveShell":
-            return True  # Terminal running IPython
-        else:
-            return False  # Other type (?)
-    except NameError:
-        return False  # Probably standard Python interpreter
 
 
 def get_free_gpu():
