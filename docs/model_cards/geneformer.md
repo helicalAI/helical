@@ -4,17 +4,17 @@
 
 **Model Name:** Geneformer  \
 **Model Version:** 1.0  \
-**Model Description:** Geneformer is a context-aware, attention-based deep learning model pretrained on a large-scale corpus of approximately 30 million single-cell transcriptomes. It is designed to enable context-specific predictions in settings with limited data in network biology. The model performs various tasks such as gene network mapping, disease modeling, and therapeutic target identification.\
+**Model Description:** Geneformer is a context-aware, attention-based deep learning model pretrained on a large-scale corpus of approximately 30 million single-cell transcriptomes. It is designed to enable context-specific predictions in settings with limited data in network biology. The model performs various tasks such as gene network mapping, disease modeling, and therapeutic target identification. \
 
 ## Model Developers
 
-**Developed By:** Christina V. Theodoris, Ling Xiao, Anant Chopra, Mark D. Chaffin, Zeina R. Al Sayed, Matthew C. Hill, Helene Mantineo, Elizabeth M. Brydon, Zexian Zeng, X. Shirley Liu, Patrick T. Ellinor\
+**Developed By:** Christina V. Theodoris, Ling Xiao, Anant Chopra, Mark D. Chaffin, Zeina R. Al Sayed, Matthew C. Hill, Helene Mantineo, Elizabeth M. Brydon, Zexian Zeng, X. Shirley Liu, Patrick T. Ellinor \
 **Contact Information:** christina.theodoris@gladstone.ucsf.edu, ellinor@mgh.harvard.edu  \
-**License:** Apache-2.0\
+**License:** Apache-2.0 \
 
 ## Model Type
 
-**Architecture:** Transformer-based\
+**Architecture:** Transformer-based \
 **Domain:** Cell Biology, Bioinformatics  \
 **Input Data:** Single-cell transcriptomes\
 

@@ -10,10 +10,13 @@ parts:
   - file: docs/UCE.rst
   - file: docs/scGPT.rst
   - file: docs/hyena_dna.rst
-- caption: Tutorials🪄
+- caption: RNA Tutorials🪄
   chapters:
   - file : examples/Geneformer-vs-UCE
   - file: examples/Quick-Start_Tutorial
+- caption: DNA Tutorials🪄
+  chapters:
+  - file: examples/hyena_dna_inference
   # - file : examples/geneformer_example
 
 # - caption: Basic examples 🪄
