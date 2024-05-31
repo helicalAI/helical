@@ -37,9 +37,11 @@ class UCEConfig():
         The token dimension
     multi_gpu : bool, optional, default = False
         Whether to use multiple GPUs or not
+    device : str, optional, default = "cpu"
+        The device to use. Either use "cuda" or "cpu".
     accelerator : bool, optional, default = False
         The accelerator configuration. By default same device as model.
-        
+
     Returns
     -------
     UCEConfig
@@ -60,6 +62,7 @@ class UCEConfig():
                  d_hid: int = 5120,
                  token_dim: int = 5120,
                  multi_gpu: bool = False,
+                 device: str = "cpu",
                  accelerator: Optional[bool] = False
                 ):
         
@@ -104,5 +107,6 @@ class UCEConfig():
             "token_file_path": model_path.parent / "all_tokens.torch",
             "token_dim": token_dim,
             "multi_gpu": multi_gpu,
+            "device": device,
             "accelerator": accelerator,
         }

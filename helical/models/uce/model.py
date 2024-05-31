@@ -51,7 +51,7 @@ class UCE(HelicalBaseModel):
 
         self.embeddings = get_ESM2_embeddings(self.config["token_file_path"], self.config["token_dim"])
         self.model =  load_model(self.config['model_path'], self.config, self.embeddings)
-        self.model = self.model.eval()
+        self.model = self.model.eval().to(self.config["device"])
 
         if self.config["accelerator"]:
             self.accelerator = Accelerator(project_dir=self.model_dir)#, cpu=self.config["accelerator"]["cpu"])
