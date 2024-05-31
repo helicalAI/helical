@@ -61,7 +61,7 @@ def get_embs(
 
         max_len = int(max(minibatch["length"]))
         original_lens = torch.tensor(minibatch["length"])
-        minibatch.set_format(type="torch")
+        minibatch.set_format(type="torch",device=device)
 
         input_data_minibatch = minibatch["input_ids"]
         input_data_minibatch = pad_tensor_list(
@@ -203,7 +203,7 @@ def gen_attention_mask(minibatch_encoding, max_len=None):
         else [1] * max_len
         for original_len in original_lens
     ]
-    return torch.tensor(attention_mask, device="cpu")
+    return torch.tensor(attention_mask, device= minibatch_encoding["length"].device)
 
 
 # get cell embeddings excluding padding
