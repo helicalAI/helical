@@ -47,9 +47,12 @@ git clone https://github.com/helicalAI/helical.git
 Within the `example` folder, open the notebook of your choice. We recommend starting with `Quick-Start_Tutorial.ipynb`
 
 ### Current Examples:
-- `Quick-Start_Tutorial.ipynb`: A tutorial to quickly get used to the helical package and enbironment. - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/Quick-Start_Tutorial.ipynb)
-- `Geneformer-vs-UCE.ipynb`: Zero-Shot Reference Mapping with Geneformer & UCE and compare the outcomes. [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/Geneformer-vs-UCE.ipynb)
-- Coming soon: new models such as scGPT, SCimilarity, scVI; benchmarking scripts; new use cases; others
+
+| Example | Description | Colab |
+| ----------- | ----------- |----------- |                                                        
+|[Quick-Start_Tutorial.ipynb](./examples/Quick-Start_Tutorial.ipynb)| A tutorial to quickly get used to the helical package and environment. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/Quick-Start_Tutorial.ipynb)|
+|[Geneformer-vs-UCE.ipynb](./examples/Geneformer-vs-UCE.ipynb) | Zero-Shot Reference Mapping with Geneformer & UCE and compare the outcomes. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/Geneformer-vs-UCE.ipynb) |
+| Coming Soon | New models such as scGPT, SCimilarity, scVI; benchmarking scripts; new use cases; others |
 
 ## Stuck somewhere ? Other ideas ?
 We are eager to help you and interact with you. Reach out via support@helical-ai.com. 
