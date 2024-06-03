@@ -42,17 +42,16 @@ labels = get_dataset_config_names("InstaDeepAI/nucleotide_transformer_downstream
 for label in labels:
     dataset = load_dataset("InstaDeepAI/nucleotide_transformer_downstream_tasks", label)
 
-    x, y = get_model_inputs(dataset["train"], 0.001)
-    
+    x, y = get_model_inputs(dataset["train"], 1)
+
     if not os.path.exists("data"):
-        os.makedirs("data")
-
-    np.save(f"data/x_{label}_norm_256", x)
-    np.save(f"data/y_{label}_norm_256", y)
-
-    X_unseen, y_unseen = get_model_inputs(dataset["test"], 0.001)
-    np.save(f"data/x_unseen_{label}_norm_256", X_unseen)
-    np.save(f"data/y_unseen_{label}_norm_256", y_unseen)
-    break
+        os.makedirs("data/train")
+        os.makedirs("data/test")
 
 
+    np.save(f"data/train/x_{label}_norm_256", x)
+    np.save(f"data/train/y_{label}_norm_256", y)
+
+    X_unseen, y_unseen = get_model_inputs(dataset["test"], 1)
+    np.save(f"data/test/x_{label}_norm_256", X_unseen)
+    np.save(f"data/test/y_{label}_norm_256", y_unseen)
