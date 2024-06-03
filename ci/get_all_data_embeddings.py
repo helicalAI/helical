@@ -37,7 +37,7 @@ def get_model_inputs(dataset: DatasetDict, ratio: float = 1.0):
 
 labels = get_dataset_config_names("InstaDeepAI/nucleotide_transformer_downstream_tasks")
 
-for i, label in enumerate(labels):
+for i, label in enumerate(labels[:5]):
     print(f"Processing '{label}' dataset: {i+1} of {len(labels)}")
 
     dataset = load_dataset("InstaDeepAI/nucleotide_transformer_downstream_tasks", label)
