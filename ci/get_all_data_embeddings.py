@@ -1,6 +1,5 @@
 import numpy as np
 from datasets import DatasetDict
-from tqdm import tqdm
 from helical.models.hyena_dna.model import HyenaDNA
 from helical.models.hyena_dna.hyena_dna_config import HyenaDNAConfig    
 from datasets import get_dataset_config_names
@@ -20,9 +19,8 @@ def get_model_inputs(dataset: DatasetDict, ratio: float = 1.0):
     import logging
     logging.disable(logging.CRITICAL)
 
-    # use tqdm for a progress bar
     length = int(len(dataset)*ratio)
-    for i in tqdm(range(length)):
+    for i in range(length):
         sequence = dataset["sequence"][i]
         
         tokenized_sequence = hyena_model.process_data(sequence)
@@ -39,9 +37,10 @@ def get_model_inputs(dataset: DatasetDict, ratio: float = 1.0):
 
 labels = get_dataset_config_names("InstaDeepAI/nucleotide_transformer_downstream_tasks")
 
-for label in labels:
-    dataset = load_dataset("InstaDeepAI/nucleotide_transformer_downstream_tasks", label)
+for i, label in enumerate(labels):
+    print(f"Processing '{label}' dataset: {i+1} of {len(labels)}")
 
+    dataset = load_dataset("InstaDeepAI/nucleotide_transformer_downstream_tasks", label)
     x, y = get_model_inputs(dataset["train"], 1)
 
     if not os.path.exists("data"):
