@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: Get Embeddings
 
 on:
   workflow_dispatch:
