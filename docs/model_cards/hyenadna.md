@@ -46,7 +46,7 @@
 - Our results clearly underperform in comparison. This is probably due to the much larger models being used for the NT, while the Hyena model was pre-trained from scratch for the better performances. 
 
 
-|Dataset       |Metric       |Helical      |NT           |GPT          |HyenaDNA pretrained|HyenaDNA not pretrained|
+|Dataset       |Metric       |HyenaDNA (Helical)      |NT           |GPT          |HyenaDNA pretrained|HyenaDNA not pretrained|
 |    :----:    |    :----:   |    :----:   |    :----:   |    :----:   |    :----:   |    :----:   |
 |H4ac|MCC|33.27%|50.10%|36.40%|**63.70%**|43.50%|
 |H3K36me3|MCC|46.65%|63.20%|47.80%|**65.30%**|53.40%|
