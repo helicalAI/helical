@@ -1,0 +1,39 @@
+name: Get Embeddings
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+  
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11.8
+          cache: 'pip' # caching pip dependencies
+
+      - name: Install dependencies
+        run: |
+            pip install .
+            
+      # First download before tests as they make use of the downloaded files 
+      - name: Download all files
+        run: |
+          python ci/download_all.py
+
+      - name: Execute script to get embeddings
+        run: |
+          python ci/probing_tutorial_helpers/get_all_data_embeddings.py
+      
+      - name: Upload numpy embeddings data
+        uses: actions/upload-artifact@v2
+        with:
+          name: upload-data
+          path: data/
+
+      
