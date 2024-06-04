@@ -91,11 +91,10 @@
 from helical.models.scgpt.model import scGPT, scGPTConfig
 import anndata as ad
 
-model_config = scGPTConfig(batch_size=10)
-scgpt = scGPT(model_config=model_config)
-
+scgpt_config = scGPTConfig(batch_size=10)
+scgpt = scGPT(configurer = scgpt_config)
 adata = ad.read_h5ad("dataset.h5ad")
-data = scgpt.process_data(adat)
+data = scgpt.process_data(adata)
 embeddings = scgpt.get_embeddings(data)
 
 print(embeddings.shape)
