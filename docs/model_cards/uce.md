@@ -90,18 +90,16 @@
 
 **Example Usage:**
 ```python
-from uce_model import UCEModel
+from helical.models.uce.model import UCE, UCEConfig
+import anndata as ad
 
-# Initialize model
-model = UCEModel()
+configurer=UCEConfig(batch_size=10)
+uce = UCE(configurer=configurer)
+ann_data = ad.read_h5ad("dataset.h5ad")
+data_loader = uce.process_data(ann_data[:10])
+embeddings = uce.get_embeddings(data_loader)
 
-# Load single-cell data
-data = load_single_cell_data("example_data.h5ad")
-
-# Predict embeddings
-result = model.predict(data)
-
-print(result)
+print(embeddings.shape)
 ```
 
 ## Developers

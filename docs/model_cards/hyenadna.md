@@ -97,12 +97,15 @@
 
 **Example Usage:**
 ```python
-from hyenadna import HyenaDNA
+from helical.models.hyena_dna.model import HyenaDNA, HyenaDNAConfig
 
-model = HyenaDNA()
-sequence = "ATCG..."
-result = model.predict(sequence)
-print(result)
+hyena_config = HyenaDNAConfig(model_name = "hyenadna-tiny-1k-seqlen-d256")
+model = HyenaDNA(configurer = hyena_config)   
+sequence = 'ACTG' * 1024
+tokenized_sequence = model.process_data(sequence)
+embeddings = model.get_embeddings(tokenized_sequence)
+
+print(embeddings.shape)
 ```
 
 ## Citation
