@@ -4,20 +4,20 @@
 
 **Model Name:** HyenaDNA  \
 **Model Version:** 1.0  \
-**Model Description:** HyenaDNA, based on the Hyena architecture, is designed for long-range genomic sequence analysis with single nucleotide resolution. \
+**Model Description:** HyenaDNA, based on the Hyena architecture, is designed for long-range genomic sequence analysis with single nucleotide resolution. 
 
 ## Model Developers
 
 **Developed By:** Eric Nguyen, Michael Poli, Marjan Faizi, Armin W. Thomas, Callum Birch Sykes, Michael Wornow, Aman Patel, Clayton Rabideau, Stefano Massaroli, Yoshua Bengio, Stefano Ermon, Stephen A. Baccus, Christopher Ré \
 **Institutions:** Stanford University, Harvard University, SynTensor, Mila, Université de Montréal  \
 **Contact Information:** [GitHub Repository](https://github.com/HazyResearch/hyena-dna)  \
-**License:** Apache 2.0 \
+**License:** Apache 2.0 
 
 ## Model Type
 
 **Architecture:** Decoder-only sequence-to-sequence  \
 **Domain:** Genomics  \
-**Input Data:** DNA sequences at single nucleotide resolution \
+**Input Data:** DNA sequences at single nucleotide resolution 
 
 ## Model Purpose
 
@@ -40,13 +40,14 @@
 - Accuracy, Precision, Recall, F1-Score
 
 **Performance Benchmarks:**  
+- We create the probing results with the pre-trained HyenaDNA model and compare it to the results from the paper. We provide the notebook to re-produce our results.
 - The tutorial [hyena_dna_inference.ipynb](https://helical.readthedocs.io/en/latest/examples/hyena_dna_inference.html) was used as a basis to create this comparison, as well as the values from the [Hyena](https://arxiv.org/pdf/2306.15794) and the [Nucleotide transformer](https://www.biorxiv.org/content/10.1101/2023.01.11.523679v1.full.pdf) papers.
 - Probing was used for the 18 downstream tasks, where the HyenaDNA embeddings of nucleotide sequences were used as features to a simpler neural network.
-- The same neural network with the same hyperparameters were used to generate these results.
-- Our results clearly underperform in comparison. This is probably due to the much larger models being used for the NT, while the Hyena model was pre-trained from scratch for the better performances. 
+- The same neural network with the same hyperparameters across all the tasks was used to generate these results.
+- Our results underperform in comparison to the fine-tuned models. This is due to the much larger models being used for the NT, while the Hyena model was pre-trained from scratch for the better performances. 
 
 
-|Dataset       |Metric       |HyenaDNA (Helical)      |NT           |GPT          |HyenaDNA pretrained|HyenaDNA not pretrained|
+|Dataset       |Metric       |HyenaDNA pre-trained (probing) - Helical     |NT (fine-tuned) - Original          |GPT - Original        |HyenaDNA pretrained (fine-tuned) - Original|HyenaDNA not pretrained - Original|
 |    :----:    |    :----:   |    :----:   |    :----:   |    :----:   |    :----:   |    :----:   |
 |H4ac|MCC|33.27%|50.10%|36.40%|**63.70%**|43.50%|
 |H3K36me3|MCC|46.65%|63.20%|47.80%|**65.30%**|53.40%|
