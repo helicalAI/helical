@@ -28,7 +28,7 @@ jobs:
 
       - name: Execute script to get embeddings
         run: |
-          python ci/get_all_data_embeddings.py
+          python ci/probing_tutorial_helpers/get_all_data_embeddings.py
       
       - name: Upload numpy embeddings data
         uses: actions/upload-artifact@v2
