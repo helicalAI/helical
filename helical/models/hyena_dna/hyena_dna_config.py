@@ -5,37 +5,59 @@ class HyenaDNAConfig():
     """
     Configuration class for Hyena DNA model.
 
-    Args:
-        model_name (Literal["hyenadna-tiny-1k-seqlen", "hyenadna-tiny-1k-seqlen-d256"], optional):
-            The name of the model. Defaults to "hyenadna-tiny-1k-seqlen".
-        n_layer (int, optional): The number of layers in the model. Defaults to 2.
-        vocab_size (int, optional): The size of the vocabulary. Defaults to 12.
-        resid_dropout (float, optional): The dropout rate for residual connections. Defaults to 0.0.
-        embed_dropout (float, optional): The dropout rate for embedding layer. Defaults to 0.1.
-        fused_mlp (bool, optional): Whether to use fused MLP. Defaults to False.
-        fused_dropout_add_ln (bool, optional): Whether to use fused dropout and layer normalization. Defaults to True.
-        residual_in_fp32 (bool, optional): Whether to use FP32 for residual connections. Defaults to True.
-        pad_vocab_size_multiple (int, optional): The multiple to pad the vocabulary size. Defaults to 8.
-        return_hidden_state (bool, optional): Whether to return the hidden state. Defaults to True.
-        layer (dict, optional): Dictionary containing layer-specific parameters. Defaults to {
-            "_name_": "hyena",
-            "emb_dim": 5,
-            "filter_order": 64,
-            "local_order": 3,
-            "l_max": 1026,
-            "modulate": True,
-            "w": 10,
-            "lr": 6e-4,
-            "wd": 0.0,
-            "lr_pos_emb": 0.0
-        }.
+    Parameters
+    ----------
+    model_name : Literal["hyenadna-tiny-1k-seqlen", "hyenadna-tiny-1k-seqlen-d256"], optional, default = "hyenadna-tiny-1k-seqlen"
+        The name of the model.
+    n_layer : int, optional, default = 2
+        The number of layers in the model.
+    vocab_size : int, optional, default = 12
+        The size of the vocabulary.
+    resid_dropout : float, optional, default = 0.0
+        The dropout rate for residual connections.
+    embed_dropout : float, optional, default = 0.1
+        The dropout rate for embedding layer.
+    fused_mlp : bool, optional, default = False
+        Whether to use fused MLP.
+    fused_dropout_add_ln : bool, optional, default = True
+        Whether to use fused dropout and layer normalization.
+    residual_in_fp32 : bool, optional, default = True
+        Whether to use FP32 for residual connections.
+    checkpoint_mixer : bool, optional, default = False
+        Whether to use checkpointing for mixer layers.
+    checkpoint_mlp : bool, optional, default = False
+        Whether to use checkpointing for MLP layers.
+    pad_vocab_size_multiple : int, optional, default = 8
+        The multiple to pad the vocabulary size.
+    return_hidden_state : bool, optional, default = True
+        Whether to return the hidden state.
+    device : Literal["cpu", "cuda"], optional, default = "cpu"
+        The device to use.
+    layer : dict, optional, default = {
+        "_name_": "hyena",
+        "emb_dim": 5,
+        "filter_order": 64,
+        "local_order": 3,
+        "l_max": 1026,
+        "modulate": True,
+        "w": 10,
+        "lr": 6e-4,
+        "wd": 0.0,
+        "lr_pos_emb": 0.0
+    }
+        Dictionary containing layer-specific parameters.
 
-    Attributes:
-        model_map (dict): A dictionary mapping model names to their corresponding configuration parameters.
-        config (dict): A dictionary containing the configuration parameters for the Hyena DNA model.
+    Attributes
+    ----------
+    model_map : dict
+        A dictionary mapping model names to their corresponding configuration parameters.
+    config : dict
+        A dictionary containing the configuration parameters for the Hyena DNA model.
 
-    Raises:
-        ValueError: If the specified model name is not found in the available models.
+    Raises
+    ------
+    ValueError
+        If the specified model name is not found in the available models.
 
     """
 
@@ -53,6 +75,7 @@ class HyenaDNAConfig():
             checkpoint_mlp: bool = False,
             pad_vocab_size_multiple: int = 8,
             return_hidden_state: bool = True,
+            device: Literal["cpu", "cuda"] = "cpu",
             layer: dict = {
                     "_name_": "hyena",
                     "emb_dim": 5,
@@ -102,6 +125,7 @@ class HyenaDNAConfig():
             "checkpoint_mlp": checkpoint_mlp,
             "pad_vocab_size_multiple": pad_vocab_size_multiple,
             "return_hidden_state": return_hidden_state,
+            "device": device,
             "layer": layer,
             "max_length": self.model_map[model_name]['max_length']
         }
