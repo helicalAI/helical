@@ -61,7 +61,7 @@ class HyenaDNA(HelicalBaseModel):
         )
 
         # prep model and forward
-        self.model = self.model.to(self.device)
+        self.model.to(self.device)
         self.model.eval()
         LOGGER.info(f"Model finished initializing.")
 
