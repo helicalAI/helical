@@ -16,7 +16,7 @@ parts:
   - file: examples/Quick-Start_Tutorial
 - caption: DNA Tutorials🪄
   chapters:
-  - file: examples/hyena_dna_inference
+  - file: examples/Hyena-DNA-Inference
   # - file : examples/geneformer_example
 
 # - caption: Basic examples 🪄
