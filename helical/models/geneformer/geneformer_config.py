@@ -1,6 +1,7 @@
 from typing import Optional
 from pathlib import Path
 from helical.constants.paths import CACHE_DIR_HELICAL
+from typing import Literal
 
 class GeneformerConfig():
     """Configuration class to use the Geneformer Model.
@@ -13,8 +14,8 @@ class GeneformerConfig():
         The embedding layer
     emb_mode : str, optional, default = "cell"
         The embedding mode
-    device : str, optional, default = "cpu"
-        The device to use. Either use "cuda" or "cpu"
+    device : Literal["cpu", "cuda"], optional, default = "cpu"
+        The device to use. Either use "cuda" or "cpu".
     accelerator : bool, optional, default = False
         The accelerator configuration. By default same device as model.
 
@@ -29,7 +30,7 @@ class GeneformerConfig():
             batch_size: int = 5,
             emb_layer: int = -1,
             emb_mode: str = "cell",
-            device: str = "cpu",
+            device: Literal["cpu", "cuda"] = "cpu",
             accelerator: Optional[bool] = False
             ):
         
