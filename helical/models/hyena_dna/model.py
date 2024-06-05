@@ -48,8 +48,6 @@ class HyenaDNA(HelicalBaseModel):
         for file in self.config["list_of_files_to_download"]:
             downloader.download_via_name(file)
 
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
         self.model = HyenaDNAPreTrainedModel().from_pretrained(self.config)
 
         # create tokenizer
@@ -61,6 +59,7 @@ class HyenaDNA(HelicalBaseModel):
         )
 
         # prep model and forward
+        self.device = self.config['device']
         self.model.to(self.device)
         self.model.eval()
         LOGGER.info(f"Model finished initializing.")
