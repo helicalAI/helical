@@ -52,6 +52,8 @@ Within the `example` folder, open the notebook of your choice. We recommend star
 | ----------- | ----------- |----------- |                                                        
 |[Quick-Start_Tutorial.ipynb](./examples/Quick-Start_Tutorial.ipynb)| A tutorial to quickly get used to the helical package and environment. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/Quick-Start_Tutorial.ipynb)|
 |[Geneformer-vs-UCE.ipynb](./examples/Geneformer-vs-UCE.ipynb) | Zero-Shot Reference Mapping with Geneformer & UCE and compare the outcomes. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/Geneformer-vs-UCE.ipynb) |
+|[Hyena-DNA-Inference.ipynb](./examples/Hyena-DNA-Inference.ipynb)|An example how to do probing with HyenaDNA by training a neural network on 18 downstream classification tasks.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/Hyena-Dna-Inference.ipynb)
+|
 | Coming Soon | New models such as scGPT, SCimilarity, scVI; benchmarking scripts; new use cases; others |
 
 ## Stuck somewhere ? Other ideas ?
