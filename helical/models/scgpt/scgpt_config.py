@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 from helical.constants.paths import CACHE_DIR_HELICAL
 from pathlib import Path
 
@@ -34,8 +34,8 @@ class scGPTConfig():
         The world size
     accelerator : bool, optional, default = False
         The accelerator configuration. By default same device as model.
-    device : str, optional, default = "cpu"
-        The device to use. Either use "cuda" or "cpu"
+    device : Literal["cpu", "cuda"], optional, default = "cpu"
+        The device to use. Either use "cuda" or "cpu".
     use_fast_transformer : bool, optional, default = False
         Wheter to use fast transformer or nots
 
@@ -65,7 +65,7 @@ class scGPTConfig():
             pad_value: int = -2,
             world_size: int = 8,
             accelerator: Optional[bool] = False,
-            device: str = "cpu",
+            device: Literal["cpu", "cuda"] = "cpu",
             use_fast_transformer: bool = False,
             ):
         
