@@ -37,7 +37,7 @@ class UCEConfig():
         The token dimension
     multi_gpu : bool, optional, default = False
         Whether to use multiple GPUs or not
-    device : str, optional, default = "cpu"
+    device : Literal["cpu", "cuda"], optional, default = "cpu"
         The device to use. Either use "cuda" or "cpu".
     accelerator : bool, optional, default = False
         The accelerator configuration. By default same device as model.
@@ -62,7 +62,7 @@ class UCEConfig():
                  d_hid: int = 5120,
                  token_dim: int = 5120,
                  multi_gpu: bool = False,
-                 device: str = "cpu",
+                 device: Literal["cpu", "cuda"] = "cpu",
                  accelerator: Optional[bool] = False
                 ):
         
