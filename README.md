@@ -1,7 +1,8 @@
 <div align="center">
-  <img src="docs/assets/logo_name.png" alt="Logo" width="304" height="110">
+  <p><a href="https://helical.readthedocs.io/"/>
+  <img src="docs/assets/logo_and_text_v2.png" alt="Helical Logo" width=400>
+  </a></p>
 </div>
-
 
 # What is Helical ?
 

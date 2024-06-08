@@ -1,8 +1,12 @@
-```{image} assets/logo_name.png
+```{image} assets/logo_and_text_v2.png
 :alt: "Logo"
 :width: 400px
 :align: center
+:target: https://helical.readthedocs.io/
+
 ```
+
+
 # What is Helical ?
 
 Helical provides a framework for state-of-the-art pre-trained bio foundation models on genomics and transcriptomics modalities.
