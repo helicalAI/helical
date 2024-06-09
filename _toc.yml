@@ -14,6 +14,7 @@ parts:
   chapters:
   - file : examples/Geneformer-vs-UCE
   - file: examples/Quick-Start_Tutorial
+  - file: examples/Cell-Type-Annotation
 - caption: DNA Tutorials🪄
   chapters:
   - file: examples/Hyena-DNA-Inference
