@@ -8,7 +8,7 @@ import logging
 from typing import Literal
 from accelerate import Accelerator
 from helical.models.scgpt.scgpt_utils import load_model
-from helical.models.scgpt.tasks.cell_emb import Dataset
+from helical.models.scgpt.dataset import Dataset
 from helical.services.downloader import Downloader
 from helical.models.scgpt.data_collator import DataCollator
 from torch.utils.data import DataLoader, SequentialSampler
@@ -131,7 +131,7 @@ class scGPT(HelicalBaseModel):
         cell_embeddings = cell_embeddings / np.linalg.norm(
             cell_embeddings, axis=1, keepdims=True
         )
-        
+
         # TODO?
         # return_new_adata (bool): Whether to return a new AnnData object. If False, will
         #     add the cell embeddings to a new :attr:`adata.obsm` with key "X_scGPT".

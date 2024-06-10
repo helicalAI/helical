@@ -1,20 +1,7 @@
-import json
 import os
-from pathlib import Path
-from typing import Optional, Union
-
+from typing import Union
 import numpy as np
-import scanpy as sc
 import torch
-from anndata import AnnData
-from torch.utils.data import DataLoader, SequentialSampler
-from tqdm import tqdm
-
-from .. import logger
-from ..data_collator import DataCollator
-from ..model_dir import TransformerModel
-from ..tokenizer import GeneVocab
-from ..utils import load_pretrained
 
 PathLike = Union[str, os.PathLike]
 
