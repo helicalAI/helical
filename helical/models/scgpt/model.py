@@ -7,8 +7,13 @@ from anndata import AnnData
 import logging
 from typing import Literal
 from accelerate import Accelerator
-from helical.models.scgpt.scgpt_utils import load_model, get_embedding
+from helical.models.scgpt.scgpt_utils import load_model
+from helical.models.scgpt.tasks.cell_emb import Dataset
 from helical.services.downloader import Downloader
+from helical.models.scgpt.data_collator import DataCollator
+from torch.utils.data import DataLoader, SequentialSampler
+import torch
+from tqdm import tqdm
 
 LOGGER = logging.getLogger(__name__)
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
@@ -63,8 +68,13 @@ class scGPT(HelicalBaseModel):
             self.accelerator = None
         LOGGER.info(f"Model finished initializing.")
         
-    def get_embeddings(self, data: AnnData) -> np.array:
+    def get_embeddings(self,
+                       dataset: Dataset, 
+    ) -> np.array:
         """Gets the gene embeddings
+
+        Parameters 
+        ----------
         
         Returns
         -------
@@ -72,25 +82,74 @@ class scGPT(HelicalBaseModel):
             The gene embeddings in the form of a numpy array
         """
         LOGGER.info(f"Inference started:")
-        # The extracted embedding is stored in the `X_scGPT` field of `obsm` in AnnData.
-        # for local development, only get embeddings for the first 100 entries
 
-        embeddings = get_embedding(data,
-            model = self.model,
-            vocab = self.vocab,
-            batch_size=self.config["batch_size"],
-            model_configs=self.config,
-            gene_col=self.gene_column_name,
-            device=self.config["device"])
+        use_batch_labels = dataset.batch_ids is not None
         
-        return embeddings
+        collator = DataCollator(
+            do_padding=True,
+            pad_token_id=self.vocab[self.config["pad_token"]],
+            pad_value=self.config["pad_value"],
+            do_mlm=False,
+            do_binning=True,
+            max_length=1200,
+            sampling=True,
+            keep_first_n_tokens=1,
+        )
+        data_loader = DataLoader(
+            dataset,
+            batch_size=self.config["batch_size"],
+            sampler=SequentialSampler(dataset),
+            collate_fn=collator,
+            drop_last=False,
+            pin_memory=True,
+        )
+
+        device = next(self.model.parameters()).device
+        cell_embeddings = np.zeros(
+            (len(dataset), self.config["embsize"]), dtype=np.float32
+        )
+        with torch.no_grad(), torch.cuda.amp.autocast(enabled=True): #torch.autocast(device_type=str(device),enabled=True): # torch.cuda.amp.autocast(enabled=True):
+            count = 0
+            for data_dict in tqdm(data_loader, desc="Embedding cells"):
+                input_gene_ids = data_dict["gene"].to(device)
+                src_key_padding_mask = input_gene_ids.eq(
+                    self.vocab[self.config["pad_token"]]
+                )
+                embeddings = self.model._encode(
+                    input_gene_ids,
+                    data_dict["expr"].to(device),
+                    src_key_padding_mask=src_key_padding_mask,
+                    batch_labels=data_dict["batch_labels"].to(device)
+                    if use_batch_labels
+                    else None,
+                )
+
+                embeddings = embeddings[:, 0, :]  # get the <cls> position embedding
+                embeddings = embeddings.cpu().numpy()
+                cell_embeddings[count : count + len(embeddings)] = embeddings
+                count += len(embeddings)
+        cell_embeddings = cell_embeddings / np.linalg.norm(
+            cell_embeddings, axis=1, keepdims=True
+        )
+        
+        # TODO?
+        # return_new_adata (bool): Whether to return a new AnnData object. If False, will
+        #     add the cell embeddings to a new :attr:`adata.obsm` with key "X_scGPT".
+        # if return_new_adata:
+        #     obs_df = adata.obs[obs_to_save] if obs_to_save is not None else None
+        #     return sc.AnnData(X=cell_embeddings, obs=obs_df, dtype="float32")
+        # adata.obsm["X_scGPT"] = cell_embeddings
+
+        return cell_embeddings
     
-    def process_data(self, 
+    def process_data(self,
                      adata: AnnData, 
                      gene_column_name: str = "gene_symbols", 
                      fine_tuning: bool = False,
                      n_top_genes: int = 1800, 
-                     flavor: Literal["seurat", "cell_ranger", "seurat_v3", "seurat_v3_paper"] = "seurat_v3") -> AnnData:
+                     flavor: Literal["seurat", "cell_ranger", "seurat_v3", "seurat_v3_paper"] = "seurat_v3",
+                     use_batch_labels: bool = False
+    ) -> Dataset:
         """Processes the data for the scGPT model
 
         Parameters 
@@ -99,7 +158,7 @@ class scGPT(HelicalBaseModel):
             The AnnData object containing the data to be processed. 
             The Anndata requires the expression counts as the data matrix and the column with the gene symbols is defined by the argument gene_column_name.
         gene_column_name: str, optional, default = "gene_symbols"
-            The name of the column containing the genes in the data.
+            The column in adata.var that contains the gene names.
         fine_tuning: bool, optional, default = False
             If you intend to use the data to fine-tune the model on a downstream task, set this to True.
         n_top_genes: int, optional, default = 1800
@@ -109,11 +168,13 @@ class scGPT(HelicalBaseModel):
             Choose the flavor for identifying highly variable genes. 
             For the dispersion based methods in their default workflows, 
             Seurat passes the cutoffs whereas Cell Ranger passes n_top_genes.
+        use_batch_labels: Bool, default = False
+            Whether to use batch labels. Defaults to False.
 
         Returns
         -------
-        AnnData
-            The processed AnnData object
+        Dataset
+            The processed dataset.
         """
         self.gene_column_name = gene_column_name
         self.adata = adata
@@ -127,4 +188,36 @@ class scGPT(HelicalBaseModel):
             # highly variable genes
             sc.pp.highly_variable_genes(self.adata, n_top_genes=n_top_genes, flavor=flavor)
             self.adata = self.adata[:, self.adata.var['highly_variable']]
-        return self.adata
+
+        # verify gene col
+        if self.gene_column_name == "index":
+            adata.var["index"] = adata.var.index
+        else:
+            assert self.gene_column_name in adata.var
+
+        adata.var["id_in_vocab"] = [ self.vocab[gene] if gene in self.vocab else -1 for gene in adata.var[self.gene_column_name] ]
+        gene_ids_in_vocab = np.array(adata.var["id_in_vocab"])
+        adata = adata[:, adata.var["id_in_vocab"] >= 0]
+
+        # Binning will be applied after tokenization. A possible way to do is to use the unified way of binning in the data collator.
+
+        self.vocab.set_default_index(self.vocab["<pad>"])
+        genes = adata.var[self.gene_column_name].tolist()
+        gene_ids = np.array(self.vocab(genes), dtype=int)
+        
+        count_matrix = adata.X
+        count_matrix = (
+            count_matrix if isinstance(count_matrix, np.ndarray) else count_matrix.A
+        )
+        # gene vocabulary ids
+        if gene_ids is None:
+            gene_ids = np.array(adata.var["id_in_vocab"])
+        assert np.all(gene_ids >= 0)
+
+        if use_batch_labels:
+            batch_ids = np.array(adata.obs["batch_id"].tolist())
+
+        dataset = Dataset(
+            count_matrix, gene_ids, self.vocab, self.config, batch_ids if use_batch_labels else None
+        )
+        return dataset
