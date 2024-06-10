@@ -5,7 +5,7 @@
 title: Helical Documentation
 author: Helical Team
 copyright: "2024"
-logo: docs/assets/official_logo_small.png
+logo: docs/assets/logo_and_text.png
 
 # Force re-execution of notebooks on each build.
 # See https://jupyterbook.org/content/execute.html
