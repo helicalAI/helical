@@ -68,14 +68,14 @@ class scGPT(HelicalBaseModel):
             self.accelerator = None
         LOGGER.info(f"Model finished initializing.")
         
-    def get_embeddings(self,
-                       dataset: Dataset, 
-    ) -> np.array:
+    def get_embeddings(self, dataset: Dataset) -> np.array:
         """Gets the gene embeddings
 
         Parameters 
         ----------
-        
+        dataset: Dataset
+            The processed dataset to get the embeddings from.
+
         Returns
         -------
         np.array
