@@ -158,7 +158,7 @@ class scGPT(HelicalBaseModel):
             The AnnData object containing the data to be processed. 
             The Anndata requires the expression counts as the data matrix and the column with the gene symbols is defined by the argument gene_column_name.
         gene_column_name: str, optional, default = "gene_symbols"
-            The column in adata.var that contains the gene names.
+            The column in adata.var that contains the gene names. An option is also to use the "index" column.
         fine_tuning: bool, optional, default = False
             If you intend to use the data to fine-tune the model on a downstream task, set this to True.
         n_top_genes: int, optional, default = 1800
@@ -196,7 +196,6 @@ class scGPT(HelicalBaseModel):
             assert self.gene_column_name in adata.var
 
         adata.var["id_in_vocab"] = [ self.vocab[gene] if gene in self.vocab else -1 for gene in adata.var[self.gene_column_name] ]
-        gene_ids_in_vocab = np.array(adata.var["id_in_vocab"])
         adata = adata[:, adata.var["id_in_vocab"] >= 0]
 
         # Binning will be applied after tokenization. A possible way to do is to use the unified way of binning in the data collator.
@@ -204,11 +203,8 @@ class scGPT(HelicalBaseModel):
         self.vocab.set_default_index(self.vocab["<pad>"])
         genes = adata.var[self.gene_column_name].tolist()
         gene_ids = np.array(self.vocab(genes), dtype=int)
-        
-        count_matrix = adata.X
-        count_matrix = (
-            count_matrix if isinstance(count_matrix, np.ndarray) else count_matrix.A
-        )
+        count_matrix = (adata.X if isinstance(adata.X, np.ndarray) else adata.X.A)
+
         # gene vocabulary ids
         if gene_ids is None:
             gene_ids = np.array(adata.var["id_in_vocab"])
