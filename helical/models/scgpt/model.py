@@ -83,8 +83,11 @@ class scGPT(HelicalBaseModel):
         """
         LOGGER.info(f"Inference started:")
 
-        use_batch_labels = dataset.batch_ids is not None
-        
+        try:
+            use_batch_labels = dataset.batch_ids is not None
+        except:
+            use_batch_labels = False
+            
         collator = DataCollator(
             do_padding=True,
             pad_token_id=self.vocab[self.config["pad_token"]],
