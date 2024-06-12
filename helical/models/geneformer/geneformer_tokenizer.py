@@ -198,7 +198,7 @@ class TranscriptomeTokenizer:
             raise
         return tokenized_cells, cell_metadata
 
-    def tokenize_anndata(self, adata, target_sum=10_000):
+    def tokenize_anndata(self, adata: AnnData, target_sum=10_000):
         # adata = ad.read(adata_file_path, backed="r")
 
         if self.custom_attr_name_dict is not None:
