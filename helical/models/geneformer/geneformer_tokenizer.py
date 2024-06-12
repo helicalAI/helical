@@ -205,32 +205,12 @@ class TranscriptomeTokenizer:
                 attr_key: [] for attr_key in self.custom_attr_name_dict.keys()
             }
 
-        coding_miRNA_loc = np.where(
-            [self.genelist_dict.get(i, False) for i in adata.var["ensembl_id"]]
-        )[0]
-        norm_factor_vector = np.array(
-            [
-                self.gene_median_dict[i]
-                for i in adata.var["ensembl_id"].iloc[coding_miRNA_loc]
-            ]
-        )
+        coding_miRNA_loc = np.where([self.genelist_dict.get(i, False) for i in adata.var["ensembl_id"]] )[0]
+        norm_factor_vector = np.array([self.gene_median_dict[i] for i in adata.var["ensembl_id"].iloc[coding_miRNA_loc]])
         coding_miRNA_ids = adata.var["ensembl_id"].iloc[coding_miRNA_loc]
-        coding_miRNA_tokens = np.array(
-            [self.gene_token_dict[i] for i in coding_miRNA_ids]
-        )
+        coding_miRNA_tokens = np.array([self.gene_token_dict[i] for i in coding_miRNA_ids])
 
-        try:
-            _ = adata.obs["filter_pass"]
-        except KeyError:
-            var_exists = False
-        else:
-            var_exists = True
-
-        if var_exists:
-            filter_pass_loc = np.where([i == 1 for i in adata.obs["filter_pass"]])[0]
-        elif not var_exists:
-            # LOGGER.info("Anndata has no column attribute 'filter_pass'; tokenizing all cells.")
-            filter_pass_loc = np.array([i for i in range(adata.shape[0])])
+        filter_pass_loc = self._get_filter_pass_loc(adata)        
 
         tokenized_cells = []
 
@@ -242,10 +222,7 @@ class TranscriptomeTokenizer:
             X_norm = X_view / n_counts * target_sum / norm_factor_vector
             X_norm = sp.csr_matrix(X_norm)
 
-            tokenized_cells += [
-                rank_genes(X_norm[i].data, coding_miRNA_tokens[X_norm[i].indices])
-                for i in range(X_norm.shape[0])
-            ]
+            tokenized_cells += [rank_genes(X_norm[i].data, coding_miRNA_tokens[X_norm[i].indices]) for i in range(X_norm.shape[0]) ]
 
             # add custom attributes for subview to dict
             if self.custom_attr_name_dict is not None:
@@ -363,3 +340,18 @@ class TranscriptomeTokenizer:
             format_cell_features, num_proc=self.nproc
         )
         return output_dataset_truncated
+
+    def _get_filter_pass_loc(self, adata):
+        try:
+            _ = adata.obs["filter_pass"]
+        except KeyError:
+            var_exists = False
+        else:
+            var_exists = True
+
+        if var_exists:
+            filter_pass_loc = np.where([i == 1 for i in adata.obs["filter_pass"]])[0]
+        elif not var_exists:
+            LOGGER.info("Anndata has no column attribute 'filter_pass'. Tokenizing all cells.")
+            filter_pass_loc = np.array([i for i in range(adata.shape[0])])   
+        return filter_pass_loc  
