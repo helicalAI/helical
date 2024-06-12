@@ -54,9 +54,9 @@ class TestGeneformerModel:
                                 (miss_ensembl_id, False)
                              ]
     )
-    def test_check_data_eligibility(self, data, use_gene_symbols):
+    def test_check_data_validity(self, data, use_gene_symbols):
         with pytest.raises(KeyError):
-            self.geneformer._check_data_eligibility(data, use_gene_symbols)
+            self.geneformer.check_data_validity(data, use_gene_symbols)
 
 class TestTranscriptomeTokenizer:
     model_dir = Path(CACHE_DIR_HELICAL, 'geneformer')

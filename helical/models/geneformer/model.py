@@ -97,7 +97,7 @@ class Geneformer(HelicalBaseModel):
             
         """ 
 
-        self._check_data_eligibility(data, use_gene_symbols)
+        self.check_data_validity(data, use_gene_symbols)
 
         files_config = {
             "mapping_path": self.config.model_dir / "human_gene_to_ensemble_id.pkl",
@@ -153,7 +153,7 @@ class Geneformer(HelicalBaseModel):
         return embeddings.cpu().detach().numpy()
 
 
-    def _check_data_eligibility(self, data: AnnData, use_gene_symbols: bool) -> None:
+    def check_data_validity(self, data: AnnData, use_gene_symbols: bool) -> None:
         """Checks if the data is eligible for processing by the Geneformer model  
 
         Parameters
