@@ -47,6 +47,7 @@ import loompy as lp
 import numpy as np
 import scipy.sparse as sp
 from datasets import Dataset
+from anndata import AnnData
 
 warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
 LOGGER = logging.getLogger(__name__)
@@ -341,17 +342,19 @@ class TranscriptomeTokenizer:
         )
         return output_dataset_truncated
 
-    def _get_filter_pass_loc(self, adata):
-        try:
-            _ = adata.obs["filter_pass"]
-        except KeyError:
-            var_exists = False
-        else:
-            var_exists = True
+    def _get_filter_pass_loc(self, adata: AnnData):
+        """
+        Get the indices of cells that pass the filter.
 
-        if var_exists:
-            filter_pass_loc = np.where([i == 1 for i in adata.obs["filter_pass"]])[0]
-        elif not var_exists:
-            LOGGER.info("Anndata has no column attribute 'filter_pass'. Tokenizing all cells.")
-            filter_pass_loc = np.array([i for i in range(adata.shape[0])])   
-        return filter_pass_loc  
+        Parameters:
+            adata (AnnData): Annotated data object.
+
+        Returns:
+            filter_pass_loc (ndarray): Indices of cells where the 'filter_pass' is 1. 
+                If no 'filter_pass' column is found, return all indices. Ie. tokenize all cells.
+        """
+        filter_pass_loc = np.where(adata.obs.get("filter_pass", 0) == 1)[0]
+        if len(filter_pass_loc) == 0:
+            LOGGER.info("Anndata has no column attribute 'filter_pass'. Passing all cells for tokenization.")
+            filter_pass_loc = np.arange(adata.shape[0])
+        return filter_pass_loc
