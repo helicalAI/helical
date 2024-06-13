@@ -29,27 +29,19 @@ class TestGeneformerModel:
         assert self.geneformer.gene_token_dict.get("<pad>") == 0
         assert self.geneformer.gene_token_dict.get("<mask>") == 1
 
-    miss_cell_type = AnnData()
-    miss_cell_type.obs["n_counts"] = [1]
-    miss_cell_type.var["gene_symbols"] = [1]
-
     miss_n_counts = AnnData()
-    miss_n_counts.obs["cell_type"] = [1]
     miss_n_counts.var["gene_symbols"] = [1]
 
     miss_gene_symbols = AnnData()
-    miss_gene_symbols.obs["cell_type"] = [1]
     miss_gene_symbols.obs["n_counts"] = [1]
 
     miss_ensembl_id = AnnData()
-    miss_ensembl_id.obs["cell_type"] = [1]
     miss_ensembl_id.obs["n_counts"] = [1]
     miss_ensembl_id.var["gene_symbols"] = [1]
 
     @pytest.mark.parametrize("data, use_gene_symbols", 
                              [
-                                (miss_cell_type, False),
-                                (miss_n_counts, False),
+                                (miss_n_counts, True),
                                 (miss_gene_symbols, True),
                                 (miss_ensembl_id, False)
                              ]

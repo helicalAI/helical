@@ -13,8 +13,6 @@ class TestTranscriptomeTokenizer:
         "token_path": model_dir / "token_dictionary.pkl",
     }
     tokenizer = TranscriptomeTokenizer(
-        custom_attr_name_dict={"cell_type": "cell_type"},
-        nproc=4,
         gene_median_file=files_config["gene_median_path"],
         token_dictionary_file=files_config["token_path"],
     )
@@ -84,6 +82,7 @@ class TestTranscriptomeTokenizer:
         """
         Test the `tokenize_anndata` method of the tokenizer.
         The ensemble ids are correclty mapped to the right token. And the resulting tokenized_cells have the right order of this list of tokens.
+        Also test that the metadata is correctly extracted from the AnnData object using the custom_attr_name_dict variable.
 
         Args:
             ensembl_id (list[str]): The ensembl ids.
@@ -94,14 +93,20 @@ class TestTranscriptomeTokenizer:
         data = AnnData()
         data.var["ensembl_id"] = ensembl_ids
         data.obs["n_counts"] = [1] * number_of_obs
-        data.obs["cell_type"] = ["CD4 T cells"] * number_of_obs
+        data.obs["key_from_file"] = ["CD4 T cells"] * number_of_obs
         data.X = [x_data_count] * number_of_obs
+
+        self.tokenizer = TranscriptomeTokenizer(
+            custom_attr_name_dict={"key_from_file": "desired_key_in_dataset"},
+            gene_median_file=self.files_config["gene_median_path"],
+            token_dictionary_file=self.files_config["token_path"],
+        )
 
         tokenized_cells, cell_metadata = self.tokenizer.tokenize_anndata(data)
         for tokenized_cell in tokenized_cells:
             assert np.array_equal(tokenized_cell, expected_token)
         assert len(tokenized_cells) == number_of_obs
-        assert cell_metadata == {"cell_type": ["CD4 T cells"] * number_of_obs}
+        assert cell_metadata == {"desired_key_in_dataset": ["CD4 T cells"] * number_of_obs}
 
     @pytest.mark.parametrize(
         "tokenized_cells, cell_metadata",
@@ -133,7 +138,8 @@ class TestTranscriptomeTokenizer:
     )
     def test_create_dataset(self, tokenized_cells, cell_metadata):
         """
-        Test the `create_dataset` method of the tokenizer.
+        Test the `create_dataset` method of the tokenizer. The tokenized dataset must contain "lenght" and "input_ids" columns.
+        If cell_metadata is provided, the dataset must contain the same information as the tokenized_cells variable.
         """
         # test the created dataset containing essentially the same information as the tokenized_cells variable
         tokenized_dataset = self.tokenizer.create_dataset(

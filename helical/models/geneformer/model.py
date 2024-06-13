@@ -114,8 +114,7 @@ class Geneformer(HelicalBaseModel):
             self.gene_token_dict = pickle.load(f)
             self.pad_token_id = self.gene_token_dict.get("<pad>")
 
-        self.tk = TranscriptomeTokenizer({"cell_type": "cell_type"}, 
-                                         nproc=nproc, 
+        self.tk = TranscriptomeTokenizer(nproc=nproc, 
                                          gene_median_file = files_config["gene_median_path"], 
                                          token_dictionary_file = files_config["token_path"])
 
@@ -172,9 +171,8 @@ class Geneformer(HelicalBaseModel):
         incomplete_obs = False
         incomplete_vars = False
 
-        necessary_keys = ['cell_type', 'n_counts']
-        if not all(x in data.obs.columns.to_list() for x in necessary_keys):
-            message = f"Data must have the 'obs' keys '{necessary_keys}' to be processed by the Geneformer model."
+        if not 'n_counts' in data.obs.columns.to_list():
+            message = f"Data must have the 'obs' keys 'n_counts' to be processed by the Geneformer model."
             incomplete_obs = True
 
         if use_gene_symbols and not 'gene_symbols' in data.var.columns.to_list():
