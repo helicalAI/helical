@@ -20,15 +20,20 @@ Geneformer tokenizer.
 
 **Description:**
 
-| Input data is a directory with .loom or .h5ad files containing raw counts from single cell RNAseq data, including all genes detected in the transcriptome without feature selection. The input file type is specified by the argument file_format in the tokenize_data function.
+| Input data is a directory with .loom or .h5ad files containing raw counts from single cell RNAseq data, including all genes detected in the transcriptome without feature selection. 
+  The input file type is specified by the argument file_format in the tokenize_data function.
 
 | The discussion below references the .loom file format, but the analagous labels are required for .h5ad files, just that they will be column instead of row attributes and vice versa due to the transposed format of the two file types.
 
-| Genes should be labeled with Ensembl IDs (loom row attribute "ensembl_id"), which provide a unique identifer for conversion to tokens. Other forms of gene annotations (e.g. gene names) can be converted to Ensembl IDs via Ensembl Biomart. Cells should be labeled with the total read count in the cell (loom column attribute "n_counts") to be used for normalization.
+| Genes should be labeled with Ensembl IDs (loom row attribute "ensembl_id"), which provide a unique identifer for conversion to tokens. Other forms of gene annotations (e.g. gene names) can be converted to Ensembl IDs via Ensembl Biomart. 
+  Cells should be labeled with the total read count in the cell (loom column attribute "n_counts") to be used for normalization.
 
-| No cell metadata is required, but custom cell attributes may be passed onto the tokenized dataset by providing a dictionary of custom attributes to be added, which is formatted as loom_col_attr_name : desired_dataset_col_attr_name. For example, if the original .loom dataset has column attributes "cell_type" and "organ_major" and one would like to retain these attributes as labels in the tokenized dataset with the new names "cell_type" and "organ", respectively, the following custom attribute dictionary should be provided: {"cell_type": "cell_type", "organ_major": "organ"}.
+| No cell metadata is required, but custom cell attributes may be passed onto the tokenized dataset by providing a dictionary of custom attributes to be added, which is formatted as loom_col_attr_name : desired_dataset_col_attr_name. 
+  For example, if the original .loom dataset has column attributes "cell_type" and "organ_major" and one would like to retain these attributes as labels in the tokenized dataset with the new names "cell_type" and "organ", respectively, 
+  the following custom attribute dictionary should be provided: {"cell_type": "cell_type", "organ_major": "organ"}.
 
-| Additionally, if the original .loom file contains a cell column attribute called "filter_pass", this column will be used as a binary indicator of whether to include these cells in the tokenized data. All cells with "1" in this attribute will be tokenized, whereas the others will be excluded. One may use this column to indicate QC filtering or other criteria for selection for inclusion in the final tokenized dataset.
+| Additionally, if the original .loom file contains a cell column attribute called "filter_pass", this column will be used as a binary indicator of whether to include these cells in the tokenized data. 
+  All cells with "1" in this attribute will be tokenized, whereas the others will be excluded. One may use this column to indicate QC filtering or other criteria for selection for inclusion in the final tokenized dataset.
 
 | If one's data is in other formats besides .loom or .h5ad, one can use the relevant tools (such as Anndata tools) to convert the file to a .loom or .h5ad format prior to running the transcriptome tokenizer.
 
@@ -47,6 +52,7 @@ import loompy as lp
 import numpy as np
 import scipy.sparse as sp
 from datasets import Dataset
+from anndata import AnnData
 
 warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
 LOGGER = logging.getLogger(__name__)
@@ -91,8 +97,8 @@ class TranscriptomeTokenizer:
 
         custom_attr_name_dict : None, dict
             | Dictionary of custom attributes to be added to the dataset.
-            | Keys are the names of the attributes in the loom file.
-            | Values are the names of the attributes in the dataset.
+            | Keys are the names of the attributes in the loom/h5ad file.
+            | Values are the new names of the attributes in the dataset.
         nproc : int
             | Number of processes to use for dataset mapping.
         chunk_size: int = 512
@@ -197,40 +203,24 @@ class TranscriptomeTokenizer:
             raise
         return tokenized_cells, cell_metadata
 
-    def tokenize_anndata(self, adata, target_sum=10_000):
-        # adata = ad.read(adata_file_path, backed="r")
+    def tokenize_anndata(self, adata: AnnData, target_sum=10_000):
 
+        # prepare custom attributes for output dataset
         if self.custom_attr_name_dict is not None:
+            # the key(s) are the name(s) of the obs column(s) in the loom/h5ad file
+            custom_keys = self.custom_attr_name_dict.keys()
+            # the values will be in the output dataset
             file_cell_metadata = {
-                attr_key: [] for attr_key in self.custom_attr_name_dict.keys()
+                attr_key: [] for attr_key in self.custom_attr_name_dict.values()
             }
+            
 
-        coding_miRNA_loc = np.where(
-            [self.genelist_dict.get(i, False) for i in adata.var["ensembl_id"]]
-        )[0]
-        norm_factor_vector = np.array(
-            [
-                self.gene_median_dict[i]
-                for i in adata.var["ensembl_id"].iloc[coding_miRNA_loc]
-            ]
-        )
+        coding_miRNA_loc = np.where([self.genelist_dict.get(i, False) for i in adata.var["ensembl_id"]] )[0]
+        norm_factor_vector = np.array([self.gene_median_dict[i] for i in adata.var["ensembl_id"].iloc[coding_miRNA_loc]])
         coding_miRNA_ids = adata.var["ensembl_id"].iloc[coding_miRNA_loc]
-        coding_miRNA_tokens = np.array(
-            [self.gene_token_dict[i] for i in coding_miRNA_ids]
-        )
+        coding_miRNA_tokens = np.array([self.gene_token_dict[i] for i in coding_miRNA_ids])
 
-        try:
-            _ = adata.obs["filter_pass"]
-        except KeyError:
-            var_exists = False
-        else:
-            var_exists = True
-
-        if var_exists:
-            filter_pass_loc = np.where([i == 1 for i in adata.obs["filter_pass"]])[0]
-        elif not var_exists:
-            # LOGGER.info("Anndata has no column attribute 'filter_pass'; tokenizing all cells.")
-            filter_pass_loc = np.array([i for i in range(adata.shape[0])])
+        filter_pass_loc = self._get_filter_pass_loc(adata)        
 
         tokenized_cells = []
 
@@ -242,15 +232,12 @@ class TranscriptomeTokenizer:
             X_norm = X_view / n_counts * target_sum / norm_factor_vector
             X_norm = sp.csr_matrix(X_norm)
 
-            tokenized_cells += [
-                rank_genes(X_norm[i].data, coding_miRNA_tokens[X_norm[i].indices])
-                for i in range(X_norm.shape[0])
-            ]
+            tokenized_cells += [rank_genes(X_norm[i].data, coding_miRNA_tokens[X_norm[i].indices]) for i in range(X_norm.shape[0]) ]
 
             # add custom attributes for subview to dict
             if self.custom_attr_name_dict is not None:
-                for k in file_cell_metadata.keys():
-                    file_cell_metadata[k] += adata[idx].obs[k].tolist()
+                for custom_key in custom_keys:
+                    file_cell_metadata[self.custom_attr_name_dict[custom_key]] += adata[idx].obs[custom_key].tolist()
             else:
                 file_cell_metadata = None
 
@@ -333,7 +320,7 @@ class TranscriptomeTokenizer:
         LOGGER.info("Creating dataset.")
         # create dict for dataset creation
         dataset_dict = {"input_ids": tokenized_cells}
-        if self.custom_attr_name_dict is not None:
+        if cell_metadata is not None:
             dataset_dict.update(cell_metadata)
 
         # create dataset
@@ -363,3 +350,20 @@ class TranscriptomeTokenizer:
             format_cell_features, num_proc=self.nproc
         )
         return output_dataset_truncated
+
+    def _get_filter_pass_loc(self, adata: AnnData):
+        """
+        Get the indices of cells that pass the filter.
+
+        Parameters:
+            adata (AnnData): Annotated data object.
+
+        Returns:
+            filter_pass_loc (ndarray): Indices of cells where the 'filter_pass' is 1. 
+                If no 'filter_pass' column is found, return all indices. Ie. tokenize all cells.
+        """
+        filter_pass_loc = np.where(adata.obs.get("filter_pass", 0) == 1)[0]
+        if len(filter_pass_loc) == 0:
+            LOGGER.info("Anndata has no column attribute 'filter_pass'. Passing all cells for tokenization.")
+            filter_pass_loc = np.arange(adata.shape[0])
+        return filter_pass_loc

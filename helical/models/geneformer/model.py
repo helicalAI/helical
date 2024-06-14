@@ -96,13 +96,16 @@ class Geneformer(HelicalBaseModel):
             The tokenized dataset in the form of a Hugginface Dataset object.
             
         """ 
+
+        self.check_data_validity(data, use_gene_symbols)
+
         files_config = {
             "mapping_path": self.config.model_dir / "human_gene_to_ensemble_id.pkl",
             "gene_median_path": self.config.model_dir / "gene_median_dictionary.pkl",
             "token_path": self.config.model_dir / "token_dictionary.pkl"
         }
 
-        if use_gene_symbols:
+        if use_gene_symbols:          
             mappings = pkl.load(open(files_config["mapping_path"], 'rb'))
             data.var['ensembl_id'] = data.var['gene_symbols'].apply(lambda x: mappings.get(x,{"id":None})['id'])
 
@@ -111,8 +114,7 @@ class Geneformer(HelicalBaseModel):
             self.gene_token_dict = pickle.load(f)
             self.pad_token_id = self.gene_token_dict.get("<pad>")
 
-        self.tk = TranscriptomeTokenizer({"cell_type": "cell_type"}, 
-                                         nproc=nproc, 
+        self.tk = TranscriptomeTokenizer(nproc=nproc, 
                                          gene_median_file = files_config["gene_median_path"], 
                                          token_dictionary_file = files_config["token_path"])
 
@@ -148,3 +150,39 @@ class Geneformer(HelicalBaseModel):
             self.device
         )
         return embeddings.cpu().detach().numpy()
+
+
+    def check_data_validity(self, data: AnnData, use_gene_symbols: bool) -> None:
+        """Checks if the data is eligible for processing by the Geneformer model  
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The AnnData object containing the data to be processed.
+        use_gene_symbols : bool
+            Wheter to use gene symbols instead of Ensembl IDs.
+
+        Raises
+        ------
+        KeyError
+            If the data is missing column names.
+        """
+        
+        incomplete_obs = False
+        incomplete_vars = False
+
+        if not 'n_counts' in data.obs.columns.to_list():
+            message = f"Data must have the 'obs' keys 'n_counts' to be processed by the Geneformer model."
+            incomplete_obs = True
+
+        if use_gene_symbols and not 'gene_symbols' in data.var.columns.to_list():
+            message = "To use your own gene symbols, the data must have the 'var' key 'gene_symbols' to be processed by the Geneformer model."
+            incomplete_vars = True
+
+        if not use_gene_symbols and not 'ensembl_id' in data.var.columns.to_list():
+            message = "To directly use the ensemble ids, the data must have the 'var' key 'ensembl_id' to be processed by the Geneformer model."
+            incomplete_vars = True
+
+        if incomplete_obs or incomplete_vars:
+            LOGGER.error(message)
+            raise KeyError(message)
