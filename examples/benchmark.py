@@ -10,9 +10,9 @@ geneformer = Geneformer()
 scgpt = scGPT()
 
 data = ad.read_h5ad("./examples/10k_pbmcs_proc.h5ad")
-train_data = data[:200]
-eval_data = data[20:400]
+train_data = data[:10]
+eval_data = data[10:20]
 bench = Benchmark([geneformer, scgpt], train_data, eval_data)
-evaluations = bench.classification(NeuralNetwork((512,), 8))
+evaluations = bench.classification(NeuralNetwork((512,), 3))
 
 print(evaluations)

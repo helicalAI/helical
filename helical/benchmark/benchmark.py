@@ -25,7 +25,26 @@ class Benchmark():
             dataset = model.process_data(eval_data)
             self.eval_embeddings.update({model.__class__.__name__: model.get_embeddings(dataset)})
     
-    def classification(self, classification_model: BaseTaskModel) -> None:
+    def classification(self, classification_model: BaseTaskModel) -> dict[str, dict[str, float]]:
+        """Classification task training and evaluating a type of classification_model.
+        This is done for each entry in the train_embeddings and eval_embeddings dictionaries.
+        
+        If for example train_embeddings = {"Geneformer": geneformer_embeddings_train, "scGPT": scgpt_embeddings_train}
+        and eval_embeddings = {"Geneformer": geneformer_embeddings_eval, "scGPT": scgpt_embeddings_eval} and the classification_model is a NeuralNetwork,
+        then two classification NNs will be trained on geneformer_embeddings_train and scgpt_embeddings_train.
+        
+        The predictions of these models will be evaluated on geneformer_embeddings_eval and scgpt_embeddings_eval.
+    
+        Parameters
+        ----------
+        classification_model : BaseTaskModel
+            The type of classification model to use.
+
+        Returns
+        -------
+        A dictionary containing the evaluations for each HelicalBaseModel provided in the initialization.
+
+        """
         train_labels = np.array(self.train_data.obs["cell_type"].tolist())
         eval_labels = np.array(self.eval_data.obs["cell_type"].tolist())
 
