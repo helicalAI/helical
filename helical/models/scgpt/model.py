@@ -179,10 +179,10 @@ class scGPT(HelicalBaseModel):
         Dataset
             The processed dataset.
         """
+ 
+        self.check_data_validity(adata, gene_column_name, use_batch_labels)
         self.gene_column_name = gene_column_name
         self.adata = adata
-        # self.adata.var[self.gene_column_name] = self.adata.var.index.values
-
         if fine_tuning:
             # Preprocess the dataset and select `N_HVG` highly variable genes for downstream analysis.
             sc.pp.normalize_total(self.adata, target_sum=1e4)
@@ -191,12 +191,6 @@ class scGPT(HelicalBaseModel):
             # highly variable genes
             sc.pp.highly_variable_genes(self.adata, n_top_genes=n_top_genes, flavor=flavor)
             self.adata = self.adata[:, self.adata.var['highly_variable']]
-
-        # verify gene col
-        if self.gene_column_name == "index":
-            adata.var["index"] = adata.var.index
-        else:
-            assert self.gene_column_name in adata.var
 
         adata.var["id_in_vocab"] = [ self.vocab[gene] if gene in self.vocab else -1 for gene in adata.var[self.gene_column_name] ]
         adata = adata[:, adata.var["id_in_vocab"] >= 0]
@@ -220,3 +214,38 @@ class scGPT(HelicalBaseModel):
             count_matrix, gene_ids, self.vocab, self.config, batch_ids if use_batch_labels else None
         )
         return dataset
+
+
+    def check_data_validity(self, adata: AnnData, gene_col_name: str, use_batch_labels: bool) -> None:
+            """Checks if the data is eligible for processing by the scGPT model  
+
+            Parameters
+            ----------
+            use_batch_labels : str
+                Wheter to use batch labels.
+
+            Raises
+            ------
+            KeyError
+                If the data is missing column names.
+            """
+            
+            incomplete_obs = False
+            incomplete_vars = False
+
+            # verify gene col
+            if gene_col_name == "index":
+                adata.var["index"] = adata.var.index
+            else:
+                if not gene_col_name in adata.var:
+                    message = f"Data must have the 'var' key '{gene_col_name}' to be processed by the scGPT model."
+                    incomplete_vars = True
+
+            if use_batch_labels:
+                if not "batch_id" in adata.obs:
+                    message = "Data must have the 'obs' key 'batch_id' to be processed by the scGPT model."
+                    incomplete_obs = True
+            
+            if incomplete_obs or incomplete_vars:
+                LOGGER.error(message)
+                raise KeyError(message)

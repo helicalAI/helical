@@ -1,7 +1,7 @@
 from helical.models.scgpt.model import scGPT
 from anndata import AnnData
 from helical.models.scgpt.tokenizer import GeneVocab
-
+import pytest
 class TestSCGPTModel:
     scgpt = scGPT()
 
@@ -48,7 +48,7 @@ class TestSCGPTModel:
 
     def test_direct_assignment_of_genes_to_index(self):
         self.data.var.index = ['SAMD11', 'PLEKHN1', "NOT_IN_VOCAB", "<pad>", 'HES4']
-        self.scgpt.process_data(self.data, gene_column_name = "index", use_batch_labels=True)
+        self.scgpt.process_data(self.data, gene_column_name = "index")
         
         # as set above, the gene column can also be direclty assigned to the index column
         assert self.scgpt.gene_column_name == "index"
@@ -59,3 +59,17 @@ class TestSCGPTModel:
         dataset = self.scgpt.process_data(self.data, gene_column_name = "gene_names")
         embeddings = self.scgpt.get_embeddings(dataset)
         assert embeddings.shape == (1, 512)
+
+    dummy_data = AnnData()
+    dummy_data.var.index = ['gene1', 'gene2', 'gene3']
+    @pytest.mark.parametrize("data, gene_column_name, batch_labels", 
+                             [
+                                #  missing gene_names in data.var
+                                (AnnData(), "gene_names", False),
+                                #  missing batch_id in data.obs
+                                (dummy_data, "index", True),
+                             ]
+    )
+    def test_check_data_validity(self, data, gene_column_name, batch_labels):
+        with pytest.raises(KeyError):
+            self.scgpt.check_data_validity(data, gene_column_name, batch_labels)
