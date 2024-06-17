@@ -13,6 +13,9 @@ data = ad.read_h5ad("./examples/10k_pbmcs_proc.h5ad")
 train_data = data[:10]
 eval_data = data[10:20]
 bench = Benchmark([geneformer, scgpt], train_data, eval_data)
-evaluations = bench.classification(NeuralNetwork((512,), 3))
+
+train_labels = np.array(train_data.obs["cell_type"].tolist())
+eval_labels = np.array(eval_data.obs["cell_type"].tolist())
+evaluations = bench.classification(NeuralNetwork((512,), 3), train_labels, eval_labels)
 
 print(evaluations)

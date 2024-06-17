@@ -19,32 +19,37 @@ class Classifier(BaseTask):
         self.y_encoded = self.encoder.fit_transform(labels)
         self.y_encoded = to_categorical(self.y_encoded, num_classes=self.num_types)
         self.y_encoded.shape
+        
         self.task_model = task_model
         self.trained_models = {}
 
-    def train_task_models(self, x_train_embeddings: dict[str, ndarray]) -> None:
-        """Based on the training embeddings, train BaseTaskModels and save them as in a dict as a class variable 'self.tained_models'.
+    def train_task_models(self, x_train: dict[str, ndarray], test_size: float, random_state: int) -> None:
+        """Based on the training data x_train, train BaseTaskModels and save them as in a dict as a class variable 'self.tained_models'.
+        The training data is split into training and validation data.
 
         Parameters
         ----------
-        x_train_embeddings : dict[str, ndarray]
-            The embeddings for each model.
+        x_train : dict[str, ndarray]
+            The training data features for each model.
+        test_size : float
+            The size of the test set.
+        random_state : int
+            The random state for reproducibility.
         """
-        for model_name, embeddings in x_train_embeddings.items():
-            x = embeddings
-            X_train, X_test, y_train, y_test = train_test_split(x, self.y_encoded, test_size=0.1, random_state=42)
+        for model_name, x in x_train.items():
+            X_train, X_test, y_train, y_test = train_test_split(x, self.y_encoded, test_size=test_size, random_state=random_state)
             
-            LOGGER.info(f"Training model head on '{model_name}' embeddings.")
+            LOGGER.info(f"Training task model '{model_name}'.")
             self.task_model.compile()
             trained_task_model = self.task_model.train(X_train, y_train, validation_data=(X_test, y_test))
             self.trained_models.update({model_name: trained_task_model}) 
             
-    def get_predictions(self, x_eval_embeddings: dict[str, ndarray]) -> dict[str, ndarray]:
-        """Based on the evaluation embeddings, use the trained BaseTaskModels (saved as class variable 'self.tained_models' in a dict) and make predictions.
+    def get_predictions(self, x_eval: dict[str, ndarray]) -> dict[str, ndarray]:
+        """Based on the evaluation data, use the trained BaseTaskModels (saved as class variable 'self.tained_models' in a dict) and make predictions.
 
         Parameters
         ----------
-        x_eval_embeddings : dict[str, ndarray]
+        x_eval : dict[str, ndarray]
             The predictions for each model.
     
         Returns
@@ -52,11 +57,10 @@ class Classifier(BaseTask):
         A dictionary containing the predictions for each model.
         """
         predictions = {}
-        for model_name, embeddings in x_eval_embeddings.items():
-            x = embeddings
+        for model_name, x in x_eval.items():
             m = self.trained_models[model_name]
             
-            LOGGER.info(f"Predicting labels for '{model_name}'.")
+            LOGGER.info(f"Predicting labels for task model '{model_name}'.")
             predictions.update({model_name: m.predict(x)}) 
         return predictions
 
