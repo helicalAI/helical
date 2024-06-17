@@ -1,0 +1,7 @@
+geneformer_head: 
+  neural_network:
+    input: (512,)
+  
+scgpt_head: 
+  neural_network:
+    input: (512,)

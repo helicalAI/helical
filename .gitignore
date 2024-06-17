@@ -33,3 +33,6 @@ _build
 
 # From unit tests
 ci/tests/test_output
+
+# Hydra
+outputs
