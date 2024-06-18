@@ -54,15 +54,17 @@ class Benchmark():
 
         """
         self.classifier = Classifier(train_labels, classification_model)
-        
-        LOGGER.info(f"Training classification models heads of type '{classification_model.__class__.__name__}'.")
-        self.classifier.train_task_models(x_train = self.train_data, test_size = 0.2, random_state = 42)
-        
-        LOGGER.info(f"Classification prediction with model heads of type '{classification_model.__class__.__name__}'.")
-        predictions = self.classifier.get_predictions(x_eval = self.eval_data)
+        evaluations = {}
+        for model_name, x in self.train_data.items():
+            LOGGER.info(f"Training classification models heads of type '{classification_model.__class__.__name__}'.")
+            trained_task_model = self.classifier.train_task_models(x = x, test_size = 0.2, random_state = 42)
+            
+            LOGGER.info(f"Classification prediction with model heads of type '{classification_model.__class__.__name__}'.")
+            predictions = self.classifier.get_predictions(m = trained_task_model, x = self.eval_data[model_name])
 
-        LOGGER.info(f"Evaluating predictions of models '{classification_model.__class__.__name__}'.")
-        evaluations = self.classifier.get_evaluations(predictions, eval_labels)
+            LOGGER.info(f"Evaluating predictions of models '{classification_model.__class__.__name__}'.")
+            evaluation = self.classifier.get_evaluations(predictions, eval_labels)
+            evaluations.update({model_name: evaluation})
         return evaluations
 
             
