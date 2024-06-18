@@ -1,35 +1,17 @@
-from helical.models.helical import HelicalBaseModel
 from helical.benchmark.tasks.classifier import Classifier
-from helical.benchmark.task_models.base_task_model import BaseTaskModel
 from anndata import AnnData
 import logging
 from numpy import ndarray
+import numpy as np
+from sklearn.metrics import accuracy_score, precision_score, f1_score, recall_score
 
 LOGGER = logging.getLogger(__name__)
 
 class Benchmark():
-    def __init__(self, models: list[HelicalBaseModel], train_anndata: AnnData, eval_anndata: AnnData) -> None:
+    def __init__(self):
+        pass
 
-        self.train_anndata = train_anndata
-        self.train_data = {}
-
-        self.eval_anndata = eval_anndata
-        self.eval_data = {}
-
-        for model in models:
-            if isinstance(model, HelicalBaseModel):
-                LOGGER.info(f"Getting training embeddings with {model.__class__.__name__}.")
-                dataset = model.process_data(train_anndata)
-                self.train_data.update({model.__class__.__name__: model.get_embeddings(dataset)})
-
-                LOGGER.info(f"Processing evaluation embeddings with {model.__class__.__name__}.")
-                dataset = model.process_data(eval_anndata)
-                self.eval_data.update({model.__class__.__name__: model.get_embeddings(dataset)})
-    
-            else:
-                pass
-
-    def classification(self, classification_model: BaseTaskModel, train_labels: ndarray, eval_labels: ndarray) -> dict[str, dict[str, float]]:
+    def evaluate_classification(self, models: list[Classifier], eval_anndata: AnnData) -> dict[str, dict[str, float]]:
         """Classification task training and evaluating a type of classification_model.
         This is done for each entry in the train_data and eval_data dictionaries.
         
@@ -53,18 +35,35 @@ class Benchmark():
         A dictionary containing the evaluations for each HelicalBaseModel provided in the initialization.
 
         """
-        self.classifier = Classifier(train_labels, classification_model)
+        self.eval_anndata = eval_anndata
         evaluations = {}
-        for model_name, x in self.train_data.items():
-            LOGGER.info(f"Training classification models heads of type '{classification_model.__class__.__name__}'.")
-            trained_task_model = self.classifier.train_task_models(x = x, test_size = 0.2, random_state = 42)
-            
-            LOGGER.info(f"Classification prediction with model heads of type '{classification_model.__class__.__name__}'.")
-            predictions = self.classifier.get_predictions(m = trained_task_model, x = self.eval_data[model_name])
-
-            LOGGER.info(f"Evaluating predictions of models '{classification_model.__class__.__name__}'.")
-            evaluation = self.classifier.get_evaluations(predictions, eval_labels)
-            evaluations.update({model_name: evaluation})
+        eval_labels = np.array(eval_anndata.obs["cell_type"].tolist())
+        for model in models:
+            LOGGER.info(f"Processing evaluation embeddings using {model.name}.")
+            prediction = model.get_predictions(eval_anndata)
+            evaluation = self.get_evaluations(prediction, eval_labels)
+            evaluations.update({model.name: evaluation})
         return evaluations
 
-            
+    def get_evaluations(self, y_true: ndarray, y_pred: ndarray) -> dict[str, float]:
+        """Based on the predictions and the ground truth, calculate evaluation metrics: accuracy, precision, f1, recall.
+        For the evaluation labels, the same encoder used for the training labels is used.
+
+        Parameters
+        ----------
+        predictions_dict : dict[str, ndarray]
+            The predictions for each model.
+        eval_labels : ndarray
+            The ground truth labels for the evaluation dataset.
+
+        Returns
+        -------
+        A dictionary containing the evaluations for each model.
+        """
+        evaluation = {
+            "accuracy": accuracy_score(y_true, y_pred),
+            "precision": precision_score(y_true, y_pred, average='macro'),
+            "f1": f1_score(y_true, y_pred, average='macro'),
+            "recall": recall_score(y_true, y_pred, average='macro'),
+        }        
+        return evaluation

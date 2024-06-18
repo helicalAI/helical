@@ -4,18 +4,25 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.metrics import F1Score
 from helical.benchmark.task_models.base_task_model import BaseTaskModel
 from numpy import ndarray
+from typing import Self
+from sklearn.preprocessing import LabelEncoder
+from tensorflow.keras.utils import to_categorical
+import numpy as np
 class NeuralNetwork(BaseTaskModel):
-    def __init__(self, input_shape: tuple, num_classes: int, loss: str = "categorical_crossentropy", learning_rate: float = 0.001, epochs=10, batch_size=32) -> None:
-        self.input_shape = input_shape
-        self.num_classes = num_classes
+    def __init__(self, loss: str = "categorical_crossentropy", learning_rate: float = 0.001, epochs=10, batch_size=32) -> None:
         self.loss = loss
         self.learning_rate = learning_rate
         self.epochs = epochs
         self.batch_size = batch_size
+        self.encoder = LabelEncoder()
 
-    def compile(self):
+    def compile(self, num_classes: int, input_shape: int) -> None:
         """Compile a neural network. The model is a simple feedforward neural network with 2 hidden layers. 
         TODO - Add more flexibility to the model architecture."""
+
+        self.num_classes = num_classes
+        self.input_shape = (input_shape,)
+
         self.model = Sequential()
         self.model.add(Dense(256, activation='relu', input_shape=self.input_shape))
         self.model.add(Dropout(0.4))
@@ -27,7 +34,7 @@ class NeuralNetwork(BaseTaskModel):
         self.f1_metric = F1Score(average='macro')
         self.model.compile(loss=self.loss, optimizer=self.optimizer, metrics=self.f1_metric)
 
-    def train(self, X_train: ndarray, y_train: ndarray, validation_data: tuple[ndarray, ndarray]) -> BaseTaskModel:
+    def train(self, X_train: ndarray, y_train: ndarray, validation_data: tuple[ndarray, ndarray]) -> Self:
         """Train the neural network on the training and validation data.
 
         Parameters
@@ -43,7 +50,10 @@ class NeuralNetwork(BaseTaskModel):
         -------
         The neural network instance.
         """
-        self.model.fit(X_train, y_train, self.epochs, self.batch_size, validation_data)
+        y_encoded = self.encoder.fit_transform(y_train)
+        y_encoded = to_categorical(y_encoded, num_classes = self.num_classes)
+
+        self.model.fit(X_train, y_encoded, self.epochs, self.batch_size, validation_data)
         return self
     
     def predict(self, x: ndarray) -> ndarray:
@@ -58,8 +68,16 @@ class NeuralNetwork(BaseTaskModel):
         -------
         The prediction of the neural network.
         """
-        return self.model.predict(x)
+        predictions = self.model.predict(x)
+        y_pred = np.argmax(predictions, axis=1)
+        return self.encoder.inverse_transform(y_pred)
     
-    def get_model_summary(self):
-        return self.model.summary()
-    
+    def save(self, path: str) -> None:
+        """Save the neural network model to a file.
+
+        Parameters
+        ----------
+        path : str
+            The path to save the model.
+        """
+        self.model.save(path)

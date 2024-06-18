@@ -10,11 +10,11 @@ class BaseTaskModel(ABC):
         pass
 
     @abstractmethod
-    def compile():
+    def compile(*args, **kwargs):
         pass
 
     @abstractmethod
-    def train():
+    def train(*args, **kwargs):
         pass
 
     @abstractmethod
