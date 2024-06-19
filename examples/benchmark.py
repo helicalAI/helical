@@ -18,10 +18,10 @@ def benchmark(cfg: DictConfig) -> None:
     eval_data = data[30:35]
 
     # saved_nn_head = NeuralNetwork().load('my_model.h5', 'classes.npy')
-    # scgpt_loaded_nn = Classifier().load_custom_model(scgpt, saved_nn_head, "scgpt with saved NN")    
+    # scgpt_loaded_nn = Classifier().load_model(scgpt, saved_nn_head, "scgpt with saved NN")    
     
     # saved_svm_head = SVM().load('my_svm.pkl')
-    # scgpt_loaded_svm = Classifier().load_custom_model(scgpt, saved_svm_head, "scgpt with saved SVM")           
+    # scgpt_loaded_svm = Classifier().load_model(scgpt, saved_svm_head, "scgpt with saved SVM")           
 
     gene_c = Classifier().train_classifier_head(train_data, geneformer, NeuralNetwork(**cfg["neural_network"]), 0.2, 42)
     scgpt_nn_c = Classifier().train_classifier_head(train_data, scgpt, NeuralNetwork(**cfg["neural_network"]))           
