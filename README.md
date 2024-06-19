@@ -99,7 +99,7 @@ You can find the Licenses for each model implementation in the model repositorie
 Please use this BibTeX to cite this repository in your publications:
 
 ```
-@misc{helical,
+@software{helical,
   author = {Maxime Allard, Benoit Putzeys, Rick Schneider, Mathieu Klop},
   title = {Helical Python Package},
   year = {2024},
