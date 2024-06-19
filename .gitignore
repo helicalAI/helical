@@ -2,12 +2,14 @@
 __pycache__
 .vscode
 
-# Data
+# Data/Models
 data/*
 examples/data/*
 *.sqlite3
 *.h5ad
+*.h5
 *.torch
+*.keras
 *.pt
 *.npz
 *.arrow
@@ -15,10 +17,12 @@ examples/data/*
 *.npy
 
 *.pickle
+*.pkl
 *.bin
 *.dataset
 *.ipynb_checkpoints
 results*
+
 # Log
 debug.log
 

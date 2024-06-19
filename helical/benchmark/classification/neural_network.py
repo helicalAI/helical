@@ -1,13 +1,15 @@
+from numpy import ndarray
+from typing import Self
+from sklearn.preprocessing import LabelEncoder
+import numpy as np
+import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.metrics import F1Score
-from helical.benchmark.task_models.base_task_model import BaseTaskModel
-from numpy import ndarray
-from typing import Self
-from sklearn.preprocessing import LabelEncoder
 from tensorflow.keras.utils import to_categorical
-import numpy as np
+from helical.benchmark.base_task_model import BaseTaskModel
+
 class NeuralNetwork(BaseTaskModel):
     def __init__(self, loss: str = "categorical_crossentropy", learning_rate: float = 0.001, epochs=10, batch_size=32) -> None:
         self.loss = loss
@@ -18,7 +20,15 @@ class NeuralNetwork(BaseTaskModel):
 
     def compile(self, num_classes: int, input_shape: int) -> None:
         """Compile a neural network. The model is a simple feedforward neural network with 2 hidden layers. 
-        TODO - Add more flexibility to the model architecture."""
+        TODO - Add more flexibility to the model architecture.
+        
+        Parameters
+        ----------
+        num_classes : int
+            The number of classes to predict.
+        input_shape : int
+            The input shape of the neural network.
+        """
 
         self.num_classes = num_classes
         self.input_shape = (input_shape,)
@@ -81,3 +91,27 @@ class NeuralNetwork(BaseTaskModel):
             The path to save the model.
         """
         self.model.save(path)
+
+    def load(self, path: str, classes: ndarray) -> Self:
+        """Load the neural network model from a file.
+
+        Parameters
+        ----------
+        path : str
+            The path to load the model from.
+        classes : ndarray
+            The classes used for encoding the labels.
+
+        Returns
+        -------
+        The neural network instance.
+        """
+        # set to None, showing this is a loaded model and not trained
+        self.loss = None
+        self.learning_rate = None
+        self.epochs = None
+        self.batch_size = None
+
+        self.encoder.classes_ = np.load(classes)
+        self.model = tf.keras.models.load_model(path)
+        return self

@@ -1,12 +1,12 @@
 from helical.benchmark.benchmark import Benchmark
 from helical.models.geneformer.model import Geneformer
 from helical.models.scgpt.model import scGPT
-from helical.benchmark.task_models.neural_network import NeuralNetwork
-from helical.benchmark.task_models.svm import SupportVectorMachine as SVM
+from helical.benchmark.classification.neural_network import NeuralNetwork
+from helical.benchmark.classification.svm import SupportVectorMachine as SVM
 import anndata as ad
 from omegaconf import DictConfig
 import hydra
-from helical.benchmark.tasks.classifier import Classifier
+from helical.benchmark.classification.classifier import Classifier
 
 @hydra.main(version_base=None, config_path=".", config_name="config")
 def benchmark(cfg: DictConfig) -> None:
@@ -17,14 +17,17 @@ def benchmark(cfg: DictConfig) -> None:
     train_data = data[:30]
     eval_data = data[30:35]
 
-    # head = tf.keras.models.load_model('my_model.h5')
-    # scgpt_loaded_c = Classifier().load_custom_model(scgpt, head, "my_model")    
-    gene_c = Classifier().train_classifier(geneformer, train_data, NeuralNetwork(**cfg["neural_network"]))
-    scgpt_nn_c = Classifier().train_classifier(scgpt, train_data, NeuralNetwork(**cfg["neural_network"]))           
-    scgpt_svm_c = Classifier().train_classifier(scgpt, train_data, SVM(**cfg["svm"]))           
+    # saved_nn_head = NeuralNetwork().load('my_model.h5', 'classes.npy')
+    # scgpt_loaded_nn = Classifier().load_custom_model(scgpt, saved_nn_head, "scgpt with saved NN")    
+    
+    # saved_svm_head = SVM().load('my_svm.pkl')
+    # scgpt_loaded_svm = Classifier().load_custom_model(scgpt, saved_svm_head, "scgpt with saved SVM")           
+
+    gene_c = Classifier().train_classifier_head(train_data, geneformer, NeuralNetwork(**cfg["neural_network"]), 0.2, 42)
+    scgpt_nn_c = Classifier().train_classifier_head(train_data, scgpt, NeuralNetwork(**cfg["neural_network"]))           
 
     bench = Benchmark()
-    evaluations = bench.evaluate_classification([gene_c, scgpt_nn_c, scgpt_svm_c], eval_data)
+    evaluations = bench.evaluate_classification([gene_c, scgpt_nn_c], eval_data, "cell_type")
     print(evaluations)
 
 if __name__ == "__main__":

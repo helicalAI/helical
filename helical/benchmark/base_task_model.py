@@ -20,3 +20,12 @@ class BaseTaskModel(ABC):
     @abstractmethod
     def predict():
         pass
+
+    @abstractmethod
+    def save():
+        pass
+
+    @abstractmethod
+    def load():
+        pass
+    
