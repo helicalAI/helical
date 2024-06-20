@@ -1,4 +1,4 @@
-helical.models.scgpt
+﻿helical.models.scgpt
 ====================
 
 .. automodule:: helical.models.scgpt
@@ -29,6 +29,8 @@ helical.models.scgpt
 
    helical.models.scgpt.data_collator
    helical.models.scgpt.data_sampler
+   helical.models.scgpt.dataset
+   helical.models.scgpt.gene_embedding
    helical.models.scgpt.loss
    helical.models.scgpt.model
    helical.models.scgpt.model_dir
@@ -36,7 +38,6 @@ helical.models.scgpt
    helical.models.scgpt.scbank
    helical.models.scgpt.scgpt_config
    helical.models.scgpt.scgpt_utils
-   helical.models.scgpt.tasks
    helical.models.scgpt.tokenizer
    helical.models.scgpt.trainer
    helical.models.scgpt.utils
