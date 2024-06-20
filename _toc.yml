@@ -18,6 +18,9 @@ parts:
 - caption: DNA Tutorials🪄
   chapters:
   - file: examples/notebooks/Hyena-DNA-Inference
+- caption: Benchmarking 📊
+  chapters:
+  - file: docs/benchmarking/description
   # - file : examples/geneformer_example
 
 # - caption: Basic examples 🪄

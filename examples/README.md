@@ -60,8 +60,10 @@ def benchmark(cfg: DictConfig) -> None:
 if __name__ == "__main__":
     benchmark()
 ```
-We use [Hydra](https://hydra.cc/) to pass configurations to our models. In this example, a neural network is used as a classification `head` but other models (such as SVM) can be found in the [classification folder](../helical/classification/). It is also possible to use your own head, your own base model or even your own standalone classifier. This is shown in the picture below: 
+We use [Hydra](https://hydra.cc/) to pass configurations to our models in the [config.yaml](config.yaml) file. In this example, a neural network is used as a classification `head` but other models (such as SVM) can be found in the [classification folder](../helical/classification/). In order to test a classification with your own dataset and label, all you have to do is load your own anndata instance, ensure it has the correct column names/keys and specify the `lables_column_name` input variable.
 
-TODO include
+It is also possible to use your own head, your own base model or even your own standalone classifier. This is shown in the picture below: 
+
+![benchmarking](../docs/benchmarking/assets/Fine-Tune_Probing.jpg)
 
 
