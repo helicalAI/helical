@@ -1,4 +1,4 @@
-from helical.benchmark.classification.classifier import Classifier
+from helical.classification.classifier import Classifier
 from anndata import AnnData
 import logging
 from numpy import ndarray

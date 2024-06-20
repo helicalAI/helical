@@ -1,5 +1,5 @@
-from helical.benchmark.classification.neural_network import NeuralNetwork
-from helical.benchmark.classification.classifier import Classifier 
+from helical.classification.neural_network import NeuralNetwork
+from helical.classification.classifier import Classifier 
 from helical.models.scgpt.model import scGPT
 import pytest 
 import anndata as ad

@@ -69,6 +69,8 @@ class Classifier():
             The base model to generate the embeddings.
         head : BaseTaskModel
             The classification model head to train.
+        labels_column_name : str
+            The name of the column in the obs attribute of the AnnData object that contains the labels.
         test_size : float
             The size of the test set.
         random_state : int
