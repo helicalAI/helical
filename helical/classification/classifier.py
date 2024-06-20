@@ -27,8 +27,9 @@ class Classifier():
         self.trained_task_model = None
         self.base_model = None
         self.name = None
+        self.gene_col_name = None
 
-    def get_predictions(self, x: Union[AnnData, ndarray]) -> ndarray:
+    def get_predictions(self, x: Union[AnnData, ndarray], gene_col_name: str = "index") -> ndarray:
         """
         Make predictions on the data. 
         
@@ -40,13 +41,16 @@ class Classifier():
         ----------
         x : AnnData
             The predictions for each model.
-    
+        gene_col_name : str, optional, default = "index"
+            The name of the column in the var attribute of the AnnData object that contains the gene names.
+
         Returns
         -------
         A numpy array with the predictions.
         """
-        if self.base_model is not None:
-            dataset = self.base_model.process_data(x)
+        if self.base_model is not None: 
+            self.gene_col_name = gene_col_name
+            dataset = self.base_model.process_data(x, self.gene_col_name)
             embeddings = self.base_model.get_embeddings(dataset)
             x = embeddings
         
@@ -56,6 +60,7 @@ class Classifier():
                               train_anndata: AnnData, 
                               base_model: BaseModelProtocol, 
                               head: BaseTaskModel, 
+                              gene_col_name: str = "index",
                               labels_column_name: str = "cell_type",
                               test_size: float = 0.2,
                               random_state: int = 42) -> Self:
@@ -69,6 +74,9 @@ class Classifier():
             The base model to generate the embeddings.
         head : BaseTaskModel
             The classification model head to train.
+         gene_col_name : str
+            The name of the column in the var attribute of the AnnData object that contains the gene names.
+            Default is 'index'.
         labels_column_name : str
             The name of the column in the obs attribute of the AnnData object that contains the labels.
         test_size : float
@@ -89,12 +97,12 @@ class Classifier():
         
         self.base_model = base_model
         self.name = f"{base_model.__class__.__name__} with {head.__class__.__name__}"
-
         self._check_validity_for_training(train_anndata, labels_column_name, base_model)
 
         # first, get the embeddings
         LOGGER.info(f"Getting training embeddings with {base_model.__class__.__name__}.")
-        dataset = base_model.process_data(train_anndata)
+        dataset = base_model.process_data(train_anndata, gene_col_name)
+        self.gene_col_name = gene_col_name
         x = base_model.get_embeddings(dataset)
           
         # then, train the classification model

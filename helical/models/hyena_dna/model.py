@@ -1,14 +1,14 @@
 import logging
 
 from helical.models.hyena_dna.hyena_dna_config import HyenaDNAConfig
-from helical.models.helical import HelicalBaseModel
+from helical.models.helical import HelicalDNAModel
 from helical.models.hyena_dna.pretrained_model import HyenaDNAPreTrainedModel
 import torch
 from .standalone_hyenadna import CharacterTokenizer
 from helical.services.downloader import Downloader
 LOGGER = logging.getLogger(__name__)
 
-class HyenaDNA(HelicalBaseModel):
+class HyenaDNA(HelicalDNAModel):
     """HyenaDNA model.
     This class represents the HyenaDNA model, which is a long-range genomic foundation model pretrained on context lengths of up to 1 million tokens at single nucleotide resolution.
     
