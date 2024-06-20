@@ -41,7 +41,7 @@
 
 **Performance Benchmarks:**  
 - We create the probing results with the pre-trained HyenaDNA model and compare it to the results from the paper. We provide the notebook to re-produce our results.
-- The tutorial [Hyena-DNA-Inference.ipynb](https://helical.readthedocs.io/en/latest/examples/Hyena-DNA-Inference.html) was used as a basis to create this comparison, as well as the values from the [Hyena](https://arxiv.org/pdf/2306.15794) and the [Nucleotide transformer](https://www.biorxiv.org/content/10.1101/2023.01.11.523679v1.full.pdf) (NT) papers.
+- The tutorial [Hyena-DNA-Inference.ipynb](https://helical.readthedocs.io/en/latest/examples/notebooks/Hyena-DNA-Inference.html) was used as a basis to create this comparison, as well as the values from the [Hyena](https://arxiv.org/pdf/2306.15794) and the [Nucleotide transformer](https://www.biorxiv.org/content/10.1101/2023.01.11.523679v1.full.pdf) (NT) papers.
 - Probing was used for the 18 downstream tasks, where the HyenaDNA embeddings of nucleotide sequences were used as features to a simpler neural network.
 - The same neural network with the same hyperparameters across all the tasks was used to generate these results.
 - Our results underperform in comparison to the fine-tuned models. This is due to the much larger models being used for the NT, while the Hyena model was pre-trained from scratch for the better performances. 
