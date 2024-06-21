@@ -75,8 +75,11 @@ class UCEDataset(Dataset):
             weights = batch_weights[c].numpy()
             weights = weights / sum(weights)  # RE NORM after mask
             
+            # set the seed for reproducibility
+            generator = np.random.default_rng(seed=42)
+
             # randomly choose the genes that will make up the sample, weighted by expression, with replacement
-            choice_idx = np.random.choice(np.arange(len(weights)),
+            choice_idx = generator.choice(np.arange(len(weights)),
                                         size=self.config["sample_size"], p=weights,
                                         replace=True)
 
@@ -95,7 +98,7 @@ class UCEDataset(Dataset):
             i = 1  # continue on to the rest of the sequence with left bracket being assumed.
             # Shuffle the chroms now, there's no natural order to chromosomes
             uq_chroms = np.unique(new_chrom)
-            np.random.shuffle(uq_chroms) # shuffle
+            generator.shuffle(uq_chroms) # shuffle
             
             # This loop is actually just over one cell
             for chrom in uq_chroms:
