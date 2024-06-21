@@ -5,7 +5,7 @@ geneformer_config = GeneformerConfig(batch_size = 10)
 geneformer = Geneformer(configurer = geneformer_config)
 
 ann_data = ad.read_h5ad("./10k_pbmcs_proc.h5ad")
-dataset = geneformer.process_data(ann_data[:10])
+dataset = geneformer.process_data(ann_data[:10], "gene_symbols")
 embeddings = geneformer.get_embeddings(dataset)
 
 print(embeddings.shape)
