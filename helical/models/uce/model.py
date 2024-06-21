@@ -4,9 +4,14 @@ from anndata import AnnData
 from torch.utils.data import DataLoader
 from helical.models.uce.uce_config import UCEConfig
 from helical.models.helical import HelicalRNAModel
-from helical.models.uce.uce_utils import get_ESM2_embeddings, load_model, process_data, get_gene_embeddings
+from helical.models.uce.uce_utils import get_ESM2_embeddings, get_positions, get_protein_embeddings_idxs, load_model, prepare_expression_counts_file, get_gene_embeddings
 from accelerate import Accelerator
 from helical.services.downloader import Downloader
+from helical.models.uce.uce_dataset import UCEDataset
+import scipy
+from pathlib import Path
+from helical.models.uce.gene_embeddings import load_gene_embeddings_adata
+import scanpy as sc
 
 LOGGER = logging.getLogger(__name__)
 class UCE(HelicalRNAModel):
@@ -90,14 +95,62 @@ class UCE(HelicalRNAModel):
             "offset_pkl_path": self.model_dir / "species_offsets.pkl"
         }
 
-        data_loader = process_data(data, 
-                              model_config=self.config, 
-                              files_config=files_config,
-                              species=species,
-                              filter_genes_min_cell=filter_genes_min_cell,
-                              embedding_model=embedding_model,
-                              accelerator=self.accelerator)
-        return data_loader
+        if filter_genes_min_cell is not None:
+            sc.pp.filter_genes(data, min_cells=filter_genes_min_cell)
+            # sc.pp.filter_cells(ad, min_genes=25)
+        ##Filtering out the Expression Data That we do not have in the protein embeddings
+        filtered_adata, species_to_all_gene_symbols = load_gene_embeddings_adata(adata=data,
+                                                                        species=[species],
+                                                                        embedding_model=embedding_model,
+                                                                        embeddings_path=Path(files_config["protein_embeddings_dir"]))
+        
+        # TODO: What about hv_genes? See orig.
+        if scipy.sparse.issparse(filtered_adata.X):
+            gene_expression = np.asarray(filtered_adata.X.todense())
+        else:
+            gene_expression = np.asarray(filtered_adata.X)
+
+        name = "test"
+        gene_expression_folder_path = "./"
+        prepare_expression_counts_file(gene_expression, name, gene_expression_folder_path)
+        
+        # shapes dictionary
+        num_cells = filtered_adata.X.shape[0]
+        num_genes = filtered_adata.X.shape[1]
+        shapes_dict = {name: (num_cells, num_genes)}
+
+        pe_row_idxs = get_protein_embeddings_idxs(files_config["offset_pkl_path"], species, species_to_all_gene_symbols, filtered_adata)
+        dataset_chroms, dataset_start = get_positions(Path(files_config["spec_chrom_csv_path"]), species, filtered_adata)
+
+        if not (len(dataset_chroms) == len(dataset_start) == num_genes == pe_row_idxs.shape[0]): 
+            LOGGER.error(f'Invalid input dimensions for the UCEDataset! ' 
+                        f'dataset_chroms: {len(dataset_chroms)}, '
+                        f'dataset_start: {len(dataset_start)}, '
+                        f'num_genes: {num_genes}, '
+                        f'pe_row_idxs.shape[0]: {pe_row_idxs.shape[0]}')
+            raise AssertionError
+        
+        dataset = UCEDataset(sorted_dataset_names = [name],
+                             shapes_dict = shapes_dict,
+                             model_config = self.config,
+                             expression_counts_path = gene_expression_folder_path,
+                             dataset_to_protein_embeddings = pe_row_idxs,
+                             datasets_to_chroms = dataset_chroms,
+                             datasets_to_starts = dataset_start
+                             )
+        batch_size = self.config["batch_size"]
+        dataloader = DataLoader(dataset, 
+                                batch_size=batch_size, 
+                                shuffle=False,
+                                collate_fn=dataset.collator_fn,
+                                num_workers=0)
+        
+        LOGGER.info(f'UCE Dataset and DataLoader prepared. Setting batch_size={batch_size} for inference.')
+
+        if self.accelerator is not None:
+            dataloader = self.accelerator.prepare(dataloader)
+
+        return dataloader
 
     def get_embeddings(self, dataloader: DataLoader) -> np.array:
         """Gets the gene embeddings from the UCE model
