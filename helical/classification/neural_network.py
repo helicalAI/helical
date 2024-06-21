@@ -115,3 +115,13 @@ class NeuralNetwork(BaseTaskModel):
         self.encoder.classes_ = np.load(classes)
         self.model = tf.keras.models.load_model(path)
         return self
+    
+    def save_encoder(self, path: str) -> None:
+        """Save the encoder to a file.
+
+        Parameters
+        ----------
+        path : str
+            The path to save the encoder.
+        """
+        np.save(path, self.encoder.classes_)
