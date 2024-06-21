@@ -67,10 +67,11 @@ class UCE(HelicalRNAModel):
             self.accelerator = None
         LOGGER.info(f"Model finished initializing.")
 
-    def process_data(self, data: AnnData, 
+    def process_data(self, 
+                     data: AnnData, 
                      species: str = "human", 
                      filter_genes_min_cell: int = None, 
-                     embedding_model: str = "ESM2" ) -> DataLoader:
+                     embedding_model: str = "ESM2" ) -> UCEDataset:
         """Processes the data for the Universal Cell Embedding model
 
         Parameters 
@@ -87,8 +88,8 @@ class UCE(HelicalRNAModel):
 
         Returns
         -------
-        DataLoader
-            The DataLoader object containing the processed data
+        UCEDataset
+            Inherits from Dataset class.
         """
         
         files_config = {
@@ -139,7 +140,24 @@ class UCE(HelicalRNAModel):
                              dataset_to_protein_embeddings = pe_row_idxs,
                              datasets_to_chroms = dataset_chroms,
                              datasets_to_starts = dataset_start
-                             )
+                             ) 
+        LOGGER.info(f'Successfully prepared the UCE Dataset.')
+        return dataset
+
+    def get_embeddings(self, dataset: UCEDataset) -> np.array:
+        """Gets the gene embeddings from the UCE model
+
+        Parameters
+        ----------
+        dataset : UCEDataSet
+            The Dataset object containing the processed data
+
+        Returns
+        -------
+        np.array
+            The gene embeddings in the form of a numpy array
+        """
+     
         batch_size = self.config["batch_size"]
         dataloader = DataLoader(dataset, 
                                 batch_size=batch_size, 
@@ -147,33 +165,18 @@ class UCE(HelicalRNAModel):
                                 collate_fn=dataset.collator_fn,
                                 num_workers=0)
         
-        LOGGER.info(f'UCE Dataset and DataLoader prepared. Setting batch_size={batch_size} for inference.')
 
         if self.accelerator is not None:
             dataloader = self.accelerator.prepare(dataloader)
 
-        return dataloader
 
-    def get_embeddings(self, dataloader: DataLoader) -> np.array:
-        """Gets the gene embeddings from the UCE model
-
-        Parameters
-        ----------
-        dataloader : DataLoader
-            The DataLoader object containing the processed data
-
-        Returns
-        -------
-        np.array
-            The gene embeddings in the form of a numpy array
-        """
-        LOGGER.info(f"Inference started")
-        
         # disable progress bar if not the main process
         if self.accelerator is not None:
             pbar = tqdm(dataloader, disable=not self.accelerator.is_local_main_process)
         else:
             pbar = tqdm(dataloader)
+        
+        LOGGER.info(f"Inference started")
         dataset_embeds = []
         
         # disabling gradient calculation for inference
