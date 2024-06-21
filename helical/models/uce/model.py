@@ -2,16 +2,18 @@ import logging
 import numpy as np
 from anndata import AnnData
 from torch.utils.data import DataLoader
-from helical.models.uce.uce_config import UCEConfig
-from helical.models.helical import HelicalRNAModel
-from helical.models.uce.uce_utils import get_ESM2_embeddings, get_positions, get_protein_embeddings_idxs, load_model, prepare_expression_counts_file, get_gene_embeddings
-from accelerate import Accelerator
-from helical.services.downloader import Downloader
-from helical.models.uce.uce_dataset import UCEDataset
 import scipy
 from pathlib import Path
-from helical.models.uce.gene_embeddings import load_gene_embeddings_adata
 import scanpy as sc
+from tqdm import tqdm
+import torch
+from accelerate import Accelerator
+from helical.models.uce.uce_config import UCEConfig
+from helical.models.helical import HelicalRNAModel
+from helical.models.uce.uce_utils import get_ESM2_embeddings, get_positions, get_protein_embeddings_idxs, load_model, prepare_expression_counts_file
+from helical.services.downloader import Downloader
+from helical.models.uce.uce_dataset import UCEDataset
+from helical.models.uce.gene_embeddings import load_gene_embeddings_adata
 
 LOGGER = logging.getLogger(__name__)
 class UCE(HelicalRNAModel):
@@ -166,5 +168,33 @@ class UCE(HelicalRNAModel):
             The gene embeddings in the form of a numpy array
         """
         LOGGER.info(f"Inference started")
-        embeddings = get_gene_embeddings(self.model, dataloader, self.accelerator)
-        return embeddings
+        
+        # disable progress bar if not the main process
+        if self.accelerator is not None:
+            pbar = tqdm(dataloader, disable=not self.accelerator.is_local_main_process)
+        else:
+            pbar = tqdm(dataloader)
+        dataset_embeds = []
+        
+        # disabling gradient calculation for inference
+        with torch.no_grad():
+            for batch in pbar:
+                batch_sentences, mask, idxs = batch[0], batch[1], batch[2]
+                batch_sentences = batch_sentences.permute(1, 0)
+                if self.config["multi_gpu"]:
+                    batch_sentences = self.model.module.pe_embedding(batch_sentences.long())
+                else:
+                    batch_sentences = self.model.pe_embedding(batch_sentences.long())
+                batch_sentences = torch.nn.functional.normalize(batch_sentences, dim=2)  # normalize token outputs
+                _, embedding = self.model.forward(batch_sentences, mask=mask)
+                
+                # Fix for duplicates in last batch
+                if self.accelerator is not None:
+                    self.accelerator.wait_for_everyone()
+                    embeddings = self.accelerator.gather_for_metrics((embedding))
+                    if self.accelerator.is_main_process:
+                        dataset_embeds.append(embeddings.detach().cpu().numpy())
+                else:
+                    dataset_embeds.append(embedding.detach().cpu().numpy())
+
+        return np.vstack(dataset_embeds)

@@ -3,12 +3,9 @@ import torch
 import pickle
 import pandas as pd
 import numpy as np
-from tqdm import tqdm
 from pathlib import Path
 from typing import Dict, Tuple, Union
 import logging
-
-from helical.models.uce.gene_embeddings import load_gene_embeddings_adata
 from helical.models.uce.uce_model import TransformerModel
 
 LOGGER = logging.getLogger(__name__)
@@ -140,36 +137,3 @@ def load_model(model_path: Union[str, Path], model_config: Dict[str, str], all_p
         model.pe_embedding = torch.nn.Embedding.from_pretrained(all_pe)
     
     return model
-
-# Create a function that uses the model to get the embeddings of the genes
-def get_gene_embeddings(model, dataloader, accelerator, model_config=None):
-
-    # disable progress bar if not the main process
-    if accelerator is not None:
-        pbar = tqdm(dataloader, disable=not accelerator.is_local_main_process)
-    else:
-        pbar = tqdm(dataloader)
-    dataset_embeds = []
-    
-    # disabling gradient calculation for inference
-    with torch.no_grad():
-        for batch in pbar:
-            batch_sentences, mask, idxs = batch[0], batch[1], batch[2]
-            batch_sentences = batch_sentences.permute(1, 0)
-            if model_config and model_config["multi_gpu"]:
-                batch_sentences = model.module.pe_embedding(batch_sentences.long())
-            else:
-                batch_sentences = model.pe_embedding(batch_sentences.long())
-            batch_sentences = torch.nn.functional.normalize(batch_sentences, dim=2)  # normalize token outputs
-            _, embedding = model.forward(batch_sentences, mask=mask)
-            
-            # Fix for duplicates in last batch
-            if accelerator is not None:
-                accelerator.wait_for_everyone()
-                embeddings = accelerator.gather_for_metrics((embedding))
-                if accelerator.is_main_process:
-                    dataset_embeds.append(embeddings.detach().cpu().numpy())
-            else:
-                dataset_embeds.append(embedding.detach().cpu().numpy())
-
-    return np.vstack(dataset_embeds)
