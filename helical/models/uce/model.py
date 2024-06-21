@@ -69,6 +69,7 @@ class UCE(HelicalRNAModel):
 
     def process_data(self, 
                      data: AnnData, 
+                     gene_column_name: str = "index",
                      species: str = "human", 
                      filter_genes_min_cell: int = None, 
                      embedding_model: str = "ESM2" ) -> UCEDataset:
@@ -79,6 +80,10 @@ class UCE(HelicalRNAModel):
         data : AnnData
             The AnnData object containing the data to be processed. 
             The UCE model requires the gene expression data as input and the gene symbols as variable names (i.e. as adata.var_names).
+        gene_column_name: str, optional, default = "index"
+            The name of the column in the AnnData object that contains the gene symbols.
+            By default, the index of the AnnData object is used.
+            If another column is specified, that column will be set as the index of the AnnData object.
         species: str, optional, default = "human"
             The species of the data.  Currently we support "human" and "macaca_fascicularis" but more embeddings will come soon.
         filter_genes_min_cell: int, default = None
@@ -91,7 +96,11 @@ class UCE(HelicalRNAModel):
         UCEDataset
             Inherits from Dataset class.
         """
-        
+                
+        self.check_rna_data_validity(data, gene_column_name)
+        if gene_column_name != "index":
+            data.var.index = data.var[gene_column_name]
+
         files_config = {
             "spec_chrom_csv_path": self.model_dir / "species_chrom.csv",
             "protein_embeddings_dir": self.model_dir / "protein_embeddings/",

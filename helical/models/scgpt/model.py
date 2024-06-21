@@ -161,7 +161,7 @@ class scGPT(HelicalRNAModel):
             The AnnData object containing the data to be processed. 
             The Anndata requires the expression counts as the data matrix and the column with the gene symbols is defined by the argument gene_column_name.
         gene_column_name: str, optional, default = "index"
-            The column in adata.var that contains the gene names. Default is to use the "index" column.
+            The column in adata.var that contains the gene names. Default is to use the index column.
         fine_tuning: bool, optional, default = False
             If you intend to use the data to fine-tune the model on a downstream task, set this to True.
         n_top_genes: int, optional, default = 1800

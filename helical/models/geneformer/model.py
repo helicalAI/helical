@@ -84,10 +84,12 @@ class Geneformer(HelicalRNAModel):
             Currently the Geneformer only supports human genes.
             If you already have the ensembl_id column, you can skip the mapping step.
         gene_column_name: str, optional, default = "ensembl_id"
-            The column in adata.var that contains the gene names. An option is also to use the "index" column. 
-            Set this string to your custom gene column name. 
-            We will map the gene symbols to Ensembl IDs with a mapping taken from the `Ensembl Website <https://www.ensembl.org/`_.
-            If it is leaft at "ensembl_id", there will be no mapping.
+            The column in adata.var that contains the gene names. If you set this string to something other than "ensembl_id", 
+            we will map the gene symbols in that column to Ensembl IDs with a mapping taken from the `Ensembl Website https://www.ensembl.org/`.
+            If it is left at "ensembl_id", there will be no mapping.
+            If this variable is set to "index", the index of the AnnData object will be used and mapped to Ensembl IDs.
+            In the special case where the data has Ensemble IDs as the index, and you pass "index". This would result in invalid mappings.
+            In that case, it is recommended to create a new column with the Ensemble IDs in the data and pass "ensembl_id" as the gene_column_name.
         nproc : int, optional, default = 1
             Number of processes to use for dataset processing.
         output_path : str, default = None
