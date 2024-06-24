@@ -9,6 +9,8 @@ import anndata as ad
 from omegaconf import DictConfig
 import hydra
 import json
+import requests
+import os
 
 @hydra.main(version_base=None, config_path=".", config_name="config")
 def benchmark(cfg: DictConfig) -> None:
@@ -69,4 +71,22 @@ def benchmark(cfg: DictConfig) -> None:
         outfile.write(json_object)
 
 if __name__ == "__main__":
+    def download_files(files: list[str])-> None:
+
+        for filename in files:
+            url = f"https://helicalpackage.blob.core.windows.net/helicalpackage/data/{filename}"
+
+            # Check if the file already exists in the current directory
+            if os.path.exists(filename):
+                print(f"Files already exist. Skipping downloads.")
+            else:
+                response = requests.get(url)
+                if response.status_code == 200:
+                    with open(filename, "wb") as file:
+                        file.write(response.content)
+                    print(f"Downloaded {filename} successfully.")
+                else:
+                    print(f"Failed to download {filename}.")
+    files = ["c_data.h5ad", "ms_default.h5ad"]
+    download_files(files)
     benchmark()
