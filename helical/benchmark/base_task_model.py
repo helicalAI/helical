@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Protocol, runtime_checkable
 from anndata import AnnData
 from datasets import Dataset
+from numpy import ndarray
 
 class BaseTaskModel(ABC):
     """
