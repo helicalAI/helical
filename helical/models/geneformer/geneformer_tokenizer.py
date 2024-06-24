@@ -53,6 +53,7 @@ import numpy as np
 import scipy.sparse as sp
 from datasets import Dataset
 from anndata import AnnData
+from numpy import ndarray
 
 warnings.filterwarnings("ignore", message=".*The 'nopython' keyword.*")
 LOGGER = logging.getLogger(__name__)
@@ -351,7 +352,7 @@ class TranscriptomeTokenizer:
         )
         return output_dataset_truncated
 
-    def _get_filter_pass_loc(self, adata: AnnData):
+    def _get_filter_pass_loc(self, adata: AnnData) -> ndarray:
         """
         Get the indices of cells that pass the filter.
 

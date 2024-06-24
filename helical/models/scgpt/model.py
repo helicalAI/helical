@@ -1,6 +1,6 @@
 import os
 import scanpy as sc
-from helical.models.helical import HelicalBaseModel
+from helical.models.helical import HelicalRNAModel
 from helical.models.scgpt.scgpt_config import scGPTConfig
 import numpy as np
 from anndata import AnnData
@@ -18,7 +18,7 @@ from tqdm import tqdm
 LOGGER = logging.getLogger(__name__)
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-class scGPT(HelicalBaseModel):
+class scGPT(HelicalRNAModel):
     """scGPT Model. 
         The scGPT Model is a transformer-based model that can be used to extract gene embeddings from single-cell RNA-seq data.
         Currently we load the continous pre-training model from the scGPT repository as default model which works best on zero-shot tasks.
@@ -147,7 +147,7 @@ class scGPT(HelicalBaseModel):
     
     def process_data(self,
                      adata: AnnData, 
-                     gene_column_name: str = "gene_symbols", 
+                     gene_column_name: str = "index", 
                      fine_tuning: bool = False,
                      n_top_genes: int = 1800, 
                      flavor: Literal["seurat", "cell_ranger", "seurat_v3", "seurat_v3_paper"] = "seurat_v3",
@@ -160,8 +160,8 @@ class scGPT(HelicalBaseModel):
         data : AnnData
             The AnnData object containing the data to be processed. 
             The Anndata requires the expression counts as the data matrix and the column with the gene symbols is defined by the argument gene_column_name.
-        gene_column_name: str, optional, default = "gene_symbols"
-            The column in adata.var that contains the gene names. An option is also to use the "index" column.
+        gene_column_name: str, optional, default = "index"
+            The column in adata.var that contains the gene names. Default is to use the index column.
         fine_tuning: bool, optional, default = False
             If you intend to use the data to fine-tune the model on a downstream task, set this to True.
         n_top_genes: int, optional, default = 1800
@@ -216,36 +216,27 @@ class scGPT(HelicalBaseModel):
         return dataset
 
 
-    def check_data_validity(self, adata: AnnData, gene_col_name: str, use_batch_labels: bool) -> None:
-            """Checks if the data is eligible for processing by the scGPT model  
+    def check_data_validity(self, adata: AnnData, gene_column_name: str, use_batch_labels: bool) -> None:
+        """Checks if the data is eligible for processing by the scGPT model  
 
-            Parameters
-            ----------
-            use_batch_labels : str
-                Wheter to use batch labels.
+        Parameters
+        ----------
+        data : AnnData
+            The AnnData object containing the data to be validated. 
+        gene_column_name : str
+            The name of the column containing gene names.
+        use_batch_labels : str
+            Wheter to use batch labels.
 
-            Raises
-            ------
-            KeyError
-                If the data is missing column names.
-            """
-            
-            incomplete_obs = False
-            incomplete_vars = False
+        Raises
+        ------
+        KeyError
+            If the data is missing column names.
+        """
+        self.check_rna_data_validity(adata, gene_column_name)
 
-            # verify gene col
-            if gene_col_name == "index":
-                adata.var["index"] = adata.var.index
-            else:
-                if not gene_col_name in adata.var:
-                    message = f"Data must have the 'var' key '{gene_col_name}' to be processed by the scGPT model."
-                    incomplete_vars = True
-
-            if use_batch_labels:
-                if not "batch_id" in adata.obs:
-                    message = "Data must have the 'obs' key 'batch_id' to be processed by the scGPT model."
-                    incomplete_obs = True
-            
-            if incomplete_obs or incomplete_vars:
+        if use_batch_labels:
+            if not "batch_id" in adata.obs:
+                message = "Data must have the 'obs' key 'batch_id' to be processed by the scGPT model."
                 LOGGER.error(message)
                 raise KeyError(message)

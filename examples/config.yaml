@@ -1,0 +1,11 @@
+neural_network:
+  loss: "categorical_crossentropy"
+  learning_rate: 0.001
+  epochs: 10
+  batch_size: 32
+
+svm:
+  kernel: "rbf"
+  degree: 3
+  C: 1
+  decision_function_shape: 'ovr'
