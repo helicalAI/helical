@@ -12,34 +12,60 @@ import json
 
 @hydra.main(version_base=None, config_path=".", config_name="config")
 def benchmark(cfg: DictConfig) -> None:
-    # geneformer = Geneformer()
-    # scgpt = scGPT()
+    geneformer = Geneformer()
+    scgpt = scGPT()
     uce = UCE()
 
-    data = ad.read_h5ad("./examples/10k_pbmcs_proc.h5ad")
-    train_data = data[:20]
-    eval_data = data[20:25]
+    train_data = ad.read_h5ad("./examples/notebooks/c_data.h5ad")
+    eval_data = ad.read_h5ad("./examples/notebooks/ms_default.h5ad")
 
-    # saved_nn_head = NeuralNetwork().load('my_model.h5', 'classes.npy')
-    # scgpt_loaded_nn = Classifier().load_model(scgpt, saved_nn_head, "scgpt with saved NN")    
-    
-    # saved_svm_head = SVM().load('my_svm.pkl')
-    # scgpt_loaded_svm = Classifier().load_model(scgpt, saved_svm_head, "scgpt with saved SVM")           
+    train_data = train_data[:10]
+    eval_data = eval_data[:10]
 
-    # uce_c = Classifier().train_classifier_head(train_data, uce, NeuralNetwork(**cfg["neural_network"]))
-    # scgpt_nn_c = Classifier().train_classifier_head(train_data, scgpt, NeuralNetwork(**cfg["neural_network"]))           
+    train_data.var["ensembl_id"] = train_data.var["index_column"]
+    train_data.obs['n_counts'] = train_data.X.sum(axis=1)
 
-    saved_nn_head = NeuralNetwork().load('nn.h5', 'classes.npy')
-    uce_c = Classifier().load_model(uce, saved_nn_head, "UCE with saved NN")   
+    eval_data.var["ensembl_id"] = train_data.var["index_column"]
+    eval_data.obs['n_counts'] = train_data.X.sum(axis=1)
+
+    geneformer_c = Classifier().train_classifier_head(train_data,
+                                                      geneformer, 
+                                                      NeuralNetwork(**cfg["neural_network"]), 
+                                                      gene_col_name="ensembl_id",
+                                                      labels_column_name="celltype",
+                                                      test_size=0.1,
+                                                      random_state=42)   
+    geneformer_c.trained_task_model.save("cell_type_annotation/geneformer/geneformer_model.h5")
+    geneformer_c.trained_task_model.save_encoder("cell_type_annotation/geneformer/geneformer_encoder")
+
+    scgpt_c = Classifier().train_classifier_head(train_data, 
+                                                 scgpt, 
+                                                 NeuralNetwork(**cfg["neural_network"]),
+                                                 gene_col_name="index",
+                                                 labels_column_name="celltype",
+                                                 test_size=0.1,
+                                                 random_state=42)       
+    scgpt_c.trained_task_model.save("cell_type_annotation/scgpt/scgpt_model.h5")
+    scgpt_c.trained_task_model.save_encoder("cell_type_annotation/scgpt/scgpt_encoder")     
+
+    uce_c = Classifier().train_classifier_head(train_data, 
+                                               uce, 
+                                               NeuralNetwork(**cfg["neural_network"]),
+                                               gene_col_name="index",
+                                               labels_column_name="celltype",
+                                               test_size=0.1,
+                                               random_state=42)
+    uce_c.trained_task_model.save("cell_type_annotation/uce/uce_model.h5")
+    uce_c.trained_task_model.save_encoder("cell_type_annotation/uce/uce_encoder")   
 
     bench = Benchmark()
-    evaluations = bench.evaluate_classification([uce_c], eval_data, "cell_type")
+    evaluations = bench.evaluate_classification([geneformer_c], eval_data, "celltype")
     
     # Serializing json
     json_object = json.dumps(evaluations, indent=4)
     
     # Writing to sample.json
-    with open("helical/benchmark/results.json", "w") as outfile:
+    with open("cell_type_annotation/cell_type_annotation.json", "w") as outfile:
         outfile.write(json_object)
 
 if __name__ == "__main__":
