@@ -1,7 +1,10 @@
 from helical.benchmark.benchmark import Benchmark
 from helical.models.geneformer.model import Geneformer
+from helical.models.geneformer.geneformer_config import GeneformerConfig
 from helical.models.scgpt.model import scGPT
+from helical.models.scgpt.scgpt_config import scGPTConfig
 from helical.models.uce.model import UCE
+from helical.models.uce.uce_config import UCEConfig
 from helical.classification.neural_network import NeuralNetwork
 from helical.classification.svm import SupportVectorMachine as SVM
 from helical.classification.classifier import Classifier
@@ -14,9 +17,12 @@ import os
 
 @hydra.main(version_base=None, config_path=".", config_name="config")
 def benchmark(cfg: DictConfig) -> None:
-    geneformer = Geneformer()
-    scgpt = scGPT()
-    uce = UCE()
+    geneformer_config = GeneformerConfig(device="gpu")
+    geneformer = Geneformer(configurer=geneformer_config)
+    scgpt_config = scGPTConfig(device="gpu")
+    scgpt = scGPT(configurer=scgpt_config)
+    uce_config = UCEConfig(device="gpu")
+    uce = UCE(configurer=uce_config)
 
     train_data = ad.read_h5ad("./examples/notebooks/c_data.h5ad")
     eval_data = ad.read_h5ad("./examples/notebooks/ms_default.h5ad")
