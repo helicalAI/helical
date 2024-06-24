@@ -1,19 +1,12 @@
 
 from sklearn.model_selection import train_test_split
-from helical.benchmark.base_task_model import BaseTaskModel
+from helical.benchmark.base_task_model import BaseTaskModel, BaseModelProtocol
 import logging
 import numpy as np
 from numpy import ndarray
 from anndata import AnnData
-from datasets import Dataset
 from typing import Protocol, runtime_checkable, Optional, Self, Union
 
-@runtime_checkable
-class BaseModelProtocol(Protocol):
-    def process_data(self, x: AnnData) -> Dataset:
-        ...
-    def get_embeddings(self, dataset: Dataset) -> ndarray:
-        ...
 @runtime_checkable
 class ClassificationModelProtocol(Protocol):
     def predict(self, x: Union[AnnData, ndarray]) -> ndarray:

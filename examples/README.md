@@ -26,7 +26,12 @@ One such example is the [Cell-Type-Annotation](./notebooks/Cell-Type-Annotation.
 That notebook explains the procedure step-by-step in much detail. A more modular and automated procedure can be found in the [benchmark.py](benchmark.py) script.
 
 ## Benchmark
-To compare different models against each other, we built a benchmarking infrastructre.
+To compare different models against each other, we built a benchmarking infrastructure. To benchmark models, we compare model performances on a dataset provided by you (or from one of our datasets). We have three choices to apply these bio foundation models:
+1. By Fine-tuning a model and tweaking their weights (or additional weights )
+2. By Probing a model to get the embeddings (and freezing the weights) and use these embeddings as inputs to a new classifier (which could be a Neural Network or an SVM for example).
+3. Some tasks do not require any fine-tuning/learning and we can directly use the bio foundation models in a zero-shot context. 
+![fine-tuning](../docs/benchmarking/assets/Fine-Tune_Probing.jpg)
+
 A simple example is shown below:
 ```
 from helical.benchmark.benchmark import Benchmark
@@ -60,10 +65,25 @@ def benchmark(cfg: DictConfig) -> None:
 if __name__ == "__main__":
     benchmark()
 ```
+
+To make the benchmarking easier, it is also possible to use your own head, your own base model or even your own standalone classifier. We believe that researchers and practitioners should be able to test their own models against others which is why we made the framework as flexible as possible.
+
+If you want to use your own model head, you can directly load a trained one onto your classifier:
+```
+saved_nn_head = NeuralNetwork().load('my_model.h5', 'classes.npy')
+scgpt_loaded_nn = Classifier().load_model(scgpt, saved_nn_head, "scgpt with saved NN")    
+    
+saved_svm_head = SVM().load('my_svm.pkl')
+scgpt_loaded_svm = Classifier().load_model(scgpt, saved_svm_head, "scgpt with saved SVM")
+bench = Benchmark()
+evaluations = bench.evaluate_classification([scgpt_loaded_nn, scgpt_loaded_svm], eval_data, "cell_type")
+print(evaluations)
+``` 
+If you would like to create your own classifier head, you can have a look at the [classifier.py](../helical/classification/classifier.py) or [base_task_model.py](../helical/benchmark/base_task_model.py) files where we define the protocols to be followed to make the models match and use our benchmarking function.
+
+![benchmarking](../docs/benchmarking/assets/Benchmarking.jpg)
+
 We use [Hydra](https://hydra.cc/) to pass configurations to our models in the [config.yaml](config.yaml) file. In this example, a neural network is used as a classification `head` but other models (such as SVM) can be found in the [classification folder](../helical/classification/). In order to test a classification with your own dataset and label, all you have to do is load your own anndata instance, ensure it has the correct column names/keys and specify the `lables_column_name` input variable.
 
-It is also possible to use your own head, your own base model or even your own standalone classifier. This is shown in the picture below: 
 
-![benchmarking](../docs/benchmarking/assets/Fine-Tune_Probing.jpg)
-
-
+We are currently developing this feature and will be adding more datasets and models soon!

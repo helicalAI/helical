@@ -1,4 +1,7 @@
 from abc import ABC, abstractmethod
+from typing import Protocol, runtime_checkable
+from anndata import AnnData
+from datasets import Dataset
 
 class BaseTaskModel(ABC):
     """
@@ -29,3 +32,10 @@ class BaseTaskModel(ABC):
     def load():
         pass
     
+
+@runtime_checkable
+class BaseModelProtocol(Protocol):
+    def process_data(self, x: AnnData) -> Dataset:
+        ...
+    def get_embeddings(self, dataset: Dataset) -> ndarray:
+        ...
