@@ -60,10 +60,16 @@ class NeuralNetwork(BaseTaskModel):
         -------
         The neural network instance.
         """
-        y_encoded = self.encoder.fit_transform(y_train)
-        y_encoded = to_categorical(y_encoded, num_classes = self.num_classes)
+        x_val, y_val = validation_data
+        self.encoder.fit_transform(np.concatenate((y_train, y_val), axis = 0))
 
-        self.model.fit(X_train, y_encoded, self.epochs, self.batch_size, validation_data)
+        y_train_encoded = self.encoder.transform(y_train)
+        y_train_encoded = to_categorical(y_train_encoded, num_classes = self.num_classes)
+
+        y_val_encoded = self.encoder.transform(y_val)
+        y_val_encoded = to_categorical(y_val_encoded, num_classes = self.num_classes)
+
+        self.model.fit(X_train, y_train_encoded, epochs = self.epochs, batch_size = self.batch_size, validation_data = (x_val, y_val_encoded))
         return self
     
     def predict(self, x: ndarray) -> ndarray:
