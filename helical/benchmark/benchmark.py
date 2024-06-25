@@ -1,4 +1,4 @@
-from helical.classification.classifier import Classifier
+from helical.models.classification.classifier import Classifier
 from anndata import AnnData
 import logging
 from numpy import ndarray
@@ -32,7 +32,7 @@ class Benchmark():
 
         Returns
         -------
-        A dictionary containing the evaluations for each HelicalBaseModel provided in the initialization.
+        A dictionary containing the evaluations for each HelicalBaseFoundationModel provided in the initialization.
 
         """
         try:

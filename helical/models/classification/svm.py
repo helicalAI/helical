@@ -1,4 +1,4 @@
-from helical.benchmark.base_task_model import BaseTaskModel
+from helical.models.base_models import BaseTaskModel
 from numpy import ndarray
 from sklearn import svm
 from typing import Self

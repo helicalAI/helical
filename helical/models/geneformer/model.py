@@ -1,4 +1,4 @@
-from helical.models.helical import HelicalRNAModel
+from helical.models.base_models import HelicalRNAModel
 import logging
 from pathlib import Path
 import numpy as np

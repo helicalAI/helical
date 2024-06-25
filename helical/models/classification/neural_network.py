@@ -8,7 +8,7 @@ from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.metrics import F1Score
 from tensorflow.keras.utils import to_categorical
-from helical.benchmark.base_task_model import BaseTaskModel
+from helical.models.base_models import BaseTaskModel
 from pathlib import Path
 
 class NeuralNetwork(BaseTaskModel):

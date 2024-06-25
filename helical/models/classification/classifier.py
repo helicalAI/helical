@@ -1,6 +1,6 @@
 
 from sklearn.model_selection import train_test_split
-from helical.benchmark.base_task_model import BaseTaskModel, BaseModelProtocol
+from helical.models.base_models import BaseTaskModel, BaseModelProtocol
 import logging
 import numpy as np
 from numpy import ndarray

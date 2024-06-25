@@ -2,9 +2,9 @@ from helical.benchmark.benchmark import Benchmark
 from helical.models.geneformer.model import Geneformer
 from helical.models.scgpt.model import scGPT
 from helical.models.uce.model import UCE
-from helical.classification.neural_network import NeuralNetwork
-from helical.classification.svm import SupportVectorMachine as SVM
-from helical.classification.classifier import Classifier
+from helical.models.classification.neural_network import NeuralNetwork
+from helical.models.classification.svm import SupportVectorMachine as SVM
+from helical.models.classification.classifier import Classifier
 import anndata as ad
 from omegaconf import DictConfig
 import hydra

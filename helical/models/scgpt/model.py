@@ -1,6 +1,6 @@
 import os
 import scanpy as sc
-from helical.models.helical import HelicalRNAModel
+from helical.models.base_models import HelicalRNAModel
 from helical.models.scgpt.scgpt_config import scGPTConfig
 import numpy as np
 from anndata import AnnData

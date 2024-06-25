@@ -36,8 +36,8 @@ A simple example is shown below:
 ```
 from helical.benchmark.benchmark import Benchmark
 from helical.models.scgpt.model import scGPT
-from helical.classification.neural_network import NeuralNetwork
-from helical.classification.classifier import Classifier
+from helical.models.classification.neural_network import NeuralNetwork
+from helical.models.classification.classifier import Classifier
 import anndata as ad
 from omegaconf import DictConfig
 import hydra
@@ -79,11 +79,11 @@ bench = Benchmark()
 evaluations = bench.evaluate_classification([scgpt_loaded_nn, scgpt_loaded_svm], eval_data, "cell_type")
 print(evaluations)
 ``` 
-If you would like to create your own classifier head, you can have a look at the [classifier.py](../helical/classification/classifier.py) or [base_task_model.py](../helical/benchmark/base_task_model.py) files where we define the protocols to be followed to make the models match and use our benchmarking function.
+If you would like to create your own classifier head, you can have a look at the [classifier.py](../helical/models/classification/classifier.py) or [base_models.py](../helical/models/base_models.py) files where we define the protocols to be followed to make the models match and use our benchmarking function.
 
 ![benchmarking](../docs/benchmarking/assets/Benchmarking.jpg)
 
-We use [Hydra](https://hydra.cc/) to pass configurations to our models in the [config.yaml](config.yaml) file. In this example, a neural network is used as a classification `head` but other models (such as SVM) can be found in the [classification folder](../helical/classification/). In order to test a classification with your own dataset and label, all you have to do is load your own anndata instance, ensure it has the correct column names/keys and specify the `lables_column_name` input variable.
+We use [Hydra](https://hydra.cc/) to pass configurations to our models in the [config.yaml](config.yaml) file. In this example, a neural network is used as a classification `head` but other models (such as SVM) can be found in the [classification folder](../helical/models/classification/). In order to test a classification with your own dataset and label, all you have to do is load your own anndata instance, ensure it has the correct column names/keys and specify the `lables_column_name` input variable.
 
 
 We are currently developing this feature and will be adding more datasets and models soon!

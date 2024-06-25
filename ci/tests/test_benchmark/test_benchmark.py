@@ -1,6 +1,6 @@
 from helical.benchmark.benchmark import Benchmark
-from helical.classification.classifier import Classifier
-from helical.classification.neural_network import NeuralNetwork
+from helical.models.classification.classifier import Classifier
+from helical.models.classification.neural_network import NeuralNetwork
 from helical.models.scgpt.model import scGPT
 import anndata as ad
 import numpy as np
@@ -25,5 +25,5 @@ def test_evaluate_classification(mocker):
     scgpt_nn_c = Classifier().train_classifier_head(data, scgpt, head, gene_col_name = "gene_symbols", labels_column_name = "cell_type")
     bench = Benchmark()
     evaluations = bench.evaluate_classification([scgpt_nn_c, scgpt_nn_c], data, "cell_type")
-    assert evaluations == {'scGPT with NeuralNetwork': {'accuracy': 1.0, 'precision': 1.0, 'f1': 1.0, 'recall': 1.0}, 
-                           'scGPT with NeuralNetwork': {'accuracy': 1.0, 'precision': 1.0, 'f1': 1.0, 'recall': 1.0}}
+    assert evaluations == {'scGPT with NeuralNetwork': {'Accuracy': 1.0, 'Precision': 1.0, 'F1': 1.0, 'Recall': 1.0}, 
+                           'scGPT with NeuralNetwork': {'Accuracy': 1.0, 'Precision': 1.0, 'F1': 1.0, 'Recall': 1.0}}

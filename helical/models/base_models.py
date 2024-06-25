@@ -3,10 +3,22 @@ from helical.services.logger import Logger
 from helical.constants.enums import LoggingType, LoggingLevel
 from anndata import AnnData
 import logging
+from typing import Protocol, runtime_checkable
+from datasets import Dataset
+from numpy import ndarray
 
 LOGGER = logging.getLogger(__name__)
-class HelicalBaseModel(ABC, Logger):
-    """Helical Base Model Class which serves as the base class for all models in the helical package. Each new model should be a subclass of this class.
+
+@runtime_checkable
+class BaseModelProtocol(Protocol):
+    def process_data(self, x: AnnData) -> Dataset:
+        ...
+    def get_embeddings(self, dataset: Dataset) -> ndarray:
+        ...
+        
+class HelicalBaseFoundationModel(ABC, Logger):
+    """Helical Base Foundation Model Class which serves as the base class for all foundation models in the helical package. 
+    Each new model should be a subclass of this class.
 
         Parameters
         ----------
@@ -33,7 +45,7 @@ class HelicalBaseModel(ABC, Logger):
     def get_embeddings():
         pass
 
-class HelicalRNAModel(HelicalBaseModel):
+class HelicalRNAModel(HelicalBaseFoundationModel):
     def check_rna_data_validity(self, adata: AnnData, gene_col_name: str) -> None:
         """Checks if the data is contains the gene_col_name, which is needed for all Helical RNA models.  
 
@@ -66,6 +78,35 @@ class HelicalRNAModel(HelicalBaseModel):
             LOGGER.error(message)
             raise KeyError(message)
         
-class HelicalDNAModel(HelicalBaseModel):
+class HelicalDNAModel(HelicalBaseFoundationModel):
     def check_dna_data_validity(self) -> None:
         pass # TODO
+
+class BaseTaskModel(ABC):
+    """
+    Helical Base Task Model which serves as the base class for all models trained for a specific task (such as classification).
+    Each new model for a specific task should be a subclass of this class.
+    """
+    
+    def __init__():
+        pass
+
+    @abstractmethod
+    def compile(*args, **kwargs):
+        pass
+
+    @abstractmethod
+    def train(*args, **kwargs):
+        pass
+
+    @abstractmethod
+    def predict():
+        pass
+
+    @abstractmethod
+    def save():
+        pass
+
+    @abstractmethod
+    def load():
+        pass
