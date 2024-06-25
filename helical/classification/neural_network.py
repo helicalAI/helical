@@ -9,6 +9,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.metrics import F1Score
 from tensorflow.keras.utils import to_categorical
 from helical.benchmark.base_task_model import BaseTaskModel
+from pathlib import Path
 
 class NeuralNetwork(BaseTaskModel):
     def __init__(self, loss: str = "categorical_crossentropy", learning_rate: float = 0.001, epochs=10, batch_size=32) -> None:
@@ -89,14 +90,17 @@ class NeuralNetwork(BaseTaskModel):
         return self.encoder.inverse_transform(y_pred)
     
     def save(self, path: str) -> None:
-        """Save the neural network model to a file.
+        """Save the neural network model and its encoder to a directory.
+        Any missing parents of this path are created as needed.
 
         Parameters
         ----------
         path : str
-            The path to save the model.
+            The path to the directory to save the model and the encoder.
         """
-        self.model.save(path)
+        Path(path).mkdir(parents=True, exist_ok=True)
+        np.save(f"{path}/encoder", self.encoder.classes_)
+        self.model.save(f"{path}/neural_network.h5")
 
     def load(self, path: str, classes: ndarray) -> Self:
         """Load the neural network model from a file.
@@ -121,13 +125,3 @@ class NeuralNetwork(BaseTaskModel):
         self.encoder.classes_ = np.load(classes)
         self.model = tf.keras.models.load_model(path)
         return self
-    
-    def save_encoder(self, path: str) -> None:
-        """Save the encoder to a file.
-
-        Parameters
-        ----------
-        path : str
-            The path to save the encoder.
-        """
-        np.save(path, self.encoder.classes_)

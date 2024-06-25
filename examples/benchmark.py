@@ -9,14 +9,16 @@ import anndata as ad
 from omegaconf import DictConfig
 import hydra
 import json
+from pathlib import Path
+from helical.services.downloader import Downloader
 
 @hydra.main(version_base=None, config_path=".", config_name="config")
 def benchmark(cfg: DictConfig) -> None:
     # geneformer = Geneformer()
-    # scgpt = scGPT()
-    uce = UCE()
+    scgpt = scGPT()
+    # uce = UCE()
 
-    data = ad.read_h5ad("./examples/10k_pbmcs_proc.h5ad")
+    data = ad.read_h5ad("./10k_pbmcs_proc.h5ad")
     train_data = data[:20]
     eval_data = data[20:25]
 
@@ -29,11 +31,12 @@ def benchmark(cfg: DictConfig) -> None:
     # uce_c = Classifier().train_classifier_head(train_data, uce, NeuralNetwork(**cfg["neural_network"]))
     # scgpt_nn_c = Classifier().train_classifier_head(train_data, scgpt, NeuralNetwork(**cfg["neural_network"]))           
 
-    saved_nn_head = NeuralNetwork().load('nn.h5', 'classes.npy')
-    uce_c = Classifier().load_model(uce, saved_nn_head, "UCE with saved NN")   
+    scgpt_nn_c = Classifier().train_classifier_head(train_data, scgpt, NeuralNetwork(**cfg["neural_network"]))
+    scgpt_nn_c.trained_task_model.save("cell_type_annotation/scgpt_w_nn")
+    # uce_c = Classifier().load_model(uce, saved_nn_head, "UCE with saved NN")   
 
     bench = Benchmark()
-    evaluations = bench.evaluate_classification([uce_c], eval_data, "cell_type")
+    evaluations = bench.evaluate_classification([scgpt_nn_c], eval_data, "cell_type")
     
     # Serializing json
     json_object = json.dumps(evaluations, indent=4)
@@ -43,4 +46,6 @@ def benchmark(cfg: DictConfig) -> None:
         outfile.write(json_object)
 
 if __name__ == "__main__":
+    downloader = Downloader()
+    downloader.download_via_link(Path("./10k_pbmcs_proc.h5ad"), "https://helicalpackage.blob.core.windows.net/helicalpackage/data/10k_pbmcs_proc.h5ad")
     benchmark()
