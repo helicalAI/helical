@@ -47,13 +47,13 @@ jobs:
       #     pytest-coverage-path: ./pytest-coverage.txt
       #     junitxml-path: ./pytest.xml
 
-      - name: Execute scGPT
-        run: |
-          python examples/run_models/run_scgpt.py
-
       - name: Execute Geneformer
         run: |
           python examples/run_models/run_geneformer.py
+
+      - name: Execute scGPT
+        run: |
+          python examples/run_models/run_scgpt.py
 
       - name: Execute UCE
         run: |
