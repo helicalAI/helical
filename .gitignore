@@ -42,8 +42,5 @@ ci/tests/test_output
 !ci/tests/data/valid_nn_head/*
 !ci/tests/data/*
 
-# Environment variables
-.env
-
 # Hydra
 outputs
