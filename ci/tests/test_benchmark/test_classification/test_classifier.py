@@ -1,5 +1,5 @@
-from helical.classification.neural_network import NeuralNetwork
-from helical.classification.classifier import Classifier 
+from helical.models.classification.neural_network import NeuralNetwork
+from helical.models.classification.classifier import Classifier 
 from helical.models.scgpt.model import scGPT
 import pytest 
 import anndata as ad
@@ -10,7 +10,7 @@ def test_load_model__ok_nn_head():
     Happy path for Classifier.load_model.
     The load_model expects a base model and a trained task model.
     - The base model needs to follow the BaseModelProtocol.
-        In this case, the base model is an instance of scGPT. As all HelicalBaseModels have a process_data and 'get_embeddings' method, this is fine.
+        In this case, the base model is an instance of scGPT. As all HelicalBaseFoundationModels have a process_data and 'get_embeddings' method, this is fine.
     - The trained task model needs to follow the ClassificationModelProtocol.
         In this case, the trained task model is an instance of NeuralNetwork. As the NeuralNetwork class inherits from a BaseTaskModel which requires the 
         implementation of the 'predict' method.

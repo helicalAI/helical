@@ -1,7 +1,7 @@
 import logging
 
 from helical.models.hyena_dna.hyena_dna_config import HyenaDNAConfig
-from helical.models.helical import HelicalDNAModel
+from helical.models.base_models import HelicalDNAModel
 from helical.models.hyena_dna.pretrained_model import HyenaDNAPreTrainedModel
 import torch
 from .standalone_hyenadna import CharacterTokenizer

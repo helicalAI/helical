@@ -83,6 +83,7 @@ A lot of our models have been published by talend authors developing these excit
 - [anndata](https://github.com/scverse/anndata)
 - [scanpy](https://github.com/scverse/scanpy)
 - [transformers](https://github.com/huggingface/transformers)
+- [scikit-learn](https://github.com/scikit-learn/scikit-learn)
 
 ### Licenses
 

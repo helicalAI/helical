@@ -1,4 +1,4 @@
-from helical.classification.classifier import Classifier
+from helical.models.classification.classifier import Classifier
 from anndata import AnnData
 import logging
 from numpy import ndarray
@@ -32,7 +32,7 @@ class Benchmark():
 
         Returns
         -------
-        A dictionary containing the evaluations for each HelicalBaseModel provided in the initialization.
+        A dictionary containing the evaluations for each HelicalBaseFoundationModel provided in the initialization.
 
         """
         try:
@@ -68,9 +68,9 @@ class Benchmark():
         A dictionary containing the evaluations.
         """
         evaluation = {
-            "accuracy": accuracy_score(y_true, y_pred),
-            "precision": precision_score(y_true, y_pred, average='macro'),
-            "f1": f1_score(y_true, y_pred, average='macro'),
-            "recall": recall_score(y_true, y_pred, average='macro'),
+            "Accuracy": accuracy_score(y_true, y_pred),
+            "Precision": precision_score(y_true, y_pred, average='macro'),
+            "F1": f1_score(y_true, y_pred, average='macro'),
+            "Recall": recall_score(y_true, y_pred, average='macro'),
         }        
         return evaluation

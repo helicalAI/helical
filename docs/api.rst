@@ -12,7 +12,7 @@ API documentation
    helical.models.uce.model.UCE
    helical.models.geneformer.model.Geneformer
 
-   .. helical.models.helical.HelicalBaseModel
+   .. helical.models.helical.HelicalBaseFoundationModel
    .. helical.models.uce.model.UCE
    .. helical.models.geneformer.model.Geneformer
    .. helical.models.scgpt.model

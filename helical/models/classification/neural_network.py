@@ -8,7 +8,8 @@ from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.metrics import F1Score
 from tensorflow.keras.utils import to_categorical
-from helical.benchmark.base_task_model import BaseTaskModel
+from helical.models.base_models import BaseTaskModel
+from pathlib import Path
 
 class NeuralNetwork(BaseTaskModel):
     def __init__(self, loss: str = "categorical_crossentropy", learning_rate: float = 0.001, epochs=10, batch_size=32) -> None:
@@ -60,10 +61,16 @@ class NeuralNetwork(BaseTaskModel):
         -------
         The neural network instance.
         """
-        y_encoded = self.encoder.fit_transform(y_train)
-        y_encoded = to_categorical(y_encoded, num_classes = self.num_classes)
+        x_val, y_val = validation_data
+        self.encoder.fit_transform(np.concatenate((y_train, y_val), axis = 0))
 
-        self.model.fit(X_train, y_encoded, self.epochs, self.batch_size, validation_data)
+        y_train_encoded = self.encoder.transform(y_train)
+        y_train_encoded = to_categorical(y_train_encoded, num_classes = self.num_classes)
+
+        y_val_encoded = self.encoder.transform(y_val)
+        y_val_encoded = to_categorical(y_val_encoded, num_classes = self.num_classes)
+
+        self.model.fit(X_train, y_train_encoded, epochs = self.epochs, batch_size = self.batch_size, validation_data = (x_val, y_val_encoded))
         return self
     
     def predict(self, x: ndarray) -> ndarray:
@@ -83,14 +90,17 @@ class NeuralNetwork(BaseTaskModel):
         return self.encoder.inverse_transform(y_pred)
     
     def save(self, path: str) -> None:
-        """Save the neural network model to a file.
+        """Save the neural network model and its encoder to a directory.
+        Any missing parents of this path are created as needed.
 
         Parameters
         ----------
         path : str
-            The path to save the model.
+            The path to the directory to save the model and the encoder.
         """
-        self.model.save(path)
+        Path(path).mkdir(parents=True, exist_ok=True)
+        np.save(f"{path}/encoder", self.encoder.classes_)
+        self.model.save(f"{path}/neural_network.h5")
 
     def load(self, path: str, classes: ndarray) -> Self:
         """Load the neural network model from a file.
@@ -115,13 +125,3 @@ class NeuralNetwork(BaseTaskModel):
         self.encoder.classes_ = np.load(classes)
         self.model = tf.keras.models.load_model(path)
         return self
-    
-    def save_encoder(self, path: str) -> None:
-        """Save the encoder to a file.
-
-        Parameters
-        ----------
-        path : str
-            The path to save the encoder.
-        """
-        np.save(path, self.encoder.classes_)
