@@ -97,12 +97,10 @@ def run_integration_example(adata: ad.AnnData, cfg: DictConfig) -> dict[str, dic
     adata = ad.concat([batch_0[:20], batch_1[:20]])
     
     dataset = uce.process_data(adata)
-    uce.get_embeddings(dataset)
-    processed_adata_uce = getattr(uce, "adata")
+    adata.obsm["X_uce"] = uce.get_embeddings(dataset)
 
     dataset = scgpt.process_data(adata)
-    scgpt.get_embeddings(dataset)
-    processed_adata_scgpt = getattr(scgpt, "adata")
+    adata.obsm["X_scgpt"] = scgpt.get_embeddings(dataset)
 
     # data specific configurations
     cfg["data"]["batch_key"] = "batch"
@@ -114,8 +112,8 @@ def run_integration_example(adata: ad.AnnData, cfg: DictConfig) -> dict[str, dic
 
     return evaluate_integration(
             [
-                ("scgpt", processed_adata_scgpt, "X_scgpt"),
-                ("uce", processed_adata_uce, "X_uce"),
+                ("scgpt", adata, "X_scgpt"),
+                ("uce", adata, "X_uce"),
                 ("scanorama", adata, "X_scanorama")
             ], cfg
         )

@@ -98,10 +98,9 @@ class UCE(HelicalRNAModel):
         """
                 
         self.check_rna_data_validity(adata, gene_column_name)
-        self.adata = adata
 
         if gene_column_name != "index":
-            self.adata.var.index = self.adata.var[gene_column_name]
+            adata.var.index = adata.var[gene_column_name]
 
         files_config = {
             "spec_chrom_csv_path": self.model_dir / "species_chrom.csv",
@@ -110,10 +109,10 @@ class UCE(HelicalRNAModel):
         }
 
         if filter_genes_min_cell is not None:
-            sc.pp.filter_genes(self.adata, min_cells=filter_genes_min_cell)
+            sc.pp.filter_genes(adata, min_cells=filter_genes_min_cell)
             # sc.pp.filter_cells(ad, min_genes=25)
         ##Filtering out the Expression Data That we do not have in the protein embeddings
-        filtered_adata, species_to_all_gene_symbols = load_gene_embeddings_adata(adata=self.adata,
+        filtered_adata, species_to_all_gene_symbols = load_gene_embeddings_adata(adata=adata,
                                                                         species=[species],
                                                                         embedding_model=embedding_model,
                                                                         embeddings_path=Path(files_config["protein_embeddings_dir"]))
@@ -211,7 +210,4 @@ class UCE(HelicalRNAModel):
                 else:
                     dataset_embeds.append(embedding.detach().cpu().numpy())
         embeddings = np.vstack(dataset_embeds)
-
-        # save the embeddings in the adata object
-        self.adata.obsm[self.config["embed_obsm_name"]] = embeddings
         return embeddings

@@ -142,8 +142,6 @@ class scGPT(HelicalRNAModel):
         #     obs_df = adata.obs[obs_to_save] if obs_to_save is not None else None
         #     return sc.AnnData(X=cell_embeddings, obs=obs_df, dtype="float32")
         
-        # save the embeddings in the adata object
-        self.adata.obsm[self.config["embed_obsm_name"]] = cell_embeddings
         return cell_embeddings
     
     def process_data(self,
@@ -183,15 +181,14 @@ class scGPT(HelicalRNAModel):
  
         self.check_data_validity(adata, gene_column_name, use_batch_labels)
         self.gene_column_name = gene_column_name
-        self.adata = adata
         if fine_tuning:
             # Preprocess the dataset and select `N_HVG` highly variable genes for downstream analysis.
-            sc.pp.normalize_total(self.adata, target_sum=1e4)
-            sc.pp.log1p(self.adata)
+            sc.pp.normalize_total(adata, target_sum=1e4)
+            sc.pp.log1p(adata)
 
             # highly variable genes
-            sc.pp.highly_variable_genes(self.adata, n_top_genes=n_top_genes, flavor=flavor)
-            self.adata = self.adata[:, self.adata.var['highly_variable']]
+            sc.pp.highly_variable_genes(adata, n_top_genes=n_top_genes, flavor=flavor)
+            adata = adata[:, adata.var['highly_variable']]
 
         adata.var["id_in_vocab"] = [ self.vocab[gene] if gene in self.vocab else -1 for gene in adata.var[self.gene_column_name] ]
         adata = adata[:, adata.var["id_in_vocab"] >= 0]
