@@ -32,6 +32,7 @@ setup(
         'einops==0.8.0',
         'omegaconf==2.3.0',
         'hydra-core==1.3.2',
-        'tensorflow==2.13.0rc1'
+        'tensorflow==2.13.0rc1',
+        'scanorama==1.7.4',
     ],  
 )

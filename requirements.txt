@@ -22,3 +22,4 @@ omegaconf==2.3.0
 keras==2.13.1
 hydra-core==1.3.2
 tensorflow==2.13.0rc1
+scanorama==1.7.4
