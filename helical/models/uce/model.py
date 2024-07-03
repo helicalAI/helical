@@ -211,5 +211,7 @@ class UCE(HelicalRNAModel):
                 else:
                     dataset_embeds.append(embedding.detach().cpu().numpy())
         embeddings = np.vstack(dataset_embeds)
-        self.adata.obsm["X_uce"] = embeddings
+
+        # save the embeddings in the adata object
+        self.adata.obsm[self.config["embed_obsm_name"]] = embeddings
         return embeddings

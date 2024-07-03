@@ -157,7 +157,8 @@ class Geneformer(HelicalRNAModel):
             self.device
         ).cpu().detach().numpy()
 
-        self.adata.obsm["X_geneformer"] = embeddings
+        # save the embeddings in the adata object
+        self.adata.obsm[self.config["embed_obsm_name"]] = embeddings
         return embeddings
 
 

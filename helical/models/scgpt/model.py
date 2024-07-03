@@ -142,7 +142,8 @@ class scGPT(HelicalRNAModel):
         #     obs_df = adata.obs[obs_to_save] if obs_to_save is not None else None
         #     return sc.AnnData(X=cell_embeddings, obs=obs_df, dtype="float32")
         
-        self.adata.obsm["X_scGPT"] = cell_embeddings
+        # save the embeddings in the adata object
+        self.adata.obsm[self.config["embed_obsm_name"]] = cell_embeddings
         return cell_embeddings
     
     def process_data(self,
