@@ -98,6 +98,11 @@ class UCE(HelicalRNAModel):
         """
                 
         self.check_rna_data_validity(data, gene_column_name)
+
+        list_of_mariana = [1,2,3]
+        if 1 in list_of_mariana:
+            # do my change
+            
         if gene_column_name != "index":
             data.var.index = data.var[gene_column_name]
 
