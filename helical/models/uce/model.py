@@ -102,7 +102,7 @@ class UCE(HelicalRNAModel):
         list_of_mariana = [1,2,3]
         if 1 in list_of_mariana:
             # do my change
-            
+
         if gene_column_name != "index":
             data.var.index = data.var[gene_column_name]
 
@@ -138,6 +138,7 @@ class UCE(HelicalRNAModel):
 
         pe_row_idxs = get_protein_embeddings_idxs(files_config["offset_pkl_path"], species, species_to_all_gene_symbols, filtered_adata)
         dataset_chroms, dataset_start = get_positions(Path(files_config["spec_chrom_csv_path"]), species, filtered_adata)
+
 
         if not (len(dataset_chroms) == len(dataset_start) == num_genes == pe_row_idxs.shape[0]): 
             LOGGER.error(f'Invalid input dimensions for the UCEDataset! ' 
