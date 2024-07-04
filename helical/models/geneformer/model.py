@@ -71,7 +71,7 @@ class Geneformer(HelicalRNAModel):
         LOGGER.info(f"Model finished initializing.")
         
     def process_data(self, 
-                     data: AnnData,  
+                     adata: AnnData,  
                      gene_column_name: str = "ensembl_id", 
                      nproc: int = 1, 
                      output_path: Optional[str] = None) -> Dataset:   
@@ -79,7 +79,7 @@ class Geneformer(HelicalRNAModel):
 
         Parameters 
         ----------
-        data : AnnData
+        adata : AnnData
             The AnnData object containing the data to be processed. It is important to note that the Geneformer uses Ensembl IDs to identify genes.
             Currently the Geneformer only supports human genes.
             If you already have the ensembl_id column, you can skip the mapping step.
@@ -102,7 +102,8 @@ class Geneformer(HelicalRNAModel):
             The tokenized dataset in the form of a Hugginface Dataset object.
             
         """ 
-        self.check_data_validity(data, gene_column_name)
+        self.check_data_validity(adata, gene_column_name)
+        self.adata = adata
 
         files_config = {
             "mapping_path": self.config.model_dir / "human_gene_to_ensemble_id.pkl",
@@ -113,7 +114,7 @@ class Geneformer(HelicalRNAModel):
         # map gene symbols to ensemble ids if provided
         if gene_column_name != "ensembl_id":          
             mappings = pkl.load(open(files_config["mapping_path"], 'rb'))
-            data.var['ensembl_id'] = data.var[gene_column_name].apply(lambda x: mappings.get(x,{"id":None})['id'])
+            self.adata.var['ensembl_id'] = self.adata.var[gene_column_name].apply(lambda x: mappings.get(x,{"id":None})['id'])
 
         # load token dictionary (Ensembl IDs:token)
         with open(files_config["token_path"], "rb") as f:
@@ -124,7 +125,7 @@ class Geneformer(HelicalRNAModel):
                                          gene_median_file = files_config["gene_median_path"], 
                                          token_dictionary_file = files_config["token_path"])
 
-        tokenized_cells, cell_metadata =  self.tk.tokenize_anndata(data)
+        tokenized_cells, cell_metadata =  self.tk.tokenize_anndata(self.adata)
         tokenized_dataset = self.tk.create_dataset(tokenized_cells, cell_metadata, use_generator=False)
         
         if output_path:
@@ -154,16 +155,19 @@ class Geneformer(HelicalRNAModel):
             self.pad_token_id,
             self.forward_batch_size,
             self.device
-        )
-        return embeddings.cpu().detach().numpy()
+        ).cpu().detach().numpy()
+
+        # save the embeddings in the adata object
+        self.adata.obsm[self.config.embed_obsm_name] = embeddings
+        return embeddings
 
 
-    def check_data_validity(self, data: AnnData, gene_column_name: str) -> None:
+    def check_data_validity(self, adata: AnnData, gene_column_name: str) -> None:
         """Checks if the data is eligible for processing by the Geneformer model  
 
         Parameters
         ----------
-        dataset : Dataset
+        adata : AnnData
             The AnnData object containing the data to be processed.
         gene_column_name: str
             The column in adata.var that contains the gene names.
@@ -173,9 +177,9 @@ class Geneformer(HelicalRNAModel):
         KeyError
             If the data is missing column names.
         """
-        self.check_rna_data_validity(data, gene_column_name)
+        self.check_rna_data_validity(adata, gene_column_name)
 
-        if not 'n_counts' in data.obs.columns.to_list():
+        if not 'n_counts' in adata.obs.columns.to_list():
             message = f"Data must have the 'obs' keys 'n_counts' to be processed by the Geneformer model."
             LOGGER.error(message)
             raise KeyError(message)

@@ -8,6 +8,8 @@ class GeneformerConfig():
     
     Parameters
     ----------
+    embed_obsm_name : str, optional, default = "X_geneformer"
+        The name of the obsm under which the embeddings will be saved in the AnnData object
     batch_size : int, optional, default = 5
         The batch size
     emb_layer : int, optional, default = -1
@@ -27,6 +29,7 @@ class GeneformerConfig():
     """
     def __init__(
             self, 
+            embed_obsm_name: str = "X_geneformer",
             batch_size: int = 5,
             emb_layer: int = -1,
             emb_mode: str = "cell",
@@ -47,6 +50,7 @@ class GeneformerConfig():
 
         self.model_dir = Path(CACHE_DIR_HELICAL, 'geneformer')
         self.model_name = model_name
+        self.embed_obsm_name = embed_obsm_name
         self.batch_size = batch_size
         self.emb_layer = emb_layer
         self.emb_mode = emb_mode
