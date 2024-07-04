@@ -190,7 +190,9 @@ class scGPT(HelicalRNAModel):
             sc.pp.highly_variable_genes(adata, n_top_genes=n_top_genes, flavor=flavor)
             adata = adata[:, adata.var['highly_variable']]
 
+        # filtering
         adata.var["id_in_vocab"] = [ self.vocab[gene] if gene in self.vocab else -1 for gene in adata.var[self.gene_column_name] ]
+        LOGGER.info(f"Filtering out {np.sum(adata.var['id_in_vocab'] < 0)} genes to a total of {np.sum(adata.var['id_in_vocab'] >= 0)} genes with an id in the scGPT vocabulary.")
         adata = adata[:, adata.var["id_in_vocab"] >= 0]
 
         # Binning will be applied after tokenization. A possible way to do is to use the unified way of binning in the data collator.

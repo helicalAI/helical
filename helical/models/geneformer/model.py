@@ -114,6 +114,8 @@ class Geneformer(HelicalRNAModel):
         if gene_column_name != "ensembl_id":          
             mappings = pkl.load(open(files_config["mapping_path"], 'rb'))
             adata.var['ensembl_id'] = adata.var[gene_column_name].apply(lambda x: mappings.get(x,{"id":None})['id'])
+            non_none_mappings = adata.var['ensembl_id'].notnull().sum()
+            LOGGER.info(f"Mapped {non_none_mappings} genes to Ensembl IDs from a total of {adata.var.shape[0]} genes.")
 
         # load token dictionary (Ensembl IDs:token)
         with open(files_config["token_path"], "rb") as f:
