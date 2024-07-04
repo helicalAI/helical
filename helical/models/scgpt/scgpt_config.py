@@ -8,8 +8,6 @@ class scGPTConfig():
     
     Parameters
     ----------
-    embed_obsm_name : str, optional, default = "X_scgpt"
-        The name of the obsm under which the embeddings will be saved in the AnnData object
     pad_token : str, optional, default = "<pad>"
         The padding token
     batch_size : int, optional, default = 24
@@ -54,7 +52,6 @@ class scGPTConfig():
 
     def __init__(
             self, 
-            embed_obsm_name: str = "X_scgpt",
             pad_token: str = "<pad>",
             batch_size: int = 24,
             fast_transformer: bool = True,
@@ -82,7 +79,6 @@ class scGPTConfig():
         self.config = {
             "model_path": model_path,
             "list_of_files_to_download": list_of_files_to_download,
-            "embed_obsm_name": embed_obsm_name,
             "pad_token": pad_token,
             "batch_size": batch_size,
             "fast_transformer": fast_transformer,

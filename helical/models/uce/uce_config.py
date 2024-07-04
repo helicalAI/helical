@@ -9,8 +9,6 @@ class UCEConfig():
     ----------
     model_name : Literal["33l_8ep_1024t_1280", "4layer_model"], optional, default = "4layer_model"
         The model name
-    embed_obsm_name : str, optional, default = "X_uce"
-        The name of the obsm under which the embeddings will be saved in the AnnData object
     batch_size : int, optional, default = 5
         The batch size
     pad_length : int, optional, default = 1536
@@ -51,7 +49,6 @@ class UCEConfig():
     """
     def __init__(self,
                  model_name: Literal["33l_8ep_1024t_1280", "4layer_model"] = "4layer_model",
-                 embed_obsm_name: str = "X_uce",
                  batch_size: int = 5,
                  pad_length: int = 1536,
                  pad_token_idx: int = 0,
@@ -95,7 +92,6 @@ class UCEConfig():
         self.config = {
             "model_path": model_path,
             "list_of_files_to_download": list_of_files_to_download,
-            "embed_obsm_name": embed_obsm_name, 
             "batch_size": batch_size,
             "pad_length": pad_length,
             "pad_token_idx": pad_token_idx,

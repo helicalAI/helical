@@ -103,7 +103,6 @@ class Geneformer(HelicalRNAModel):
             
         """ 
         self.check_data_validity(adata, gene_column_name)
-        self.adata = adata
 
         files_config = {
             "mapping_path": self.config.model_dir / "human_gene_to_ensemble_id.pkl",
@@ -114,7 +113,9 @@ class Geneformer(HelicalRNAModel):
         # map gene symbols to ensemble ids if provided
         if gene_column_name != "ensembl_id":          
             mappings = pkl.load(open(files_config["mapping_path"], 'rb'))
-            self.adata.var['ensembl_id'] = self.adata.var[gene_column_name].apply(lambda x: mappings.get(x,{"id":None})['id'])
+            adata.var['ensembl_id'] = adata.var[gene_column_name].apply(lambda x: mappings.get(x,{"id":None})['id'])
+            non_none_mappings = adata.var['ensembl_id'].notnull().sum()
+            LOGGER.info(f"Mapped {non_none_mappings} genes to Ensembl IDs from a total of {adata.var.shape[0]} genes.")
 
         # load token dictionary (Ensembl IDs:token)
         with open(files_config["token_path"], "rb") as f:
@@ -125,7 +126,7 @@ class Geneformer(HelicalRNAModel):
                                          gene_median_file = files_config["gene_median_path"], 
                                          token_dictionary_file = files_config["token_path"])
 
-        tokenized_cells, cell_metadata =  self.tk.tokenize_anndata(self.adata)
+        tokenized_cells, cell_metadata =  self.tk.tokenize_anndata(adata)
         tokenized_dataset = self.tk.create_dataset(tokenized_cells, cell_metadata, use_generator=False)
         
         if output_path:
@@ -157,8 +158,6 @@ class Geneformer(HelicalRNAModel):
             self.device
         ).cpu().detach().numpy()
 
-        # save the embeddings in the adata object
-        self.adata.obsm[self.config.embed_obsm_name] = embeddings
         return embeddings
 
 
