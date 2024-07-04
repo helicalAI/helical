@@ -6,10 +6,11 @@ import numpy as np
 from sklearn.metrics import accuracy_score, precision_score, f1_score, recall_score
 from scib.metrics import metrics
 from omegaconf import DictConfig
+from copy import deepcopy
 
 LOGGER = logging.getLogger(__name__)
 
-def evaluate_integration(data_list: list[tuple[str, AnnData, str]], cfg: DictConfig) -> dict[str, dict[str, float]]:
+def evaluate_integration(data_list: list[tuple[str, str]], adata: AnnData, cfg: DictConfig) -> dict[str, dict[str, float]]:
     """
     Evaluate the data integration of the anndata object using the scib metrics. 
 
@@ -18,8 +19,9 @@ def evaluate_integration(data_list: list[tuple[str, AnnData, str]], cfg: DictCon
     data_list : list[tuple[str, AnnData, str]]
         A list of tuples containing:
         The name of the model that was used to generate the embeddings.
-        The AnnData object that contains the embeddings.
         The name of the obsm attribute that contains the embeddings.
+    adata : AnnData
+        The AnnData object that contains the embeddings.
     cfg : DictConfig
         The configuration of the data and the integration.
         Ie. the config must enable access to cfg["data"] and cfg["integration"].
@@ -30,10 +32,13 @@ def evaluate_integration(data_list: list[tuple[str, AnnData, str]], cfg: DictCon
 
     """
     evaluations = {}
-    for model, adata, embed_obsm_name in data_list:
+    for model, embed_obsm_name in data_list:
         LOGGER.info(f"Processing integration evaluation using...")
-        evaluation = _get_integration_evaluations(adata,
-                                                  adata,
+
+        # because scib library modifies the adata object, we need to deepcopy it for each model
+        # otherwise, some evaluations will be identical and thus incorrect 
+        evaluation = _get_integration_evaluations(deepcopy(adata),
+                                                  deepcopy(adata),
                                                   cfg["data"]["batch_key"], 
                                                   cfg["data"]["label_key"], 
                                                   embed_obsm_name, 

@@ -112,10 +112,10 @@ def run_integration_example(adata: ad.AnnData, cfg: DictConfig) -> dict[str, dic
 
     return evaluate_integration(
             [
-                ("scgpt", adata, "X_scgpt"),
-                ("uce", adata, "X_uce"),
-                ("scanorama", adata, "X_scanorama")
-            ], cfg
+                ("scgpt", "X_scgpt"),
+                ("uce", "X_uce"),
+                ("scanorama", "X_scanorama")
+            ], adata, cfg
         )
 
 
@@ -124,8 +124,8 @@ def benchmark(cfg: DictConfig) -> None:
 
     data = ad.read_h5ad("./10k_pbmcs_proc.h5ad")
 
-    evaluations_c = run_classification_example(data, cfg)
-    write_to_json(evaluations_c, "classification_evaluations")
+    # evaluations_c = run_classification_example(data, cfg)
+    # write_to_json(evaluations_c, "classification_evaluations")
 
     evaluations_i = run_integration_example(data, cfg)
     write_to_json(evaluations_i, "integration_evaluations")
