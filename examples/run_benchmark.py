@@ -112,10 +112,10 @@ def run_integration_example(adata: ad.AnnData, cfg: DictConfig) -> dict[str, dic
 
     return evaluate_integration(
             [
-                ("scgpt", adata, "X_scgpt"),
-                ("uce", adata, "X_uce"),
-                ("scanorama", adata, "X_scanorama")
-            ], cfg
+                ("scgpt", "X_scgpt"),
+                ("uce", "X_uce"),
+                ("scanorama", "X_scanorama")
+            ], adata, cfg
         )
 
 
