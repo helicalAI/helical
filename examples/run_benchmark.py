@@ -124,8 +124,8 @@ def benchmark(cfg: DictConfig) -> None:
 
     data = ad.read_h5ad("./10k_pbmcs_proc.h5ad")
 
-    # evaluations_c = run_classification_example(data, cfg)
-    # write_to_json(evaluations_c, "classification_evaluations")
+    evaluations_c = run_classification_example(data, cfg)
+    write_to_json(evaluations_c, "classification_evaluations")
 
     evaluations_i = run_integration_example(data, cfg)
     write_to_json(evaluations_i, "integration_evaluations")
