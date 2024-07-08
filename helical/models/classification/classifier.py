@@ -5,7 +5,7 @@ import logging
 import numpy as np
 from numpy import ndarray
 from anndata import AnnData
-from typing import Protocol, runtime_checkable, Optional, Self, Union
+from typing import Protocol, runtime_checkable, Optional, Self, Union, Optional
 
 @runtime_checkable
 class ClassificationModelProtocol(Protocol):
@@ -22,7 +22,7 @@ class Classifier():
         self.name = None
         self.gene_col_name = None
 
-    def get_predictions(self, x: Union[AnnData, ndarray], gene_col_name: str = "index") -> ndarray:
+    def get_predictions(self, x: Union[AnnData, ndarray], gene_col_name: Optional[str] = None) -> ndarray:
         """
         Make predictions on the data. 
         
@@ -34,15 +34,17 @@ class Classifier():
         ----------
         x : AnnData
             The predictions for each model.
-        gene_col_name : str, optional, default = "index"
+        gene_col_name : str, optional
             The name of the column in the var attribute of the AnnData object that contains the gene names.
+            If none is provided, the member variable self.gene_col_name is used.
 
         Returns
         -------
         A numpy array with the predictions.
         """
         if self.base_model is not None: 
-            self.gene_col_name = gene_col_name
+            if gene_col_name:
+                self.gene_col_name = gene_col_name
             dataset = self.base_model.process_data(x, self.gene_col_name)
             embeddings = self.base_model.get_embeddings(dataset)
             x = embeddings
@@ -112,7 +114,8 @@ class Classifier():
     def load_model(self,
                    base_model: Optional[BaseModelProtocol], 
                    classification_model: ClassificationModelProtocol, 
-                   name: str) -> Self:
+                   name: str,
+                   gene_col_name: str = "index") -> Self:
         """
         Load a classifier model.
         - If no base model is provided, it is assumed that the classification_model can directly classify data.
@@ -128,6 +131,9 @@ class Classifier():
             The classification model to load.
         name : str
             The name of the model.
+        gene_col_name : str
+            The name of the default column (specific to this loaded model) in the var attribute of the AnnData object that contains the gene names.
+            This can be useful for models like Geneformer that have a default ("ensemble_id") which is different to the other models ("index").
     
         Raises
         ------
@@ -153,6 +159,7 @@ class Classifier():
         self.base_model = base_model
         self.trained_task_model = classification_model
         self.name = name
+        self.gene_col_name = gene_col_name
         return self
     
     def _check_validity_for_training(self, train_anndata: AnnData, labels_column_name: str, base_model: BaseModelProtocol) -> None:
