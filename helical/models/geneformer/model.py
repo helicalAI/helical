@@ -76,7 +76,7 @@ class Geneformer(HelicalRNAModel):
                      nproc: int = 1, 
                      output_path: Optional[str] = None,
                      custom_attr_name_dict: Optional[dict] = None) -> Dataset:   
-        """Processes the data for the UCE model
+        """Processes the data for the Geneformer model
 
         Parameters 
         ----------
