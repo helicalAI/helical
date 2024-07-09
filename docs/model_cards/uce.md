@@ -1,7 +1,7 @@
 # Model Card for Universal Cell Embedding (UCE)
 
 ## Model Details
-#test
+
 **Model Name:** Universal Cell Embedding (UCE) v1.0 \
 **Model Version:** 1.0 \
 **Model Description:** A large pre-trained model for creating universal representations of cell types across species. The model performs tasks such as cell type annotation, hypothesis generation, and integrating diverse single-cell datasets.
@@ -33,10 +33,10 @@
 
 **Data Sources:**  
 - Public single-cell transcriptomic datasets (e.g., CellXGene, various GEO datasets)
-- Data from multiple species and tissues to ensure diversity
+- Data from multiple species (including humans, mice, lemurs, zebrafish, pigs, monkeys, and frogs) and tissues to ensure diversity
 
 **Data Volume:**  
-- Integrated dataset with 36 million cells, more than 1,000 cell types, from hundreds of experiments
+- Trained across more than 300 datasets consisting of over 36 million cells and more than 1,000 different cell types.
 
 **Preprocessing:**  
 - Standardized to remove low-quality data
