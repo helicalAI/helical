@@ -68,7 +68,7 @@ class UCE(HelicalRNAModel):
         LOGGER.info(f"Model finished initializing.")
 
     def process_data(self, 
-                     data: AnnData, 
+                     adata: AnnData, 
                      gene_column_name: str = "index",
                      species: str = "human", 
                      filter_genes_min_cell: int = None, 
@@ -77,7 +77,7 @@ class UCE(HelicalRNAModel):
 
         Parameters 
         ----------
-        data : AnnData
+        adata : AnnData
             The AnnData object containing the data to be processed. 
             The UCE model requires the gene expression data as input and the gene symbols as variable names (i.e. as adata.var_names).
         gene_column_name: str, optional, default = "index"
@@ -97,9 +97,10 @@ class UCE(HelicalRNAModel):
             Inherits from Dataset class.
         """
                 
-        self.check_rna_data_validity(data, gene_column_name)
+        self.check_rna_data_validity(adata, gene_column_name)
+
         if gene_column_name != "index":
-            data.var.index = data.var[gene_column_name]
+            adata.var.index = adata.var[gene_column_name]
 
         files_config = {
             "spec_chrom_csv_path": self.model_dir / "species_chrom.csv",
@@ -108,10 +109,10 @@ class UCE(HelicalRNAModel):
         }
 
         if filter_genes_min_cell is not None:
-            sc.pp.filter_genes(data, min_cells=filter_genes_min_cell)
+            sc.pp.filter_genes(adata, min_cells=filter_genes_min_cell)
             # sc.pp.filter_cells(ad, min_genes=25)
         ##Filtering out the Expression Data That we do not have in the protein embeddings
-        filtered_adata, species_to_all_gene_symbols = load_gene_embeddings_adata(adata=data,
+        filtered_adata, species_to_all_gene_symbols = load_gene_embeddings_adata(adata=adata,
                                                                         species=[species],
                                                                         embedding_model=embedding_model,
                                                                         embeddings_path=Path(files_config["protein_embeddings_dir"]))
@@ -208,5 +209,5 @@ class UCE(HelicalRNAModel):
                         dataset_embeds.append(embeddings.detach().cpu().numpy())
                 else:
                     dataset_embeds.append(embedding.detach().cpu().numpy())
-
-        return np.vstack(dataset_embeds)
+        embeddings = np.vstack(dataset_embeds)
+        return embeddings
