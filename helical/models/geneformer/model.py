@@ -74,7 +74,8 @@ class Geneformer(HelicalRNAModel):
                      adata: AnnData,  
                      gene_column_name: str = "ensembl_id", 
                      nproc: int = 1, 
-                     output_path: Optional[str] = None) -> Dataset:   
+                     output_path: Optional[str] = None,
+                     custom_attr_name_dict: Optional[dict] = None) -> Dataset:   
         """Processes the data for the UCE model
 
         Parameters 
@@ -94,7 +95,11 @@ class Geneformer(HelicalRNAModel):
             Number of processes to use for dataset processing.
         output_path : str, default = None
             Whether to save the tokenized dataset to the specified output_path.
-
+        custom_attr_name_dict : dict, optional, default = None
+            A dictionary that contains the names of the custom attributes to be added to the dataset. 
+            The keys of the dictionary are the names of the custom attributes, and the values are the names of the columns in adata.obs. 
+            For example, if you want to add a custom attribute called "cell_type" to the dataset, you would pass custom_attr_name_dict = {"cell_type": "cell_type"}.
+            If you do not want to add any custom attributes, you can leave this parameter as None.
 
         Returns
         -------
@@ -122,7 +127,8 @@ class Geneformer(HelicalRNAModel):
             self.gene_token_dict = pickle.load(f)
             self.pad_token_id = self.gene_token_dict.get("<pad>")
 
-        self.tk = TranscriptomeTokenizer(nproc=nproc, 
+        self.tk = TranscriptomeTokenizer(custom_attr_name_dict=custom_attr_name_dict,
+                                         nproc=nproc, 
                                          gene_median_file = files_config["gene_median_path"], 
                                          token_dictionary_file = files_config["token_path"])
 
