@@ -72,10 +72,11 @@ class Geneformer(HelicalRNAModel):
         
     def process_data(self, 
                      adata: AnnData,  
-                     gene_column_name: str = "ensembl_id", 
+                     gene_names: str = "ensembl_id", 
                      nproc: int = 1, 
-                     output_path: Optional[str] = None) -> Dataset:   
-        """Processes the data for the UCE model
+                     output_path: Optional[str] = None,
+                     custom_attr_name_dict: Optional[dict] = None) -> Dataset:   
+        """Processes the data for the Geneformer model
 
         Parameters 
         ----------
@@ -83,18 +84,22 @@ class Geneformer(HelicalRNAModel):
             The AnnData object containing the data to be processed. It is important to note that the Geneformer uses Ensembl IDs to identify genes.
             Currently the Geneformer only supports human genes.
             If you already have the ensembl_id column, you can skip the mapping step.
-        gene_column_name: str, optional, default = "ensembl_id"
+        gene_names: str, optional, default = "ensembl_id"
             The column in adata.var that contains the gene names. If you set this string to something other than "ensembl_id", 
             we will map the gene symbols in that column to Ensembl IDs with a mapping taken from the `Ensembl Website https://www.ensembl.org/`.
             If it is left at "ensembl_id", there will be no mapping.
             If this variable is set to "index", the index of the AnnData object will be used and mapped to Ensembl IDs.
             In the special case where the data has Ensemble IDs as the index, and you pass "index". This would result in invalid mappings.
-            In that case, it is recommended to create a new column with the Ensemble IDs in the data and pass "ensembl_id" as the gene_column_name.
+            In that case, it is recommended to create a new column with the Ensemble IDs in the data and pass "ensembl_id" as the gene_names.
         nproc : int, optional, default = 1
             Number of processes to use for dataset processing.
         output_path : str, default = None
             Whether to save the tokenized dataset to the specified output_path.
-
+        custom_attr_name_dict : dict, optional, default = None
+            A dictionary that contains the names of the custom attributes to be added to the dataset. 
+            The keys of the dictionary are the names of the custom attributes, and the values are the names of the columns in adata.obs. 
+            For example, if you want to add a custom attribute called "cell_type" to the dataset, you would pass custom_attr_name_dict = {"cell_type": "cell_type"}.
+            If you do not want to add any custom attributes, you can leave this parameter as None.
 
         Returns
         -------
@@ -102,7 +107,7 @@ class Geneformer(HelicalRNAModel):
             The tokenized dataset in the form of a Hugginface Dataset object.
             
         """ 
-        self.check_data_validity(adata, gene_column_name)
+        self.check_data_validity(adata, gene_names)
 
         files_config = {
             "mapping_path": self.config.model_dir / "human_gene_to_ensemble_id.pkl",
@@ -111,9 +116,9 @@ class Geneformer(HelicalRNAModel):
         }
 
         # map gene symbols to ensemble ids if provided
-        if gene_column_name != "ensembl_id":          
+        if gene_names != "ensembl_id":          
             mappings = pkl.load(open(files_config["mapping_path"], 'rb'))
-            adata.var['ensembl_id'] = adata.var[gene_column_name].apply(lambda x: mappings.get(x,{"id":None})['id'])
+            adata.var['ensembl_id'] = adata.var[gene_names].apply(lambda x: mappings.get(x,{"id":None})['id'])
             non_none_mappings = adata.var['ensembl_id'].notnull().sum()
             LOGGER.info(f"Mapped {non_none_mappings} genes to Ensembl IDs from a total of {adata.var.shape[0]} genes.")
 
@@ -122,7 +127,8 @@ class Geneformer(HelicalRNAModel):
             self.gene_token_dict = pickle.load(f)
             self.pad_token_id = self.gene_token_dict.get("<pad>")
 
-        self.tk = TranscriptomeTokenizer(nproc=nproc, 
+        self.tk = TranscriptomeTokenizer(custom_attr_name_dict=custom_attr_name_dict,
+                                         nproc=nproc, 
                                          gene_median_file = files_config["gene_median_path"], 
                                          token_dictionary_file = files_config["token_path"])
 
@@ -161,14 +167,14 @@ class Geneformer(HelicalRNAModel):
         return embeddings
 
 
-    def check_data_validity(self, adata: AnnData, gene_column_name: str) -> None:
+    def check_data_validity(self, adata: AnnData, gene_names: str) -> None:
         """Checks if the data is eligible for processing by the Geneformer model  
 
         Parameters
         ----------
         adata : AnnData
             The AnnData object containing the data to be processed.
-        gene_column_name: str
+        gene_names: str
             The column in adata.var that contains the gene names.
 
         Raises
@@ -176,7 +182,7 @@ class Geneformer(HelicalRNAModel):
         KeyError
             If the data is missing column names.
         """
-        self.check_rna_data_validity(adata, gene_column_name)
+        self.check_rna_data_validity(adata, gene_names)
 
         if not 'n_counts' in adata.obs.columns.to_list():
             message = f"Data must have the 'obs' keys 'n_counts' to be processed by the Geneformer model."

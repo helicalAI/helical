@@ -15,7 +15,7 @@ class TestGeneformerModel:
     data.obs["n_counts"] = [1]
     data.obs["cell_type"] = ["CD4 T cells"]
     data.X = [[1, 2, 5]]
-    tokenized_dataset = geneformer.process_data(data, gene_column_name='gene_symbols')
+    tokenized_dataset = geneformer.process_data(data, gene_names='gene_symbols')
 
     def test_process_data_mapping_to_ensemble_ids(self):
         assert self.data.var['ensembl_id'][0] == 'ENSG00000187634'
