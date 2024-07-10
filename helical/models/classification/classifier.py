@@ -20,9 +20,9 @@ class Classifier():
         self.trained_task_model = None
         self.base_model = None
         self.name = None
-        self.gene_col_name = None
+        self.gene_names = None
 
-    def get_predictions(self, x: Union[AnnData, ndarray], gene_col_name: Optional[str] = None) -> ndarray:
+    def get_predictions(self, x: Union[AnnData, ndarray], gene_names: Optional[str] = None) -> ndarray:
         """
         Make predictions on the data. 
         
@@ -34,18 +34,18 @@ class Classifier():
         ----------
         x : AnnData
             The predictions for each model.
-        gene_col_name : str, optional
+        gene_names : str, optional
             The name of the column in the var attribute of the AnnData object that contains the gene names.
-            If none is provided, the member variable self.gene_col_name is used.
+            If none is provided, the member variable self.gene_names is used.
 
         Returns
         -------
         A numpy array with the predictions.
         """
         if self.base_model is not None: 
-            if gene_col_name:
-                self.gene_col_name = gene_col_name
-            dataset = self.base_model.process_data(x, self.gene_col_name)
+            if gene_names:
+                self.gene_names = gene_names
+            dataset = self.base_model.process_data(x, self.gene_names)
             embeddings = self.base_model.get_embeddings(dataset)
             x = embeddings
         
@@ -55,7 +55,7 @@ class Classifier():
                               train_anndata: AnnData, 
                               base_model: BaseModelProtocol, 
                               head: BaseTaskModel, 
-                              gene_col_name: str = "index",
+                              gene_names: str = "index",
                               labels_column_name: str = "cell_type",
                               test_size: float = 0.2,
                               random_state: int = 42) -> Self:
@@ -69,7 +69,7 @@ class Classifier():
             The base model to generate the embeddings.
         head : BaseTaskModel
             The classification model head to train.
-         gene_col_name : str
+         gene_names : str
             The name of the column in the var attribute of the AnnData object that contains the gene names.
             Default is 'index'.
         labels_column_name : str
@@ -96,8 +96,8 @@ class Classifier():
 
         # first, get the embeddings
         LOGGER.info(f"Getting training embeddings with {base_model.__class__.__name__}.")
-        dataset = base_model.process_data(train_anndata, gene_col_name)
-        self.gene_col_name = gene_col_name
+        dataset = base_model.process_data(train_anndata, gene_names)
+        self.gene_names = gene_names
         x = base_model.get_embeddings(dataset)
           
         # then, train the classification model
@@ -115,7 +115,7 @@ class Classifier():
                    base_model: Optional[BaseModelProtocol], 
                    classification_model: ClassificationModelProtocol, 
                    name: str,
-                   gene_col_name: str = "index") -> Self:
+                   gene_names: str = "index") -> Self:
         """
         Load a classifier model.
         - If no base model is provided, it is assumed that the classification_model can directly classify data.
@@ -131,7 +131,7 @@ class Classifier():
             The classification model to load.
         name : str
             The name of the model.
-        gene_col_name : str
+        gene_names : str
             The name of the default column (specific to this loaded model) in the var attribute of the AnnData object that contains the gene names.
             This can be useful for models like Geneformer that have a default ("ensemble_id") which is different to the other models ("index").
     
@@ -159,7 +159,7 @@ class Classifier():
         self.base_model = base_model
         self.trained_task_model = classification_model
         self.name = name
-        self.gene_col_name = gene_col_name
+        self.gene_names = gene_names
         return self
     
     def _check_validity_for_training(self, train_anndata: AnnData, labels_column_name: str, base_model: BaseModelProtocol) -> None:

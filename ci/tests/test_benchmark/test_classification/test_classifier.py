@@ -23,7 +23,7 @@ def test_load_model__ok_nn_head():
     assert scgpt_loaded_nn.base_model == scgpt
     assert scgpt_loaded_nn.trained_task_model == saved_nn_head
     assert scgpt_loaded_nn.name == name
-    assert scgpt_loaded_nn.gene_col_name == "index"
+    assert scgpt_loaded_nn.gene_names == "index"
 
 
 def test_load_model__ok_custom_head():
@@ -48,7 +48,7 @@ def test_load_model__ok_custom_head():
     assert scgpt_loaded_nn.base_model == scgpt
     assert scgpt_loaded_nn.trained_task_model == custom_head
     assert scgpt_loaded_nn.name == name
-    assert scgpt_loaded_nn.gene_col_name == "index"
+    assert scgpt_loaded_nn.gene_names == "index"
 
 def test_load_model__nok_custom_head():
     """
@@ -91,7 +91,7 @@ def test_load_model__ok_custom_base():
     assert custom_base_classifier.base_model == custom_base
     assert custom_base_classifier.trained_task_model == saved_nn_head
     assert custom_base_classifier.name == name
-    assert custom_base_classifier.gene_col_name == "index"
+    assert custom_base_classifier.gene_names == "index"
 
 def test_load_model__nok_custom_base():
     """
@@ -132,7 +132,7 @@ def test_train_classifier_head(mocker):
     assert scgpt_nn_c.base_model == scgpt
     assert scgpt_nn_c.name == f"{scgpt.__class__.__name__} with {head.__class__.__name__}"
     assert scgpt_nn_c.trained_task_model == head 
-    assert scgpt_nn_c.gene_col_name == "index"      
+    assert scgpt_nn_c.gene_names == "index"      
 
 
 def test_check_validity_for_training_wrong_column_label_name():
@@ -181,4 +181,4 @@ def test_get_predictions_w_no_base_model(mocker):
     assert c.base_model == None
     assert c.name == name
     assert c.trained_task_model == standalone   
-    assert c.gene_col_name == "index"    
+    assert c.gene_names == "index"    

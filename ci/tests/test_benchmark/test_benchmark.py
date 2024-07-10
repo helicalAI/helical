@@ -27,7 +27,7 @@ def test_evaluate_classification(mocker):
     mocker.patch.object(head, 'predict')
     head.predict.return_value = np.array(['type1', 'type2'] * (data.shape[0] // 2))
 
-    scgpt_nn_c = Classifier().train_classifier_head(data, scgpt, head, gene_col_name = "gene_symbols", labels_column_name = "cell_type")
+    scgpt_nn_c = Classifier().train_classifier_head(data, scgpt, head, gene_names = "gene_symbols", labels_column_name = "cell_type")
     evaluations = evaluate_classification([scgpt_nn_c, scgpt_nn_c], data, "cell_type")
     assert evaluations == {'scGPT with NeuralNetwork': {'Accuracy': 1.0, 'Precision': 1.0, 'F1': 1.0, 'Recall': 1.0}, 
                            'scGPT with NeuralNetwork': {'Accuracy': 1.0, 'Precision': 1.0, 'F1': 1.0, 'Recall': 1.0}}
