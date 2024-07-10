@@ -14,7 +14,7 @@ To evaluate the models, we have three choices:
 :align: center
 ```
 
-The code for the benchmarking system is available in our [GitHub repository](https://github.com/helicalAI/helical/tree/develop/helical/benchmark).
+The code for the benchmarking system is available in our [GitHub repository](https://github.com/helicalAI/helical/tree/release/helical/benchmark).
 
 To enable easy benchmarking we have built a framework with the following parts:
 
