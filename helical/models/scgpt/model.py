@@ -146,7 +146,7 @@ class scGPT(HelicalRNAModel):
     
     def process_data(self,
                      adata: AnnData, 
-                     gene_column_name: str = "index", 
+                     gene_names: str = "index", 
                      fine_tuning: bool = False,
                      n_top_genes: int = 1800, 
                      flavor: Literal["seurat", "cell_ranger", "seurat_v3", "seurat_v3_paper"] = "seurat_v3",
@@ -158,8 +158,8 @@ class scGPT(HelicalRNAModel):
         ----------
         data : AnnData
             The AnnData object containing the data to be processed. 
-            The Anndata requires the expression counts as the data matrix and the column with the gene symbols is defined by the argument gene_column_name.
-        gene_column_name: str, optional, default = "index"
+            The Anndata requires the expression counts as the data matrix and the column with the gene symbols is defined by the argument gene_names.
+        gene_names: str, optional, default = "index"
             The column in adata.var that contains the gene names. Default is to use the index column.
         fine_tuning: bool, optional, default = False
             If you intend to use the data to fine-tune the model on a downstream task, set this to True.
@@ -179,8 +179,8 @@ class scGPT(HelicalRNAModel):
             The processed dataset.
         """
  
-        self.check_data_validity(adata, gene_column_name, use_batch_labels)
-        self.gene_column_name = gene_column_name
+        self.check_data_validity(adata, gene_names, use_batch_labels)
+        self.gene_names = gene_names
         if fine_tuning:
             # Preprocess the dataset and select `N_HVG` highly variable genes for downstream analysis.
             sc.pp.normalize_total(adata, target_sum=1e4)
@@ -191,14 +191,14 @@ class scGPT(HelicalRNAModel):
             adata = adata[:, adata.var['highly_variable']]
 
         # filtering
-        adata.var["id_in_vocab"] = [ self.vocab[gene] if gene in self.vocab else -1 for gene in adata.var[self.gene_column_name] ]
+        adata.var["id_in_vocab"] = [ self.vocab[gene] if gene in self.vocab else -1 for gene in adata.var[self.gene_names] ]
         LOGGER.info(f"Filtering out {np.sum(adata.var['id_in_vocab'] < 0)} genes to a total of {np.sum(adata.var['id_in_vocab'] >= 0)} genes with an id in the scGPT vocabulary.")
         adata = adata[:, adata.var["id_in_vocab"] >= 0]
 
         # Binning will be applied after tokenization. A possible way to do is to use the unified way of binning in the data collator.
 
         self.vocab.set_default_index(self.vocab["<pad>"])
-        genes = adata.var[self.gene_column_name].tolist()
+        genes = adata.var[self.gene_names].tolist()
         gene_ids = np.array(self.vocab(genes), dtype=int)
         count_matrix = (adata.X if isinstance(adata.X, np.ndarray) else adata.X.A)
 
@@ -216,14 +216,14 @@ class scGPT(HelicalRNAModel):
         return dataset
 
 
-    def check_data_validity(self, adata: AnnData, gene_column_name: str, use_batch_labels: bool) -> None:
+    def check_data_validity(self, adata: AnnData, gene_names: str, use_batch_labels: bool) -> None:
         """Checks if the data is eligible for processing by the scGPT model  
 
         Parameters
         ----------
         data : AnnData
             The AnnData object containing the data to be validated. 
-        gene_column_name : str
+        gene_names : str
             The name of the column containing gene names.
         use_batch_labels : str
             Wheter to use batch labels.
@@ -233,7 +233,7 @@ class scGPT(HelicalRNAModel):
         KeyError
             If the data is missing column names.
         """
-        self.check_rna_data_validity(adata, gene_column_name)
+        self.check_rna_data_validity(adata, gene_names)
 
         if use_batch_labels:
             if not "batch_id" in adata.obs:
