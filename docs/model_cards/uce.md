@@ -34,13 +34,15 @@
 **Data Sources:**  
 - Public single-cell transcriptomic datasets (e.g., CellXGene, various GEO datasets)
 - Data from multiple species (including humans, mice, lemurs, zebrafish, pigs, monkeys, and frogs) and tissues to ensure diversity
+- Download the full list of datasets used to train UCE [here](https://www.biorxiv.org/content/biorxiv/early/2023/11/29/2023.11.28.568918/DC3/embed/media-3.xlsx?download=true) 
 
 **Data Volume:**  
-- Trained across more than 300 datasets consisting of over 36 million cells and more than 1,000 different cell types.
+- Trained across more than 300 datasets consisting of over 36 million cells and more than 1,000 different cell types
 
 **Preprocessing:**  
 - Standardized to remove low-quality data
 - Balanced to ensure representation across species and cell types
+
 
 ## Model Performance
 
@@ -101,6 +103,7 @@ embeddings = uce.get_embeddings(data_loader)
 
 print(embeddings.shape)
 ```
+- Download processed datasets used in the paper [here](https://drive.google.com/drive/folders/1f63fh0ykgEhCrkd_EVvIootBw7LYDVI7?usp=drive_link)
 
 ## Developers
 
