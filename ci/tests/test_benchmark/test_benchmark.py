@@ -69,7 +69,7 @@ def test_evaluate_integration():
     data.obs["str_labels"] = pd.Categorical(['type1', 'type2'] * (data.shape[0] // 2))
     data.obsm["X_scgpt"] = np.zeros((data.shape[0], 10))
 
-    evaluations = evaluate_integration([("scgpt", "X_scgpt"), ("different_model", "X_scgpt")], data, config)
+    evaluations = evaluate_integration([("scgpt", "X_scgpt"), ("different_model", "X_scgpt")], data, config["data"], config["integration"])
     
     # scgpt
     assert_near_exact(evaluations["scgpt"]["BATCH"]["ASW_batch"], 1.0)
