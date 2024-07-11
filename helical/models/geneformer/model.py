@@ -72,7 +72,7 @@ class Geneformer(HelicalRNAModel):
         
     def process_data(self, 
                      adata: AnnData,  
-                     gene_names: str = "ensembl_id", 
+                     gene_names: str = "index", 
                      nproc: int = 1, 
                      output_path: Optional[str] = None,
                      custom_attr_name_dict: Optional[dict] = None) -> Dataset:   
@@ -84,12 +84,12 @@ class Geneformer(HelicalRNAModel):
             The AnnData object containing the data to be processed. It is important to note that the Geneformer uses Ensembl IDs to identify genes.
             Currently the Geneformer only supports human genes.
             If you already have the ensembl_id column, you can skip the mapping step.
-        gene_names: str, optional, default = "ensembl_id"
+        gene_names: str, optional, default = "index"
             The column in adata.var that contains the gene names. If you set this string to something other than "ensembl_id", 
-            we will map the gene symbols in that column to Ensembl IDs with a mapping taken from the pyensembl package, which ultimately gets the mappings from 
+            we will map the gene symbols in that column to Ensembl IDs with a mapping taken from the 'pyensembl' package, which ultimately gets the mappings from 
             the Ensembl FTP server and loads them into a local database.
-            If it is left at "ensembl_id", there will be no mapping.
-            If this variable is set to "index", the index of the AnnData object will be used and mapped to Ensembl IDs.
+            If this variable is left at "index", the index of the AnnData object will be used and mapped to Ensembl IDs.
+            If it is changes to "ensembl_id", there will be no mapping.
             In the special case where the data has Ensemble IDs as the index, and you pass "index". This would result in invalid mappings.
             In that case, it is recommended to create a new column with the Ensemble IDs in the data and pass "ensembl_id" as the gene_names.
         nproc : int, optional, default = 1
