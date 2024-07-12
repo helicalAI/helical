@@ -3,6 +3,7 @@ from helical.services.mapping import map_ensembl_ids_to_gene_symbols
 from pyensembl.species import human
 from pyensembl.species import macaque
 import anndata as ad
+import pytest
 
 adata = ad.read_h5ad("ci/tests/data/cell_type_sample.h5ad")
 
@@ -24,6 +25,7 @@ def test_map_ensembl_ids_to_gene_symbols():
     map_ensembl_ids_to_gene_symbols(adata, ensembl_id_key="ensembl_id", species = human)
     assert all(adata.var["gene_names"] == ["BAD"] * adata.var.shape[0])
 
+@pytest.mark.skip(reason="This test may take a long time to run because the dataset of macaque needs to be downloaded.")
 def test_map_gene_symbols_to_ensembl_ids_macaque():
     """
     Test if the gene symbols are mapped to Ensembl IDs correctly for macaque.
