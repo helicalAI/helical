@@ -28,6 +28,7 @@ def test_map_gene_symbols_to_ensembl_ids_macaque():
     """
     Test if the gene symbols are mapped to Ensembl IDs correctly for macaque.
     CD99 should be mapped to ENSMFAG00000000608.
+    Note, this test may be long the first time it is being run because the database for macaque needs to be downloaded.
     """
     adata.var["gene_names"] = ["CD99"] * adata.var.shape[0]
     map_gene_symbols_to_ensembl_ids(adata, gene_names = "gene_names", species = macaque)
