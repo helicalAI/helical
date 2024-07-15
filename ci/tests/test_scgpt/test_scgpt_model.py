@@ -2,6 +2,7 @@ from helical.models.scgpt.model import scGPT
 from anndata import AnnData
 from helical.models.scgpt.tokenizer import GeneVocab
 import pytest
+import anndata as ad
 class TestSCGPTModel:
     scgpt = scGPT()
 
@@ -60,8 +61,7 @@ class TestSCGPTModel:
         embeddings = self.scgpt.get_embeddings(dataset)
         assert embeddings.shape == (1, 512)
 
-    dummy_data = AnnData()
-    dummy_data.var.index = ['gene1', 'gene2', 'gene3']
+    dummy_data = ad.read_h5ad("ci/tests/data/cell_type_sample.h5ad")
     @pytest.mark.parametrize("data, gene_names, batch_labels", 
                              [
                                 #  missing gene_names in data.var
@@ -70,6 +70,6 @@ class TestSCGPTModel:
                                 (dummy_data, "index", True),
                              ]
     )
-    def test_check_data_validity(self, data, gene_names, batch_labels):
+    def test_ensure_data_validity(self, data, gene_names, batch_labels):
         with pytest.raises(KeyError):
-            self.scgpt.check_data_validity(data, gene_names, batch_labels)
+            self.scgpt.ensure_data_validity(data, gene_names, batch_labels)

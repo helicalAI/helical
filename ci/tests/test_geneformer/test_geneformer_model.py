@@ -46,7 +46,7 @@ class TestGeneformerModel:
                                 (miss_ensembl_id, False)
                              ]
     )
-    def test_check_data_validity(self, data, use_gene_symbols):
+    def test_ensure_data_validity(self, data, use_gene_symbols):
         with pytest.raises(KeyError):
-            self.geneformer.check_data_validity(data, use_gene_symbols)
+            self.geneformer.ensure_data_validity(data, use_gene_symbols)
             
