@@ -9,10 +9,10 @@ from transformers import BertForMaskedLM
 from helical.models.geneformer.geneformer_utils import get_embs,quant_layers
 from helical.models.geneformer.geneformer_tokenizer import TranscriptomeTokenizer
 from helical.models.geneformer.geneformer_config import GeneformerConfig
+from helical.services.mapping import map_gene_symbols_to_ensembl_ids
 from datasets import Dataset
 from typing import Optional
 from accelerate import Accelerator
-import pickle as pkl
 
 LOGGER = logging.getLogger(__name__)
 class Geneformer(HelicalRNAModel):
@@ -72,7 +72,7 @@ class Geneformer(HelicalRNAModel):
         
     def process_data(self, 
                      adata: AnnData,  
-                     gene_names: str = "ensembl_id", 
+                     gene_names: str = "index", 
                      nproc: int = 1, 
                      output_path: Optional[str] = None,
                      custom_attr_name_dict: Optional[dict] = None) -> Dataset:   
@@ -84,11 +84,12 @@ class Geneformer(HelicalRNAModel):
             The AnnData object containing the data to be processed. It is important to note that the Geneformer uses Ensembl IDs to identify genes.
             Currently the Geneformer only supports human genes.
             If you already have the ensembl_id column, you can skip the mapping step.
-        gene_names: str, optional, default = "ensembl_id"
+        gene_names: str, optional, default = "index"
             The column in adata.var that contains the gene names. If you set this string to something other than "ensembl_id", 
-            we will map the gene symbols in that column to Ensembl IDs with a mapping taken from the `Ensembl Website https://www.ensembl.org/`.
-            If it is left at "ensembl_id", there will be no mapping.
-            If this variable is set to "index", the index of the AnnData object will be used and mapped to Ensembl IDs.
+            we will map the gene symbols in that column to Ensembl IDs with a mapping taken from the 'pyensembl' package, which ultimately gets the mappings from 
+            the Ensembl FTP server and loads them into a local database.
+            If this variable is left at "index", the index of the AnnData object will be used and mapped to Ensembl IDs.
+            If it is changes to "ensembl_id", there will be no mapping.
             In the special case where the data has Ensemble IDs as the index, and you pass "index". This would result in invalid mappings.
             In that case, it is recommended to create a new column with the Ensemble IDs in the data and pass "ensembl_id" as the gene_names.
         nproc : int, optional, default = 1
@@ -110,17 +111,13 @@ class Geneformer(HelicalRNAModel):
         self.check_data_validity(adata, gene_names)
 
         files_config = {
-            "mapping_path": self.config.model_dir / "human_gene_to_ensemble_id.pkl",
             "gene_median_path": self.config.model_dir / "gene_median_dictionary.pkl",
             "token_path": self.config.model_dir / "token_dictionary.pkl"
         }
 
         # map gene symbols to ensemble ids if provided
-        if gene_names != "ensembl_id":          
-            mappings = pkl.load(open(files_config["mapping_path"], 'rb'))
-            adata.var['ensembl_id'] = adata.var[gene_names].apply(lambda x: mappings.get(x,{"id":None})['id'])
-            non_none_mappings = adata.var['ensembl_id'].notnull().sum()
-            LOGGER.info(f"Mapped {non_none_mappings} genes to Ensembl IDs from a total of {adata.var.shape[0]} genes.")
+        if gene_names != "ensembl_id":
+            adata = map_gene_symbols_to_ensembl_ids(adata, gene_names)
 
         # load token dictionary (Ensembl IDs:token)
         with open(files_config["token_path"], "rb") as f:

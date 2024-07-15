@@ -16,7 +16,6 @@ def main():
     downloader.download_via_name("scgpt/scGPT_CP/best_model.pt")
 
     downloader.download_via_name("geneformer/gene_median_dictionary.pkl")
-    downloader.download_via_name("geneformer/human_gene_to_ensemble_id.pkl")
     downloader.download_via_name("geneformer/token_dictionary.pkl")
     downloader.download_via_name("geneformer/geneformer-12L-30M/config.json")
     downloader.download_via_name("geneformer/geneformer-12L-30M/pytorch_model.bin")
