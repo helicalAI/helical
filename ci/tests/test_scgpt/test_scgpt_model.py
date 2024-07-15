@@ -11,7 +11,6 @@ class TestSCGPTModel:
     # Create a dummy AnnData object
     data = AnnData()
     data.var["gene_names"] = ['SAMD11', 'PLEKHN1', "NOT_IN_VOCAB", "<pad>", 'HES4']
-    data.obs["n_counts"] = [1]
     data.obs["cell_type"] = ["CD4 T cells"]
     
     vocab = {

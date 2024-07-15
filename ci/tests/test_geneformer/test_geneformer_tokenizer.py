@@ -92,9 +92,9 @@ class TestTranscriptomeTokenizer:
         number_of_obs = 5
         data = AnnData()
         data.var["ensembl_id"] = ensembl_ids
-        data.obs["n_counts"] = [1] * number_of_obs
         data.obs["key_from_file"] = ["CD4 T cells"] * number_of_obs
         data.X = [x_data_count] * number_of_obs
+        data.obs["total_counts"] = data.X.sum(axis=1)
 
         self.tokenizer = TranscriptomeTokenizer(
             custom_attr_name_dict={"key_from_file": "desired_key_in_dataset"},
