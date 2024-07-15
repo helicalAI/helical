@@ -35,7 +35,7 @@
 - Publicly available single-cell RNA-seq, ATAC-seq, and other omics databases from CELLxGENE and other repositories
 
 **Data Volume:**  
-- Pre-trained on data from over 33 million single-cell samples
+- Pre-trained on data from over 33 million human cells under non-disease conditions. This comprehensive dataset encompasses a wide range of cell types from 51 organs or tissues, and 441 studies. 
 
 **Preprocessing:**  
 - Standardized to remove low-quality cells and sequences
