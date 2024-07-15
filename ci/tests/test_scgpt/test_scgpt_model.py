@@ -3,6 +3,8 @@ from anndata import AnnData
 from helical.models.scgpt.tokenizer import GeneVocab
 import pytest
 import anndata as ad
+import numpy as np
+
 class TestSCGPTModel:
     scgpt = scGPT()
 
@@ -70,6 +72,15 @@ class TestSCGPTModel:
                                 (dummy_data, "index", True),
                              ]
     )
-    def test_ensure_data_validity(self, data, gene_names, batch_labels):
+    def test_ensure_data_validity__key_error(self, data, gene_names, batch_labels):
         with pytest.raises(KeyError):
             self.scgpt.ensure_data_validity(data, gene_names, batch_labels)
+    
+    def test_ensure_data_validity__value_error(self):
+        '''The data in X must be ints. A single value being a float is enough to raise an error.'''
+        data = ad.read_h5ad("ci/tests/data/cell_type_sample.h5ad")
+        data.X.dtype=float
+        data.X[0,0] = 0.5
+        with pytest.raises(ValueError):
+            self.scgpt.ensure_data_validity(data, "index", False)
+        assert "total_counts" in data.obs
