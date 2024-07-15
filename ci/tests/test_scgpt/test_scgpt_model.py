@@ -2,13 +2,16 @@ from helical.models.scgpt.model import scGPT
 from anndata import AnnData
 from helical.models.scgpt.tokenizer import GeneVocab
 import pytest
+import anndata as ad
+import numpy as np
+from scipy.sparse import csr_matrix
+
 class TestSCGPTModel:
     scgpt = scGPT()
 
     # Create a dummy AnnData object
     data = AnnData()
     data.var["gene_names"] = ['SAMD11', 'PLEKHN1', "NOT_IN_VOCAB", "<pad>", 'HES4']
-    data.obs["n_counts"] = [1]
     data.obs["cell_type"] = ["CD4 T cells"]
     
     vocab = {
@@ -60,8 +63,7 @@ class TestSCGPTModel:
         embeddings = self.scgpt.get_embeddings(dataset)
         assert embeddings.shape == (1, 512)
 
-    dummy_data = AnnData()
-    dummy_data.var.index = ['gene1', 'gene2', 'gene3']
+    dummy_data = ad.read_h5ad("ci/tests/data/cell_type_sample.h5ad")
     @pytest.mark.parametrize("data, gene_names, batch_labels", 
                              [
                                 #  missing gene_names in data.var
@@ -70,6 +72,38 @@ class TestSCGPTModel:
                                 (dummy_data, "index", True),
                              ]
     )
-    def test_check_data_validity(self, data, gene_names, batch_labels):
+    def test_ensure_data_validity__key_error(self, data, gene_names, batch_labels):
         with pytest.raises(KeyError):
-            self.scgpt.check_data_validity(data, gene_names, batch_labels)
+            self.scgpt.ensure_data_validity(data, gene_names, batch_labels)
+    
+    err_np_arr_data = ad.read_h5ad("ci/tests/data/cell_type_sample.h5ad")
+    err_np_arr_data.X.dtype=float
+    err_np_arr_data.X[0,0] = 0.5
+
+    err_csr_data = ad.read_h5ad("ci/tests/data/cell_type_sample.h5ad")
+    err_csr_data.X = csr_matrix(np.random.rand(100, 5), dtype=np.float32)
+    @pytest.mark.parametrize("data",
+                             [
+                                (err_np_arr_data),
+                                (err_csr_data),
+                             ]
+    )
+    def test_ensure_data_validity__value_error(self, data):
+        '''The data in X must be ints. Test an error is raised for both np.ndarray and csr_matrix.'''
+        with pytest.raises(ValueError):
+            self.scgpt.ensure_data_validity(data, "index", False)
+        assert "total_counts" in data.obs
+
+    np_arr_data = ad.read_h5ad("ci/tests/data/cell_type_sample.h5ad")
+    csr_data = ad.read_h5ad("ci/tests/data/cell_type_sample.h5ad")
+    csr_data.X = csr_matrix(np.random.poisson(1, size=(100, 5)), dtype=np.float32)
+    @pytest.mark.parametrize("data",
+                             [
+                                (np_arr_data),
+                                (csr_data),
+                             ]
+    )
+    def test_ensure_data_validity__no_error(self, data):
+        '''The data in X must be ints. Test no error is raised for both np.ndarray and csr_matrix.'''
+        self.scgpt.ensure_data_validity(data, "index", False)
+        assert "total_counts" in data.obs

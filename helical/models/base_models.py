@@ -46,8 +46,9 @@ class HelicalBaseFoundationModel(ABC, Logger):
         pass
 
 class HelicalRNAModel(HelicalBaseFoundationModel):
-    def check_rna_data_validity(self, adata: AnnData, gene_names: str) -> None:
-        """Checks if the data is contains the gene_names, which is needed for all Helical RNA models.  
+    def ensure_rna_data_validity(self, adata: AnnData, gene_names: str) -> None:
+        """Ensures that the data contains the gene_names and has integer counts for adata.X which is saved 
+        in 'total_counts'.  
 
         Parameters
         ----------
@@ -77,6 +78,14 @@ class HelicalRNAModel(HelicalBaseFoundationModel):
             message = f"Data must have the provided key '{gene_names}' in its 'var' section to be processed by the Helical RNA model."
             LOGGER.error(message)
             raise KeyError(message)
+    
+        # verify that the data in X are integers
+        adata.obs["total_counts"] = adata.X.sum(axis=1)
+        if not (adata.obs["total_counts"] % 1  == 0).all():
+            message = "The data in X must be integers."
+            LOGGER.error(message)
+            raise ValueError(message)
+
         
 class HelicalDNAModel(HelicalBaseFoundationModel):
     def check_dna_data_validity(self) -> None:
