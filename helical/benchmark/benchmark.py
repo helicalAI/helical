@@ -7,19 +7,20 @@ from sklearn.metrics import accuracy_score, precision_score, f1_score, recall_sc
 from scib.metrics import metrics
 from omegaconf import DictConfig
 from copy import deepcopy
+from helical.models.base_models import BaseModelProtocol
 
 LOGGER = logging.getLogger(__name__)
 
-def evaluate_integration(data_list: list[tuple[str, str]], adata: AnnData, data_cfg: DictConfig, integration_cfg: DictConfig) -> dict[str, dict[str, float]]:
+def evaluate_integration(model_list: list[tuple[BaseModelProtocol, str]], adata: AnnData, data_cfg: DictConfig, integration_cfg: DictConfig) -> dict[str, dict[str, float]]:
     """
     Evaluate the data integration of the anndata object using the scib metrics. 
 
     Parameters
     ----------
-    data_list : list[tuple[str, AnnData, str]]
+    model_list : list[tuple[BaseModelProtocol, str]]
         A list of tuples containing:
-        The name of the model that was used to generate the embeddings.
-        The name of the obsm attribute that contains the embeddings.
+        A model adhering to the BaseModelProtocol that is used to generate the embeddings.
+        The name of that model.
     adata : AnnData
         The AnnData object that contains the embeddings.
     data_cfg : DictConfig
@@ -27,14 +28,28 @@ def evaluate_integration(data_list: list[tuple[str, str]], adata: AnnData, data_
     integration_cfg : DictConfig
         The configuration of the integration.
 
+    Raises
+    ------
+    TypeError
+        If the model is not an instance of BaseModelProtocol.
+        
     Returns
     -------
     A dictionary containing the evaluations for each model specified in the tuple.
 
     """
     evaluations = {}
-    for model, embed_obsm_name in data_list:
-        LOGGER.info(f"Processing integration evaluation using...")
+    for model, model_name in model_list:
+        LOGGER.info(f"Processing integration evaluation using: {model_name}")
+        embed_obsm_name = f"X_{model_name}"
+
+        if not isinstance(model, BaseModelProtocol):
+            message = "To train a classifier head, a base model of type 'BaseModelProtocol' needs to generate the embeddings first."
+            LOGGER.error(message)
+            raise TypeError(message)
+        
+        dataset = model.process_data(adata, gene_names=data_cfg["gene_names"])
+        adata.obsm[embed_obsm_name] = model.get_embeddings(dataset)
 
         # because scib library modifies the adata object, we need to deepcopy it for each model
         # otherwise, some evaluations will be identical and thus incorrect 
@@ -44,7 +59,7 @@ def evaluate_integration(data_list: list[tuple[str, str]], adata: AnnData, data_
                                                   data_cfg["label_key"], 
                                                   embed_obsm_name, 
                                                   **integration_cfg)
-        evaluations.update({model: evaluation})
+        evaluations.update({model_name: evaluation})
     return evaluations
 
 def evaluate_classification(models: list[Classifier], eval_anndata: AnnData, labels_column_name: str) -> dict[str, dict[str, float]]:
