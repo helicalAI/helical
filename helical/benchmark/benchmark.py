@@ -10,7 +10,7 @@ from copy import deepcopy
 
 LOGGER = logging.getLogger(__name__)
 
-def evaluate_integration(data_list: list[tuple[str, str]], adata: AnnData, cfg: DictConfig) -> dict[str, dict[str, float]]:
+def evaluate_integration(data_list: list[tuple[str, str]], adata: AnnData, data_cfg: DictConfig, integration_cfg: DictConfig) -> dict[str, dict[str, float]]:
     """
     Evaluate the data integration of the anndata object using the scib metrics. 
 
@@ -22,9 +22,10 @@ def evaluate_integration(data_list: list[tuple[str, str]], adata: AnnData, cfg: 
         The name of the obsm attribute that contains the embeddings.
     adata : AnnData
         The AnnData object that contains the embeddings.
-    cfg : DictConfig
-        The configuration of the data and the integration.
-        Ie. the config must enable access to cfg["data"] and cfg["integration"].
+    data_cfg : DictConfig
+        The configuration of the data. It must contain the keys "batch_key" and "label_key".
+    integration_cfg : DictConfig
+        The configuration of the integration.
 
     Returns
     -------
@@ -39,10 +40,10 @@ def evaluate_integration(data_list: list[tuple[str, str]], adata: AnnData, cfg: 
         # otherwise, some evaluations will be identical and thus incorrect 
         evaluation = _get_integration_evaluations(deepcopy(adata),
                                                   deepcopy(adata),
-                                                  cfg["data"]["batch_key"], 
-                                                  cfg["data"]["label_key"], 
+                                                  data_cfg["batch_key"], 
+                                                  data_cfg["label_key"], 
                                                   embed_obsm_name, 
-                                                  **cfg["integration"])
+                                                  **integration_cfg)
         evaluations.update({model: evaluation})
     return evaluations
 

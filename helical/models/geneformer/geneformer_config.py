@@ -38,7 +38,6 @@ class GeneformerConfig():
         
         self.list_of_files_to_download = [
             "geneformer/gene_median_dictionary.pkl",
-            "geneformer/human_gene_to_ensemble_id.pkl",
             "geneformer/token_dictionary.pkl",
             f"geneformer/{model_name}/config.json",
             f"geneformer/{model_name}/pytorch_model.bin",

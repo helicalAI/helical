@@ -179,7 +179,7 @@ class scGPT(HelicalRNAModel):
             The processed dataset.
         """
  
-        self.check_data_validity(adata, gene_names, use_batch_labels)
+        self.ensure_data_validity(adata, gene_names, use_batch_labels)
         self.gene_names = gene_names
         if fine_tuning:
             # Preprocess the dataset and select `N_HVG` highly variable genes for downstream analysis.
@@ -216,7 +216,7 @@ class scGPT(HelicalRNAModel):
         return dataset
 
 
-    def check_data_validity(self, adata: AnnData, gene_names: str, use_batch_labels: bool) -> None:
+    def ensure_data_validity(self, adata: AnnData, gene_names: str, use_batch_labels: bool) -> None:
         """Checks if the data is eligible for processing by the scGPT model  
 
         Parameters
@@ -233,7 +233,7 @@ class scGPT(HelicalRNAModel):
         KeyError
             If the data is missing column names.
         """
-        self.check_rna_data_validity(adata, gene_names)
+        self.ensure_rna_data_validity(adata, gene_names)
 
         if use_batch_labels:
             if not "batch_id" in adata.obs:

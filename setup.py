@@ -35,5 +35,6 @@ setup(
         'tensorflow==2.13.0rc1',
         'scanorama==1.7.4',
         'louvain==0.8.2',
+        'pyensembl==2.3.13',
     ],  
 )

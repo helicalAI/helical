@@ -46,14 +46,15 @@ class HelicalBaseFoundationModel(ABC, Logger):
         pass
 
 class HelicalRNAModel(HelicalBaseFoundationModel):
-    def check_rna_data_validity(self, adata: AnnData, gene_col_name: str) -> None:
-        """Checks if the data is contains the gene_col_name, which is needed for all Helical RNA models.  
+    def ensure_rna_data_validity(self, adata: AnnData, gene_names: str) -> None:
+        """Ensures that the data contains the gene_names and has integer counts for adata.X which is saved 
+        in 'total_counts'.  
 
         Parameters
         ----------
         adata : AnnData
             The data to be checked.
-        gene_col_name : str
+        gene_names : str
             The name of the column containing gene names in adata.var.
 
         Raises
@@ -62,9 +63,9 @@ class HelicalRNAModel(HelicalBaseFoundationModel):
             If the data is missing column names.
         """
         
-        if gene_col_name == "index":
+        if gene_names == "index":
     
-            # as the gene_col_name is "index" by default, check that the data is strings
+            # as the gene_names is "index" by default, check that the data is strings
             if not all(isinstance(item, str) for item in adata.var.index):
                 message = "The data in the index must only contain strings."
                 LOGGER.error(message)
@@ -73,10 +74,18 @@ class HelicalRNAModel(HelicalBaseFoundationModel):
             adata.var["index"] = adata.var.index
         
         # verify gene col name is present in adata.var
-        if not gene_col_name in adata.var:
-            message = f"Data must have the provided key '{gene_col_name}' in its 'var' section to be processed by the Helical RNA model."
+        if not gene_names in adata.var:
+            message = f"Data must have the provided key '{gene_names}' in its 'var' section to be processed by the Helical RNA model."
             LOGGER.error(message)
             raise KeyError(message)
+    
+        # verify that the data in X are integers
+        adata.obs["total_counts"] = adata.X.sum(axis=1)
+        if not (adata.obs["total_counts"] % 1  == 0).all():
+            message = "The data in X must be integers."
+            LOGGER.error(message)
+            raise ValueError(message)
+
         
 class HelicalDNAModel(HelicalBaseFoundationModel):
     def check_dna_data_validity(self) -> None:
