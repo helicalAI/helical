@@ -8,18 +8,11 @@ RUN apt-get update -y \
         curl \
         gcc \
         gfortran \
-        openblas-dev 
-
-# WORKDIR /usr/local/helical
-
-# COPY . /usr/local/helical
-# RUN pip install .
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+   
 
 RUN pip install --upgrade --force-reinstall git+https://github.com/helicalAI/helical.git
-# RUN python3 -m pip install --index-url https://test.pypi.org/simple/ helical
-
-# Make the shell script executable
-RUN chmod +x entrypoint.sh
 
 # Define the entry point for the container
 ENTRYPOINT ["/bin/bash"]

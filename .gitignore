@@ -6,6 +6,7 @@ dist/*
 # Data/Models
 data/*
 examples/data/*
+singularity/*
 *.sqlite3
 *.h5ad
 *.h5

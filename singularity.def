@@ -1,0 +1,16 @@
+Bootstrap: docker
+From : library/python:3.11
+
+%labels
+    Author maxime@helical-ai.com
+    Author benoit@helical-ai.com
+    Version v0.0.1
+
+%post
+   cd /home
+   apt-get -y upgrade 
+   apt-get -y update
+   apt-get install -y cmake wget git curl gcc gfortran 
+   apt-get clean
+   pip3 install --upgrade --force-reinstall git+https://github.com/helicalAI/helical.git
+
