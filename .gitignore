@@ -1,6 +1,7 @@
 *.egg-info
 __pycache__
 .vscode
+dist/*
 
 # Data/Models
 data/*

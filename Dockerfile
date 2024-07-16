@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM python:3.11
 
 RUN apt-get update -y \
     && apt-get upgrade -y \
@@ -6,13 +6,17 @@ RUN apt-get update -y \
         wget \
         git \
         curl \
-        python3 \
-        python3-pip
+        gcc \
+        gfortran \
+        openblas-dev 
 
-WORKDIR /usr/local/helical
+# WORKDIR /usr/local/helical
 
-COPY . /usr/local/helical
-RUN pip install .
+# COPY . /usr/local/helical
+# RUN pip install .
+
+RUN pip install --upgrade --force-reinstall git+https://github.com/helicalAI/helical.git
+# RUN python3 -m pip install --index-url https://test.pypi.org/simple/ helical
 
 # Make the shell script executable
 RUN chmod +x entrypoint.sh
