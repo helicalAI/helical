@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "helical"
-version = "0.0.1a"
+version = "0.0.1a0"
 authors = [
   { name="Maxime Allard", email="maxime@helical-ai.com" },
   { name = "Benoit Putzeys", email="benoit@helical-ai.com"},
@@ -43,7 +43,7 @@ dependencies = [
     'einops==0.8.0',
     'omegaconf==2.3.0',
     'hydra-core==1.3.2',
-    'tensorflow==2.13.0rc1',
+    'tensorflow==2.17.0',
     'scanorama==1.7.4',
     'louvain==0.8.2',
     'pyensembl==2.3.13',
