@@ -9,7 +9,7 @@ on:
 jobs:
   build:
   
-    runs-on: helical_8core_large
+    runs-on: ubuntu-latest
     timeout-minutes: 60 
     steps:
       - name: Checkout repository
