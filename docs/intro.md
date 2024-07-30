@@ -25,10 +25,27 @@ We recommend installing Helical within a conda environment with the commands bel
 conda create --name helical-package python=3.11.8
 conda activate helical-package
 ```
-To install the Helical package, you can run the command below:
+To install the latest pip release of our Helical package, you can run the command below:
 ```
-pip install --upgrade --force-reinstall git+https://github.com/helicalAI/helical.git
+pip install helical
 ```
+
+To install the latest Helical package, you can run the command below:
+```
+pip install --upgrade git+https://github.com/helicalAI/helical.git
+```
+
+### Singularity (Optional)
+If you desire to run your code in a singularity file, you can use the [singularity.def](../../helical/singularity.def) file and build an apptainer with it:
+```
+apptainer build --sandbox singularity/helical singularity.def
+```
+
+and then shell into the sandbox container (use the --nv flag if you have a GPU available):
+```
+apptainer shell --nv --fakeroot singularity/helical/
+```
+
 
 ## Installation
 ### RNA models:

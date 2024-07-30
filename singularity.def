@@ -1,0 +1,17 @@
+Bootstrap: docker
+From : library/python:3.11
+#From : nvidia/cuda:12.5.1-cudnn-devel-ubuntu22.04
+#From : tensorflow/tensorflow:nightly-gpu
+
+%labels
+    Author maxime@helical-ai.com
+    Author benoit@helical-ai.com
+    Version v0.0.1
+
+%post
+   cd /home
+   apt-get -y upgrade 
+   apt-get -y update
+   apt-get install -y cmake wget git curl gcc gfortran 
+   apt-get clean
+   python3 -m pip install helical

@@ -43,7 +43,7 @@ class NeuralNetwork(BaseTaskModel):
 
         self.optimizer = Adam(learning_rate=self.learning_rate)
         self.f1_metric = F1Score(average='macro')
-        self.model.compile(loss=self.loss, optimizer=self.optimizer, metrics=self.f1_metric)
+        self.model.compile(loss=self.loss, optimizer=self.optimizer, metrics=[self.f1_metric])
 
     def train(self, X_train: ndarray, y_train: ndarray, validation_data: tuple[ndarray, ndarray]) -> Self:
         """Train the neural network on the training and validation data.
