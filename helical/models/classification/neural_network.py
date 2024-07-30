@@ -5,7 +5,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
-from tensorflow.keras.optimizers.legacy import Adam
+from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.metrics import F1Score
 from tensorflow.keras.utils import to_categorical
 from helical.models.base_models import BaseTaskModel
@@ -43,7 +43,7 @@ class NeuralNetwork(BaseTaskModel):
 
         self.optimizer = Adam(learning_rate=self.learning_rate)
         self.f1_metric = F1Score(average='macro')
-        self.model.compile(loss=self.loss, optimizer=self.optimizer, metrics=self.f1_metric)
+        self.model.compile(loss=self.loss, optimizer=self.optimizer, metrics=[self.f1_metric])
 
     def train(self, X_train: ndarray, y_train: ndarray, validation_data: tuple[ndarray, ndarray]) -> Self:
         """Train the neural network on the training and validation data.

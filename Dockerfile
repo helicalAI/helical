@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM python:3.11
 
 RUN apt-get update -y \
     && apt-get upgrade -y \
@@ -6,16 +6,13 @@ RUN apt-get update -y \
         wget \
         git \
         curl \
-        python3 \
-        python3-pip
+        gcc \
+        gfortran \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+   
 
-WORKDIR /usr/local/helical
-
-COPY . /usr/local/helical
-RUN pip install .
-
-# Make the shell script executable
-RUN chmod +x entrypoint.sh
+RUN pip install --upgrade --force-reinstall git+https://github.com/helicalAI/helical.git
 
 # Define the entry point for the container
 ENTRYPOINT ["/bin/bash"]
