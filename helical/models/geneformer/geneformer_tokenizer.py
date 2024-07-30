@@ -5,7 +5,7 @@ Geneformer tokenizer.
 
 | *Required format:* raw counts scRNAseq data without feature selection as .loom or anndata file.
 | *Required row (gene) attribute:* "ensembl_id"; Ensembl ID for each gene.
-| *Required col (cell) attribute:* "n_counts"; total read counts in that cell.
+| *Required col (cell) attribute:* "total_counts"; total read counts in that cell.
 
 | *Optional col (cell) attribute:* "filter_pass"; binary indicator of whether cell should be tokenized based on user-defined filtering criteria.
 | *Optional col (cell) attributes:* any other cell metadata can be passed on to the tokenized dataset as a custom attribute dictionary as shown below.
@@ -26,7 +26,7 @@ Geneformer tokenizer.
 | The discussion below references the .loom file format, but the analagous labels are required for .h5ad files, just that they will be column instead of row attributes and vice versa due to the transposed format of the two file types.
 
 | Genes should be labeled with Ensembl IDs (loom row attribute "ensembl_id"), which provide a unique identifer for conversion to tokens. Other forms of gene annotations (e.g. gene names) can be converted to Ensembl IDs via Ensembl Biomart. 
-  Cells should be labeled with the total read count in the cell (loom column attribute "n_counts") to be used for normalization.
+  Cells should be labeled with the total read count in the cell (loom column attribute "total_counts") to be used for normalization.
 
 | No cell metadata is required, but custom cell attributes may be passed onto the tokenized dataset by providing a dictionary of custom attributes to be added, which is formatted as loom_col_attr_name : desired_dataset_col_attr_name. 
   For example, if the original .loom dataset has column attributes "cell_type" and "organ_major" and one would like to retain these attributes as labels in the tokenized dataset with the new names "cell_type" and "organ", respectively, 
@@ -228,7 +228,7 @@ class TranscriptomeTokenizer:
         for i in range(0, len(filter_pass_loc), self.chunk_size):
             idx = filter_pass_loc[i : i + self.chunk_size]
 
-            n_counts = adata[idx].obs["n_counts"].values[:, None]
+            n_counts = adata[idx].obs["total_counts"].values[:, None]
             X_view = adata[idx, coding_miRNA_loc].X
             X_norm = X_view / n_counts * target_sum / norm_factor_vector
             X_norm = sp.csr_matrix(X_norm)

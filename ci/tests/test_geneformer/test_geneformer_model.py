@@ -12,7 +12,6 @@ class TestGeneformerModel:
     # Create a dummy AnnData object
     data = AnnData()
     data.var['gene_symbols'] = ['SAMD11', 'PLEKHN1', 'HES4']
-    data.obs["n_counts"] = [1]
     data.obs["cell_type"] = ["CD4 T cells"]
     data.X = [[1, 2, 5]]
     tokenized_dataset = geneformer.process_data(data, gene_names='gene_symbols')
@@ -29,24 +28,8 @@ class TestGeneformerModel:
         assert self.geneformer.gene_token_dict.get("<pad>") == 0
         assert self.geneformer.gene_token_dict.get("<mask>") == 1
 
-    miss_n_counts = AnnData()
-    miss_n_counts.var["gene_symbols"] = [1]
-
-    miss_gene_symbols = AnnData()
-    miss_gene_symbols.obs["n_counts"] = [1]
-
-    miss_ensembl_id = AnnData()
-    miss_ensembl_id.obs["n_counts"] = [1]
-    miss_ensembl_id.var["gene_symbols"] = [1]
-
-    @pytest.mark.parametrize("data, use_gene_symbols", 
-                             [
-                                (miss_n_counts, True),
-                                (miss_gene_symbols, True),
-                                (miss_ensembl_id, False)
-                             ]
-    )
-    def test_check_data_validity(self, data, use_gene_symbols):
+    def test_ensure_data_validity_raising_error_with_missing_ensembl_id_column(self):
+        del self.data.var['ensembl_id']
         with pytest.raises(KeyError):
-            self.geneformer.check_data_validity(data, use_gene_symbols)
+            self.geneformer.ensure_data_validity(self.data, "ensembl_id")
             

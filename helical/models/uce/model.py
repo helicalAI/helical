@@ -97,7 +97,7 @@ class UCE(HelicalRNAModel):
             Inherits from Dataset class.
         """
                 
-        self.check_rna_data_validity(adata, gene_names)
+        self.ensure_rna_data_validity(adata, gene_names)
 
         if gene_names != "index":
             adata.var.index = adata.var[gene_names]

@@ -108,7 +108,7 @@ class Geneformer(HelicalRNAModel):
             The tokenized dataset in the form of a Hugginface Dataset object.
             
         """ 
-        self.check_data_validity(adata, gene_names)
+        self.ensure_data_validity(adata, gene_names)
 
         files_config = {
             "gene_median_path": self.config.model_dir / "gene_median_dictionary.pkl",
@@ -164,8 +164,9 @@ class Geneformer(HelicalRNAModel):
         return embeddings
 
 
-    def check_data_validity(self, adata: AnnData, gene_names: str) -> None:
-        """Checks if the data is eligible for processing by the Geneformer model  
+    def ensure_data_validity(self, adata: AnnData, gene_names: str) -> None:
+        """Ensure that the data is eligible for processing by the Geneformer model. This checks 
+        if the data contains the gene_names, and sets the total_counts column in adata.obs.
 
         Parameters
         ----------
@@ -179,9 +180,4 @@ class Geneformer(HelicalRNAModel):
         KeyError
             If the data is missing column names.
         """
-        self.check_rna_data_validity(adata, gene_names)
-
-        if not 'n_counts' in adata.obs.columns.to_list():
-            message = f"Data must have the 'obs' keys 'n_counts' to be processed by the Geneformer model."
-            LOGGER.error(message)
-            raise KeyError(message)
+        self.ensure_rna_data_validity(adata, gene_names)
