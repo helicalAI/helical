@@ -34,7 +34,7 @@ pip install --upgrade git+https://github.com/helicalAI/helical.git
 ```
 
 ### Singularity (Optional)
-If you desire to run your code in a singularity file, you can use the [singularity.def](../../helical/singularity.def) file and build an apptainer with it:
+If you desire to run your code in a singularity file, you can use the [singularity.def](../helical/singularity.def) file and build an apptainer with it:
 ```
 apptainer build --sandbox singularity/helical singularity.def
 ```
