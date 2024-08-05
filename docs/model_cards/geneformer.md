@@ -8,7 +8,7 @@
 
 ## Model Developers
 
-**Developed By:** Christina V. Theodoris, Ling Xiao, Anant Chopra, Mark D. Chaffin, Zeina R. Al Sayed, Matthew C. Hill, Helene Mantineo, Elizabeth M. Brydon, Zexian Zeng, X. Shirley Liu, Patrick T. Ellinor \
+**Developed by:** Christina V. Theodoris conceived of the work, developed Geneformer, assembled Genecorpus-30M and designed and performed computational analyses. Other [author contributions](#citation). \
 **Contact Information:** christina.theodoris@gladstone.ucsf.edu  \
 **License:** Apache-2.0 
 
