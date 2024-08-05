@@ -36,9 +36,6 @@
 - Prediction of gene dosage sensitivity and chromatin dynamics
 - Context-specific predictions in gene regulatory networks
 
-**Out-of-Scope Use Cases:**  
-- Applications outside the scope of gene network and transcriptomic analysis
-
 ## Training Data
 
 **Data Sources:**  
@@ -56,7 +53,6 @@
 ## Model Performance
 
 **Evaluation Metrics:**  
-- Area Under the Receiver Operating Characteristic Curve (AUC)
 - Predictive accuracy in distinguishing:
     - With *fine-tuning*:
         - Transcription factor dosage sensitivity
