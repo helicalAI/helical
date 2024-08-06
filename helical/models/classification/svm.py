@@ -4,6 +4,7 @@ from sklearn import svm
 from typing import Self
 from typing import Optional
 import pickle
+import os
 
 class SupportVectorMachine(BaseTaskModel):
     def __init__(self, kernel='rbf', degree=3, C=1, decision_function_shape='ovr') -> None:
@@ -69,7 +70,9 @@ class SupportVectorMachine(BaseTaskModel):
         path : str
             The path to save the model.
         """
-        with open(path, 'wb') as f:
+        os.makedirs(os.path.dirname(path), exist_ok=True)  
+        file = f"{path}svm.h5"
+        with open(file, 'wb') as f:
             pickle.dump(self.svm_model, f)
 
     def load(self, path: str) -> Self:
