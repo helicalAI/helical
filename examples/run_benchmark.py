@@ -1,24 +1,39 @@
 from helical.benchmark.benchmark import evaluate_classification, evaluate_integration
 from helical.models.geneformer.model import Geneformer
+from helical.models.geneformer.geneformer_config import GeneformerConfig
 from helical.models.scgpt.model import scGPT
+from helical.models.scgpt.scgpt_config import scGPTConfig
 from helical.models.uce.model import UCE
+from helical.models.uce.uce_config import UCEConfig
 from helical.models.classification.neural_network import NeuralNetwork
-from helical.models.classification.svm import SupportVectorMachine as SVM
 from helical.models.classification.classifier import Classifier
-from helical.services.downloader import Downloader
 import anndata as ad
 from omegaconf import DictConfig
 import hydra
 import json
-from pathlib import Path
 import scanpy as sc
 import scanpy.external as sce
+import os
+from anndata import AnnData
+import logging
 
-geneformer = Geneformer()
-scgpt = scGPT()
-uce = UCE()
+LOGGER = logging.getLogger(__name__)
 
-def write_to_json(evaluations: dict, file_name: str) -> None:
+class Scanorama():
+    def __init__(self, batch_key: str):
+        self.key = batch_key
+
+    def process_data(self, data, **kwargs) -> AnnData:
+        return data
+
+    def get_embeddings(self, data: AnnData):
+        sc.pp.recipe_zheng17(data)
+        sc.pp.pca(data)
+        sce.pp.scanorama_integrate(data, self.key, verbose=1)
+        return data.obsm["X_scanorama"]
+
+
+def write_to_json(evaluations: dict, path: str, file_name: str) -> None:
     """
     Write the evaluations to a JSON file.
 
@@ -26,17 +41,36 @@ def write_to_json(evaluations: dict, file_name: str) -> None:
     -----------
         evaluations: dict
             The evaluations to be written to the JSON file.
+        path: str
+            The path where the JSON file will be saved.
         file_name: str
             The name of the JSON file.
     """
     # Serializing json
     json_object = json.dumps(evaluations, indent=4)
     
+    os.makedirs(os.path.dirname(path), exist_ok=True)  
+
     # Writing to sample.json
-    with open(f"data/benchmark/{file_name}.json", "w") as outfile:
+    with open(f"{path}{file_name}.json", "w+") as outfile:
         outfile.write(json_object)
 
-def run_classification_example(data: ad.AnnData, cfg: DictConfig) -> dict[str, dict[str, float]]:
+def get_model(model_name: str, data_cfg: DictConfig, device: str = "cpu"):
+    if model_name == "geneformer":
+        configurer = GeneformerConfig(device=device, batch_size=5)
+        return Geneformer(configurer)
+    elif model_name == "scgpt":
+        configurer = scGPTConfig(device=device)
+        return scGPT(configurer)
+    elif model_name == "uce":
+        configurer = UCEConfig(device=device)
+        return UCE(configurer)
+    elif model_name == "scanorama":
+        return Scanorama(data_cfg["batch_key"])
+    else:
+        raise ValueError(f"Model {model_name} not found.")
+
+def run_classification_example(data, helical_models, data_cfg, head_cfg: DictConfig, device: str = "cpu"):
     """
     This function shows one example how to run a classification evaluation.
     Different combinations can be used, which is shown with the comments.
@@ -48,8 +82,6 @@ def run_classification_example(data: ad.AnnData, cfg: DictConfig) -> dict[str, d
 
     Parameters:
     -----------
-        data: AnnData
-            The data to be used for the classification evaluation.
         cfg: DictConfig
             The configuration for the classification evaluation.
     
@@ -58,79 +90,56 @@ def run_classification_example(data: ad.AnnData, cfg: DictConfig) -> dict[str, d
         dict[str, dict[str, float]]
             The evaluations for the classification models.
     """
-    train_data = data[:20]
-    eval_data = data[20:25]
-    
-    # saved_nn_head = NeuralNetwork().load('my_model.h5', 'classes.npy')
-    # scgpt_loaded_nn = Classifier().load_model(scgpt, saved_nn_head, "scgpt with saved NN")    
-    
-    # saved_svm_head = SVM().load('my_svm.pkl')
-    # scgpt_loaded_svm = Classifier().load_model(scgpt, saved_svm_head, "scgpt with saved SVM")           
 
-    uce_c = Classifier().train_classifier_head(train_data, uce, NeuralNetwork(**cfg["neural_network"]))
-    scgpt_nn_c = Classifier().train_classifier_head(train_data, scgpt, NeuralNetwork(**cfg["neural_network"]))
-    scgpt_nn_c.trained_task_model.save("cell_type_annotation/scgpt_w_nn")
+    train_data = data[:int(len(data)*0.8)]
+    eval_data = data[int(len(data)*0.8):]
 
-    return evaluate_classification([scgpt_nn_c, uce_c], eval_data, "cell_type")
+    for model_name in helical_models:
+        model = get_model(model_name, data_cfg, device)
+        model_c = Classifier().train_classifier_head(train_data,
+                                                        model, 
+                                                        NeuralNetwork(**head_cfg), 
+                                                        gene_names=data_cfg["gene_names"],
+                                                        labels_column_name=data_cfg["label_key"],
+                                                        test_size=0.1,
+                                                        random_state=42) 
+        evaluations = evaluate_classification([model_c], eval_data, data_cfg["label_key"])
 
-def run_integration_example(adata: ad.AnnData, cfg: DictConfig) -> dict[str, dict[str, float]]:
-    """
-    This function shows one example how to run an integration evaluation.
-    We get the embeddings for the UCE and scGPT models and compare them to the
-    scanorama integration.
+        # save outputs
+        model_c.trained_task_model.save(f"{data_cfg['base_dir']}/{data_cfg['name']}/cell_type_annotation/{model_name}/")        
+        write_to_json(evaluations, f"{data_cfg['base_dir']}/{data_cfg['name']}/cell_type_annotation/", f"classification_evaluations_{model_name}")
 
-    Parameters:
-    -----------
-        adata: AnnData
-            The data to be used for the integration evaluation.
-        cfg: DictConfig
-            The configuration for the integration evaluation.
-    
-    Returns:
-    --------
-        dict[str, dict[str, float]]
-            The evaluations for the integration models.
-    """
+        # memory management
+        del model_c
+        del model
 
-    batch_0 = adata[adata.obs["batch"]==0]
-    batch_1 = adata[adata.obs["batch"]==1]
-    adata = ad.concat([batch_0[:20], batch_1[:20]])
-    
-    dataset = uce.process_data(adata)
-    adata.obsm["X_uce"] = uce.get_embeddings(dataset)
+def run_integration_example(data, models, data_cfg, integration_cfg: DictConfig, device: str = "cpu"):
 
-    dataset = scgpt.process_data(adata)
-    adata.obsm["X_scgpt"] = scgpt.get_embeddings(dataset)
-
-    # data specific configurations
-    cfg["data"]["batch_key"] = "batch"
-    cfg["data"]["label_key"] = "str_labels"
-
-    sc.pp.recipe_zheng17(adata)
-    sc.pp.pca(adata)
-    sce.pp.scanorama_integrate(adata, 'batch', verbose=1)
-
-    return evaluate_integration(
-            [
-                ("scgpt", "X_scgpt"),
-                ("uce", "X_uce"),
-                ("scanorama", "X_scanorama")
-            ], adata, cfg
-        )
-
+    for model_name in models:
+        model = get_model(model_name, data_cfg, device)
+        evaluations = evaluate_integration([(model, model_name)], data, data_cfg, integration_cfg)
+        write_to_json(evaluations, f"{data_cfg['base_dir']}/{data_cfg['name']}/integration/", f"integration_evaluations_{model_name}")
+        del model
 
 @hydra.main(version_base=None, config_path=".", config_name="config")
 def benchmark(cfg: DictConfig) -> None:
 
-    data = ad.read_h5ad("./10k_pbmcs_proc.h5ad")
+    cfg["device"] = "cpu"
+    dataset = "pbmc"
 
-    evaluations_c = run_classification_example(data, cfg)
-    write_to_json(evaluations_c, "classification_evaluations")
+    data_cfg = cfg["data"][dataset]
+    head_cfg = cfg["neural_network"]
+    integration_cfg = cfg["integration"]
 
-    evaluations_i = run_integration_example(data, cfg)
-    write_to_json(evaluations_i, "integration_evaluations")
+    data = ad.read_h5ad(data_cfg["path"])[:100]
+    data.obs[data_cfg["label_key"]] = data.obs[data_cfg["label_key"]].astype("category")
+
+    # scanorama requires continuous batches
+    data = data[data.obs[data_cfg["batch_key"]].sort_values().index]
+
+    run_classification_example(data, ["geneformer", "uce", "scgpt"], data_cfg, head_cfg, device=cfg["device"])
+    run_integration_example(data, ["geneformer", "uce", "scgpt", "scanorama"], data_cfg, integration_cfg, device=cfg["device"])
+    LOGGER.info("Benchmarking done.")
 
 if __name__ == "__main__":
-    downloader = Downloader()
-    downloader.download_via_link(Path("./10k_pbmcs_proc.h5ad"), "https://helicalpackage.blob.core.windows.net/helicalpackage/data/10k_pbmcs_proc.h5ad")
     benchmark()
