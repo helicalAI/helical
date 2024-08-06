@@ -16,19 +16,22 @@ config = {
         "gene_names": "index"
     },
     "integration": {
-        "isolated_labels_asw_": False,
-        "silhouette_": True,
-        "hvg_score_": False,
-        "graph_conn_": True,
-        "pcr_": True,
-        "isolated_labels_f1_": False,
-        "trajectory_": False,
-        "nmi_": True,  # use the clustering bias to the best matching
-        "ari_": True,  # use the clustering bias to the best matching
-        "cell_cycle_": False,
-        "kBET_": False,  # kBET return nan sometimes need to examine
-        "ilisi_": False,
-        "clisi_": False,
+        "scib": {
+            "isolated_labels_asw_": False,
+            "silhouette_": True,
+            "hvg_score_": False,
+            "graph_conn_": True,
+            "pcr_": True,
+            "isolated_labels_f1_": False,
+            "trajectory_": False,
+            "nmi_": True,  # use the clustering bias to the best matching
+            "ari_": True,  # use the clustering bias to the best matching
+            "cell_cycle_": False,
+            "kBET_": False,  # kBET return nan sometimes need to examine
+            "ilisi_": False,
+            "clisi_": False
+        },
+        "alcs": False
     }
 }
 
