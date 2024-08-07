@@ -2,13 +2,13 @@
 
 ## Model Details
 
-**Model Name:** Universal Cell Embedding (UCE) v1.0 \
+**Model Name:** Universal Cell Embedding (UCE) \
 **Model Version:** 1.0 \
-**Model Description:** A large pre-trained model for creating universal representations of cell types across species. The model performs tasks such as cell type annotation, hypothesis generation, and integrating diverse single-cell datasets.
+**Model Description:** A large-scale self-supervised transformer-based model, pre-trained across more than 36 million cells for creating universal representations of cell types across different species and tissues. The model enables cell type annotation prediction, hypothesis generation, disease state comparison, new data mapping, integration of diverse single-cell datasets, and opens the door for discovery of novel cell type functions.
 
 ## Model Developers
 
-**Developed By:** Yanay Rosen, Yusuf Roohani, Ayush Agarwal, Leon Samotorčan, Tabula Sapiens Consortium, Stephen R. Quake, Jure Leskovec\
+**Developed By:** Yanay Rosen and Yusuf Roohani conceived the study, performed research, contributed to new analytical tools, designed algorithmic frameworks, analyzed data, performed experiments and developed the software. Other [author contributions](#citation). \
 **Contact Information:** jure@cs.stanford.edu, quake@stanford.edu \  
 **License:** MIT License \
 
@@ -105,9 +105,6 @@ print(embeddings.shape)
 ```
 - Download processed datasets used in the paper [here](https://drive.google.com/drive/folders/1f63fh0ykgEhCrkd_EVvIootBw7LYDVI7?usp=drive_link)
 
-## Developers
-
-Yanay Rosen, Yusuf Roohani, Ayush Agarwal, Leon Samotorčan, Tabula Sapiens Consortium, Stephen R. Quake, Jure Leskovec
 
 ## Contact
 
@@ -117,6 +114,9 @@ For correspondence: jure@cs.stanford.edu, quake@stanford.edu
 
 Rosen, Y., Roohani, Y., Agarwal, A., Samotorčan, L., Tabula Sapiens Consortium, Quake, S. R., & Leskovec, J. (2023). Universal Cell Embeddings: A Foundation Model for Cell Biology. bioRxiv. https://doi.org/10.1101/2023.11.28.568918
 
-## License
+## Author contributions 
 
-MIT License
+Y.RS., Y.RH., S.Q. and J.L. conceived the study. Y.RS, Y.RH., S.Q. and J.L. performed research, contributed new analytical tools, designed algorithmic frameworks, analyzed data and wrote the manuscript. Y.RS. and Y.RH. performed experiments and developed the software. A.A. and L.S.
+contributed to code and performed analyses. T.S. provided annotated data.
+
+
