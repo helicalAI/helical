@@ -7,7 +7,6 @@ from sklearn.metrics import accuracy_score, precision_score, f1_score, recall_sc
 from scib.metrics import metrics
 from omegaconf import DictConfig
 from helical.models.base_models import BaseModelProtocol
-from copy import deepcopy
 
 LOGGER = logging.getLogger(__name__)
 
@@ -48,11 +47,11 @@ def evaluate_integration(model_list: list[tuple[BaseModelProtocol, str]], adata:
             LOGGER.error(message)
             raise TypeError(message)
         
-        # because some models may process the data in different ways (including scib) we use deepcopy for each model
+        # because some models may process the data in different ways (including scib) we use .copy() for each model
         # so that all models start with the same data and are independent of each other
         # otherwise, some evaluations will be identical and thus incorrect 
-        adata_copy = deepcopy(adata)
-        
+        adata_copy = adata.copy()
+
         dataset = model.process_data(adata_copy, gene_names=data_cfg["gene_names"])
         adata_copy.obsm[embed_obsm_name] = model.get_embeddings(dataset)
         evaluation = _get_integration_evaluations(adata_copy,
