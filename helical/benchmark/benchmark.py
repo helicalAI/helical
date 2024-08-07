@@ -63,6 +63,34 @@ def evaluate_integration(model_list: list[tuple[BaseModelProtocol, str]], adata:
         evaluations.update({model_name: evaluation})
     return evaluations
 
+def get_alcs_evaluations(evaluations_all: dict[str, dict[str, dict[str, float]]])-> dict[str, dict[str, float]]:
+    """
+    Calculates the ALCS coefficient as defined in the BENGAL paper.
+    The ALCS coefficient is then calculated as the difference in accuracy between the "original" model and the model being evaluated.
+    The "original" model is a model that does not return embeddings but the original adata.X.
+    It is assumed here, that the original model was used with a model head for classification and subsequent evaluation.
+    Same for the other models.
+    ALCS = Test_accuracy_original - Test_accuracy_model
+
+    Parameters
+    ----------
+    evaluations_all : dict[str, dict[str, dict[str, float]]]
+        The evaluations for each model based on the unseen test/eval data.
+    
+    Returns
+    ------- 
+    A dictionary containing the ALCS coefficient for each model.
+    """
+    _, ref_values = next(iter(evaluations_all["original"].items()))
+    before = ref_values["Accuracy"]
+    del evaluations_all["original"]
+    alcs = {}
+    for name, evaluations in evaluations_all.items():
+        model_name, values = next(iter(evaluations.items()))
+        after = values["Accuracy"]
+        alcs.update({name: {model_name: before - after}})
+    return alcs
+
 def evaluate_classification(models: list[Classifier], eval_anndata: AnnData, labels_column_name: str) -> dict[str, dict[str, float]]:
     """
     Evaluate the classification models using the evaluation dataset. 
@@ -137,7 +165,7 @@ def _get_integration_evaluations(adata: AnnData,
         Configuration for the metrics calculation as key-value pairs, coming from the config file.
     """
 
-    results = metrics(adata, adata_int, batch_key, label_key, embed = embed_obsm_name, **configs)
+    results = metrics(adata, adata_int, batch_key, label_key, embed = embed_obsm_name, **configs["scib"])
     result_dict = results[0].to_dict()
 
     # rearrange 
