@@ -141,7 +141,7 @@ def run_integration_example(data: AnnData, models: list[str], data_cfg: DictConf
 @hydra.main(version_base=None, config_path=".", config_name="config")
 def benchmark(cfg: DictConfig) -> None:
 
-    cfg["device"] = "cpu"
+    cfg["device"] = "cuda"
     dataset = "pbmc"
 
     data_cfg = cfg["data"][dataset]
