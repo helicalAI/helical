@@ -62,3 +62,7 @@ jobs:
       - name: Execute Hyena
         run: |
           python examples/run_models/run_hyena_dna.py
+      
+      - name: Execute benchmarking
+        run: |
+          python examples/run_benchmark.py
