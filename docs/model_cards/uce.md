@@ -4,13 +4,13 @@
 
 **Model Name:** Universal Cell Embedding (UCE) \
 **Model Version:** 1.0 \
-**Model Description:** A large-scale self-supervised transformer-based model, pre-trained across more than 36 million cells for creating universal representations of cell types across different species and tissues. The model enables cell type annotation prediction, hypothesis generation, disease state comparison, new data mapping, integration of diverse single-cell datasets, and opens the door for discovery of novel cell type functions.
+**Model Description:** A large-scale self-supervised transformer-based model, pre-trained across more than 36 million cells for creating universal representations of cell types across different species and tissues. The model enables cell type annotation prediction, hypothesis generation, disease state comparison, new data mapping, integration of diverse single-cell datasets, and opens the door for discovery of novel cell type functions
 
 ## Model Developers
 
-**Developed By:** Yanay Rosen and Yusuf Roohani conceived the study, performed research, contributed to new analytical tools, designed algorithmic frameworks, analyzed data, performed experiments and developed the software. Other [author contributions](#citation). \
+**Developed By:** Yanay Rosen and Yusuf Roohani conceived the study, performed research, contributed to new analytical tools, designed algorithmic frameworks, analyzed data, performed experiments and developed the software. Other [author contributions](#citation) \
 **Contact Information:** jure@cs.stanford.edu, quake@stanford.edu \  
-**License:** MIT License \
+**License:** MIT License Copyright (c) 2023 Yanay Rosen, Yusuf Roohani, Jure Leskovec \
 
 ## Model Type
 
@@ -66,14 +66,6 @@
 **Bias and Fairness:**  
 - Inclusion of diverse species and cell types to minimize bias
 - Continuous evaluation for potential biases
-
-**Privacy:**  
-- Training data sourced from public datasets with appropriate usage permissions
-- No private or sensitive genetic data used without consent
-
-**Mitigations:**  
-- Regular audits to identify and address biases
-- Collaboration with ethicists and domain experts
 
 ## Model Limitations
 
