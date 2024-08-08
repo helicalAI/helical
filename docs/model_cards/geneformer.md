@@ -40,10 +40,9 @@
 
 **Data Sources:**  
 - Publicly available single-cell transcriptomic datasets (e.g., NCBI Gene Expression Omnibus, Human Cell Atlas, EMBL-EBI Single Cell Expression Atlas)
-- Assembled from 29.9 million human single-cell transcriptomes across a wide range of tissues
 
 **Data Volume:**  
-- 29.9 million single-cell transcriptomes
+- 29.9 million single-cell transcriptomes across a wide range of tissues
 
 **Preprocessing:**  
 - Exclusion of cells with high mutational burdens
@@ -81,20 +80,6 @@
 - Experimental validation for: 
     - Prediction of novel transcription factor in cardiomyocytes with zero-shot learning that had a functional impact on cardiomyocytes' contractile force generation 
     - Prediction of candidate therapeutic targets with in silico treatment analysis that significantly improved contractile force generation of cardiac microtissues in an iPS cell model of cardiomyopathy
-
-## Ethical Considerations
-
-**Bias and Fairness:**  
-- Ensured diverse representation of tissues in the training data
-- Ongoing evaluation to detect and mitigate biases, especially those affecting specific tissue types
-
-**Privacy:**  
-- Training data sourced from public databases with appropriate usage permissions
-- No use of private or sensitive genetic data without explicit consent
-
-**Mitigations:**  
-- Regular audits of model outputs to detect and correct biases
-- Collaboration with ethicists and domain experts to ensure responsible use
 
 ## Model Limitations
 

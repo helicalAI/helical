@@ -4,13 +4,13 @@
 
 **Model Name:** scGPT  \
 **Model Version:** 1.0  \
-**Model Description:** scGPT is a generative pre-trained transformer model for single-cell multi-omics analysis. It is designed to perform various tasks, including cell type annotation, multi-batch integration, multi-omic integration, perturbation response prediction, and gene network inference. The model is pre-trained on extensive single-cell RNA sequencing data to build a foundational understanding of cellular biology.
+**Model Description:** scGPT is a large-scale self-supervised transformer-based model, pre-trained across more than 33 million human cells under non-disease conditions. It is designed to perform various tasks, including cell type annotation, multi-batch integration, multi-omic integration, in silico perturbation response prediction, and gene regulatory network inference. The model is pre-trained on extensive single-cell RNA sequencing data to build a foundational understanding of cellular biology.
 
 ## Model Developers
 
-**Developed By:** Haotian Cui, Chloe Wang, Hassaan Maan, Kuan Pang, Fengning Luo, Nan Duan, Bo Wang  \
+**Developed By:** Haotian Cui, Chloe Wang, Hassaan Maan, Kuan Pang, Fengning Luo, Nan Duan, Bo Wang. See specific [author contributions](#citation) \
 **Contact Information:** Bo Wang (bowang@vectorinstitute.ai)  \
-**License:** MIT License \
+**License:** MIT License Copyright (c) 2022 suber \
 
 ## Model Type
 
@@ -20,71 +20,70 @@
 
 ## Model Purpose
 
-**Intended Use:**  
-- Research in single-cell genomics and bioinformatics
-- Cell type annotation and data integration in single-cell studies
-- Educational purposes in the context of multi-omics data analysis
-
-**Out-of-Scope Use Cases:**  
-- Direct clinical decision making without human oversight
-- Applications outside the scope of single-cell multi-omics analysis
+**Broader research applications:**  
+- Cell type annotation 
+- Perturbation response prediction
+- Batch correction on integrating multiple scRNA-seq datasets
+- Integrative representation learning for single-cell multi-omic data
+- Gene regulatory network inference 
 
 ## Training Data
 
 **Data Sources:**  
-- Publicly available single-cell RNA-seq, ATAC-seq, and other omics databases from CELLxGENE and other repositories
+- Publicly available datasets are described in [Data availability](https://www.nature.com/articles/s41592-024-02201-0#data-availability) in the manuscript
 
 **Data Volume:**  
-- Pre-trained on data from over 33 million human cells under non-disease conditions. This comprehensive dataset encompasses a wide range of cell types from 51 organs or tissues, and 441 studies. 
+- Pre-trained on data from over 33 million human cells under non-disease conditions. This comprehensive dataset encompasses a wide range of cell types from 51 organs or tissues, and 441 studies
 
 **Preprocessing:**  
 - Standardized to remove low-quality cells and sequences
 - Normalization and scaling to ensure consistency across datasets
+- Value binning technique to convert all expression counts
+into relative values
 
 ## Model Performance
 
 **Evaluation Metrics:**  
-- Accuracy, Precision, Recall, F1-Score for tasks like cell type annotation, data imputation, and perturbation response prediction
-
-**Performance Benchmarks:**  
-- Cell Type Annotation: Precision > 0.8 for most cell types
-- Perturbation Prediction: Outperformed other methods in predicting post-perturbation changes with significant margins
+- Classification metrics: Accuracy, Precision, Recall, Macro F1 
+- Biological conservation metrics: NMIcell, ARIcell, ASWcell
+- Batch correction metrics: ASWbatch, GraphConn
 
 **Testing Data:**  
 - Held-out subsets of the training dataset
 - Additional external validation datasets from independent studies
 
-## Ethical Considerations
-
-**Bias and Fairness:**  
-- Ensured diverse representation of cell types and conditions in the training data
-- Ongoing evaluation for biases, particularly those impacting underrepresented cell types or conditions
-
-**Privacy:**  
-- All training data sourced from public databases with appropriate usage permissions
-- No use of private or sensitive genetic data without explicit consent
-
-**Mitigations:**  
-- Regular audits of model outputs to detect and correct biases
-- Collaboration with ethicists and domain experts to ensure responsible use
-
 ## Model Limitations
 
-**Known Limitations:**  
-- May not generalize well to rare cell types or novel conditions not represented in the training data
-- Performance may vary across different sequencing technologies and experimental conditions
+**Known Limitations:**
+
+- The current pretraining does not inherently mitigate batch effects, and thus the
+model’s zero-shot performance could be constrained on datasets
+with substantial technical variation
+- Evaluating the model is also
+complex, given the frequent absence of definitive biological ground
+truths and the variation in data quality
 
 **Future Improvements:**  
-- Continuous integration of new data sources and modalities
-- Enhancements in model architecture to better handle rare cell types and novel conditions
+- Pretraining on a larger-scale dataset
+with more diversity, including multi-omic data, spatial omics and various
+diseased conditions
+- Incorporation of perturbation
+and temporal data in the pretraining stage, enabling the model
+to learn causal relationships and infer how genes and cells respond
+to changes over time
+-Development of techniques that
+allow the pretrained model to understand and adapt to different tasks
+and contexts in a zero-shot setting without the need for fine-tuning
 
 ## How to Use
 
 **Input Format:**  
-- Standard single-cell RNA-seq, ATAC-seq, and other omics data formats (e.g., CSV, H5AD)
+- The input to scGPT consists of three main components:
+(1) gene (or peak) tokens, (2) expression values (cell-by-gene matrix) and (3) condition
+tokens
 
 **Output Format:**  
-- JSON format with predicted cell types, imputed data, and integrated multi-modal data
+- Gene and cell embeddings, JSON format with predicted cell types and integrated multi-modal data
 
 **Example Usage:**
 ```python
@@ -102,13 +101,7 @@ print(embeddings.shape)
 
 ## Developers
 
-- Haotian Cui
-- Chloe Wang
-- Hassaan Maan
-- Kuan Pang
-- Fengning Luo
-- Nan Duan
-- Bo Wang
+Haotian Cui, Chloe Wang, Hassaan Maan, Kuan Pang, Fengning Luo, Nan Duan, Bo Wang
 
 ## Contact
 
@@ -128,3 +121,14 @@ To cite the scGPT model, please use the following reference:
 ```
 
 For more details and updates, visit the [scGPT GitHub repository](https://github.com/bowang-lab/scGPT).
+
+## Author contributions
+
+H.C. developed the concept of the work and contributed to design
+and implementation of the algorithm. C.W. and K.P. contributed to
+design and implementation of the algorithm. H.C., C.W., H.M., K.P. and
+F.L. contributed to the analysis of computational experiments. H.C.
+and C.W. drafted the initial version of the manuscript. H.C., C.W., H.M.,
+K.P., F.L. and B.W. contributed to revision of the work. N.D. contributed
+to design of the algorithm. B.W. contributed to the conception and
+design of the work.
