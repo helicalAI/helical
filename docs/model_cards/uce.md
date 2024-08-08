@@ -20,14 +20,19 @@
 
 ## Model Purpose
 
-**Intended Use:**  
-- Research in cell biology and bioinformatics
-- Annotation of cell types in large single-cell datasets
-- Hypothesis generation in biological research
+**Technical usage:**
+- Tokenizing genes corresponding to its protein product
+- Pre-training
+- Running in Zero-shot setting  
+- Extracting and plotting cell embeddings
 
-**Out-of-Scope Use Cases:**  
-- Direct clinical decision making without human oversight
-- Applications outside the scope of single-cell data analysis
+**Broader research applications:**  
+- Designed to address questions in cell and molecular biology
+- Generation of representations of new single-cell expression datasets with no model fine-tuning or retraining while still remaining robust to dataset and batch-specific artifacts
+- Cell type prediction in large single-cell datasets with no additional model retraining
+- Mapping of new data into a universal embedding space that aligns cell types across tissues and species
+- Hypothesis generation in biological research
+- Novel cross-dataset discoveries
 
 ## Training Data
 
@@ -47,12 +52,10 @@
 ## Model Performance
 
 **Evaluation Metrics:**  
-- Accuracy, Precision, Recall, F1-Score for cell type annotation
-- Embedding quality evaluated by ability to uncover biological insights
-
-**Performance Benchmarks:**  
-- Precision and recall metrics in line with current state-of-the-art models
-- Emergent behaviors such as identifying developmental lineages and novel species integration
+- Zero-shot embedding quality and clustering using metrics from the [single-cell integration benchmark](https://www.nature.com/articles/s41592-021-01336-8)
+- Cell type organization
+- Comparison to cell ontology
+- Zero-shot cell type alignment to Integrated Mega-scale Atlas 
 
 **Testing Data:**  
 - Held-out subsets of training datasets
@@ -75,12 +78,13 @@
 ## Model Limitations
 
 **Known Limitations:**  
-- May not generalize well to novel species or rare cell types not present in training data
-- Performance may vary with different single-cell sequencing technologies
+- Analyses and corresponding benchmarks are generally limited by their emphasis on broad, coarse-grained cell type labels
+- Current scRNA-seq foundation models, including UCE, do not utilize the detailed information contained in the raw RNA transcripts
 
 **Future Improvements:**  
-- Ongoing integration of new datasets
-- Enhancements to model architecture for better handling of rare cell types
+- New analyses and benchmarks should focus on more detailed, fine-grained cell type classifications
+- Incorporation of genomic precision at the transcript level
+- Simulation of the biological processes of cells, leading to the creation of "Virtual Cells"
 
 ## How to Use
 
@@ -108,7 +112,7 @@ print(embeddings.shape)
 
 ## Contact
 
-For correspondence: jure@cs.stanford.edu, quake@stanford.edu
+jure@cs.stanford.edu, quake@stanford.edu
 
 ## Citation
 
