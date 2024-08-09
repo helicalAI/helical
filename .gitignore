@@ -2,6 +2,7 @@
 __pycache__
 .vscode
 dist/*
+examples/notebooks/logs/*
 
 # Data/Models
 data/*
