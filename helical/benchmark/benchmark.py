@@ -6,7 +6,6 @@ import numpy as np
 from sklearn.metrics import accuracy_score, precision_score, f1_score, recall_score
 from scib.metrics import metrics
 from omegaconf import DictConfig
-from copy import deepcopy
 from helical.models.base_models import BaseModelProtocol
 
 LOGGER = logging.getLogger(__name__)
@@ -48,19 +47,49 @@ def evaluate_integration(model_list: list[tuple[BaseModelProtocol, str]], adata:
             LOGGER.error(message)
             raise TypeError(message)
         
-        dataset = model.process_data(adata, gene_names=data_cfg["gene_names"])
-        adata.obsm[embed_obsm_name] = model.get_embeddings(dataset)
-
-        # because scib library modifies the adata object, we need to deepcopy it for each model
+        # because some models may process the data in different ways (including scib) we use .copy() for each model
+        # so that all models start with the same data and are independent of each other
         # otherwise, some evaluations will be identical and thus incorrect 
-        evaluation = _get_integration_evaluations(deepcopy(adata),
-                                                  deepcopy(adata),
+        adata_copy = adata.copy()
+
+        dataset = model.process_data(adata_copy, gene_names=data_cfg["gene_names"])
+        adata_copy.obsm[embed_obsm_name] = model.get_embeddings(dataset)
+        evaluation = _get_integration_evaluations(adata_copy,
+                                                  adata_copy,
                                                   data_cfg["batch_key"], 
                                                   data_cfg["label_key"], 
                                                   embed_obsm_name, 
                                                   **integration_cfg)
         evaluations.update({model_name: evaluation})
     return evaluations
+
+def get_alcs_evaluations(evaluations_all: dict[str, dict[str, dict[str, float]]])-> dict[str, dict[str, float]]:
+    """
+    Calculates the ALCS coefficient as defined in the BENGAL paper.
+    The ALCS coefficient is then calculated as the difference in accuracy between the "original" model and the model being evaluated.
+    The "original" model is a model that does not return embeddings but the original adata.X.
+    It is assumed here, that the original model was used with a model head for classification and subsequent evaluation.
+    Same for the other models.
+    ALCS = Test_accuracy_original - Test_accuracy_model
+
+    Parameters
+    ----------
+    evaluations_all : dict[str, dict[str, dict[str, float]]]
+        The evaluations for each model based on the unseen test/eval data.
+    
+    Returns
+    ------- 
+    A dictionary containing the ALCS coefficient for each model.
+    """
+    _, ref_values = next(iter(evaluations_all["original"].items()))
+    before = ref_values["Accuracy"]
+    del evaluations_all["original"]
+    alcs = {}
+    for name, evaluations in evaluations_all.items():
+        model_name, values = next(iter(evaluations.items()))
+        after = values["Accuracy"]
+        alcs.update({name: {model_name: before - after}})
+    return alcs
 
 def evaluate_classification(models: list[Classifier], eval_anndata: AnnData, labels_column_name: str) -> dict[str, dict[str, float]]:
     """
@@ -136,7 +165,7 @@ def _get_integration_evaluations(adata: AnnData,
         Configuration for the metrics calculation as key-value pairs, coming from the config file.
     """
 
-    results = metrics(adata, adata_int, batch_key, label_key, embed = embed_obsm_name, **configs)
+    results = metrics(adata, adata_int, batch_key, label_key, embed = embed_obsm_name, **configs["scib"])
     result_dict = results[0].to_dict()
 
     # rearrange 
