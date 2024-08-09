@@ -10,7 +10,7 @@ setup(
     author_email='benoit@helical-ai.com, maxime@helical-ai.com',
     packages=find_packages(),
     install_requires=[
-        'requests==2.32.0',
+        'requests==2.32.2',
         'pandas==2.2.2',
         'anndata==0.10.7',
         'numpy==1.26.4',
@@ -35,5 +35,6 @@ setup(
         'louvain==0.8.2',
         'pyensembl==2.3.13',
         'datasets==2.20.0',
+        'pyarrow==17.0.0',
     ],  
 )
