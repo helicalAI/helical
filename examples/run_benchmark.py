@@ -15,6 +15,8 @@ import logging
 import os
 from anndata import AnnData
 from numpy import ndarray
+import scanpy as sc
+import scanpy.external as sce
 
 LOGGER = logging.getLogger(__name__)
 
@@ -30,6 +32,21 @@ class Original():
         return anndata
     def get_embeddings(self, anndata) -> ndarray:
         return anndata.X
+    
+class Scanorama():
+    def __init__(self, batch_key: str):
+        self.key = batch_key
+
+    def process_data(self, data, **kwargs) -> AnnData:
+        data = data[data.obs[self.key].sort_values().index]
+        return data
+
+    def get_embeddings(self, data: AnnData):
+        sc.pp.recipe_zheng17(data)
+        sc.pp.pca(data)
+        sce.pp.scanorama_integrate(data, self.key, verbose=1)
+        return data.obsm["X_scanorama"]
+
 
 def write_to_json(evaluations: dict, path: str, file_name: str) -> None:
     """
@@ -63,6 +80,8 @@ def get_model(model_name: str, data_cfg: DictConfig, device: str = "cpu"):
     elif model_name == "uce":
         configurer = UCEConfig(device=device)
         return UCE(configurer)
+    elif model_name == "scanorama":
+        return Scanorama(data_cfg["batch_key"])
     elif model_name == "original":
         return Original()
     else:
@@ -155,7 +174,7 @@ def benchmark(cfg: DictConfig) -> None:
     # data.var_names = data.var["feature_name"]
 
     run_classification_example(data, ["geneformer", "scgpt", "original"], data_cfg, head_cfg, device=cfg["device"], alcs=cfg["integration"]["alcs"])
-    run_integration_example(data, ["geneformer", "scgpt"], data_cfg, integration_cfg, device=cfg["device"])
+    run_integration_example(data, ["geneformer", "scgpt", "scanorama"], data_cfg, integration_cfg, device=cfg["device"])
     LOGGER.info("Benchmarking done.")
 
 if __name__ == "__main__":
