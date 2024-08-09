@@ -35,5 +35,6 @@ setup(
         'tensorflow==2.17.0',
         'louvain==0.8.2',
         'pyensembl==2.3.13',
+        'datasets'
     ],  
 )
