@@ -33,8 +33,7 @@ setup(
         'hydra-core==1.3.2',
         'tensorflow==2.17.0',
         'louvain==0.8.2',
-        'pyensembl==2.3.13',
+        'pyensembl',
         'datasets==2.20.0',
-        'pyarrow==17.0.0',
     ],  
 )
