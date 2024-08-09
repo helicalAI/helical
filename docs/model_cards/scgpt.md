@@ -20,6 +20,13 @@
 
 ## Model Purpose
 
+**Technical usage:**
+- Tokenizing transcriptomes
+- Tokenizing conditions (i.e. meta-information associated with individual genes, like perturbation experiment alterations, which are indicated by perturbation tokens)
+- Pre-training
+- Fine-tuning 
+- Extracting and plotting cell embeddings
+
 **Broader research applications:**  
 - Cell type annotation 
 - Perturbation response prediction
@@ -36,7 +43,6 @@
 - Pre-trained on data from over 33 million human cells under non-disease conditions. This comprehensive dataset encompasses a wide range of cell types from 51 organs or tissues, and 441 studies
 
 **Preprocessing:**  
-- Standardized to remove low-quality cells and sequences
 - Normalization and scaling to ensure consistency across datasets
 - Value binning technique to convert all expression counts
 into relative values
@@ -55,7 +61,6 @@ into relative values
 ## Model Limitations
 
 **Known Limitations:**
-
 - The current pretraining does not inherently mitigate batch effects, and thus the
 model’s zero-shot performance could be constrained on datasets
 with substantial technical variation
@@ -71,7 +76,7 @@ diseased conditions
 and temporal data in the pretraining stage, enabling the model
 to learn causal relationships and infer how genes and cells respond
 to changes over time
--Development of techniques that
+- Development of techniques that
 allow the pretrained model to understand and adapt to different tasks
 and contexts in a zero-shot setting without the need for fine-tuning
 
