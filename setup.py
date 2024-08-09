@@ -14,7 +14,7 @@ setup(
         'pandas==2.2.2',
         'anndata==0.10.7',
         'numpy==1.26.4',
-        'scikit-learn==1.2.2',
+        'scikit-learn>=1.2.2',
         'scipy==1.13.1',
         'gitpython==3.1.43',
         'torch==2.3.0',
@@ -24,7 +24,6 @@ setup(
         'loompy==3.0.7',
         'scib==1.1.5',
         'scikit-misc==0.3.1',
-        'datasets==2.14.7',
         'torchtext==0.18.0',
         'azure-identity==1.16.0',
         'azure-storage-blob==12.19.1',
@@ -35,6 +34,6 @@ setup(
         'tensorflow==2.17.0',
         'louvain==0.8.2',
         'pyensembl==2.3.13',
-        'datasets'
+        'datasets==2.20.0',
     ],  
 )
