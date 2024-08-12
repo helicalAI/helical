@@ -3,7 +3,6 @@ name: Notebooks
 on:
   workflow_run:
     workflows: ["CI Pipeline"]
-    branches: [release]
     types:
       - completed
 
