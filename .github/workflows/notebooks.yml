@@ -1,0 +1,35 @@
+name: Notebooks
+
+on:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    branches: [release]
+    types:
+      - completed
+
+jobs:
+  notebooks:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.pull_request.base.ref == 'release'
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11.8
+
+      - name: Install dependencies
+        run: |
+            pip install -r requirements-dev.txt
+            
+      - name: Reduce datasets to speedup checks
+        run: |
+          sed -i 's/train\[:65%\]/train\[:5%\]/g' ./examples/notebooks/Cell-Type-Annotation.ipynb
+          sed -i 's/train\[70%:\]/train\[5%:7%\]/g' ./examples/notebooks/Cell-Type-Annotation.ipynb
+
+      - name: Run Notebooks
+        run: |
+          pytest --durations=0 --nbmake ./examples/notebooks/*.ipynb
