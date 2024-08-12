@@ -1,14 +1,12 @@
 name: Notebooks
 
 on:
-  workflow_run:
-    workflows: ["CI Pipeline"]
-    types:
-      - completed
+  pull_request:
+    branches:
+      - release
 
 jobs:
   notebooks:
-    if: github.event.workflow_run.conclusion == 'success' && github.event.pull_request.base.ref == 'release'
     runs-on: self-hosted
 
     steps:
