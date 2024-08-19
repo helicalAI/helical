@@ -63,39 +63,6 @@ def evaluate_integration(model_list: list[tuple[BaseModelProtocol, str]], adata:
         evaluations.update({model_name: evaluation})
     return evaluations
 
-def get_alcs_evaluations(evaluations_all: dict[str, dict[str, dict[str, float]]])-> dict[str, dict[str, float]]:
-    """
-    Calculates the ALCS coefficient as defined in the BENGAL paper.
-    The ALCS coefficient is then calculated as the difference in accuracy between the "original" model and the model being evaluated.
-    The "original" model is a model that does not return embeddings but the original adata.X.
-    It is assumed here, that the original model was used with a model head for classification and subsequent evaluation.
-    Same for the other models.
-    ALCS = Test_accuracy_original - Test_accuracy_model
-
-    Parameters
-    ----------
-    evaluations_all : dict[str, dict[str, dict[str, float]]]
-        The evaluations for each model based on the unseen test/eval data.
-    
-    Returns
-    ------- 
-    A dictionary containing the ALCS coefficient for each model.
-    """
-    for key, value in evaluations_all.items():
-        if key.startswith("Original"):
-            before = value["Accuracy"]
-            break  
-    
-    if not before:
-        raise ValueError("Original model not found in evaluations dictionary.")
-    
-    del evaluations_all[key]
-    alcs = {}
-    for name, evaluations in evaluations_all.items():
-        after = evaluations["Accuracy"]
-        alcs.update({name: {name: before - after}})
-    return alcs
-
 def evaluate_classification(models: list[Classifier], eval_anndata: AnnData, labels_column_name: str) -> dict[str, dict[str, float]]:
     """
     Evaluate the classification models using the evaluation dataset. 
