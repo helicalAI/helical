@@ -81,14 +81,19 @@ def get_alcs_evaluations(evaluations_all: dict[str, dict[str, dict[str, float]]]
     ------- 
     A dictionary containing the ALCS coefficient for each model.
     """
-    _, ref_values = next(iter(evaluations_all["original"].items()))
-    before = ref_values["Accuracy"]
-    del evaluations_all["original"]
+    for key, value in evaluations_all.items():
+        if key.startswith("Original"):
+            before = value["Accuracy"]
+            break  
+    
+    if not before:
+        raise ValueError("Original model not found in evaluations dictionary.")
+    
+    del evaluations_all[key]
     alcs = {}
     for name, evaluations in evaluations_all.items():
-        model_name, values = next(iter(evaluations.items()))
-        after = values["Accuracy"]
-        alcs.update({name: {model_name: before - after}})
+        after = evaluations["Accuracy"]
+        alcs.update({name: {name: before - after}})
     return alcs
 
 def evaluate_classification(models: list[Classifier], eval_anndata: AnnData, labels_column_name: str) -> dict[str, dict[str, float]]:
