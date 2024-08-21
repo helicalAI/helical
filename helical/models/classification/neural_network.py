@@ -1,5 +1,5 @@
 from numpy import ndarray
-from typing import Self
+from typing_extensions import Self
 from sklearn.preprocessing import LabelEncoder
 import numpy as np
 import tensorflow as tf
