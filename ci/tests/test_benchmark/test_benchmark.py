@@ -30,8 +30,7 @@ config = {
             "kBET_": False,  # kBET return nan sometimes need to examine
             "ilisi_": False,
             "clisi_": False
-        },
-        "alcs": False
+        }
     }
 }
 

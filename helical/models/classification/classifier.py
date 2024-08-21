@@ -5,7 +5,8 @@ import logging
 import numpy as np
 from numpy import ndarray
 from anndata import AnnData
-from typing import Protocol, runtime_checkable, Optional, Self, Union, Optional
+from typing import Protocol, runtime_checkable, Optional, Union, Optional
+from typing_extensions import Self
 
 @runtime_checkable
 class ClassificationModelProtocol(Protocol):
