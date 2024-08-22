@@ -1,0 +1,5 @@
+batch_size: 24
+emb_layer: -1
+emb_mode: "cell"
+device: "cuda"
+accelerator: False
