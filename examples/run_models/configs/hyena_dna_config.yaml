@@ -22,3 +22,4 @@ layer:
     "lr": 6e-4
     "wd": 0.0
     "lr_pos_emb": 0.0
+    "d_model": ???

@@ -881,9 +881,7 @@ class HyenaDNAModel(nn.Module):
 
         self.use_head = use_head
 
-        # check if layer (config) has d_model (HF code differs from main Safari code)
-        if 'd_model' not in layer:
-            layer['d_model'] = d_model
+        layer['d_model'] = d_model
 
         self.backbone = LMBackbone(
             d_model=d_model, n_layer=n_layer, d_inner=d_inner, vocab_size=vocab_size,
