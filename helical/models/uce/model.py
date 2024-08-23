@@ -116,12 +116,8 @@ class UCE(HelicalRNAModel):
                                                                         species=[species],
                                                                         embedding_model=embedding_model,
                                                                         embeddings_path=Path(files_config["protein_embeddings_dir"]))
-        
         # TODO: What about hv_genes? See orig.
-        if scipy.sparse.issparse(filtered_adata.X):
-            gene_expression = np.asarray(filtered_adata.X.todense())
-        else:
-            gene_expression = np.asarray(filtered_adata.X)
+        gene_expression = adata.X.toarray()
 
         name = "test"
         gene_expression_folder_path = "./"
