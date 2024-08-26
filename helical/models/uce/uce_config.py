@@ -9,7 +9,7 @@ class UCEConfig():
     ----------
     model_name : Literal["33l_8ep_1024t_1280", "4layer_model"], optional, default = "4layer_model"
         The model name
-    batch_size : int, optional, default = 5
+    batch_size : int, optional, default = 24
         The batch size
     pad_length : int, optional, default = 1536
         The padding length
@@ -49,7 +49,7 @@ class UCEConfig():
     """
     def __init__(self,
                  model_name: Literal["33l_8ep_1024t_1280", "4layer_model"] = "4layer_model",
-                 batch_size: int = 5,
+                 batch_size: int = 24,
                  pad_length: int = 1536,
                  pad_token_idx: int = 0,
                  chrom_token_left_idx: int = 1,
