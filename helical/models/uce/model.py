@@ -70,9 +70,8 @@ class UCE(HelicalRNAModel):
     def process_data(self, 
                      adata: AnnData, 
                      gene_names: str = "index",
-                     species: str = "human", 
-                     filter_genes_min_cell: int = None, 
-                     embedding_model: str = "ESM2" ) -> UCEDataset:
+                     filter_genes_min_cell: int = None
+                     ) -> UCEDataset:
         """Processes the data for the Universal Cell Embedding model
 
         Parameters 
@@ -84,12 +83,8 @@ class UCE(HelicalRNAModel):
             The name of the column in the AnnData object that contains the gene symbols.
             By default, the index of the AnnData object is used.
             If another column is specified, that column will be set as the index of the AnnData object.
-        species: str, optional, default = "human"
-            The species of the data.  Currently we support "human" and "macaca_fascicularis" but more embeddings will come soon.
         filter_genes_min_cell: int, default = None
             Filter threshold that defines how many times a gene should occur in all the cells.
-        embedding_model: str, optional, default = "ESM2"
-            The name of the gene embedding model. The current option is only ESM2.
 
         Returns
         -------
@@ -113,8 +108,8 @@ class UCE(HelicalRNAModel):
             # sc.pp.filter_cells(ad, min_genes=25)
         ##Filtering out the Expression Data That we do not have in the protein embeddings
         filtered_adata, species_to_all_gene_symbols = load_gene_embeddings_adata(adata=adata,
-                                                                        species=[species],
-                                                                        embedding_model=embedding_model,
+                                                                        species=[self.config["species"]],
+                                                                        embedding_model=self.config["gene_embedding_model"],
                                                                         embeddings_path=Path(files_config["protein_embeddings_dir"]))
         
         # TODO: What about hv_genes? See orig.
@@ -132,8 +127,8 @@ class UCE(HelicalRNAModel):
         num_genes = filtered_adata.X.shape[1]
         shapes_dict = {name: (num_cells, num_genes)}
 
-        pe_row_idxs = get_protein_embeddings_idxs(files_config["offset_pkl_path"], species, species_to_all_gene_symbols, filtered_adata)
-        dataset_chroms, dataset_start = get_positions(Path(files_config["spec_chrom_csv_path"]), species, filtered_adata)
+        pe_row_idxs = get_protein_embeddings_idxs(files_config["offset_pkl_path"], self.config["species"], species_to_all_gene_symbols, filtered_adata)
+        dataset_chroms, dataset_start = get_positions(Path(files_config["spec_chrom_csv_path"]), self.config["species"], filtered_adata)
 
         if not (len(dataset_chroms) == len(dataset_start) == num_genes == pe_row_idxs.shape[0]): 
             LOGGER.error(f'Invalid input dimensions for the UCEDataset! ' 
