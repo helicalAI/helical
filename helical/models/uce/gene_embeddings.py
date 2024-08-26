@@ -7,21 +7,24 @@ from typing import Dict, Tuple
 import torch
 from scanpy import AnnData
 import logging
+from helical.models.uce.uce_config import SPECIES_GENE_EMBEDDINGS
+
 logger = logging.getLogger(__name__)
 
-def get_gene_embedding_paths(embedding_path: Path):
-    return {
-        'ESM2': {
-            'human': embedding_path / 'Homo_sapiens.GRCh38.gene_symbol_to_embedding_ESM2.pt',
-            'mouse': embedding_path / 'Mus_musculus.GRCm39.gene_symbol_to_embedding_ESM2.pt',
-            'frog': embedding_path / 'Xenopus_tropicalis.Xenopus_tropicalis_v9.1.gene_symbol_to_embedding_ESM2.pt',
-            'zebrafish': embedding_path / 'Danio_rerio.GRCz11.gene_symbol_to_embedding_ESM2.pt',
-            "mouse_lemur": embedding_path / "Microcebus_murinus.Mmur_3.0.gene_symbol_to_embedding_ESM2.pt",
-            "pig": embedding_path / 'Sus_scrofa.Sscrofa11.1.gene_symbol_to_embedding_ESM2.pt',
-            "macaca_fascicularis": embedding_path / 'Macaca_fascicularis.Macaca_fascicularis_6.0.gene_symbol_to_embedding_ESM2.pt',
-            "macaca_mulatta": embedding_path / 'Macaca_mulatta.Mmul_10.gene_symbol_to_embedding_ESM2.pt',
-        }
-    }
+
+def get_gene_embedding_paths(embedding_path: Path) -> Dict[str, Dict[str, Path]]:
+    """
+    Get the paths to the gene embeddings for all species and models by prepending the embedding path to the file names.
+    
+    :param embedding_path: The path to the directory containing the gene embeddings.
+    :return: A dictionary mapping model names to dictionaries mapping species names to the paths of the gene embeddings.
+    """
+    res = {}
+    for model, species_dict in SPECIES_GENE_EMBEDDINGS.items():
+        res[model] = {}
+        for species, file in species_dict.items():
+                res[model][species] = embedding_path / file
+    return res
 
 #TODO Add new function to add embeddings
 # extra_species = pd.read_csv("./UCE/model_files/new_species_protein_embeddings.csv").set_index("species").to_dict()["path"]
