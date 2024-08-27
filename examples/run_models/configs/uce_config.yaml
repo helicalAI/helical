@@ -1,5 +1,7 @@
 model_name: "4layer_model"
 batch_size: 5
+species : "human"
+gene_embedding_model: "ESM2"
 pad_length: 1536
 pad_token_idx: 0
 chrom_token_left_idx: 1
