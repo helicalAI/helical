@@ -1,0 +1,15 @@
+pad_token: "<pad>"
+batch_size: 24
+fast_transformer: True
+nlayers: 12
+nheads: 8
+embsize: 512
+d_hid: 512
+dropout: 0.2
+n_layers_cls: 3
+mask_value: -1
+pad_value: -2
+world_size: 8
+accelerator: False
+device: "cpu"
+use_fast_transformer: False

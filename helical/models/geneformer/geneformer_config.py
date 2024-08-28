@@ -8,7 +8,7 @@ class GeneformerConfig():
     
     Parameters
     ----------
-    batch_size : int, optional, default = 5
+    batch_size : int, optional, default = 24
         The batch size
     emb_layer : int, optional, default = -1
         The embedding layer
@@ -27,7 +27,7 @@ class GeneformerConfig():
     """
     def __init__(
             self, 
-            batch_size: int = 5,
+            batch_size: int = 24,
             emb_layer: int = -1,
             emb_mode: str = "cell",
             device: Literal["cpu", "cuda"] = "cpu",
