@@ -32,4 +32,17 @@ class TestGeneformerModel:
         del self.data.var['ensembl_id']
         with pytest.raises(KeyError):
             self.geneformer.ensure_data_validity(self.data, "ensembl_id")
+    
+    @pytest.mark.parametrize("gene_symbols, raises_error",
+                             [
+                                (['ENSGSAMD11', 'ENSGPLEKHN1', 'ENSGHES4'], True),
+                                (['SAMD11', 'None', 'HES4'], True),
+                                (['SAMD11', 'PLEKHN1', 'HES4'], False),
+                             ]
+    )
+    def test_ensembl_data_is_caught(self, gene_symbols, raises_error):
+        self.data.var['gene_symbols'] = gene_symbols
+        if raises_error:
+            with pytest.raises(ValueError):
+                self.geneformer.process_data(self.data, "gene_symbols")
             
