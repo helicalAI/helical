@@ -65,4 +65,5 @@ jobs:
       
       - name: Execute benchmarking
         run: |
+          pip install scanorama
           python examples/run_benchmark.py
