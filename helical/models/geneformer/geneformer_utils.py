@@ -4,7 +4,7 @@ import json
 import pickle as pkl
 # imports
 import logging
-
+from sklearn.base import accuracy_score
 import torch
 from tqdm.auto import trange
 import re
@@ -221,3 +221,90 @@ def mean_nonpadding_embs(embs, original_lens, dim=1):
         masked_embs = embs.masked_fill(~mask, 0.0)
         mean_embs = masked_embs.sum(dim) / original_lens.float()
     return mean_embs
+
+# fine tune Geneformer for classification tasks
+def classification_fine_tuning(  
+    model,
+    filtered_input_data,
+    optimizer,
+    loss_function,
+    label,
+    epochs,
+    pad_token_id,
+    batch_size,
+    device,
+    lr_scheduler=None,
+    num_layers=0,
+    silent=False,
+):
+    model_input_size = get_model_input_size(model)
+    model.train()
+
+    frozen_layers = model.bert.encoder.layer[:num_layers]
+
+    for module in frozen_layers:
+        for param in module.parameters():
+            param.requires_grad = False
+
+    model.to(device)
+
+    # shuffle and split dataset
+    filtered_input_data = filtered_input_data.shuffle()
+    filtered_input_data = filtered_input_data.train_test_split(test_size=0.2)
+    total_batch_length = len(filtered_input_data["train"])
+
+    for j in range(epochs):
+        training_loop = trange(0, total_batch_length, batch_size, desc="Fine-Tuning", leave=(not silent))
+        for i in training_loop:
+            max_range = min(i + batch_size, total_batch_length)
+
+            minibatch = filtered_input_data["train"].select([i for i in range(i, max_range)])
+            max_len = int(max(minibatch["length"]))
+            minibatch.set_format(type="torch",device=device)
+
+            input_data_minibatch = minibatch["input_ids"]
+            input_data_minibatch = pad_tensor_list(
+                input_data_minibatch, max_len, pad_token_id, model_input_size
+            ).to(device)
+
+            outputs = model(input_ids=input_data_minibatch)
+            loss = loss_function(outputs.logits, minibatch[label])
+            loss.backward()
+            training_loop.set_postfix({"loss": loss.item()})
+            training_loop.set_description(f"Fine-Tuning: epoch {j+1}/{epochs}")
+            optimizer.step()
+            optimizer.zero_grad()
+
+            del outputs
+            del minibatch
+            del input_data_minibatch
+        if lr_scheduler is not None:
+            lr_scheduler.step()
+
+    # model.save_pretrained(save_directory)
+    # model.eval()
+    total_batch_length = len(filtered_input_data["test"])
+
+    testing_loop = trange(0, total_batch_length, batch_size, desc="Testing Fine-Tuning", leave=(not silent))
+    accuracy = 0
+    count = 0
+    for i in testing_loop:
+        max_range = min(i + batch_size, total_batch_length)
+
+        minibatch = filtered_input_data["train"].select([i for i in range(i, max_range)])
+        max_len = int(max(minibatch["length"]))
+        minibatch.set_format(type="torch",device=device)
+
+        input_data_minibatch = minibatch["input_ids"]
+        input_data_minibatch = pad_tensor_list(
+            input_data_minibatch, max_len, pad_token_id, model_input_size
+        ).to(device)
+
+        with torch.no_grad():
+            outputs = model(input_ids=input_data_minibatch)
+        accuracy += accuracy_score(minibatch[label].cpu(), torch.argmax(outputs.logits, dim=1).cpu())
+        count += 1.0
+        del outputs
+        del minibatch
+        del input_data_minibatch
+    print(f"Accuracy: {accuracy/count * 100:.4f}%")
