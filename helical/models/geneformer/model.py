@@ -13,6 +13,8 @@ from helical.services.mapping import map_gene_symbols_to_ensembl_ids
 from datasets import Dataset
 from typing import Optional
 from accelerate import Accelerator
+import tempfile
+import os 
 
 LOGGER = logging.getLogger(__name__)
 class Geneformer(HelicalRNAModel):
@@ -41,30 +43,33 @@ class Geneformer(HelicalRNAModel):
     Notes
     -----
     It has been published in this `Nature Paper <https://www.nature.com/articles/s41586-023-06139-9.epdf?sharing_token=u_5LUGVkd3A8zR-f73lU59RgN0jAjWel9jnR3ZoTv0N2UB4yyXENUK50s6uqjXH69sDxh4Z3J4plYCKlVME-W2WSuRiS96vx6t5ex2-krVDS46JkoVvAvJyWtYXIyj74pDWn_DutZq1oAlDaxfvBpUfSKDdBPJ8SKlTId8uT47M%3D>`_. 
+    A second updated version of the model has been published in https://www.biorxiv.org/content/10.1101/2024.08.16.608180v1.full.pdf
     We use the implementation from the `Geneformer <https://huggingface.co/ctheodoris/Geneformer/tree/main>`_ repository.
 
     """
     default_configurer = GeneformerConfig()
     def __init__(self, configurer: GeneformerConfig = default_configurer) -> None:
         super().__init__()
-        self.config = configurer
-
-        self.device = self.config.device
+        self.configurer = configurer
+        self.config = configurer.config
+        self.files_config = configurer.files_config
+        self.device = self.config['device']
 
         downloader = Downloader()
-        for file in self.config.list_of_files_to_download:
+        for file in configurer.list_of_files_to_download:
             downloader.download_via_name(file)
 
-        self.model =  BertForMaskedLM.from_pretrained(self.config.model_dir / self.config.model_name, output_hidden_states=True, output_attentions=False)
-        self.model.eval()#.to("cuda:0")
+        self.model =  BertForMaskedLM.from_pretrained(self.files_config['model_files_dir'], output_hidden_states=True, output_attentions=False)
+        self.model.eval()
         self.model = self.model.to(self.device)
 
-        self.layer_to_quant = quant_layers(self.model) + self.config.emb_layer
-        self.emb_mode = self.config.emb_mode
-        self.forward_batch_size = self.config.batch_size
+
+        self.layer_to_quant = quant_layers(self.model) + self.config['emb_layer']
+        self.emb_mode = self.config['emb_mode']
+        self.forward_batch_size = self.config['batch_size']
         
-        if self.config.accelerator:
-            self.accelerator = Accelerator(project_dir=self.config.model_dir)
+        if self.config['accelerator']:
+            self.accelerator = Accelerator(project_dir=configurer.model_dir)
             self.model = self.accelerator.prepare(self.model)
         else:
             self.accelerator = None
@@ -110,11 +115,6 @@ class Geneformer(HelicalRNAModel):
         """ 
         self.ensure_data_validity(adata, gene_names)
 
-        files_config = {
-            "gene_median_path": self.config.model_dir / "gene_median_dictionary.pkl",
-            "token_path": self.config.model_dir / "token_dictionary.pkl"
-        }
-
         # map gene symbols to ensemble ids if provided
         if gene_names != "ensembl_id":
             if (adata.var[gene_names].str.startswith("ENSG").all()) or (adata.var[gene_names].str.startswith("None").any()):
@@ -125,16 +125,28 @@ class Geneformer(HelicalRNAModel):
             adata = map_gene_symbols_to_ensembl_ids(adata, gene_names)
 
         # load token dictionary (Ensembl IDs:token)
-        with open(files_config["token_path"], "rb") as f:
+        with open(self.files_config["token_path"], "rb") as f:
             self.gene_token_dict = pickle.load(f)
             self.pad_token_id = self.gene_token_dict.get("<pad>")
 
         self.tk = TranscriptomeTokenizer(custom_attr_name_dict=custom_attr_name_dict,
                                          nproc=nproc, 
-                                         gene_median_file = files_config["gene_median_path"], 
-                                         token_dictionary_file = files_config["token_path"])
+                                         model_input_size=self.config["input_size"],
+                                         special_token=self.config["special_token"],
+                                         gene_median_file = self.files_config["gene_median_path"], 
+                                         token_dictionary_file = self.files_config["token_path"],
+                                         gene_mapping_file = self.files_config["ensembl_dict_path"],
+                                        )
+        # Pass the path to the ann_data file instead of passing the anndata object
+        with tempfile.NamedTemporaryFile(suffix='.h5ad', delete=False) as tmp:
+            adata.write(tmp.name)
+            tmp_path = tmp.name
+        try:
+            tokenized_cells, cell_metadata = self.tk.tokenize_anndata(tmp_path)
+        finally:
+            os.unlink(tmp_path) 
 
-        tokenized_cells, cell_metadata =  self.tk.tokenize_anndata(adata)
+        # tokenized_cells, cell_metadata =  self.tk.tokenize_anndata(adata)
         tokenized_dataset = self.tk.create_dataset(tokenized_cells, cell_metadata, use_generator=False)
         
         if output_path:
@@ -163,6 +175,7 @@ class Geneformer(HelicalRNAModel):
             self.layer_to_quant,
             self.pad_token_id,
             self.forward_batch_size,
+            self.gene_token_dict,
             self.device
         ).cpu().detach().numpy()
 
