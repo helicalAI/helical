@@ -5,7 +5,7 @@ import numpy as np
 from anndata import AnnData
 from helical.services.downloader import Downloader
 import pickle
-from transformers import BertForMaskedLM
+from transformers import BertForMaskedLM, BertForSequenceClassification
 from helical.models.geneformer.geneformer_utils import get_embs,quant_layers
 from helical.models.geneformer.geneformer_tokenizer import TranscriptomeTokenizer
 from helical.models.geneformer.geneformer_config import GeneformerConfig
@@ -186,3 +186,6 @@ class Geneformer(HelicalRNAModel):
             If the data is missing column names.
         """
         self.ensure_rna_data_validity(adata, gene_names)
+
+    def fine_tune_classifier() -> BertForSequenceClassification:
+        pass

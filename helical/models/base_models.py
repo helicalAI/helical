@@ -6,6 +6,7 @@ import logging
 from typing import Protocol, runtime_checkable
 from datasets import Dataset
 from numpy import ndarray
+from transformers import BertForSequenceClassification
 
 LOGGER = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ class BaseModelProtocol(Protocol):
         ...
     def get_embeddings(self, dataset: Dataset) -> ndarray:
         ...
-    def fine_tune_classifier(self, dataset: Dataset) -> None:
+    def fine_tune_classifier(self, dataset: Dataset) -> BertForSequenceClassification:
         ...
         
 class HelicalBaseFoundationModel(ABC, Logger):
@@ -46,7 +47,7 @@ class HelicalBaseFoundationModel(ABC, Logger):
     @abstractmethod
     def get_embeddings():
         pass
-    
+
     @abstractmethod
     def fine_tune_classifier():
         pass
