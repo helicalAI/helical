@@ -3,6 +3,7 @@ import anndata as ad
 import hydra
 from omegaconf import DictConfig
 
+
 @hydra.main(version_base=None, config_path="configs", config_name="geneformer_config")
 def run(cfg: DictConfig):
     geneformer_config = GeneformerConfig(**cfg)
@@ -13,6 +14,7 @@ def run(cfg: DictConfig):
     embeddings = geneformer.get_embeddings(dataset)
 
     print(embeddings.shape)
+
 
 
 if __name__ == "__main__":
