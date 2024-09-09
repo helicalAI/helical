@@ -51,6 +51,10 @@ jobs:
         run: |
           python examples/run_models/run_geneformer.py
 
+      - name: Execute Geneformer
+        run: |
+          python examples/run_models/run_geneformer.py --config-name geneformer_config_v2
+
       - name: Execute scGPT
         run: |
           python examples/run_models/run_scgpt.py
