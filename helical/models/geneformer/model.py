@@ -5,8 +5,10 @@ import numpy as np
 from anndata import AnnData
 from helical.services.downloader import Downloader
 import pickle
-from transformers import BertForMaskedLM, BertForSequenceClassification
-from helical.models.geneformer.geneformer_utils import get_embs,quant_layers
+from torch import optim
+import torch.nn.modules.loss as loss
+from transformers import BertForMaskedLM, BertForSequenceClassification, get_scheduler
+from helical.models.geneformer.geneformer_utils import get_embs,quant_layers,classification_fine_tuning
 from helical.models.geneformer.geneformer_tokenizer import TranscriptomeTokenizer
 from helical.models.geneformer.geneformer_config import GeneformerConfig
 from helical.services.mapping import map_gene_symbols_to_ensembl_ids
@@ -168,7 +170,6 @@ class Geneformer(HelicalRNAModel):
 
         return embeddings
 
-
     def ensure_data_validity(self, adata: AnnData, gene_names: str) -> None:
         """Ensure that the data is eligible for processing by the Geneformer model. This checks 
         if the data contains the gene_names, and sets the total_counts column in adata.obs.
@@ -187,5 +188,28 @@ class Geneformer(HelicalRNAModel):
         """
         self.ensure_rna_data_validity(adata, gene_names)
 
-    def fine_tune_classifier() -> BertForSequenceClassification:
-        pass
+    def fine_tune_classifier(
+            self, 
+            dataset: Dataset, 
+            optimizer: optim = optim.CrossEntropyLoss(), 
+            loss_function: loss = loss.CrossEntropyLoss(), 
+            label: str = "cell_types", 
+            epochs: int = 10,
+            freeze_layers: int = 2,
+            lr_scheduler: Optional[get_scheduler] = None) -> BertForSequenceClassification:
+
+        trained_model = classification_fine_tuning(
+            self.model,
+            dataset,
+            optimizer,
+            loss_function,
+            label,
+            epochs,
+            self.pad_token_id,
+            self.config.batch_size,
+            self.device,
+            lr_scheduler,
+            freeze_layers,
+        )
+
+        return trained_model

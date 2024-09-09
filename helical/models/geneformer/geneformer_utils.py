@@ -233,8 +233,8 @@ def classification_fine_tuning(
     pad_token_id,
     batch_size,
     device,
-    lr_scheduler=None,
-    num_layers=0,
+    lr_scheduler,
+    num_layers,
     silent=False,
 ):
     model_input_size = get_model_input_size(model)
