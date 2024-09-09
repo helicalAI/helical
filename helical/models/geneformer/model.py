@@ -19,17 +19,26 @@ import os
 LOGGER = logging.getLogger(__name__)
 class Geneformer(HelicalRNAModel):
     """Geneformer Model. 
-    The Geneformer Model is a transformer-based model that can be used to extract gene embeddings from single-cell RNA-seq data. 
+    The Geneformer Model is a transformer-based model that can be used to extract gene embeddings from single-cell RNA-seq data. Both versions are made available through this interface.
+    For a detailed explanation of the difference between both versions, please refer to the model card, here: https://helical.readthedocs.io/en/latest/docs/Geneformer.html
 
     Example
     -------
-    >>> from helical.models import Geneformer,GeneformerConfig
+    >>> from helical.models import Geneformer, GeneformerConfig
     >>> import anndata as ad
-    >>> geneformer_config=GeneformerConfig(batch_size=10)
-    >>> geneformer = Geneformer(configurer=geneformer_config)
+    >>> 
+    >>> # For Version 1.0
+    >>> geneformer_config_v1 = GeneformerConfig(model_name="gf-12L-30M-i2048", batch_size=10)
+    >>> geneformer_v1 = Geneformer(configurer=geneformer_config_v1)
+    >>> 
+    >>> # For Version 2.0
+    >>> geneformer_config_v2 = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
+    >>> geneformer_v2 = Geneformer(configurer=geneformer_config_v2)
+    >>> 
+    >>> # Example usage (same for both versions)
     >>> ann_data = ad.read_h5ad("./data/10k_pbmcs_proc.h5ad")
-    >>> dataset = geneformer.process_data(ann_data[:100])
-    >>> embeddings = geneformer.get_embeddings(dataset)
+    >>> dataset = geneformer_v2.process_data(ann_data[:100])
+    >>> embeddings = geneformer_v2.get_embeddings(dataset)
 
     Parameters
     ----------
@@ -42,8 +51,8 @@ class Geneformer(HelicalRNAModel):
 
     Notes
     -----
-    It has been published in this `Nature Paper <https://www.nature.com/articles/s41586-023-06139-9.epdf?sharing_token=u_5LUGVkd3A8zR-f73lU59RgN0jAjWel9jnR3ZoTv0N2UB4yyXENUK50s6uqjXH69sDxh4Z3J4plYCKlVME-W2WSuRiS96vx6t5ex2-krVDS46JkoVvAvJyWtYXIyj74pDWn_DutZq1oAlDaxfvBpUfSKDdBPJ8SKlTId8uT47M%3D>`_. 
-    A second updated version of the model has been published in https://www.biorxiv.org/content/10.1101/2024.08.16.608180v1.full.pdf
+    The first version of the model is published in this `Nature Paper <https://www.nature.com/articles/s41586-023-06139-9.epdf?sharing_token=u_5LUGVkd3A8zR-f73lU59RgN0jAjWel9jnR3ZoTv0N2UB4yyXENUK50s6uqjXH69sDxh4Z3J4plYCKlVME-W2WSuRiS96vx6t5ex2-krVDS46JkoVvAvJyWtYXIyj74pDWn_DutZq1oAlDaxfvBpUfSKDdBPJ8SKlTId8uT47M%3D>`_. 
+    The second version of the model is available at https://www.biorxiv.org/content/10.1101/2024.08.16.608180v1.full.pdf
     We use the implementation from the `Geneformer <https://huggingface.co/ctheodoris/Geneformer/tree/main>`_ repository.
 
     """

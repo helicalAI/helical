@@ -2,9 +2,33 @@
 
 ## Model Details
 
-**Model Name:** Geneformer  \
-**Model Version:** 1.0  \
-**Model Description:** Geneformer is a context-aware, attention-based deep learning model pretrained on a large-scale corpus of approximately 30 million single-cell transcriptomes. It is designed to enable context-specific predictions in settings with limited data in network biology. The model performs various tasks such as gene network mapping, disease modeling, and therapeutic target identification. 
+**Model Name:** Geneformer  
+**Model Versions:** 1.0 and 2.0  
+**Model Description:** Geneformer is a context-aware, attention-based deep learning model pretrained on a large-scale corpus of single-cell transcriptomes. It is designed to enable context-specific predictions in settings with limited data in network biology. The model performs various downstream tasks such as gene network mapping, disease modeling, and therapeutic target identification.
+
+## Model Versions
+
+Geneformer has two main versions:
+
+**Version 1.0:**
+- Pretrained on approximately 30 million single-cell transcriptomes
+- Input size of 2048 genes per cell
+- Focused on single-task learning
+
+**Version 2.0:**
+- Pretrained on Genecorpus-103M, comprising ~103 million human single-cell transcriptomes
+- Initial self-supervised pretraining with ~95 million cells, excluding cells with high mutational burdens
+- Expanded input/context size of 4096 genes per cell
+- Employs multi-task learning to jointly learn cell types, tissues, disease states, and developmental stages
+- Includes a cancer-tuned model variant using domain-specific continual learning
+- Supports model quantization for resource-efficient fine-tuning and inference
+
+Key improvements in v2.0:
+- Larger and more diverse pretraining corpus
+- Increased model parameters and expanded input size
+- Multi-task learning for context-specific representations of gene network dynamics (use of <cls> and <eos> embedding tokens to that effect)
+- Improved zero-shot predictions in diverse downstream tasks
+- Cancer-specific tuning for tumor microenvironment analysis
 
 ## Model Developers
 
@@ -42,12 +66,15 @@
 - Publicly available single-cell transcriptomic datasets (e.g., NCBI Gene Expression Omnibus, Human Cell Atlas, EMBL-EBI Single Cell Expression Atlas)
 
 **Data Volume:**  
-- 29.9 million single-cell transcriptomes across a wide range of tissues
+- Version 1.0: 29.9 million single-cell transcriptomes across a wide range of tissues
+- Version 2.0: ~103 million human single-cell transcriptomes (Genecorpus-103M), including:
+  - ~95 million cells for initial self-supervised pretraining
+  - ~14 million cells from cancer studies for domain-specific continual learning
 
 **Preprocessing:**  
 - Exclusion of cells with high mutational burdens
 - Metrics established for scalable filtering to exclude possible doublets and/or damaged cells
-- Rank value encoding of transcriptomes where genes are ranked by scaled expression within each cell.
+- Rank value encoding of transcriptomes where genes are ranked by scaled expression within each cell
 
 ## Model Performance
 
@@ -104,13 +131,24 @@
 from helical.models.geneformer.model import Geneformer,GeneformerConfig
 import anndata as ad
 
-model_config = GeneformerConfig(batch_size = 10)
-geneformer = Geneformer(model_config = model_config)
-ann_data = ad.read_h5ad("dataset.h5ad")
-dataset = geneformer.process_data(ann_data)
-embeddings = geneformer.get_embeddings(dataset)
+# For Version 1.0
+model_config_v1 = GeneformerConfig(model_name="gf-12L-30M-i2048", batch_size=10)
+geneformer_v1 = Geneformer(model_config=model_config_v1)
 
+#For Version 2.0
+model_config_v2 = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
+geneformer_v2 = Geneformer(model_config=model_config_v2)
+
+# For Version 2.0 (Cancer-tuned)
+model_config_v2_cancer = GeneformerConfig(model_name="gf-12L-95M-i4096-CLcancer", batch_size=10)
+geneformer_v2_cancer = Geneformer(model_config=model_config_v2_cancer)
+
+# Example usage (same for all versions)
+ann_data = ad.read_h5ad("dataset.h5ad")
+dataset = geneformer_v2.process_data(ann_data)
+embeddings = geneformer_v2.get_embeddings(dataset)
 print(embeddings.shape)
+
 
 ```
 
