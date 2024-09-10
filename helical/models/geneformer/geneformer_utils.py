@@ -4,13 +4,14 @@ import json
 import pickle as pkl
 # imports
 import logging
+import numpy as np
 from sklearn.metrics import accuracy_score
 import torch
 from tqdm.auto import trange
 import re
 import torch
 from transformers import (
-    BertForMaskedLM,
+    BertForMaskedLM,BertForSequenceClassification,get_scheduler
 )
 
 
@@ -223,22 +224,38 @@ def mean_nonpadding_embs(embs, original_lens, dim=1):
     return mean_embs
 
 # fine tune Geneformer for classification tasks
-def classification_fine_tuning(  
-    model,
+def classification_fine_tuning(
+    model_dir,
     train_input_data,
     validation_input_data,
     optimizer,
+    optimizer_params,
     loss_function,
     label,
     epochs,
     pad_token_id,
     batch_size,
     device,
-    lr_scheduler,
+    lr_scheduler_params,
     num_layers,
     silent=False,
 ):
+    model = BertForSequenceClassification.from_pretrained(
+        model_dir,
+        num_labels=np.unique(train_input_data[label]).shape[0],
+        output_hidden_states=True,
+        output_attentions=False
+    )
+
     model_input_size = get_model_input_size(model)
+
+    #initialise optimizer
+    optimizer = optimizer(model.parameters(), **optimizer_params)
+
+    #initialise lr_scheduler
+    lr_scheduler = None
+    if lr_scheduler_params is not None: 
+        lr_scheduler = get_scheduler(optimizer=optimizer, **lr_scheduler_params)
 
     # put model into train mode
     model.train()

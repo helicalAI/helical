@@ -190,52 +190,55 @@ class Geneformer(HelicalRNAModel):
 
     def fine_tune_classifier(
             self,
-            model: BertForSequenceClassification,
             train_dataset: Dataset, 
-            optimizer: optim, 
+            optimizer: optim = optim.AdamW,
+            optimizer_params: dict = {'lr': 0.0001}, 
             loss_function: loss = loss.CrossEntropyLoss(), 
             label: str = "cell_types", 
-            epochs: int = 10,
+            epochs: int = 1,
             freeze_layers: int = 0,
             validation_dataset: Optional[Dataset] = None,
-            lr_scheduler: Optional[get_scheduler] = None) -> BertForSequenceClassification:
+            lr_scheduler_params: Optional[dict] = None) -> BertForSequenceClassification:
         """Fine-tunes the Geneformer model for classification tasks. 
 
         Parameters
         ----------
 
-        model : BertForSequenceClassification
-            The model to be fine-tuned.
         train_dataset : Dataset
-            A helical processed dataset for fine-tuning.
+            A helical processed dataset for fine-tuning
         optimizer : torch.optim e.g. optim.AdamW
-            The optimizer to be used for training
-        loss_function : torch.nn.modules.loss e.g. torch.nn.modules.loss.CrossEntropyLoss(). Default is cross entropy loss.
-            The loss function to be used
+            The optimizer to be used for training.
+        optimizer_params : dict
+            The optimizer parameters to be used for the optimizer specified. This list should NOT include model parameters.
+            e.g. optimizer_params = {'lr': 0.0001}
+        loss_function : torch.nn.modules.loss e.g. torch.nn.modules.loss.CrossEntropyLoss(). Default is cross entropy loss
+            The loss function to be used.
         label : str, optional, default = "cell_types"
             The column in the dataset containing the training labels. These should be stored as unique per class integers.
         epochs : int, optional, default = 10
             The number of epochs to train the model
         freeze_layers : int, optional, default = 0
-            The number of layers to freeze
-        validation_dataset : Dataset. Default is None.
+            The number of layers to freeze.
+        validation_dataset : Dataset. Default is None
             A helical processed dataset for per epoch validation.
-        lr_scheduler : get_scheduler from tranformers. Default is None.
-            The learning rate scheduler to be used. If no scheduler is provided, no scheduler is used.
+        lr_scheduler_params : dict, default = None
+            The learning rate scheduler parameters for the transformers get_scheduler method. The optimizer will be taken from the optimizer input and should not be included in the learning scheduler parameters. If None, no scheduler will be used.
+            e.g. lr_scheduler_params = { 'name': 'linear', 'num_warmup_steps': 0, 'num_training_steps': 5 }
         """
 
         trained_model = classification_fine_tuning(
-            model,
+            self.config.model_dir / self.config.model_name,
             train_dataset,
             validation_dataset,
             optimizer,
+            optimizer_params,
             loss_function,
             label,
             epochs,
             self.pad_token_id,
             self.config.batch_size,
             self.device,
-            lr_scheduler,
+            lr_scheduler_params,
             freeze_layers
         )
 

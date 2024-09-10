@@ -3,6 +3,7 @@ from helical.models.geneformer.model import Geneformer
 from anndata import AnnData
 import numpy as np
 from helical.models.geneformer.geneformer_tokenizer import TranscriptomeTokenizer
+from transformers import BertForSequenceClassification
 from pathlib import Path
 from helical.constants.paths import CACHE_DIR_HELICAL
 
@@ -15,6 +16,7 @@ class TestGeneformerModel:
     data.obs["cell_type"] = ["CD4 T cells"]
     data.X = [[1, 2, 5]]
     tokenized_dataset = geneformer.process_data(data, gene_names='gene_symbols')
+    tokenized_dataset = tokenized_dataset.add_column('cell_types', [0])
 
     def test_process_data_mapping_to_ensemble_ids(self):
         assert self.data.var['ensembl_id'][0] == 'ENSG00000187634'
@@ -46,8 +48,10 @@ class TestGeneformerModel:
             with pytest.raises(ValueError):
                 self.geneformer.process_data(self.data, "gene_symbols")
 
-    # test fine_tune_classifier method in for Geneformer class
     def test_fine_tune_classifier(self):
-        #TODO: Implement this test
         assert self.geneformer.fine_tune_classifier is not None
+        fine_tuned_model = self.geneformer.fine_tune_classifier(self.tokenized_dataset)
+        assert fine_tuned_model is not None
+        assert fine_tuned_model is not self.geneformer.model
+        assert isinstance(fine_tuned_model, BertForSequenceClassification)
             
