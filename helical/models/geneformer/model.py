@@ -38,20 +38,21 @@ class Geneformer(HelicalRNAModel):
     >>> from helical.models import Geneformer, GeneformerConfig
     >>> import anndata as ad
     >>> 
-    >>> # For Version 1.0
-    >>> geneformer_config_v1 = GeneformerConfig(model_name="gf-12L-30M-i2048", batch_size=10)
-    >>> geneformer_v1 = Geneformer(configurer=geneformer_config_v1)
-    >>> 
     >>> # For Version 2.0
     >>> geneformer_config_v2 = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
     >>> geneformer_v2 = Geneformer(configurer=geneformer_config_v2)
+    >>>
+    >>> # You can use other model names in the config, such as:
+    >>> # "gf-12L-30M-i2048" (Version 1.0)
+    >>> # "gf-12L-95M-i4096-CLcancer" (Version 2.0, Cancer-tuned)
+    >>> # "gf-20L-95M-i4096" (Version 2.0, 20-layer model)
     >>> 
     >>> # Example usage for base pretrained model (for general transcriptomic analysis, v1 and v2)
     >>> ann_data = ad.read_h5ad("general_dataset.h5ad")
     >>> dataset = geneformer_v2.process_data(ann_data)
     >>> embeddings = geneformer_v2.get_embeddings(dataset)
     >>> print("Base model embeddings shape:", embeddings.shape)
-
+    >>>
     >>> # Example usage for cancer-tuned model (for cancer-specific analysis)
     >>> cancer_ann_data = ad.read_h5ad("cancer_dataset.h5ad")
     >>> cancer_dataset = geneformer_v2_cancer.process_data(cancer_ann_data)

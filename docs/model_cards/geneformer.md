@@ -8,6 +8,9 @@
 
 In version 2.0, Geneformer introduces a cancer-tuned model variant using domain-specific continual learning. This variant was developed to address the exclusion of malignant cells from the initial pretraining due to their propensity for gain-of-function mutations. The cancer-tuned model underwent additional training with ~14 million cells from cancer studies, including matched healthy controls, to provide contrasting context. This approach allows the model to better understand gene network rewiring in malignancy while maintaining its general knowledge of gene network dynamics.
 
+The first version of the model is published in this <a href="https://www.nature.com/articles/s41586-023-06139-9.epdf?sharing_token=u_5LUGVkd3A8zR-f73lU59RgN0jAjWel9jnR3ZoTv0N2UB4yyXENUK50s6uqjXH69sDxh4Z3J4plYCKlVME-W2WSuRiS96vx6t5ex2-krVDS46JkoVvAvJyWtYXIyj74pDWn_DutZq1oAlDaxfvBpUfSKDdBPJ8SKlTId8uT47M%3D">Nature Paper</a>. 
+The second version of the model is available at <a href="https://pubmed.ncbi.nlm.nih.gov/39229018/">NIH</a>.
+
 When to use each model:
 - Base pretrained model: Use for general transcriptomic analysis tasks and non-cancer-specific applications.
 - Cancer-tuned model: Use for cancer-specific analyses, tumor microenvironment studies, and predicting factors that could shift cells to tumor-restricting or immune-activating states.
@@ -98,6 +101,8 @@ Key improvements in v2.0:
 
 **Data Sources:**  
 - Publicly available single-cell transcriptomic datasets (e.g., NCBI Gene Expression Omnibus, Human Cell Atlas, EMBL-EBI Single Cell Expression Atlas)
+- GeneCorpus-30M is available on the [Hugging Face Dataset Hub](https://huggingface.co/datasets/ctheodoris/Genecorpus-30M)
+- Genecorpus-103M will be available on Hugging Face Dataset Hub. (coming soon)
 
 **Data Volume:**  
 - Version 1.0: 29.9 million single-cell transcriptomes across a wide range of tissues
@@ -165,17 +170,14 @@ Key improvements in v2.0:
 from helical.models.geneformer.model import Geneformer,GeneformerConfig
 import anndata as ad
 
-# For Version 1.0
-model_config_v1 = GeneformerConfig(model_name="gf-12L-30M-i2048", batch_size=10)
-geneformer_v1 = Geneformer(model_config=model_config_v1)
+# Example configuration
+model_config = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
+geneformer = Geneformer(model_config=model_config)
 
-#For Version 2.0
-model_config_v2 = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
-geneformer_v2 = Geneformer(model_config=model_config_v2)
-
-# For Version 2.0 (Cancer-tuned)
-model_config_v2_cancer = GeneformerConfig(model_name="gf-12L-95M-i4096-CLcancer", batch_size=10)
-geneformer_v2_cancer = Geneformer(model_config=model_config_v2_cancer)
+# You can use other model names in the config, such as:
+# "gf-12L-30M-i2048" (Version 1.0)
+# "gf-12L-95M-i4096-CLcancer" (Version 2.0, Cancer-tuned)
+# "gf-20L-95M-i4096" (Version 2.0, 20-layer model)
 
 # Example usage for base pretrained model (for general transcriptomic analysis, v1 and v2)
 ann_data = ad.read_h5ad("general_dataset.h5ad")
@@ -200,6 +202,12 @@ christina.theodoris@gladstone.ucsf.edu
 
 Theodoris, C. V., Xiao, L., Chopra, A., Chaffin, M. D., Al Sayed, Z. R., Hill, M. C., Mantineo, H., Brydon, E. M., Zeng, Z., Liu, X. S., & Ellinor, P. T. (2023). Transfer learning enables predictions in network biology. Nature, 618, 616-624. https://doi.org/10.1038/s41586-023-06139-9
 
+ 
+H Chen*, M S Venkatesh*, J Gomez Ortega, S V Mahesh, T Nandi, R Madduri, K Pelka†, C V Theodoris†#. Quantized multi-task learning for context-specific representations of gene network dynamics. bioRxiv, 19 Aug 2024. (*co-first authors, †co-senior authors, #corresponding author). https://doi.org/10.1101/2024.08.16.608180
+
+
 ## Author contributions 
 
 C.V.T. conceived of the work, developed Geneformer, assembled Genecorpus-30M and designed and performed computational analyses. L.X., A.C., Z.R.A.S., M.C.H., H.M. and E.M.B. performed experimental validation in engineered cardiac microtissues. M.D.C. performed preprocessing, cell annotation and differential expression analysis of the cardiomyopathy dataset. Z.Z. provided data from the TISCH database for inclusion in Genecorpus-30M. X.S.L. and P.T.E. designed analyses and supervised the work. C.V.T., X.S.L. and P.T.E. 
+
+HC and MSV developed the models and designed/performed computational analyses. HC assembled the pretraining corpuses and developed the continual learning method. MSV developed the multi-task learning method and quantization strategy. JGO contributed to model pretraining and corpus assembly. 
