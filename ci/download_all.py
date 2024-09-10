@@ -1,6 +1,7 @@
 from helical.services.downloader import Downloader
 from pathlib import Path
-
+import logging
+LOGGER = logging.getLogger(__name__)
 
 def download_geneformer_models():
     downloader = Downloader()
@@ -44,7 +45,7 @@ def download_geneformer_models():
             for file in model_files:
                 downloader.download_via_name(file)
     
-    print("All Geneformer models and files have been downloaded.")
+    LOGGER.info("All Geneformer models and files have been downloaded.")
 
 def main():
     downloader = Downloader()
@@ -60,11 +61,6 @@ def main():
     downloader.download_via_name("scgpt/scGPT_CP/vocab.json")
     downloader.download_via_name("scgpt/scGPT_CP/best_model.pt")
 
-    # downloader.download_via_name("geneformer/gene_median_dictionary.pkl")
-    # downloader.download_via_name("geneformer/token_dictionary.pkl")
-    # downloader.download_via_name("geneformer/geneformer-12L-30M/config.json")
-    # downloader.download_via_name("geneformer/geneformer-12L-30M/pytorch_model.bin")
-    # downloader.download_via_name("geneformer/geneformer-12L-30M/training_args.bin")
     download_geneformer_models()
 
     downloader.download_via_name("hyena_dna/hyenadna-tiny-1k-seqlen.ckpt")
