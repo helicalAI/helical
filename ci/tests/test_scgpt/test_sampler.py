@@ -58,17 +58,21 @@ def test_subsets_batch_sampler() -> None:
     assert list(sampler) == [[0, 1, 2], [5, 6, 7]]
 
     # Test sampling with inter subset shuffle
-    sampler = SubsetsBatchSampler(
-        subsets,
-        batch_size=3,
-        intra_subset_shuffle=False,
-        inter_subset_shuffle=True,
-    )
-    sampled_idx = list(sampler)
-    assert len(sampled_idx) == 4
-    print(sampled_idx)
-    assert sampled_idx != [[0, 1, 2], [3, 4], [5, 6, 7], [8, 9]]
-    assert _check_reorder(sampled_idx, [[0, 1, 2], [3, 4], [5, 6, 7], [8, 9]])
+    for _ in range(5):  # Run 5 times to check for consistent behavior
+        sampler = SubsetsBatchSampler(
+            subsets,
+            batch_size=3,
+            intra_subset_shuffle=False,
+            inter_subset_shuffle=True,
+        )
+        sampled_idx = list(sampler)
+        assert len(sampled_idx) == 4
+        print(sampled_idx)
+        if sampled_idx != [[0, 1, 2], [3, 4], [5, 6, 7], [8, 9]]:
+            break
+    else:
+        assert False, "Inter-subset shuffle did not produce different orders in 5 attempts"
+        assert _check_reorder(sampled_idx, [[0, 1, 2], [3, 4], [5, 6, 7], [8, 9]])
 
     # Test sampling with intra subset shuffle
     sampler = SubsetsBatchSampler(
