@@ -6,6 +6,13 @@
 **Model Versions:** 1.0 and 2.0  
 **Model Description:** Geneformer is a context-aware, attention-based deep learning model pretrained on a large-scale corpus of single-cell transcriptomes. It is designed to enable context-specific predictions in settings with limited data in network biology. The model performs various downstream tasks such as gene network mapping, disease modeling, and therapeutic target identification.
 
+In version 2.0, Geneformer introduces a cancer-tuned model variant using domain-specific continual learning. This variant was developed to address the exclusion of malignant cells from the initial pretraining due to their propensity for gain-of-function mutations. The cancer-tuned model underwent additional training with ~14 million cells from cancer studies, including matched healthy controls, to provide contrasting context. This approach allows the model to better understand gene network rewiring in malignancy while maintaining its general knowledge of gene network dynamics.
+
+When to use each model:
+- Base pretrained model: Use for general transcriptomic analysis tasks and non-cancer-specific applications.
+- Cancer-tuned model: Use for cancer-specific analyses, tumor microenvironment studies, and predicting factors that could shift cells to tumor-restricting or immune-activating states.
+
+
 ## Model Versions
 
 Geneformer has two main versions:
@@ -29,6 +36,33 @@ Key improvements in v2.0:
 - Multi-task learning for context-specific representations of gene network dynamics (use of <cls> and <eos> embedding tokens to that effect)
 - Improved zero-shot predictions in diverse downstream tasks
 - Cancer-specific tuning for tumor microenvironment analysis
+
+## Available Models for each Version
+
+### Version 1.0 (30M dataset)
+- **gf-6L-30M-i2048**
+  - 6 layers
+  - 2048 input size
+  - Trained on ~30 million cells
+- **gf-12L-30M-i2048**
+  - 12 layers
+  - 2048 input size
+  - Trained on ~30 million cells
+
+### Version 2.0 (95M dataset)
+- **gf-12L-95M-i4096**
+  - 12 layers
+  - 4096 input size
+  - Trained on ~95 million cells
+- **gf-20L-95M-i4096**
+  - 20 layers
+  - 4096 input size
+  - Trained on ~95 million cells
+- **gf-12L-95M-i4096-CLcancer**
+  - 12 layers
+  - 4096 input size
+  - Initially trained on ~95 million cells
+  - Further tuned on ~14 million cancer cells
 
 ## Model Developers
 
@@ -143,11 +177,17 @@ geneformer_v2 = Geneformer(model_config=model_config_v2)
 model_config_v2_cancer = GeneformerConfig(model_name="gf-12L-95M-i4096-CLcancer", batch_size=10)
 geneformer_v2_cancer = Geneformer(model_config=model_config_v2_cancer)
 
-# Example usage (same for all versions)
-ann_data = ad.read_h5ad("dataset.h5ad")
+# Example usage for base pretrained model (for general transcriptomic analysis, v1 and v2)
+ann_data = ad.read_h5ad("general_dataset.h5ad")
 dataset = geneformer_v2.process_data(ann_data)
 embeddings = geneformer_v2.get_embeddings(dataset)
-print(embeddings.shape)
+print("Base model embeddings shape:", embeddings.shape)
+
+# Example usage for cancer-tuned model (for cancer-specific analysis)
+cancer_ann_data = ad.read_h5ad("cancer_dataset.h5ad")
+cancer_dataset = geneformer_v2_cancer.process_data(cancer_ann_data)
+cancer_embeddings = geneformer_v2_cancer.get_embeddings(cancer_dataset)
+print("Cancer-tuned model embeddings shape:", cancer_embeddings.shape)
 
 
 ```

@@ -20,7 +20,18 @@ LOGGER = logging.getLogger(__name__)
 class Geneformer(HelicalRNAModel):
     """Geneformer Model. 
     The Geneformer Model is a transformer-based model that can be used to extract gene embeddings from single-cell RNA-seq data. Both versions are made available through this interface.
-    For a detailed explanation of the difference between both versions, please refer to the model card, here: https://helical.readthedocs.io/en/latest/docs/Geneformer.html
+    Both versions of Geneformer (v1 and v2) have different sub-models with varying numbers of layers, context size and pretraining set. The available models are the following:
+
+    Version 1.0:
+    - gf-12L-30M-i2048
+    - gf-6L-30M-i2048
+
+    Version 2.0:
+    - gf-12L-95M-i4096
+    - gf-12L-95M-i4096-CLcancer
+    - gf-20L-95M-i4096
+
+    For a detailed explanation of the differences between these models and versions, please refer to the Geneformer model card: https://helical.readthedocs.io/en/latest/docs/Geneformer.html
 
     Example
     -------
@@ -35,10 +46,17 @@ class Geneformer(HelicalRNAModel):
     >>> geneformer_config_v2 = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
     >>> geneformer_v2 = Geneformer(configurer=geneformer_config_v2)
     >>> 
-    >>> # Example usage (same for both versions)
-    >>> ann_data = ad.read_h5ad("./data/10k_pbmcs_proc.h5ad")
-    >>> dataset = geneformer_v2.process_data(ann_data[:100])
+    >>> # Example usage for base pretrained model (for general transcriptomic analysis, v1 and v2)
+    >>> ann_data = ad.read_h5ad("general_dataset.h5ad")
+    >>> dataset = geneformer_v2.process_data(ann_data)
     >>> embeddings = geneformer_v2.get_embeddings(dataset)
+    >>> print("Base model embeddings shape:", embeddings.shape)
+
+    >>> # Example usage for cancer-tuned model (for cancer-specific analysis)
+    >>> cancer_ann_data = ad.read_h5ad("cancer_dataset.h5ad")
+    >>> cancer_dataset = geneformer_v2_cancer.process_data(cancer_ann_data)
+    >>> cancer_embeddings = geneformer_v2_cancer.get_embeddings(cancer_dataset)
+    >>> print("Cancer-tuned model embeddings shape:", cancer_embeddings.shape)
 
     Parameters
     ----------
@@ -51,9 +69,9 @@ class Geneformer(HelicalRNAModel):
 
     Notes
     -----
-    The first version of the model is published in this `Nature Paper <https://www.nature.com/articles/s41586-023-06139-9.epdf?sharing_token=u_5LUGVkd3A8zR-f73lU59RgN0jAjWel9jnR3ZoTv0N2UB4yyXENUK50s6uqjXH69sDxh4Z3J4plYCKlVME-W2WSuRiS96vx6t5ex2-krVDS46JkoVvAvJyWtYXIyj74pDWn_DutZq1oAlDaxfvBpUfSKDdBPJ8SKlTId8uT47M%3D>`_. 
-    The second version of the model is available at https://www.biorxiv.org/content/10.1101/2024.08.16.608180v1.full.pdf
-    We use the implementation from the `Geneformer <https://huggingface.co/ctheodoris/Geneformer/tree/main>`_ repository.
+    The first version of the model is published in this <a href="https://www.nature.com/articles/s41586-023-06139-9.epdf?sharing_token=u_5LUGVkd3A8zR-f73lU59RgN0jAjWel9jnR3ZoTv0N2UB4yyXENUK50s6uqjXH69sDxh4Z3J4plYCKlVME-W2WSuRiS96vx6t5ex2-krVDS46JkoVvAvJyWtYXIyj74pDWn_DutZq1oAlDaxfvBpUfSKDdBPJ8SKlTId8uT47M%3D">Nature Paper</a>. 
+    The second version of the model is available at <a href="https://pubmed.ncbi.nlm.nih.gov/39229018/">NIH</a>.
+    We use the implementation from the <a href="https://huggingface.co/ctheodoris/Geneformer/tree/main">Geneformer</a> repository.
 
     """
     default_configurer = GeneformerConfig()
@@ -65,7 +83,7 @@ class Geneformer(HelicalRNAModel):
         self.device = self.config['device']
 
         downloader = Downloader()
-        for file in configurer.list_of_files_to_download:
+        for file in self.configurer.list_of_files_to_download:
             downloader.download_via_name(file)
 
         self.model =  BertForMaskedLM.from_pretrained(self.files_config['model_files_dir'], output_hidden_states=True, output_attentions=False)
@@ -78,7 +96,7 @@ class Geneformer(HelicalRNAModel):
         self.forward_batch_size = self.config['batch_size']
         
         if self.config['accelerator']:
-            self.accelerator = Accelerator(project_dir=configurer.model_dir)
+            self.accelerator = Accelerator(project_dir=self.configurer.model_dir)
             self.model = self.accelerator.prepare(self.model)
         else:
             self.accelerator = None
