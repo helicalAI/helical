@@ -192,22 +192,22 @@ class Geneformer(HelicalRNAModel):
             self,
             model: BertForSequenceClassification,
             train_dataset: Dataset, 
-            validation_dataset: Dataset,
             optimizer: optim, 
             loss_function: loss = loss.CrossEntropyLoss(), 
             label: str = "cell_types", 
             epochs: int = 10,
             freeze_layers: int = 0,
+            validation_dataset: Optional[Dataset] = None,
             lr_scheduler: Optional[get_scheduler] = None) -> BertForSequenceClassification:
         """Fine-tunes the Geneformer model for classification tasks. 
 
         Parameters
         ----------
 
+        model : BertForSequenceClassification
+            The model to be fine-tuned.
         train_dataset : Dataset
             A helical processed dataset for fine-tuning.
-        validation_dataset : Dataset
-            A helical processed dataset for per epoch validation.
         optimizer : torch.optim e.g. optim.AdamW
             The optimizer to be used for training
         loss_function : torch.nn.modules.loss e.g. torch.nn.modules.loss.CrossEntropyLoss(). Default is cross entropy loss.
@@ -218,6 +218,8 @@ class Geneformer(HelicalRNAModel):
             The number of epochs to train the model
         freeze_layers : int, optional, default = 0
             The number of layers to freeze
+        validation_dataset : Dataset. Default is None.
+            A helical processed dataset for per epoch validation.
         lr_scheduler : get_scheduler from tranformers. Default is None.
             The learning rate scheduler to be used. If no scheduler is provided, no scheduler is used.
         """
@@ -234,7 +236,7 @@ class Geneformer(HelicalRNAModel):
             self.config.batch_size,
             self.device,
             lr_scheduler,
-            freeze_layers,
+            freeze_layers
         )
 
         return trained_model

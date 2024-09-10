@@ -239,6 +239,7 @@ def classification_fine_tuning(
     silent=False,
 ):
     model_input_size = get_model_input_size(model)
+
     # put model into train mode
     model.train()
 
@@ -251,7 +252,9 @@ def classification_fine_tuning(
     model.to(device)
 
     total_batch_length = len(train_input_data)
-    validation_batch_length = len(validation_input_data)
+    validation_batch_length = 0
+    if validation_input_data is not None:
+        validation_batch_length = len(validation_input_data)
 
     for j in range(epochs):
         training_loop = trange(0, total_batch_length, batch_size, desc="Fine-Tuning", leave=(not silent))
@@ -281,29 +284,32 @@ def classification_fine_tuning(
         if lr_scheduler is not None:
             lr_scheduler.step()
 
-        testing_loop = trange(0, validation_batch_length, batch_size, desc="Fine-Tuning Validation", leave=(not silent))
-        accuracy = 0.0
-        count = 0.0
-        for i in testing_loop:
-            max_range = min(i + batch_size, validation_batch_length)
+        if validation_input_data is not None:
+            testing_loop = trange(0, validation_batch_length, batch_size, desc="Fine-Tuning Validation", leave=(not silent))
+            accuracy = 0.0
+            count = 0.0
+            for i in testing_loop:
+                max_range = min(i + batch_size, validation_batch_length)
 
-            minibatch = validation_input_data.select([i for i in range(i, max_range)])
-            max_len = int(max(minibatch["length"]))
-            minibatch.set_format(type="torch",device=device)
+                minibatch = validation_input_data.select([i for i in range(i, max_range)])
+                max_len = int(max(minibatch["length"]))
+                minibatch.set_format(type="torch",device=device)
 
-            input_data_minibatch = minibatch["input_ids"]
-            input_data_minibatch = pad_tensor_list(
-                input_data_minibatch, max_len, pad_token_id, model_input_size
-            ).to(device)
+                input_data_minibatch = minibatch["input_ids"]
+                input_data_minibatch = pad_tensor_list(
+                    input_data_minibatch, max_len, pad_token_id, model_input_size
+                ).to(device)
 
-            with torch.no_grad():
-                outputs = model(input_ids=input_data_minibatch)
-            accuracy += accuracy_score(minibatch[label].cpu(), torch.argmax(outputs.logits, dim=1).cpu())
-            count += 1.0
-            testing_loop.set_postfix({"accuracy": accuracy/count})
+                with torch.no_grad():
+                    outputs = model(input_ids=input_data_minibatch)
+                accuracy += accuracy_score(minibatch[label].cpu(), torch.argmax(outputs.logits, dim=1).cpu())
+                count += 1.0
+                testing_loop.set_postfix({"accuracy": accuracy/count})
 
-            del outputs
-            del minibatch
-            del input_data_minibatch
+                del outputs
+                del minibatch
+                del input_data_minibatch
 
+    # put model back into eval mode
+    model.eval()
     return model

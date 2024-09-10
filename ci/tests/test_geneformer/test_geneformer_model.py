@@ -45,4 +45,9 @@ class TestGeneformerModel:
         if raises_error:
             with pytest.raises(ValueError):
                 self.geneformer.process_data(self.data, "gene_symbols")
+
+    # test fine_tune_classifier method in for Geneformer class
+    def test_fine_tune_classifier(self):
+        #TODO: Implement this test
+        assert self.geneformer.fine_tune_classifier is not None
             
