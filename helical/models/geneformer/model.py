@@ -189,18 +189,43 @@ class Geneformer(HelicalRNAModel):
         self.ensure_rna_data_validity(adata, gene_names)
 
     def fine_tune_classifier(
-            self, 
-            dataset: Dataset, 
-            optimizer: optim = optim.CrossEntropyLoss(), 
+            self,
+            model: BertForSequenceClassification,
+            train_dataset: Dataset, 
+            validation_dataset: Dataset,
+            optimizer: optim, 
             loss_function: loss = loss.CrossEntropyLoss(), 
             label: str = "cell_types", 
             epochs: int = 10,
-            freeze_layers: int = 2,
+            freeze_layers: int = 0,
             lr_scheduler: Optional[get_scheduler] = None) -> BertForSequenceClassification:
+        """Fine-tunes the Geneformer model for classification tasks. 
+
+        Parameters
+        ----------
+
+        train_dataset : Dataset
+            A helical processed dataset for fine-tuning.
+        validation_dataset : Dataset
+            A helical processed dataset for per epoch validation.
+        optimizer : torch.optim e.g. optim.AdamW
+            The optimizer to be used for training
+        loss_function : torch.nn.modules.loss e.g. torch.nn.modules.loss.CrossEntropyLoss(). Default is cross entropy loss.
+            The loss function to be used
+        label : str, optional, default = "cell_types"
+            The column in the dataset containing the training labels. These should be stored as unique per class integers.
+        epochs : int, optional, default = 10
+            The number of epochs to train the model
+        freeze_layers : int, optional, default = 0
+            The number of layers to freeze
+        lr_scheduler : get_scheduler from tranformers. Default is None.
+            The learning rate scheduler to be used. If no scheduler is provided, no scheduler is used.
+        """
 
         trained_model = classification_fine_tuning(
-            self.model,
-            dataset,
+            model,
+            train_dataset,
+            validation_dataset,
             optimizer,
             loss_function,
             label,
