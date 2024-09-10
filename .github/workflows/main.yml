@@ -49,11 +49,11 @@ jobs:
 
       - name: Execute Geneformer v1
         run: |
-          python examples/run_models/run_geneformer.py +model_name="gf-12L-30M-i2048"
+          python examples/run_models/run_geneformer.py ++model_name="gf-12L-30M-i2048"
 
       - name: Execute Geneformer v2
         run: |
-          python examples/run_models/run_geneformer.py +model_name="gf-12L-95M-i4096"
+          python examples/run_models/run_geneformer.py ++model_name="gf-12L-95M-i4096"
 
       - name: Execute scGPT
         run: |
