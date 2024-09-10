@@ -165,15 +165,14 @@ def quant_layers(model):
 def get_model_input_size(model):
     return int(re.split("\(|,", str(model.bert.embeddings.position_embeddings))[1])
 
-def load_model(model_type, model_directory):
+def load_model(model_type, model_directory, device):
     if model_type == "Pretrained":
         model = BertForMaskedLM.from_pretrained(
             model_directory, output_hidden_states=True, output_attentions=False
         )
     # put the model in eval mode for fwd pass and load onto the GPU if available
     model.eval()
-    if torch.cuda.is_available():
-        model = model.to("cuda:0")
+    model = model.to(device)
     return model
 
 def pad_tensor(tensor, pad_token_id, max_len):

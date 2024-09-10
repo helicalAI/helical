@@ -8,7 +8,8 @@ from anndata import AnnData
 class TestGeneformerModel:
     @pytest.fixture(params=["gf-12L-30M-i2048", "gf-12L-95M-i4096"])
     def geneformer(self, request):
-        config = GeneformerConfig(model_name=request.param)
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        config = GeneformerConfig(model_name=request.param, device=self.device)
         return Geneformer(config)
 
     @pytest.fixture
@@ -59,7 +60,7 @@ class TestGeneformerModel:
             geneformer.process_data(mock_data, "gene_symbols")
     def test_get_embs_cell_mode(self, geneformer, mock_data):
         tokenized_dataset = geneformer.process_data(mock_data, gene_names='gene_symbols')
-        model = load_model("Pretrained", geneformer.files_config["model_files_dir"])
+        model = load_model("Pretrained", geneformer.files_config["model_files_dir"], self.device)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         embs = get_embs(
             model,
@@ -77,7 +78,7 @@ class TestGeneformerModel:
         if not geneformer.config["special_token"]:
             pytest.skip("This test is only for models with special tokens (v2)")
         tokenized_dataset = geneformer.process_data(mock_data, gene_names='gene_symbols')
-        model = load_model("Pretrained", geneformer.files_config["model_files_dir"])
+        model = load_model("Pretrained", geneformer.files_config["model_files_dir"], self.device)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         embs = get_embs(
             model,
@@ -93,7 +94,7 @@ class TestGeneformerModel:
 
     def test_get_embs_gene_mode(self, geneformer, mock_data):
         tokenized_dataset = geneformer.process_data(mock_data, gene_names='gene_symbols')
-        model = load_model("Pretrained", geneformer.files_config["model_files_dir"])
+        model = load_model("Pretrained", geneformer.files_config["model_files_dir"], self.device)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         embs = get_embs(
             model,
@@ -110,7 +111,7 @@ class TestGeneformerModel:
 
     def test_get_embs_different_layer(self, geneformer, mock_data):
         tokenized_dataset = geneformer.process_data(mock_data, gene_names='gene_symbols')
-        model = load_model("Pretrained", geneformer.files_config["model_files_dir"])
+        model = load_model("Pretrained", geneformer.files_config["model_files_dir"], self.device)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         embs_last = get_embs(
             model,
@@ -136,7 +137,7 @@ class TestGeneformerModel:
 
     def test_get_embs_cell_mode(self, geneformer, mock_data):
         tokenized_dataset = geneformer.process_data(mock_data, gene_names='gene_symbols')
-        model = load_model("Pretrained", geneformer.files_config["model_files_dir"])
+        model = load_model("Pretrained", geneformer.files_config["model_files_dir"], self.device)
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         embs = get_embs(
             model,
