@@ -8,7 +8,7 @@ class GeneformerConfig():
     
     Parameters
     ----------
-    model_name : Literal["gf-6L-30M-i2048", "gf-12L-30M-i2048", "gf-12L-95M-i4096", "gf-20L-95M-i4096", "gf-12L-95M-i4096-CLcancer"], optional, default = "gf-12L-95M-i4096"
+    model_name : Literal["gf-6L-30M-i2048", "gf-12L-30M-i2048", "gf-12L-95M-i4096", "gf-20L-95M-i4096", "gf-12L-95M-i4096-CLcancer"], optional, default = "gf-12L-30M-i4096"
         The name of the model.
     batch_size : int, optional, default = 24
         The batch size
@@ -29,7 +29,7 @@ class GeneformerConfig():
     """
     def __init__(
             self, 
-            model_name: Literal["gf-6L-30M-i2048", "gf-12L-30M-i2048", "gf-12L-95M-i4096", "gf-20L-95M-i4096", "gf-12L-95M-i4096-CLcancer"] = "gf-12L-95M-i4096",
+            model_name: Literal["gf-6L-30M-i2048", "gf-12L-30M-i2048", "gf-12L-95M-i4096", "gf-20L-95M-i4096", "gf-12L-95M-i4096-CLcancer"] = "gf-12L-30M-i4096",
             batch_size: int = 24,
             emb_layer: int = -1,
             emb_mode: str = "cell",

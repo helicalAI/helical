@@ -1,4 +1,4 @@
-model_name: "gf-12L-95M-i4096"
+model_name: "gf-12L-30M-i4096"
 batch_size: 24
 emb_layer: -1
 emb_mode: "cell"
