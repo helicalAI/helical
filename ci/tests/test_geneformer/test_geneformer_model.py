@@ -58,6 +58,13 @@ class TestGeneformerModel:
                 geneformer.process_data(mock_data, "gene_symbols")
         else:
             geneformer.process_data(mock_data, "gene_symbols")
+
+    def test_cls_mode_with_v1_model_config(self, geneformer, mock_data):
+        if geneformer.config["special_token"]:
+            pytest.skip("This test is only for v1 models and should thus be only executed once.")
+        with pytest.raises(ValueError):
+            config = GeneformerConfig(model_name="gf-12L-30M-i2048", device="cpu", emb_mode='cls')
+
     def test_get_embs_cell_mode(self, geneformer, mock_data):
         tokenized_dataset = geneformer.process_data(mock_data, gene_names='gene_symbols')
         model = load_model("Pretrained", geneformer.files_config["model_files_dir"], self.device)

@@ -32,7 +32,7 @@ class GeneformerConfig():
             model_name: Literal["gf-6L-30M-i2048", "gf-12L-30M-i2048", "gf-12L-95M-i4096", "gf-20L-95M-i4096", "gf-12L-95M-i4096-CLcancer"] = "gf-12L-30M-i2048",
             batch_size: int = 24,
             emb_layer: int = -1,
-            emb_mode: str = "cell",
+            emb_mode: Literal["cls", "cell", "gene"] = "cell",
             device: Literal["cpu", "cuda"] = "cpu",
             accelerator: Optional[bool] = False
             ):
@@ -65,6 +65,9 @@ class GeneformerConfig():
             raise ValueError(f"Model name {model_name} not found in available models: {self.model_map.keys()}")
         
         model_version = 'v2' if "95M" in model_name else 'v1'
+
+        if model_version == 'v1' and emb_mode=='cls':
+            raise ValueError(f"Verson 1 Geneformer models do not support the CLS embedding mode")
         
         self.list_of_files_to_download = [
             f"geneformer/{model_version}/gene_median_dictionary.pkl",
