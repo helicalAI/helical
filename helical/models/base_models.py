@@ -15,8 +15,6 @@ class BaseModelProtocol(Protocol):
         ...
     def get_embeddings(self, dataset: Dataset) -> ndarray:
         ...
-    def fine_tune_classifier(self, train_dataset: Dataset):
-        ...
         
 class HelicalBaseFoundationModel(ABC, Logger):
     """Helical Base Foundation Model Class which serves as the base class for all foundation models in the helical package. 
@@ -45,10 +43,6 @@ class HelicalBaseFoundationModel(ABC, Logger):
 
     @abstractmethod
     def get_embeddings():
-        pass
-
-    @abstractmethod
-    def fine_tune_classifier():
         pass
 
 class HelicalRNAModel(HelicalBaseFoundationModel):

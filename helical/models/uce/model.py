@@ -202,6 +202,3 @@ class UCE(HelicalRNAModel):
                     dataset_embeds.append(embedding.detach().cpu().numpy())
         embeddings = np.vstack(dataset_embeds)
         return embeddings
-
-    def fine_tune_classifier(self, train_dataset: UCEDataset):
-        pass
