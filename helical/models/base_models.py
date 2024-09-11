@@ -15,16 +15,7 @@ class BaseModelProtocol(Protocol):
         ...
     def get_embeddings(self, dataset: Dataset) -> ndarray:
         ...
-    def fine_tune_classifier(self, 
-            train_dataset: Dataset, 
-            optimizer,
-            optimizer_params, 
-            loss_function, 
-            label, 
-            epochs,
-            freeze_layers,
-            validation_dataset,
-            lr_scheduler_params):
+    def fine_tune_classifier(self, train_dataset: Dataset):
         ...
         
 class HelicalBaseFoundationModel(ABC, Logger):

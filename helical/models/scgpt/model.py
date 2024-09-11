@@ -240,3 +240,6 @@ class scGPT(HelicalRNAModel):
                 message = "Data must have the 'obs' key 'batch_id' to be processed by the scGPT model."
                 LOGGER.error(message)
                 raise KeyError(message)
+
+    def fine_tune_classifier(self, train_dataset: Dataset):
+        pass
