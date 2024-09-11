@@ -223,7 +223,7 @@ def mean_nonpadding_embs(embs, original_lens, dim=1):
         mean_embs = masked_embs.sum(dim) / original_lens.float()
     return mean_embs
 
-# fine tune Geneformer for classification tasks
+# fine-tune Geneformer for classification tasks
 def classification_fine_tuning(
     model_dir,
     train_input_data,
