@@ -37,6 +37,12 @@ def load_mappings(gene_symbols):
     pkl.dump(gene_id_to_ensemble, open('./human_gene_to_ensemble_id.pkl', 'wb'))
     return gene_id_to_ensemble
 
+def forw(model, input_data_minibatch, minibatch):
+    return model(
+        input_ids=input_data_minibatch,
+        attention_mask=gen_attention_mask(minibatch),
+    )
+
 
 # extract embeddings
 def get_embs(
@@ -224,8 +230,9 @@ def mean_nonpadding_embs(embs, original_lens, dim=1):
     return mean_embs
 
 # fine-tune Geneformer for classification tasks
-def classification_fine_tuning(
-    model_dir,
+def fine_tuning(
+    model,
+    fine_tune_head,
     train_input_data,
     validation_input_data,
     optimizer,
@@ -240,14 +247,23 @@ def classification_fine_tuning(
     num_layers,
     silent=False,
 ):
-    model = BertForSequenceClassification.from_pretrained(
-        model_dir,
-        num_labels=np.unique(train_input_data[label]).shape[0],
-        output_hidden_states=True,
-        output_attentions=False
-    )
 
+    class GeneformerFineTuningModel(torch.nn.Module):
+        def __init__(self, helical_model, fine_tuning_head):
+            super(GeneformerFineTuningModel, self).__init__()
+            self.helical_model = helical_model
+            self.fine_tuning_head = fine_tuning_head
+
+        def forward(self, input_ids, minibatch):
+            outputs = self.helical_model.forward(input_ids=input_ids, attention_mask=gen_attention_mask(minibatch))
+            final_layer = outputs.hidden_states[-1]
+            cls_seq = final_layer[:, 0, :]
+            final = self.fine_tuning_head(cls_seq)
+            return final
+        
     model_input_size = get_model_input_size(model)
+    model = GeneformerFineTuningModel(model, fine_tune_head)
+    
 
     #initialise optimizer
     optimizer = optimizer(model.parameters(), **optimizer_params)
@@ -260,11 +276,11 @@ def classification_fine_tuning(
     # put model into train mode
     model.train()
 
-    frozen_layers = model.bert.encoder.layer[:num_layers]
+    # frozen_layers = model.bert.encoder.layer[:num_layers]
 
-    for module in frozen_layers:
-        for param in module.parameters():
-            param.requires_grad = False
+    # for module in frozen_layers:
+    #     for param in module.parameters():
+    #         param.requires_grad = False
 
     model.to(device)
 
@@ -287,8 +303,8 @@ def classification_fine_tuning(
                 input_data_minibatch, max_len, pad_token_id, model_input_size
             ).to(device)
 
-            outputs = model(input_ids=input_data_minibatch)
-            loss = loss_function(outputs.logits, minibatch[label])
+            outputs = model(input_ids=input_data_minibatch, minibatch=minibatch)
+            loss = loss_function(outputs, minibatch[label])
             loss.backward()
             training_loop.set_postfix({"loss": loss.item()})
             training_loop.set_description(f"Fine-Tuning: epoch {j+1}/{epochs}")
@@ -318,8 +334,8 @@ def classification_fine_tuning(
                 ).to(device)
 
                 with torch.no_grad():
-                    outputs = model(input_ids=input_data_minibatch)
-                accuracy += accuracy_score(minibatch[label].cpu(), torch.argmax(outputs.logits, dim=1).cpu())
+                    outputs = model(input_ids=input_data_minibatch, minibatch=minibatch)
+                accuracy += accuracy_score(minibatch[label].cpu(), torch.argmax(outputs, dim=1).cpu())
                 count += 1.0
                 testing_loop.set_postfix({"accuracy": accuracy/count})
 

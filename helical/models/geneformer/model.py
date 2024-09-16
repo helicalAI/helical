@@ -6,9 +6,10 @@ from anndata import AnnData
 from helical.services.downloader import Downloader
 import pickle
 from torch import optim
+import torch
 import torch.nn.modules.loss as loss
-from transformers import BertForMaskedLM, BertForSequenceClassification, get_scheduler
-from helical.models.geneformer.geneformer_utils import get_embs,quant_layers,classification_fine_tuning
+from transformers import BertForMaskedLM, BertForSequenceClassification
+from helical.models.geneformer.geneformer_utils import get_embs,quant_layers,fine_tuning, forw
 from helical.models.geneformer.geneformer_tokenizer import TranscriptomeTokenizer
 from helical.models.geneformer.geneformer_config import GeneformerConfig
 from helical.services.mapping import map_gene_symbols_to_ensembl_ids
@@ -144,6 +145,9 @@ class Geneformer(HelicalRNAModel):
             tokenized_dataset.save_to_disk(output_path)
         return tokenized_dataset
 
+    def forward(self, input_mini_batch, minibatch):
+        return forw(self.model, input_mini_batch, minibatch)
+
     def get_embeddings(self, dataset: Dataset) -> np.array:
         """Gets the gene embeddings from the Geneformer model   
 
@@ -188,8 +192,9 @@ class Geneformer(HelicalRNAModel):
         """
         self.ensure_rna_data_validity(adata, gene_names)
 
-    def fine_tune_classifier(
+    def fine_tune(
             self,
+            fine_tune_head: torch.nn.Module,
             train_dataset: Dataset, 
             optimizer: optim = optim.AdamW,
             optimizer_params: dict = {'lr': 0.0001}, 
@@ -231,8 +236,9 @@ class Geneformer(HelicalRNAModel):
             The fine-tuned model. Original model is a huggingface BertForMaskedLM model. By using BertForSequenceClassification, it allows for an automatic head to be added to the model for classification tasks.
         """
 
-        trained_model = classification_fine_tuning(
-            self.config.model_dir / self.config.model_name,
+        trained_model = fine_tuning(
+            self.model,
+            fine_tune_head,
             train_dataset,
             validation_dataset,
             optimizer,

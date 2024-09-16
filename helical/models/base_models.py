@@ -45,6 +45,10 @@ class HelicalBaseFoundationModel(ABC, Logger):
     def get_embeddings():
         pass
 
+    # @abstractmethod
+    # def fine_tune():
+    #     pass
+
 class HelicalRNAModel(HelicalBaseFoundationModel):
     def ensure_rna_data_validity(self, adata: AnnData, gene_names: str) -> None:
         """Ensures that the data contains the gene_names and has integer counts for adata.X which is saved 
