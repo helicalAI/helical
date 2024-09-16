@@ -31,7 +31,8 @@ class GeneformerConfig():
             emb_layer: int = -1,
             emb_mode: str = "cell",
             device: Literal["cpu", "cuda"] = "cpu",
-            accelerator: Optional[bool] = False
+            accelerator: Optional[bool] = False,
+            embsize: int = 512
             ):
         
         model_name = "geneformer-12L-30M"
@@ -51,5 +52,6 @@ class GeneformerConfig():
         self.emb_mode = emb_mode
         self.device = device
         self.accelerator = accelerator
+        self.embsize = embsize
 
 

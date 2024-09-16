@@ -1,4 +1,5 @@
 import os
+from helical.models.scgpt.fine_tuning_model import scGPTFineTuningModel
 import scanpy as sc
 from helical.models.base_models import HelicalRNAModel
 from helical.models.scgpt.scgpt_config import scGPTConfig
@@ -257,15 +258,19 @@ class scGPT(HelicalRNAModel):
             loss_function: loss = loss.CrossEntropyLoss(), 
             epochs: int = 1,
             freeze_layers: int = 0,
-            validation_dataset: Optional[Dataset] = None,
-            lr_scheduler_params: Optional[dict] = None):
-        """Fine-tunes the Geneformer model for classification tasks. 
+            lr_scheduler_params: Optional[dict] = None) -> scGPTFineTuningModel:
+        """Fine-tunes the scGPT model with different head modules. 
 
         Parameters
         ----------
-
-        train_dataset : Dataset
-            A helical processed dataset for fine-tuning
+        fine_tune_head : torch.nn.Module
+            The head module to be used for fine-tuning. This should be a torch.nn.Module.
+        train_input_data : Dataset
+            A helical scGPT processed dataset for fine-tuning
+        labels : ndarray
+            The labels for the training data. These should be stored as unique per class integers.
+        validation_input_data : Dataset, default = None
+            A helical scGPT processed dataset for per epoch validation. If this is not specified, no validation will be performed.
         optimizer : torch.optim, default = torch.optim.AdamW
             The optimizer to be used for training.
         optimizer_params : dict
@@ -273,42 +278,22 @@ class scGPT(HelicalRNAModel):
             e.g. optimizer_params = {'lr': 0.0001}
         loss_function : torch.nn.modules.loss, default = torch.nn.modules.loss.CrossEntropyLoss()
             The loss function to be used.
-        label : str, optional, default = "cell_types"
-            The column in the dataset containing the training labels. These should be stored as unique per class integers.
         epochs : int, optional, default = 10
             The number of epochs to train the model
         freeze_layers : int, optional, default = 0
             The number of layers to freeze.
-        validation_dataset : Dataset, default = None
-            A helical processed dataset for per epoch validation. If this is not specified, no validation will be performed.
         lr_scheduler_params : dict, default = None
             The learning rate scheduler parameters for the transformers get_scheduler method. The optimizer will be taken from the optimizer input and should not be included in the learning scheduler parameters. If not specified, no scheduler will be used.
             e.g. lr_scheduler_params = { 'name': 'linear', 'num_warmup_steps': 0, 'num_training_steps': 5 }
 
         Returns
         -------
-        BertForSequenceClassification
-            The fine-tuned model. Original model is a huggingface BertForMaskedLM model. By using BertForSequenceClassification, it allows for an automatic head to be added to the model for classification tasks.
+        torch.nn.Module
+            The fine-tuned model.
         """
+        
         device = next(self.model.parameters()).device
-        class scGPTFineTuningModel(torch.nn.Module):
-            def __init__(self, helical_model, fine_tuning_head):
-                super(scGPTFineTuningModel, self).__init__()
-                self.helical_model = helical_model # Ensure no overwriting of the original model
-                self.fine_tuning_head = fine_tuning_head
 
-            def forward(self, input_gene_ids, data_dict, src_key_padding_mask, use_batch_labels, device):
-                embeddings = self.helical_model._encode(
-                    input_gene_ids,
-                    data_dict["expr"].to(device),
-                    src_key_padding_mask=src_key_padding_mask,
-                    batch_labels=data_dict["batch_labels"].to(device)
-                    if use_batch_labels
-                    else None,
-                )
-                avg_pool_seq = embeddings[:, 0, :]
-                output = self.fine_tuning_head(avg_pool_seq)
-                return output
         try:
             use_batch_labels = train_input_data.batch_ids is not None
         except:
@@ -387,5 +372,6 @@ class scGPT(HelicalRNAModel):
                         count += 1.0
                         testing_loop.set_postfix({"accuracy": accuracy/count})
 
-
+        # put model back in eval mode
+        model.eval()
         return model

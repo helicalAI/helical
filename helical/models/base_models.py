@@ -6,6 +6,7 @@ import logging
 from typing import Protocol, runtime_checkable
 from datasets import Dataset
 from numpy import ndarray
+import torch
 
 LOGGER = logging.getLogger(__name__)
 
@@ -14,6 +15,8 @@ class BaseModelProtocol(Protocol):
     def process_data(self, x: AnnData) -> Dataset:
         ...
     def get_embeddings(self, dataset: Dataset) -> ndarray:
+        ...
+    def fine_tune(self, fine_tune_head: torch.nn.Module, train_input_data: Dataset, labels: ndarray):
         ...
         
 class HelicalBaseFoundationModel(ABC, Logger):
@@ -45,9 +48,9 @@ class HelicalBaseFoundationModel(ABC, Logger):
     def get_embeddings():
         pass
 
-    # @abstractmethod
-    # def fine_tune():
-    #     pass
+    @abstractmethod
+    def fine_tune():
+        pass
 
 class HelicalRNAModel(HelicalBaseFoundationModel):
     def ensure_rna_data_validity(self, adata: AnnData, gene_names: str) -> None:
@@ -122,4 +125,15 @@ class BaseTaskModel(ABC):
 
     @abstractmethod
     def load():
+        pass
+
+class HelicalBaseFineTuningHead(torch.nn.Module):
+    """Helical Fine-Tuning Head Class which serves as the base class for all fine-tuning heads in the helical package.
+    Each new fine-tuning head should be a subclass of this class.
+    """
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def forward():
         pass

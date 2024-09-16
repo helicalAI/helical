@@ -203,7 +203,7 @@ class Geneformer(HelicalRNAModel):
             epochs: int = 1,
             freeze_layers: int = 0,
             validation_dataset: Optional[Dataset] = None,
-            lr_scheduler_params: Optional[dict] = None) -> BertForSequenceClassification:
+            lr_scheduler_params: Optional[dict] = None) -> torch.nn.Module:
         """Fine-tunes the Geneformer model for classification tasks. 
 
         Parameters
@@ -232,8 +232,8 @@ class Geneformer(HelicalRNAModel):
 
         Returns
         -------
-        BertForSequenceClassification
-            The fine-tuned model. Original model is a huggingface BertForMaskedLM model. By using BertForSequenceClassification, it allows for an automatic head to be added to the model for classification tasks.
+        torch.nn.Module
+            The fine-tuned model.
         """
 
         trained_model = fine_tuning(
@@ -254,3 +254,5 @@ class Geneformer(HelicalRNAModel):
         )
 
         return trained_model
+
+

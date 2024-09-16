@@ -1,4 +1,5 @@
 import pickle as pkl
+from helical.models.geneformer.fine_tuning_model import GeneformerFineTuningModel
 import requests
 import json
 import pickle as pkl
@@ -11,7 +12,7 @@ from tqdm.auto import trange
 import re
 import torch
 from transformers import (
-    BertForMaskedLM,BertForSequenceClassification,get_scheduler
+    BertForMaskedLM,get_scheduler
 )
 
 
@@ -247,20 +248,7 @@ def fine_tuning(
     num_layers,
     silent=False,
 ):
-
-    class GeneformerFineTuningModel(torch.nn.Module):
-        def __init__(self, helical_model, fine_tuning_head):
-            super(GeneformerFineTuningModel, self).__init__()
-            self.helical_model = helical_model
-            self.fine_tuning_head = fine_tuning_head
-
-        def forward(self, input_ids, minibatch):
-            outputs = self.helical_model.forward(input_ids=input_ids, attention_mask=gen_attention_mask(minibatch))
-            final_layer = outputs.hidden_states[-1]
-            cls_seq = final_layer[:, 0, :]
-            final = self.fine_tuning_head(cls_seq)
-            return final
-        
+            
     model_input_size = get_model_input_size(model)
     model = GeneformerFineTuningModel(model, fine_tune_head)
     
@@ -305,7 +293,7 @@ def fine_tuning(
                 input_data_minibatch, max_len, pad_token_id, model_input_size
             ).to(device)
 
-            outputs = model(input_ids=input_data_minibatch, minibatch=minibatch)
+            outputs = model(input_ids=input_data_minibatch, attention_mask_minibatch=gen_attention_mask(minibatch))
             loss = loss_function(outputs, minibatch[label])
             loss.backward()
             batch_loss += loss.item()
@@ -338,7 +326,7 @@ def fine_tuning(
                 ).to(device)
 
                 with torch.no_grad():
-                    outputs = model(input_ids=input_data_minibatch, minibatch=minibatch)
+                    outputs = model(input_ids=input_data_minibatch, attention_mask_minibatch=gen_attention_mask(minibatch))
                 accuracy += accuracy_score(minibatch[label].cpu(), torch.argmax(outputs, dim=1).cpu())
                 count += 1.0
                 testing_loop.set_postfix({"accuracy": accuracy/count})
