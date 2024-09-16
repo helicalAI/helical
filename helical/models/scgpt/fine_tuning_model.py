@@ -1,5 +1,5 @@
 import torch
-from helical.models.base_models import HelicalBaseFineTuningHead
+from helical.models.base_models import HelicalBaseFineTuningHead, HelicalRNAModel
 
 class scGPTFineTuningModel(torch.nn.Module):
     """Fine-tuning model for the scGPT model.
@@ -16,7 +16,7 @@ class scGPTFineTuningModel(torch.nn.Module):
     forward(input_gene_ids: torch.Tensor, data_dict: dict, src_key_padding_mask: torch.Tensor, use_batch_labels: bool, device: str) -> torch.Tensor
         The forward method of the fine-tuning model.
     """
-    def __init__(self, scGPT_model, fine_tuning_head: HelicalBaseFineTuningHead):
+    def __init__(self, scGPT_model: HelicalRNAModel, fine_tuning_head: HelicalBaseFineTuningHead):
         super(scGPTFineTuningModel, self).__init__()
         self.helical_model = scGPT_model
         self.fine_tuning_head = fine_tuning_head

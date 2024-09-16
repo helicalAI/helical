@@ -242,7 +242,7 @@ class Geneformer(HelicalRNAModel):
             loss_function: loss = loss.CrossEntropyLoss(), 
             label: str = "cell_types", 
             epochs: int = 1,
-            freeze_layers: int = 0,
+            freeze_layers: int = 2,
             validation_dataset: Optional[Dataset] = None,
             lr_scheduler_params: Optional[dict] = None) -> torch.nn.Module:
         """Fine-tunes the Geneformer model for classification tasks. 

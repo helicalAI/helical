@@ -127,7 +127,7 @@ class BaseTaskModel(ABC):
     def load():
         pass
 
-class HelicalBaseFineTuningHead(torch.nn.Module):
+class HelicalBaseFineTuningHead(ABC, torch.nn.Module):
     """Helical Fine-Tuning Head Class which serves as the base class for all fine-tuning heads in the helical package.
     Each new fine-tuning head should be a subclass of this class.
     """

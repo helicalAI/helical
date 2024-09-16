@@ -301,12 +301,15 @@ def fine_tuning(
 
     # put model into train mode
     model.train()
+    
+    if num_layers > 0:
+        print(f"Freezing the first {num_layers} encoder layers of the Geneformer model during fine-tuning.")
 
-    # frozen_layers = model.bert.encoder.layer[:num_layers]
+        frozen_layers = model.helical_model.bert.encoder.layer[:num_layers]
 
-    # for module in frozen_layers:
-    #     for param in module.parameters():
-    #         param.requires_grad = False
+        for module in frozen_layers:
+            for param in module.parameters():
+                param.requires_grad = False
 
     model.to(device)
 

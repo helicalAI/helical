@@ -1,4 +1,4 @@
-from helical.models.base_models import HelicalBaseFineTuningHead
+from helical.models.base_models import HelicalBaseFineTuningHead, HelicalRNAModel
 import torch
 
 class GeneformerFineTuningModel(torch.nn.Module):
@@ -16,7 +16,7 @@ class GeneformerFineTuningModel(torch.nn.Module):
     forward(input_ids: torch.Tensor, attention_mask_minibatch: torch.Tensor) -> torch.Tensor
         The forward method of the fine-tuning model.
     """
-    def __init__(self, geneformer_model, fine_tuning_head: HelicalBaseFineTuningHead):
+    def __init__(self, geneformer_model: HelicalRNAModel, fine_tuning_head: HelicalBaseFineTuningHead):
         super(GeneformerFineTuningModel, self).__init__()
         self.helical_model = geneformer_model
         self.fine_tuning_head = fine_tuning_head
