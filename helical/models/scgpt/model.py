@@ -5,13 +5,15 @@ from helical.models.scgpt.scgpt_config import scGPTConfig
 import numpy as np
 from anndata import AnnData
 import logging
-from typing import Literal
+from typing import Literal, Optional
 from accelerate import Accelerator
 from helical.models.scgpt.scgpt_utils import load_model
 from helical.models.scgpt.dataset import Dataset
 from helical.services.downloader import Downloader
 from helical.models.scgpt.data_collator import DataCollator
+from sklearn.metrics import accuracy_score
 from torch.utils.data import DataLoader, SequentialSampler
+from transformers import get_scheduler
 from torch import optim
 from torch.nn.modules import loss
 import torch
@@ -110,6 +112,7 @@ class scGPT(HelicalRNAModel):
         )
 
         device = next(self.model.parameters()).device
+
         cell_embeddings = np.zeros(
             (len(dataset), self.config["embsize"]), dtype=np.float32
         )
@@ -246,15 +249,16 @@ class scGPT(HelicalRNAModel):
     def fine_tune(
             self,
             fine_tune_head: torch.nn.Module,
-            train_dataset: Dataset, 
+            train_input_data: Dataset, 
+            labels,     
+            validation_input_data = None,
             optimizer: optim = optim.AdamW,
             optimizer_params: dict = {'lr': 0.0001}, 
             loss_function: loss = loss.CrossEntropyLoss(), 
-            label: str = "cell_types", 
             epochs: int = 1,
             freeze_layers: int = 0,
             validation_dataset: Optional[Dataset] = None,
-            lr_scheduler_params: Optional[dict] = None) -> BertForSequenceClassification:
+            lr_scheduler_params: Optional[dict] = None):
         """Fine-tunes the Geneformer model for classification tasks. 
 
         Parameters
@@ -286,7 +290,102 @@ class scGPT(HelicalRNAModel):
         BertForSequenceClassification
             The fine-tuned model. Original model is a huggingface BertForMaskedLM model. By using BertForSequenceClassification, it allows for an automatic head to be added to the model for classification tasks.
         """
+        device = next(self.model.parameters()).device
+        class scGPTFineTuningModel(torch.nn.Module):
+            def __init__(self, helical_model, fine_tuning_head):
+                super(scGPTFineTuningModel, self).__init__()
+                self.helical_model = helical_model # Ensure no overwriting of the original model
+                self.fine_tuning_head = fine_tuning_head
 
-        trained_model = None
+            def forward(self, input_gene_ids, data_dict, src_key_padding_mask, use_batch_labels, device):
+                embeddings = self.helical_model._encode(
+                    input_gene_ids,
+                    data_dict["expr"].to(device),
+                    src_key_padding_mask=src_key_padding_mask,
+                    batch_labels=data_dict["batch_labels"].to(device)
+                    if use_batch_labels
+                    else None,
+                )
+                avg_pool_seq = embeddings[:, 0, :]
+                output = self.fine_tuning_head(avg_pool_seq)
+                return output
+        try:
+            use_batch_labels = train_input_data.batch_ids is not None
+        except:
+            use_batch_labels = False
+                
+        collator = DataCollator(
+            do_padding=True,
+            pad_token_id=self.vocab[self.config["pad_token"]],
+            pad_value=self.config["pad_value"],
+            do_mlm=False,
+            do_binning=True,
+            max_length=1200,
+            sampling=True,
+            keep_first_n_tokens=1,
+        )
 
-        return trained_model
+        data_loader = DataLoader(
+            train_input_data,
+            batch_size=self.config["batch_size"],
+            sampler=SequentialSampler(train_input_data),
+            collate_fn=collator,
+            drop_last=False,
+            pin_memory=True,
+        )
+
+        model = scGPTFineTuningModel(self.model, fine_tune_head).to(device)
+        model.train()
+
+        optimizer = optimizer(model.parameters(), **optimizer_params)
+
+        lr_scheduler = None
+        if lr_scheduler_params is not None: 
+            lr_scheduler = get_scheduler(optimizer=optimizer, **lr_scheduler_params)
+
+        with torch.cuda.amp.autocast(enabled=True): #torch.autocast(device_type=str(device),enabled=True): # torch.cuda.amp.autocast(enabled=True):
+            for j in range(epochs):
+                batch_count = 0
+                batch_loss = 0.0
+                batches_processed = 0
+                training_loop = tqdm(data_loader, desc="Fine-Tuning")
+                for data_dict in training_loop:
+                    input_gene_ids = data_dict["gene"].to(device)
+                    src_key_padding_mask = input_gene_ids.eq(
+                        self.vocab[self.config["pad_token"]]
+                    )
+                    output = model(input_gene_ids, data_dict, src_key_padding_mask, use_batch_labels, device)
+                    cell_types = torch.tensor(labels[batch_count: batch_count + self.config["batch_size"]], device=device)
+                    batch_count += self.config["batch_size"]
+                    loss = loss_function(output, cell_types)
+                    loss.backward()
+                    batch_loss += loss.item()
+                    batches_processed += 1
+                    optimizer.step()
+                    optimizer.zero_grad()
+
+                    training_loop.set_postfix({"loss": batch_loss/batches_processed})
+                    training_loop.set_description(f"Fine-Tuning: epoch {j+1}/{epochs}")
+
+                if lr_scheduler is not None:
+                    lr_scheduler.step()
+
+                if validation_input_data is not None:
+                    testing_loop = tqdm(data_loader, desc="Fine-Tuning Validation")
+                    accuracy = 0.0
+                    count = 0.0
+                    validation_batch_count = 0
+                    for validation_data_dict in testing_loop:
+                        input_gene_ids = validation_data_dict["gene"].to(device)
+                        src_key_padding_mask = input_gene_ids.eq(
+                            self.vocab[self.config["pad_token"]]
+                        )
+                        output = model(input_gene_ids, validation_data_dict, src_key_padding_mask, use_batch_labels, device)
+                        cell_types = torch.tensor(labels[validation_batch_count: validation_batch_count + self.config["batch_size"]], device=device)
+                        validation_batch_count += self.config["batch_size"]
+                        accuracy += accuracy_score(cell_types.cpu(), torch.argmax(output, dim=1).cpu())
+                        count += 1.0
+                        testing_loop.set_postfix({"accuracy": accuracy/count})
+
+
+        return model

@@ -291,6 +291,8 @@ def fine_tuning(
 
     for j in range(epochs):
         training_loop = trange(0, total_batch_length, batch_size, desc="Fine-Tuning", leave=(not silent))
+        batch_loss = 0.0
+        batches_processed = 0
         for i in training_loop:
             max_range = min(i + batch_size, total_batch_length)
 
@@ -306,7 +308,9 @@ def fine_tuning(
             outputs = model(input_ids=input_data_minibatch, minibatch=minibatch)
             loss = loss_function(outputs, minibatch[label])
             loss.backward()
-            training_loop.set_postfix({"loss": loss.item()})
+            batch_loss += loss.item()
+            batches_processed += 1
+            training_loop.set_postfix({"loss": batch_loss/batches_processed})
             training_loop.set_description(f"Fine-Tuning: epoch {j+1}/{epochs}")
             optimizer.step()
             optimizer.zero_grad()
