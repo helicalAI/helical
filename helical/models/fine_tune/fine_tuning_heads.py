@@ -19,7 +19,7 @@ class ClassificationHead(HelicalBaseFineTuningHead):
     """
     def __init__(self, model: HelicalBaseFoundationModel, num_classes: int):
         super(HelicalBaseFineTuningHead, self).__init__()
-        self.input_size = model.configurer.config["embsize"] if hasattr(model, "configurer") else model.config.embsize
+        self.input_size = model.configurer.config["embsize"] if hasattr(model, "configurer") else model.config["embsize"]
         self.output_size = num_classes
         self.dropout = torch.nn.Dropout(p=0.02)
         self.linear = torch.nn.Linear(self.input_size, self.output_size)

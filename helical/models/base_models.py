@@ -16,8 +16,8 @@ class BaseModelProtocol(Protocol):
         ...
     def get_embeddings(self, dataset: Dataset) -> ndarray:
         ...
-    def fine_tune(self, fine_tune_head: torch.nn.Module, train_input_data: Dataset, labels: ndarray):
-        ...
+    # def fine_tune(self, fine_tune_head: torch.nn.Module, train_input_data: Dataset, labels: ndarray):
+    #     ...
         
 class HelicalBaseFoundationModel(ABC, Logger):
     """Helical Base Foundation Model Class which serves as the base class for all foundation models in the helical package. 
@@ -48,9 +48,9 @@ class HelicalBaseFoundationModel(ABC, Logger):
     def get_embeddings():
         pass
 
-    @abstractmethod
-    def fine_tune():
-        pass
+    # @abstractmethod
+    # def fine_tune():
+    #     pass
 
 class HelicalRNAModel(HelicalBaseFoundationModel):
     def ensure_rna_data_validity(self, adata: AnnData, gene_names: str) -> None:

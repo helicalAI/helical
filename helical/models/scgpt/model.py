@@ -251,8 +251,9 @@ class scGPT(HelicalRNAModel):
             self,
             fine_tune_head: torch.nn.Module,
             train_input_data: Dataset, 
-            labels,     
+            train_labels,     
             validation_input_data = None,
+            validation_labels = None,
             optimizer: optim = optim.AdamW,
             optimizer_params: dict = {'lr': 0.0001}, 
             loss_function: loss = loss.CrossEntropyLoss(), 
@@ -267,10 +268,12 @@ class scGPT(HelicalRNAModel):
             The head module to be used for fine-tuning. This should be a torch.nn.Module.
         train_input_data : Dataset
             A helical scGPT processed dataset for fine-tuning
-        labels : ndarray
+        train_labels : ndarray
             The labels for the training data. These should be stored as unique per class integers.
         validation_input_data : Dataset, default = None
             A helical scGPT processed dataset for per epoch validation. If this is not specified, no validation will be performed.
+        validation_labels : ndarray, default = None
+            The labels for the validation data. These should be stored as unique per class integers.
         optimizer : torch.optim, default = torch.optim.AdamW
             The optimizer to be used for training.
         optimizer_params : dict
@@ -319,6 +322,16 @@ class scGPT(HelicalRNAModel):
             pin_memory=True,
         )
 
+        if validation_input_data is not None:
+            validation_data_loader = DataLoader(
+                validation_input_data,
+                batch_size=self.config["batch_size"],
+                sampler=SequentialSampler(validation_input_data),
+                collate_fn=collator,
+                drop_last=False,
+                pin_memory=True,
+            )
+
         model = scGPTFineTuningModel(self.model, fine_tune_head).to(device)
         model.train()
 
@@ -340,9 +353,9 @@ class scGPT(HelicalRNAModel):
                         self.vocab[self.config["pad_token"]]
                     )
                     output = model(input_gene_ids, data_dict, src_key_padding_mask, use_batch_labels, device)
-                    cell_types = torch.tensor(labels[batch_count: batch_count + self.config["batch_size"]], device=device)
+                    labels = torch.tensor(train_labels[batch_count: batch_count + self.config["batch_size"]], device=device)
                     batch_count += self.config["batch_size"]
-                    loss = loss_function(output, cell_types)
+                    loss = loss_function(output, labels)
                     loss.backward()
                     batch_loss += loss.item()
                     batches_processed += 1
@@ -356,7 +369,7 @@ class scGPT(HelicalRNAModel):
                     lr_scheduler.step()
 
                 if validation_input_data is not None:
-                    testing_loop = tqdm(data_loader, desc="Fine-Tuning Validation")
+                    testing_loop = tqdm(validation_data_loader, desc="Fine-Tuning Validation")
                     accuracy = 0.0
                     count = 0.0
                     validation_batch_count = 0
@@ -366,12 +379,13 @@ class scGPT(HelicalRNAModel):
                             self.vocab[self.config["pad_token"]]
                         )
                         output = model(input_gene_ids, validation_data_dict, src_key_padding_mask, use_batch_labels, device)
-                        cell_types = torch.tensor(labels[validation_batch_count: validation_batch_count + self.config["batch_size"]], device=device)
+                        val_labels = torch.tensor(validation_labels[validation_batch_count: validation_batch_count + self.config["batch_size"]], device=device)
                         validation_batch_count += self.config["batch_size"]
-                        accuracy += accuracy_score(cell_types.cpu(), torch.argmax(output, dim=1).cpu())
+                        accuracy += accuracy_score(val_labels.cpu(), torch.argmax(output, dim=1).cpu())
                         count += 1.0
                         testing_loop.set_postfix({"accuracy": accuracy/count})
 
         # put model back in eval mode
         model.eval()
         return model
+    
