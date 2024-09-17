@@ -12,6 +12,7 @@ from transformers import BertForMaskedLM, BertForSequenceClassification
 from helical.models.geneformer.geneformer_utils import get_embs,quant_layers,fine_tuning, forw
 from helical.models.geneformer.geneformer_tokenizer import TranscriptomeTokenizer
 from helical.models.geneformer.geneformer_config import GeneformerConfig
+from helical.models.geneformer.fine_tuning_model import GeneformerFineTuningModel
 from helical.services.mapping import map_gene_symbols_to_ensembl_ids
 from datasets import Dataset
 from typing import Optional
@@ -244,7 +245,7 @@ class Geneformer(HelicalRNAModel):
             epochs: int = 1,
             freeze_layers: int = 2,
             validation_dataset: Optional[Dataset] = None,
-            lr_scheduler_params: Optional[dict] = None) -> torch.nn.Module:
+            lr_scheduler_params: Optional[dict] = None) -> GeneformerFineTuningModel:
         """Fine-tunes the Geneformer model for classification tasks. 
 
         Parameters
