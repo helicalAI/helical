@@ -284,13 +284,34 @@ def fine_tuning(
     device,
     lr_scheduler_params,
     num_layers,
+    emb_mode,
+    gene_token_dict,
     silent=False,
 ):
             
     model_input_size = get_model_input_size(model)
     model = GeneformerFineTuningModel(model, fine_tune_head)
-    
 
+    cls_present = any("<cls>" in key for key in gene_token_dict.keys())
+    eos_present = any("<eos>" in key for key in gene_token_dict.keys())
+    if emb_mode == "cls":
+        assert cls_present, "<cls> token missing in token dictionary"
+        # Check to make sure that the first token of the filtered input data is cls token
+        cls_token_id = gene_token_dict["<cls>"]
+        assert (
+            train_input_data["input_ids"][0][0] == cls_token_id
+        ), "First token is not <cls> token value"
+    elif emb_mode == "cell":
+        if cls_present:
+            logger.warning(
+                "CLS token present in token dictionary, excluding from average."
+            )
+        if eos_present:
+            logger.warning(
+                "EOS token present in token dictionary, excluding from average."
+            )
+    
+    total_batch_length = len(train_input_data)
     #initialise optimizer
     optimizer = optimizer(model.parameters(), **optimizer_params)
 
@@ -313,7 +334,7 @@ def fine_tuning(
 
     model.to(device)
 
-    total_batch_length = len(train_input_data)
+
     validation_batch_length = 0
     if validation_input_data is not None:
         validation_batch_length = len(validation_input_data)

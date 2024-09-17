@@ -291,7 +291,9 @@ class Geneformer(HelicalRNAModel):
             self.config["batch_size"],
             self.device,
             lr_scheduler_params,
-            freeze_layers
+            freeze_layers,
+            self.emb_mode,
+            self.gene_token_dict,
         )
 
         return trained_model
