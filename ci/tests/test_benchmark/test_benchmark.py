@@ -94,6 +94,9 @@ def test_integration_with_custom_model():
 
         def get_embeddings(self, data: AnnData):
             return np.zeros((data.shape[0], 10))
+        
+        def fine_tune(self):
+            pass # TODO
 
     custom_model = CustomWrapper()
     evaluations = evaluate_integration([(custom_model, "custom_model")], data, config["data"], config["integration"])
