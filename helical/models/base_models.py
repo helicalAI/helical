@@ -16,8 +16,6 @@ class BaseModelProtocol(Protocol):
         ...
     def get_embeddings(self, dataset: Dataset) -> ndarray:
         ...
-    def fine_tune(self, fine_tune_head: torch.nn.Module, train_dataset: Dataset, label: str|list) -> torch.nn.Module: 
-        ...
         
 class HelicalBaseFoundationModel(ABC, Logger):
     """Helical Base Foundation Model Class which serves as the base class for all foundation models in the helical package. 
@@ -46,10 +44,6 @@ class HelicalBaseFoundationModel(ABC, Logger):
 
     @abstractmethod
     def get_embeddings():
-        pass
-
-    @abstractmethod
-    def fine_tune():
         pass
 
 class HelicalRNAModel(HelicalBaseFoundationModel):
@@ -132,8 +126,27 @@ class HelicalBaseFineTuningHead(ABC, torch.nn.Module):
     Each new fine-tuning head should be a subclass of this class.
     """
     def __init__(self):
-        pass
+        super(HelicalBaseFineTuningHead, self).__init__()
 
     @abstractmethod
     def forward():
+        pass
+
+    @abstractmethod
+    def set_dim_size():
+        pass
+
+class HelicalBaseFineTuningModel(torch.nn.Module):
+    """Helical Base Fine-Tuning Model Class which serves as the base class for all fine-tuning models in the helical package.
+    Each new fine-tuning model should be a subclass of this class.
+    """
+    def __init__(self):
+       super(HelicalBaseFineTuningModel, self).__init__()
+
+    @abstractmethod
+    def forward():
+        pass
+
+    @abstractmethod
+    def fine_tune():
         pass

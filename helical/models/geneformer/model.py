@@ -5,14 +5,10 @@ import numpy as np
 from anndata import AnnData
 from helical.services.downloader import Downloader
 import pickle
-from torch import optim
-import torch
-import torch.nn.modules.loss as loss
-from transformers import BertForMaskedLM, BertForSequenceClassification
-from helical.models.geneformer.geneformer_utils import get_embs,quant_layers,fine_tuning, forw
+from transformers import BertForMaskedLM
+from helical.models.geneformer.geneformer_utils import get_embs,quant_layers,forw
 from helical.models.geneformer.geneformer_tokenizer import TranscriptomeTokenizer
 from helical.models.geneformer.geneformer_config import GeneformerConfig
-from helical.models.geneformer.fine_tuning_model import GeneformerFineTuningModel
 from helical.services.mapping import map_gene_symbols_to_ensembl_ids
 from datasets import Dataset
 from typing import Optional
@@ -233,70 +229,5 @@ class Geneformer(HelicalRNAModel):
             If the data is missing column names.
         """
         self.ensure_rna_data_validity(adata, gene_names)
-
-    def fine_tune(
-            self,
-            fine_tune_head: torch.nn.Module,
-            train_dataset: Dataset, 
-            optimizer: optim = optim.AdamW,
-            optimizer_params: dict = {'lr': 0.0001}, 
-            loss_function: loss = loss.CrossEntropyLoss(), 
-            label: str = "cell_types", 
-            epochs: int = 1,
-            freeze_layers: int = 2,
-            validation_dataset: Optional[Dataset] = None,
-            lr_scheduler_params: Optional[dict] = None) -> GeneformerFineTuningModel:
-        """Fine-tunes the Geneformer model for classification tasks. 
-
-        Parameters
-        ----------
-
-        train_dataset : Dataset
-            A helical processed dataset for fine-tuning
-        optimizer : torch.optim, default = torch.optim.AdamW
-            The optimizer to be used for training.
-        optimizer_params : dict
-            The optimizer parameters to be used for the optimizer specified. This list should NOT include model parameters.
-            e.g. optimizer_params = {'lr': 0.0001}
-        loss_function : torch.nn.modules.loss, default = torch.nn.modules.loss.CrossEntropyLoss()
-            The loss function to be used.
-        label : str, optional, default = "cell_types"
-            The column in the dataset containing the training labels. These should be stored as unique per class integers.
-        epochs : int, optional, default = 10
-            The number of epochs to train the model
-        freeze_layers : int, optional, default = 0
-            The number of layers to freeze.
-        validation_dataset : Dataset, default = None
-            A helical processed dataset for per epoch validation. If this is not specified, no validation will be performed.
-        lr_scheduler_params : dict, default = None
-            The learning rate scheduler parameters for the transformers get_scheduler method. The optimizer will be taken from the optimizer input and should not be included in the learning scheduler parameters. If not specified, no scheduler will be used.
-            e.g. lr_scheduler_params = { 'name': 'linear', 'num_warmup_steps': 0, 'num_training_steps': 5 }
-
-        Returns
-        -------
-        torch.nn.Module
-            The fine-tuned model.
-        """
-
-        trained_model = fine_tuning(
-            self.model,
-            fine_tune_head,
-            train_dataset,
-            validation_dataset,
-            optimizer,
-            optimizer_params,
-            loss_function,
-            label,
-            epochs,
-            self.pad_token_id,
-            self.config["batch_size"],
-            self.device,
-            lr_scheduler_params,
-            freeze_layers,
-            self.emb_mode,
-            self.gene_token_dict,
-        )
-
-        return trained_model
 
 

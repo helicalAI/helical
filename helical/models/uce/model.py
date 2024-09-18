@@ -1,19 +1,12 @@
 import logging
-from typing import Optional
-from helical.models.uce.fine_tuning_model import UCEFineTuningModel
 import numpy as np
 from anndata import AnnData
-from sklearn.metrics import accuracy_score
 from torch.utils.data import DataLoader
-import scipy
 from pathlib import Path
 import scanpy as sc
 from tqdm import tqdm
 import torch
-from torch import optim
-from torch.nn.modules import loss
 from accelerate import Accelerator
-from transformers import get_scheduler
 from helical.models.uce.uce_config import UCEConfig
 from helical.models.base_models import HelicalRNAModel
 from helical.models.uce.uce_utils import get_ESM2_embeddings, get_positions, get_protein_embeddings_idxs, load_model, prepare_expression_counts_file
@@ -212,138 +205,4 @@ class UCE(HelicalRNAModel):
         embeddings = np.vstack(dataset_embeds)
         return embeddings
 
-    def fine_tune(
-            self,
-            fine_tune_head: torch.nn.Module,
-            train_input_data: UCEDataset, 
-            train_labels,     
-            validation_input_data = None,
-            validation_labels = None,
-            optimizer: optim = optim.AdamW,
-            optimizer_params: dict = {'lr': 0.0001}, 
-            loss_function: loss = loss.CrossEntropyLoss(), 
-            epochs: int = 1,
-            freeze_layers: int = 0,
-            lr_scheduler_params: Optional[dict] = None) -> UCEFineTuningModel:
-        """Fine-tunes the scGPT model with different head modules. 
-
-        Parameters
-        ----------
-        fine_tune_head : torch.nn.Module
-            The head module to be used for fine-tuning. This should be a torch.nn.Module.
-        train_input_data : Dataset
-            A helical scGPT processed dataset for fine-tuning
-        train_labels : ndarray
-            The labels for the training data. These should be stored as unique per class integers.
-        validation_input_data : Dataset, default = None
-            A helical scGPT processed dataset for per epoch validation. If this is not specified, no validation will be performed.
-        validation_labels : ndarray, default = None,
-            The labels for the validation data. These should be stored as unique per class integers.
-        optimizer : torch.optim, default = torch.optim.AdamW
-            The optimizer to be used for training.
-        optimizer_params : dict
-            The optimizer parameters to be used for the optimizer specified. This list should NOT include model parameters.
-            e.g. optimizer_params = {'lr': 0.0001}
-        loss_function : torch.nn.modules.loss, default = torch.nn.modules.loss.CrossEntropyLoss()
-            The loss function to be used.
-        epochs : int, optional, default = 10
-            The number of epochs to train the model
-        freeze_layers : int, optional, default = 0
-            The number of layers to freeze.
-        lr_scheduler_params : dict, default = None
-            The learning rate scheduler parameters for the transformers get_scheduler method. The optimizer will be taken from the optimizer input and should not be included in the learning scheduler parameters. If not specified, no scheduler will be used.
-            e.g. lr_scheduler_params = { 'name': 'linear', 'num_warmup_steps': 0, 'num_training_steps': 5 }
-
-        Returns
-        -------
-        torch.nn.Module
-            The fine-tuned model.
-        """
-        batch_size = self.config["batch_size"]
-        dataloader = DataLoader(train_input_data, 
-                                batch_size=batch_size, 
-                                shuffle=False,
-                                collate_fn=train_input_data.collator_fn,
-                                num_workers=0)
-        
-        if validation_input_data is not None:
-            validation_dataloader = DataLoader(validation_input_data, 
-                        batch_size=batch_size, 
-                        shuffle=False,
-                        collate_fn=validation_input_data.collator_fn,
-                        num_workers=0)
-
-        if self.accelerator is not None:
-            dataloader = self.accelerator.prepare(dataloader)
-            if validation_input_data is not None:
-                validation_dataloader = self.accelerator.prepare(validation_dataloader)
-
-
-        # disable progress bar if not the main process
-        # if self.accelerator is not None:
-        #     pbar = tqdm(dataloader, disable=not self.accelerator.is_local_main_process)
-        # else:
-        #     pbar = tqdm(dataloader)
-
-        model = UCEFineTuningModel(self, fine_tune_head).to(self.device)
-        
-        model.train()
-
-        optimizer = optimizer(model.parameters(), **optimizer_params)
-
-        lr_scheduler = None
-        if lr_scheduler_params is not None: 
-            lr_scheduler = get_scheduler(optimizer=optimizer, **lr_scheduler_params)
-
-        for j in range(epochs):
-            batch_count = 0
-            batch_loss = 0.0
-            batches_processed = 0
-            training_loop = tqdm(dataloader, desc="Fine-Tuning")
-            for batch in training_loop:
-                batch_sentences, mask, idxs = batch[0], batch[1], batch[2]
-                batch_sentences = batch_sentences.permute(1, 0)
-                if self.config["multi_gpu"]:
-                    batch_sentences = self.model.module.pe_embedding(batch_sentences.long())
-                else:
-                    batch_sentences = self.model.pe_embedding(batch_sentences.long())
-                batch_sentences = torch.nn.functional.normalize(batch_sentences, dim=2)  # normalize token outputs
-                output = model.forward(batch_sentences, mask=mask)
-                labels = torch.tensor(train_labels[batch_count: batch_count + self.config["batch_size"]], device=self.device)
-                batch_count += self.config["batch_size"]
-                loss = loss_function(output, labels)
-                loss.backward()
-                batch_loss += loss.item()
-                batches_processed += 1
-
-                optimizer.step()
-                optimizer.zero_grad()
-
-                training_loop.set_postfix({"loss": batch_loss/batches_processed})
-                training_loop.set_description(f"Fine-Tuning: epoch {j+1}/{epochs}")
-
-            if lr_scheduler is not None:
-                lr_scheduler.step()
-
-            if validation_input_data is not None:
-                testing_loop = tqdm(validation_dataloader, desc="Fine-Tuning Validation")
-                accuracy = 0.0
-                count = 0.0
-                validation_batch_count = 0
-                for validation_data in testing_loop:
-                    batch_sentences, mask, idxs = validation_data[0], validation_data[1], validation_data[2]
-                    batch_sentences = batch_sentences.permute(1, 0)
-                    if self.config["multi_gpu"]:
-                        batch_sentences = self.model.module.pe_embedding(batch_sentences.long())
-                    else:
-                        batch_sentences = self.model.pe_embedding(batch_sentences.long())
-                    batch_sentences = torch.nn.functional.normalize(batch_sentences, dim=2)  # normalize token outputs
-                    output = model.forward(batch_sentences, mask=mask)
-                    val_labels = torch.tensor(validation_labels[validation_batch_count: validation_batch_count + self.config["batch_size"]], device=self.device)
-                    validation_batch_count += self.config["batch_size"]
-                    accuracy += accuracy_score(val_labels.cpu(), torch.argmax(output, dim=1).cpu())
-                    count += 1.0
-                    testing_loop.set_postfix({"accuracy": accuracy/count})
     
-                
-        return None

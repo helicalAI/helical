@@ -17,14 +17,16 @@ class ClassificationHead(HelicalBaseFineTuningHead):
         The forward method of the classification head.
 
     """
-    def __init__(self, model: HelicalBaseFoundationModel, num_classes: int):
-        super(HelicalBaseFineTuningHead, self).__init__()
-        self.input_size = model.configurer.config["embsize"] if hasattr(model, "configurer") else model.config["embsize"]
+    def __init__(self, num_classes: int):
+        super(ClassificationHead, self).__init__()
         self.output_size = num_classes
         self.dropout = torch.nn.Dropout(p=0.02)
-        self.linear = torch.nn.Linear(self.input_size, self.output_size)
+        
     
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         drop = self.dropout(inputs)
         output = self.linear(drop)
         return output
+
+    def set_dim_size(self, dim_size: int) -> None:
+        self.linear = torch.nn.Linear(dim_size, self.output_size)

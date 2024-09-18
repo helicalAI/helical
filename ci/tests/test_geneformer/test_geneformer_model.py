@@ -178,11 +178,11 @@ class TestGeneformerModel:
         assert geneformer.config["input_size"] == geneformer.configurer.model_map[geneformer.config["model_name"]]['input_size']
 
     def test_fine_tune_classifier(self, geneformer, mock_data, fine_tune_mock_data):
-        assert geneformer.fine_tune is not None
         tokenized_dataset = geneformer.process_data(mock_data, gene_names='gene_symbols')
         tokenized_dataset = tokenized_dataset.add_column('labels', fine_tune_mock_data)
-        classifier_head = ClassificationHead(geneformer, len(set(fine_tune_mock_data)))
-        fine_tuned_model = geneformer.fine_tune(fine_tune_head=classifier_head, train_dataset=tokenized_dataset, label='labels')
+        classifier_head = ClassificationHead(len(set(fine_tune_mock_data)))
+        fine_tuned_model = GeneformerFineTuningModel(geneformer, classifier_head)
+        fine_tuned_model.fine_tune(train_dataset=tokenized_dataset, label='labels')
         assert fine_tuned_model is not None
         assert isinstance(fine_tuned_model, GeneformerFineTuningModel)
             

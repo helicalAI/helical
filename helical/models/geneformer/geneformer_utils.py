@@ -1,5 +1,4 @@
 import pickle as pkl
-from helical.models.geneformer.fine_tuning_model import GeneformerFineTuningModel
 import requests
 import json
 import pickle as pkl
@@ -271,7 +270,6 @@ def mean_nonpadding_embs(embs, original_lens, dim=1):
 # fine-tune Geneformer for classification tasks
 def fine_tuning(
     model,
-    fine_tune_head,
     train_input_data,
     validation_input_data,
     optimizer,
@@ -289,8 +287,7 @@ def fine_tuning(
     silent=False,
 ):
             
-    model_input_size = get_model_input_size(model)
-    model = GeneformerFineTuningModel(model, fine_tune_head)
+    model_input_size = get_model_input_size(model.helical_model)
 
     cls_present = any("<cls>" in key for key in gene_token_dict.keys())
     eos_present = any("<eos>" in key for key in gene_token_dict.keys())
