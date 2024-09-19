@@ -12,7 +12,7 @@ from transformers import get_scheduler
 from helical.models.base_models import HelicalBaseFineTuningHead, HelicalRNAModel
 from helical.models.base_models import HelicalBaseFineTuningModel
 
-class scGPTFineTune(HelicalBaseFineTuningModel):
+class scGPTFineTuningModel(HelicalBaseFineTuningModel):
     """Fine-tuning model for the scGPT model.
 
     Parameters
@@ -31,7 +31,7 @@ class scGPTFineTune(HelicalBaseFineTuningModel):
 
     """
     def __init__(self, scGPT_model: HelicalRNAModel, fine_tuning_head: Literal["classification"]|HelicalBaseFineTuningHead, output_size: Optional[int]=None):
-        super(scGPTFineTune, self).__init__()
+        super(scGPTFineTuningModel, self).__init__()
         self.config = scGPT_model.config
         self.vocab = scGPT_model.vocab
         self.helical_model = scGPT_model.model
@@ -156,7 +156,7 @@ class scGPTFineTune(HelicalBaseFineTuningModel):
                 batch_count = 0
                 batch_loss = 0.0
                 batches_processed = 0
-                training_loop = tqdm(data_loader, desc="Fine-Tuning")
+                training_loop = tqdm(data_loader)
                 for data_dict in training_loop:
                     input_gene_ids = data_dict["gene"].to(device)
                     src_key_padding_mask = input_gene_ids.eq(

@@ -396,4 +396,3 @@ def fine_tuning(
 
     # put model back into eval mode
     model.eval()
-    return model

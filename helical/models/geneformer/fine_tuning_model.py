@@ -95,7 +95,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
             The fine-tuned model.
         """
 
-        trained_model = fine_tuning(
+        fine_tuning(
             self,
             train_dataset,
             validation_dataset,
@@ -112,5 +112,3 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
             self.emb_mode,
             self.gene_token_dict,
         )
-
-        return trained_model

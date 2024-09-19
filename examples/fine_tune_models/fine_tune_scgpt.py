@@ -1,4 +1,4 @@
-from helical.models.scgpt.fine_tuning_model import scGPTFineTune
+from helical.models.scgpt.fine_tuning_model import scGPTFineTuningModel
 from helical.models.scgpt.model import scGPT,scGPTConfig
 import anndata as ad
 from omegaconf import DictConfig
@@ -21,7 +21,7 @@ def run_fine_tuning(cfg: DictConfig):
     for i in range(len(cell_types)):
         cell_types[i] = class_id_dict[cell_types[i]]
 
-    scgpt_fine_tune = scGPTFineTune(scGPT_model=scgpt, fine_tuning_head="classification", output_size=len(label_set))
+    scgpt_fine_tune = scGPTFineTuningModel(scGPT_model=scgpt, fine_tuning_head="classification", output_size=len(label_set))
     scgpt_fine_tune.fine_tune(train_input_data=dataset, train_labels=cell_types)
 
 if __name__ == "__main__":

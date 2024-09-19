@@ -3,7 +3,6 @@ import torch
 from helical.models.geneformer.model import Geneformer
 from helical.models.geneformer.geneformer_config import GeneformerConfig
 from helical.models.geneformer.geneformer_utils import get_embs, load_model
-from helical.models.fine_tune.fine_tuning_heads import ClassificationHead
 from helical.models.geneformer.fine_tuning_model import GeneformerFineTuningModel
 from anndata import AnnData
 
@@ -180,8 +179,7 @@ class TestGeneformerModel:
     def test_fine_tune_classifier(self, geneformer, mock_data, fine_tune_mock_data):
         tokenized_dataset = geneformer.process_data(mock_data, gene_names='gene_symbols')
         tokenized_dataset = tokenized_dataset.add_column('labels', fine_tune_mock_data)
-        classifier_head = ClassificationHead(len(set(fine_tune_mock_data)))
-        fine_tuned_model = GeneformerFineTuningModel(geneformer, classifier_head)
+        fine_tuned_model = GeneformerFineTuningModel(geneformer, fine_tuning_head="classification", output_size=1)
         fine_tuned_model.fine_tune(train_dataset=tokenized_dataset, label='labels')
         assert fine_tuned_model is not None
         assert isinstance(fine_tuned_model, GeneformerFineTuningModel)
