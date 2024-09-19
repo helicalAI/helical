@@ -193,9 +193,4 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
                         accuracy += accuracy_score(val_labels.cpu(), torch.argmax(output, dim=1).cpu())
                         count += 1.0
                         testing_loop.set_postfix({"accuracy": accuracy/count})
-
-        # put model back in eval mode
-        self.eval()
-        # should the model be returned #TODO
-        # return self
     

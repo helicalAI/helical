@@ -6,7 +6,7 @@ from anndata import AnnData
 from helical.services.downloader import Downloader
 import pickle
 from transformers import BertForMaskedLM
-from helical.models.geneformer.geneformer_utils import get_embs,quant_layers,forw
+from helical.models.geneformer.geneformer_utils import get_embs,quant_layers
 from helical.models.geneformer.geneformer_tokenizer import TranscriptomeTokenizer
 from helical.models.geneformer.geneformer_config import GeneformerConfig
 from helical.services.mapping import map_gene_symbols_to_ensembl_ids
@@ -181,9 +181,6 @@ class Geneformer(HelicalRNAModel):
             output_path = Path(output_path).with_suffix(".dataset")
             tokenized_dataset.save_to_disk(output_path)
         return tokenized_dataset
-
-    def forward(self, input_mini_batch, minibatch):
-        return forw(self.model, input_mini_batch, minibatch)
 
     def get_embeddings(self, dataset: Dataset) -> np.array:
         """Gets the gene embeddings from the Geneformer model   

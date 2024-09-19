@@ -4,14 +4,12 @@ import json
 import pickle as pkl
 # imports
 import logging
-import numpy as np
-from sklearn.metrics import accuracy_score
 import torch
 from tqdm.auto import trange
 import re
 import torch
 from transformers import (
-    BertForMaskedLM,get_scheduler
+    BertForMaskedLM
 )
 
 
@@ -36,12 +34,6 @@ def load_mappings(gene_symbols):
 
     pkl.dump(gene_id_to_ensemble, open('./human_gene_to_ensemble_id.pkl', 'wb'))
     return gene_id_to_ensemble
-
-def forw(model, input_data_minibatch, minibatch):
-    return model(
-        input_ids=input_data_minibatch,
-        attention_mask=gen_attention_mask(minibatch),
-    )
 
 
 # extract embeddings
@@ -266,130 +258,3 @@ def mean_nonpadding_embs(embs, original_lens, dim=1):
         masked_embs = embs.masked_fill(~mask, 0.0)
         mean_embs = masked_embs.sum(dim) / original_lens.float()
     return mean_embs
-
-# fine-tune Geneformer for classification tasks
-def fine_tuning(
-    model,
-    train_input_data,
-    validation_input_data,
-    optimizer,
-    optimizer_params,
-    loss_function,
-    label,
-    epochs,
-    pad_token_id,
-    batch_size,
-    device,
-    lr_scheduler_params,
-    num_layers,
-    emb_mode,
-    gene_token_dict,
-    silent=False,
-):
-            
-    model_input_size = get_model_input_size(model.helical_model)
-
-    cls_present = any("<cls>" in key for key in gene_token_dict.keys())
-    eos_present = any("<eos>" in key for key in gene_token_dict.keys())
-    if emb_mode == "cls":
-        assert cls_present, "<cls> token missing in token dictionary"
-        # Check to make sure that the first token of the filtered input data is cls token
-        cls_token_id = gene_token_dict["<cls>"]
-        assert (
-            train_input_data["input_ids"][0][0] == cls_token_id
-        ), "First token is not <cls> token value"
-    elif emb_mode == "cell":
-        if cls_present:
-            logger.warning(
-                "CLS token present in token dictionary, excluding from average."
-            )
-        if eos_present:
-            logger.warning(
-                "EOS token present in token dictionary, excluding from average."
-            )
-    
-    total_batch_length = len(train_input_data)
-    #initialise optimizer
-    optimizer = optimizer(model.parameters(), **optimizer_params)
-
-    #initialise lr_scheduler
-    lr_scheduler = None
-    if lr_scheduler_params is not None: 
-        lr_scheduler = get_scheduler(optimizer=optimizer, **lr_scheduler_params)
-    
-    if num_layers > 0:
-        print(f"Freezing the first {num_layers} encoder layers of the Geneformer model during fine-tuning.")
-
-        frozen_layers = model.helical_model.bert.encoder.layer[:num_layers]
-
-        for module in frozen_layers:
-            for param in module.parameters():
-                param.requires_grad = False
-
-    model.to(device)
-
-
-    validation_batch_length = 0
-    if validation_input_data is not None:
-        validation_batch_length = len(validation_input_data)
-
-    for j in range(epochs):
-        training_loop = trange(0, total_batch_length, batch_size, desc="Fine-Tuning", leave=(not silent))
-        batch_loss = 0.0
-        batches_processed = 0
-        for i in training_loop:
-            max_range = min(i + batch_size, total_batch_length)
-
-            minibatch = train_input_data.select([i for i in range(i, max_range)])
-            max_len = int(max(minibatch["length"]))
-            minibatch.set_format(type="torch",device=device)
-
-            input_data_minibatch = minibatch["input_ids"]
-            input_data_minibatch = pad_tensor_list(
-                input_data_minibatch, max_len, pad_token_id, model_input_size
-            ).to(device)
-
-            outputs = model(input_ids=input_data_minibatch, attention_mask_minibatch=gen_attention_mask(minibatch))
-            loss = loss_function(outputs, minibatch[label])
-            loss.backward()
-            batch_loss += loss.item()
-            batches_processed += 1
-            training_loop.set_postfix({"loss": batch_loss/batches_processed})
-            training_loop.set_description(f"Fine-Tuning: epoch {j+1}/{epochs}")
-            optimizer.step()
-            optimizer.zero_grad()
-
-            del outputs
-            del minibatch
-            del input_data_minibatch
-        if lr_scheduler is not None:
-            lr_scheduler.step()
-
-        if validation_input_data is not None:
-            testing_loop = trange(0, validation_batch_length, batch_size, desc="Fine-Tuning Validation", leave=(not silent))
-            accuracy = 0.0
-            count = 0.0
-            for i in testing_loop:
-                max_range = min(i + batch_size, validation_batch_length)
-
-                minibatch = validation_input_data.select([i for i in range(i, max_range)])
-                max_len = int(max(minibatch["length"]))
-                minibatch.set_format(type="torch",device=device)
-
-                input_data_minibatch = minibatch["input_ids"]
-                input_data_minibatch = pad_tensor_list(
-                    input_data_minibatch, max_len, pad_token_id, model_input_size
-                ).to(device)
-
-                with torch.no_grad():
-                    outputs = model(input_ids=input_data_minibatch, attention_mask_minibatch=gen_attention_mask(minibatch))
-                accuracy += accuracy_score(minibatch[label].cpu(), torch.argmax(outputs, dim=1).cpu())
-                count += 1.0
-                testing_loop.set_postfix({"accuracy": accuracy/count})
-
-                del outputs
-                del minibatch
-                del input_data_minibatch
-
-    # put model back into eval mode
-    model.eval()
