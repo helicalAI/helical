@@ -148,5 +148,5 @@ class HelicalBaseFineTuningModel(torch.nn.Module):
         pass
 
     @abstractmethod
-    def fine_tune():
+    def train():
         pass

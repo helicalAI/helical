@@ -133,7 +133,7 @@ for i in range(len(cell_types)):
 uce_fine_tune = UCEFineTuningModel(uce_model=uce, fine_tuning_head="classification", output_size=len(label_set))
 
 # Fine-tune
-uce_fine_tune.fine_tune(train_input_data=dataset, train_labels=cell_types)
+uce_fine_tune.train(train_input_data=dataset, train_labels=cell_types)
 
 ```
 

@@ -113,6 +113,6 @@ class TestSCGPTModel:
         tokenized_dataset = self.scgpt.process_data(self.data)
         labels = list([0])
         fine_tuned_model = scGPTFineTuningModel(self.scgpt, fine_tuning_head="classification", output_size=1)
-        fine_tuned_model.fine_tune(train_input_data=tokenized_dataset, train_labels=labels)
+        fine_tuned_model.train(train_input_data=tokenized_dataset, train_labels=labels)
         assert fine_tuned_model is not None
         assert isinstance(fine_tuned_model, scGPTFineTuningModel)

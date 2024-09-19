@@ -60,7 +60,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
         output = self.fine_tuning_head(cls_emb)
         return output
     
-    def fine_tune(
+    def train(
         self,
         train_input_data: Dataset, 
         train_labels,     
@@ -143,7 +143,6 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
             )
 
         self.to(device)
-        self.train()
 
         optimizer = optimizer(self.parameters(), **optimizer_params)
 

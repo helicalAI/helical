@@ -26,7 +26,7 @@ def run_fine_tuning(cfg: DictConfig):
     dataset = dataset.map(classes_to_ids, num_proc=1)
 
     geneformer_fine_tune = GeneformerFineTuningModel(geneformer_model=geneformer, fine_tuning_head="classification", output_size=len(label_set))
-    geneformer_fine_tune.fine_tune(train_dataset=dataset["train"], validation_dataset=dataset["test"])
+    geneformer_fine_tune.train(train_dataset=dataset["train"], validation_dataset=dataset["test"])
 
 if __name__ == "__main__":
     run_fine_tuning()

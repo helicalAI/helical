@@ -22,7 +22,7 @@ def run_fine_tuning(cfg: DictConfig):
         cell_types[i] = class_id_dict[cell_types[i]]
 
     scgpt_fine_tune = scGPTFineTuningModel(scGPT_model=scgpt, fine_tuning_head="classification", output_size=len(label_set))
-    scgpt_fine_tune.fine_tune(train_input_data=dataset, train_labels=cell_types)
+    scgpt_fine_tune.train(train_input_data=dataset, train_labels=cell_types)
 
 if __name__ == "__main__":
     run_fine_tuning()

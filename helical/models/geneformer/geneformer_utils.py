@@ -316,9 +316,6 @@ def fine_tuning(
     lr_scheduler = None
     if lr_scheduler_params is not None: 
         lr_scheduler = get_scheduler(optimizer=optimizer, **lr_scheduler_params)
-
-    # put model into train mode
-    model.train()
     
     if num_layers > 0:
         print(f"Freezing the first {num_layers} encoder layers of the Geneformer model during fine-tuning.")

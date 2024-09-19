@@ -81,7 +81,7 @@ def test_load_model__ok_custom_base():
             pass
         def process_data(self):
             pass
-        def fine_tune(self):
+        def train(self):
             pass
 
     custom_base = CustomBaseModel()

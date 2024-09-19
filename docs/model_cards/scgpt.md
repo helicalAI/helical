@@ -133,7 +133,7 @@ for i in range(len(cell_types)):
 scgpt_fine_tune = scGPTFineTuningModel(scGPT_model=scgpt, fine_tuning_head="classification", output_size=len(label_set))
 
 # Fine-tune
-scgpt_fine_tune.fine_tune(train_input_data=dataset, train_labels=cell_types)
+scgpt_fine_tune.train(train_input_data=dataset, train_labels=cell_types)
 ```
 
 ## Developers

@@ -226,7 +226,7 @@ dataset = dataset.add_column('cell_types', cell_types)
 geneformer_fine_tune = GeneformerFineTuningModel(geneformer_model=geneformer, fine_tuning_head="classification", label="cell_types", output_size=len(label_set))
 
 # Fine-tune
-geneformer_fine_tune.fine_tune(train_dataset=dataset["train"])
+geneformer_fine_tune.train(train_dataset=dataset["train"])
 
 ```
 

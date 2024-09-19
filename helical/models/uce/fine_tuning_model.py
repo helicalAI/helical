@@ -59,7 +59,7 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
         output = self.fine_tuning_head(embeddings)
         return output
     
-    def fine_tune(
+    def train(
             self,
             train_input_data: UCEDataset, 
             train_labels,     
@@ -131,8 +131,6 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
         #     pbar = tqdm(dataloader)
 
         model = self.to(self.device)
-        
-        model.train()
 
         optimizer = optimizer(model.parameters(), **optimizer_params)
 

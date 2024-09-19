@@ -52,7 +52,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
         final = self.fine_tuning_head(cls_seq)
         return final
     
-    def fine_tune(
+    def train(
             self,
             train_dataset: Dataset, 
             optimizer: optim = optim.AdamW,

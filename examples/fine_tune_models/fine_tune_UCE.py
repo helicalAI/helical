@@ -21,4 +21,4 @@ def run_fine_tuning(cfg: DictConfig):
         cell_types[i] = class_id_dict[cell_types[i]]
 
     uce_fine_tune = UCEFineTuningModel(uce_model=uce, fine_tuning_head="classification", output_size=len(label_set))
-    uce_fine_tune.fine_tune(train_input_data=dataset, train_labels=cell_types)
+    uce_fine_tune.train(train_input_data=dataset, train_labels=cell_types)
