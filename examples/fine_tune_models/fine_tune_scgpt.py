@@ -5,7 +5,7 @@ from omegaconf import DictConfig
 import hydra
 
 
-@hydra.main(version_base=None, config_path="configs", config_name="scgpt_config")
+@hydra.main(version_base=None, config_path="../run_models/configs", config_name="scgpt_config")
 def run_fine_tuning(cfg: DictConfig):
     scgpt_config=scGPTConfig(**cfg)
     scgpt = scGPT(configurer=scgpt_config)

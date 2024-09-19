@@ -4,7 +4,7 @@ from helical.models.uce.fine_tuning_model import UCEFineTuningModel
 from omegaconf import DictConfig
 import hydra
 
-@hydra.main(version_base=None, config_path="configs", config_name="uce_config")
+@hydra.main(version_base=None, config_path="../run_models/configs", config_name="uce_config")
 def run_fine_tuning(cfg: DictConfig):
     uce_config=UCEConfig(**cfg)
     uce = UCE(configurer=uce_config)
@@ -22,3 +22,6 @@ def run_fine_tuning(cfg: DictConfig):
 
     uce_fine_tune = UCEFineTuningModel(uce_model=uce, fine_tuning_head="classification", output_size=len(label_set))
     uce_fine_tune.train(train_input_data=dataset, train_labels=cell_types)
+    
+if __name__ == "__main__":
+    run_fine_tuning()

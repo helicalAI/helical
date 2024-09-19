@@ -5,7 +5,7 @@ import anndata as ad
 import hydra
 from omegaconf import DictConfig
 
-@hydra.main(version_base=None, config_path="configs", config_name="geneformer_config")
+@hydra.main(version_base=None, config_path="../run_models/configs", config_name="geneformer_config")
 def run_fine_tuning(cfg: DictConfig):
     geneformer_config = GeneformerConfig(**cfg)
     geneformer = Geneformer(configurer = geneformer_config)
