@@ -119,10 +119,12 @@ Please use this BibTeX to cite this repository in your publications:
 ```
 @software{allard_2024_13135902,
   author       = {Allard, Maxime and
-                  Benoit Putzeys and
+                  Putzeys, Benoit and
                   Schneider, Rick and
                   Quiroga Londoño, Mariana and
-                  Klop, Mathieu},
+                  Klop, Mathieu and
+                  Sbaï, Jad and
+                  Wood, Matthew},
   title        = {helicalAI/helical: v0.0.1-alpha},
   month        = jul,
   year         = 2024,
