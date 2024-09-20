@@ -32,6 +32,11 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
     -------
     forward(input_gene_ids: torch.Tensor, data_dict: dict, src_key_padding_mask: torch.Tensor, use_batch_labels: bool, device: str) -> torch.Tensor
         The forward method of the fine-tuning model.
+    train(train_input_data: UCEDataset, train_labels: np.ndarray, validation_input_data = None, validation_labels = None, optimizer: optim = optim.AdamW, optimizer_params: dict = {'lr': 0.0001}, loss_function: loss = loss.CrossEntropyLoss(), epochs: int = 1, lr_scheduler_params: Optional[dict] = None)
+        Fine-tunes the UCE model with different head modules.
+    get_outputs(dataset: UCEDataset) -> np.ndarray
+        Get the outputs of the fine-tuned model on a UCE processed dataset.
+
     """
     def __init__(self, uce_model: HelicalRNAModel, fine_tuning_head: Literal["classification"]|HelicalBaseFineTuningHead, output_size: Optional[int]=None):
         super(UCEFineTuningModel, self).__init__()
@@ -70,7 +75,7 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
     def train(
             self,
             train_input_data: UCEDataset, 
-            train_labels,     
+            train_labels: np.ndarray,     
             validation_input_data = None,
             validation_labels = None,
             optimizer: optim = optim.AdamW,

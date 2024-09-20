@@ -32,6 +32,10 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
     -------
     forward(input_gene_ids: torch.Tensor, data_dict: dict, src_key_padding_mask: torch.Tensor, use_batch_labels: bool, device: str) -> torch.Tensor
         The forward method of the fine-tuning model.
+    train(train_input_data: Dataset, train_labels: np.ndarray, validation_input_data: Optional[Dataset], validation_labels: Optional[np.ndarray], optimizer: optim, optimizer_params: dict, loss_function: loss, epochs: int, lr_scheduler_params: Optional[dict])
+        Fine-tunes the scGPT model with different head modules.
+    get_outputs(dataset: Dataset) -> np.ndarray
+        Get the outputs of the fine-tuned model.
 
     """
     def __init__(self, scGPT_model: HelicalRNAModel, fine_tuning_head: Literal["classification"]|HelicalBaseFineTuningHead, output_size: Optional[int]=None):
@@ -71,7 +75,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
     def train(
         self,
         train_input_data: Dataset, 
-        train_labels,     
+        train_labels: np.ndarray,     
         validation_input_data = None,
         validation_labels = None,
         optimizer: optim = optim.AdamW,
@@ -206,7 +210,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
 
     def get_outputs(
         self, 
-        dataset,
+        dataset: Dataset,
     ) -> np.ndarray:
         """Get the outputs of the fine-tuned model.
         
@@ -258,4 +262,4 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
             output = self(input_gene_ids, validation_data_dict, src_key_padding_mask, use_batch_labels, device)
             outputs.append(output.detach().cpu().numpy())
         
-        return outputs
+        return np.vstack(outputs)

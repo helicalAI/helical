@@ -182,5 +182,7 @@ class TestGeneformerModel:
         fine_tuned_model = GeneformerFineTuningModel(geneformer, fine_tuning_head="classification", output_size=1)
         fine_tuned_model.train(train_dataset=tokenized_dataset, label='labels')
         assert fine_tuned_model is not None
-        assert isinstance(fine_tuned_model, GeneformerFineTuningModel)
+        outputs = fine_tuned_model.get_outputs(tokenized_dataset)
+        assert outputs.shape == (len(mock_data), len(fine_tune_mock_data))
+
             

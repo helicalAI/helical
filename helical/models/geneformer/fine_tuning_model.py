@@ -31,6 +31,10 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
     -------
     forward(input_ids: torch.Tensor, attention_mask_minibatch: torch.Tensor) -> torch.Tensor
         The forward method of the fine-tuning model.
+    train(train_dataset: Dataset, optimizer: optim, optimizer_params: dict, loss_function: loss, label: str, epochs: int, freeze_layers: int, validation_dataset: Optional[Dataset], lr_scheduler_params: Optional[dict], silent = False)
+        Fine-tunes the Geneformer model.
+    get_outputs(dataset: Dataset, silent = False)
+        Get outputs from the fine-tuned model on the given processed dataset.
     """
     def __init__(self, geneformer_model: HelicalRNAModel, fine_tuning_head: Literal["classification"]|HelicalBaseFineTuningHead, output_size: Optional[int]=None):
         super(GeneformerFineTuningModel, self).__init__()
@@ -112,7 +116,6 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
                 message = "<cls> token missing in token dictionary"
                 logger.error(message)
                 raise ValueError(message)
-            assert cls_present, "<cls> token missing in token dictionary"
             # Check to make sure that the first token of the filtered input data is cls token
             cls_token_id = self.gene_token_dict["<cls>"]
             if cls_token_id != train_dataset["input_ids"][0][0]:
@@ -234,7 +237,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
         """
         model_input_size = get_model_input_size(self.geneformer_model)
         self.to(self.device)
-        
+
         dataset_length = len(dataset)
 
         cls_present = any("<cls>" in key for key in self.gene_token_dict.keys())
