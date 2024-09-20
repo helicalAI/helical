@@ -100,3 +100,6 @@ class HyenaDNA(HelicalDNAModel):
         LOGGER.info(f"Inference started")
         with torch.inference_mode():
             return self.model(tensor)
+
+    def train(self):
+        pass #TODO: Implement fine-tuning for HyenaDNA model

@@ -209,7 +209,6 @@ class Geneformer(HelicalRNAModel):
 
         return embeddings
 
-
     def ensure_data_validity(self, adata: AnnData, gene_names: str) -> None:
         """Ensure that the data is eligible for processing by the Geneformer model. This checks 
         if the data contains the gene_names, and sets the total_counts column in adata.obs.
@@ -227,3 +226,5 @@ class Geneformer(HelicalRNAModel):
             If the data is missing column names.
         """
         self.ensure_rna_data_validity(adata, gene_names)
+
+

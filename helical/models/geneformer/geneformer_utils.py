@@ -4,13 +4,12 @@ import json
 import pickle as pkl
 # imports
 import logging
-
 import torch
 from tqdm.auto import trange
 import re
 import torch
 from transformers import (
-    BertForMaskedLM,
+    BertForMaskedLM
 )
 
 

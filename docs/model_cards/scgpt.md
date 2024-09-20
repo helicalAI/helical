@@ -104,6 +104,38 @@ embeddings = scgpt.get_embeddings(data)
 print(embeddings.shape)
 ```
 
+## How To Fine-Tune
+
+```python
+from helical.models.scgpt.fine_tuning_model import scGPTFineTuningModel
+from helical.models.scgpt.model import scGPT,scGPTConfig
+
+# Create the Geneformer model with relevant configs
+scgpt_config=scGPTConfig(batch_size=10)
+scgpt = scGPT(configurer=scgpt_config)
+                        
+adata = ad.read_h5ad("dataset.h5ad")
+
+# Process the data for training
+data = scgpt.process_data(adata)
+
+# Get the desired label class
+cell_types = list(ann_data.obs.cell_type)
+
+# Create a dictionary mapping the classes to unique integers for training
+label_set = set(cell_types)
+class_id_dict = dict(zip(label_set, [i for i in range(len(label_set))]))
+
+for i in range(len(cell_types)):
+    cell_types[i] = class_id_dict[cell_types[i]]
+
+# Create the fine-tuning model
+scgpt_fine_tune = scGPTFineTuningModel(scGPT_model=scgpt, fine_tuning_head="classification", output_size=len(label_set))
+
+# Fine-tune
+scgpt_fine_tune.train(train_input_data=dataset, train_labels=cell_types)
+```
+
 ## Developers
 
 Haotian Cui, Chloe Wang, Hassaan Maan, Kuan Pang, Fengning Luo, Nan Duan, Bo Wang

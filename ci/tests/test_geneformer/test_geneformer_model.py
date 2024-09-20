@@ -3,6 +3,7 @@ import torch
 from helical.models.geneformer.model import Geneformer
 from helical.models.geneformer.geneformer_config import GeneformerConfig
 from helical.models.geneformer.geneformer_utils import get_embs, load_model
+from helical.models.geneformer.fine_tuning_model import GeneformerFineTuningModel
 from anndata import AnnData
 
 class TestGeneformerModel:
@@ -20,6 +21,11 @@ class TestGeneformerModel:
         data.obs["cell_type"] = ["CD4 T cells"]
         data.X = [[1, 2, 5]]
         return data
+
+    @pytest.fixture
+    def fine_tune_mock_data(self):
+        labels = list([0])
+        return labels
 
     def test_pass_invalid_model_name(self):
         with pytest.raises(ValueError):
@@ -169,4 +175,14 @@ class TestGeneformerModel:
 
     def test_model_input_size(self, geneformer):
         assert geneformer.config["input_size"] == geneformer.configurer.model_map[geneformer.config["model_name"]]['input_size']
+
+    def test_fine_tune_classifier(self, geneformer, mock_data, fine_tune_mock_data):
+        tokenized_dataset = geneformer.process_data(mock_data, gene_names='gene_symbols')
+        tokenized_dataset = tokenized_dataset.add_column('labels', fine_tune_mock_data)
+        fine_tuned_model = GeneformerFineTuningModel(geneformer, fine_tuning_head="classification", output_size=1)
+        fine_tuned_model.train(train_dataset=tokenized_dataset, label='labels')
+        assert fine_tuned_model is not None
+        outputs = fine_tuned_model.get_outputs(tokenized_dataset)
+        assert outputs.shape == (len(mock_data), len(fine_tune_mock_data))
+
             

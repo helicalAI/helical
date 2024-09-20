@@ -34,7 +34,7 @@ class GeneformerConfig():
             emb_layer: int = -1,
             emb_mode: Literal["cls", "cell", "gene"] = "cell",
             device: Literal["cpu", "cuda"] = "cpu",
-            accelerator: Optional[bool] = False
+            accelerator: Optional[bool] = False,
             ):
         
         # model specific parameters
@@ -42,22 +42,27 @@ class GeneformerConfig():
             "gf-12L-95M-i4096": {
                 'input_size': 4096,
                 'special_token': True,
+                'embsize': 512,
             },
             "gf-12L-95M-i4096-CLcancer": {
                 'input_size': 4096,
                 'special_token': True,
+                'embsize': 512,
             },
             "gf-20L-95M-i4096": {
                 'input_size': 4096,
                 'special_token': True,
+                'embsize': 896,
             },
             "gf-12L-30M-i2048": {
                 'input_size': 2048,
                 'special_token': False,
+                'embsize': 512,
             },
             "gf-6L-30M-i2048": {
                 'input_size': 2048,
                 'special_token': False,
+                'embsize': 256,
             },
 
         }
@@ -100,8 +105,9 @@ class GeneformerConfig():
             "emb_mode": emb_mode,
             "device": device,
             "accelerator": accelerator,
-            "input_size": self.model_map[model_name]['input_size'],
-            "special_token": self.model_map[model_name]['special_token'],
+            "input_size": self.model_map[model_name]["input_size"],
+            "special_token": self.model_map[model_name]["special_token"],
+            "embsize": self.model_map[model_name]["embsize"]
         }
     
 

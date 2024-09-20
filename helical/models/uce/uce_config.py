@@ -131,4 +131,5 @@ class UCEConfig():
             "multi_gpu": multi_gpu,
             "device": device,
             "accelerator": accelerator,
+            "embsize": output_dim,
         }

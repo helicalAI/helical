@@ -1,11 +1,11 @@
 import os
+from typing import Literal
 import scanpy as sc
 from helical.models.base_models import HelicalRNAModel
 from helical.models.scgpt.scgpt_config import scGPTConfig
 import numpy as np
 from anndata import AnnData
 import logging
-from typing import Literal
 from accelerate import Accelerator
 from helical.models.scgpt.scgpt_utils import load_model
 from helical.models.scgpt.dataset import Dataset
@@ -108,6 +108,7 @@ class scGPT(HelicalRNAModel):
         )
 
         device = next(self.model.parameters()).device
+
         cell_embeddings = np.zeros(
             (len(dataset), self.config["embsize"]), dtype=np.float32
         )
