@@ -24,7 +24,7 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
     uce_model : UCE
         The initialised UCE model to fine-tune.
     fine_tuning_head : Literal["classification"] | HelicalBaseFineTuningHead
-        The fine-tuning head that is appended to the model. This can either be a string specifying the task or a custom fine-tuning head inheriting from HelicalBaseFineTuningHead.
+        The fine-tuning head that is appended to the model. This can either be a string (options available: "classification") specifying the task or a custom fine-tuning head inheriting from HelicalBaseFineTuningHead.
     output_size : Optional[int]
         The output size of the fine-tuning model. This is required if the fine_tuning_head is a string specified task. For a classification task this is number of unique classes.
 
