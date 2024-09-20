@@ -12,6 +12,7 @@ from transformers import get_scheduler
 from helical.models.base_models import HelicalBaseFineTuningHead, HelicalRNAModel
 from helical.models.base_models import HelicalBaseFineTuningModel
 import logging
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -41,10 +42,14 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
         if isinstance(fine_tuning_head, str):
             if fine_tuning_head == "classification":
                 if output_size is None:
-                    raise ValueError("The output_size must be specified for a classification head.")
+                    message = "The output_size must be specified for a classification head."
+                    logger.error(message)
+                    raise ValueError(message)
                 fine_tuning_head = ClassificationHead(output_size)
             else:
-                raise ValueError(f"The fine_tuning_head must be a valid HelicalBaseFineTuningHead")
+                message = "The fine_tuning_head must be a valid HelicalBaseFineTuningHead"
+                logger.error(message)
+                raise ValueError(message)
         else:
             fine_tuning_head = fine_tuning_head
         fine_tuning_head.set_dim_size(self.config["embsize"])
@@ -198,3 +203,59 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
                         count += 1.0
                         testing_loop.set_postfix({"accuracy": accuracy/count})
         logger.info(f"Fine-Tuning Complete. Epochs: {epochs}")
+
+    def get_outputs(
+        self, 
+        dataset,
+    ) -> np.ndarray:
+        """Get the outputs of the fine-tuned model.
+        
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to get the outputs from.
+
+        Returns
+        -------
+        np.ndarray
+            The outputs of the fine-tuned model.
+        """
+        device = next(self.scgpt_model.parameters()).device
+        self.to(device)
+        
+        try:
+            use_batch_labels = dataset.batch_ids is not None
+        except:
+            use_batch_labels = False
+                
+        collator = DataCollator(
+            do_padding=True,
+            pad_token_id=self.vocab[self.config["pad_token"]],
+            pad_value=self.config["pad_value"],
+            do_mlm=False,
+            do_binning=True,
+            max_length=1200,
+            sampling=True,
+            keep_first_n_tokens=1,
+        )
+
+        data_loader = DataLoader(
+            dataset,
+            batch_size=self.config["batch_size"],
+            sampler=SequentialSampler(dataset),
+            collate_fn=collator,
+            drop_last=False,
+            pin_memory=True,
+        )
+
+        testing_loop = tqdm(data_loader, desc="Fine-Tuning Validation")
+        outputs = []
+        for validation_data_dict in testing_loop:
+            input_gene_ids = validation_data_dict["gene"].to(device)
+            src_key_padding_mask = input_gene_ids.eq(
+                self.vocab[self.config["pad_token"]]
+            )
+            output = self(input_gene_ids, validation_data_dict, src_key_padding_mask, use_batch_labels, device)
+            outputs.append(output.detach().cpu().numpy())
+        
+        return outputs

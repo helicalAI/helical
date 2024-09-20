@@ -1,5 +1,6 @@
 from helical.models.fine_tune.fine_tuning_heads import ClassificationHead
 from helical.models.uce.uce_dataset import UCEDataset
+import numpy as np
 import torch
 from torch import optim
 from torch.nn.modules import loss
@@ -41,10 +42,14 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
         if isinstance(fine_tuning_head, str):
             if fine_tuning_head == "classification":
                 if output_size is None:
-                    raise ValueError("The output_size must be specified for a classification head.")
+                    message = "The output_size must be specified for a classification head."
+                    logger.error(message)
+                    raise ValueError(message)
                 fine_tuning_head = ClassificationHead(output_size)
             else:
-                raise ValueError(f"The fine_tuning_head must be a valid HelicalBaseFineTuningHead")
+                message = "The fine_tuning_head must be a valid HelicalBaseFineTuningHead"
+                logger.error(message)
+                raise ValueError(message)
         else:
             fine_tuning_head = fine_tuning_head
         fine_tuning_head.set_dim_size(self.config["embsize"])
@@ -192,3 +197,48 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
                     count += 1.0
                     testing_loop.set_postfix({"accuracy": accuracy/count})
         logger.info(f"Fine-Tuning Complete. Epochs: {epochs}")
+
+    def get_outputs(
+        self,
+        dataset: UCEDataset
+    ) -> np.ndarray:
+        """
+        Get the outputs of the fine-tuned model on a dataset.
+
+        Parameters
+        ----------
+        dataset : UCEDataset
+            The dataset to get the outputs for.
+        
+        Returns
+        -------
+        np.ndarray
+            The outputs of the model.
+        """
+        model = self.to(self.device)
+
+        batch_size = self.config["batch_size"]
+        dataloader = DataLoader(dataset, 
+                                batch_size=batch_size, 
+                                shuffle=False,
+                                collate_fn=dataset.collator_fn,
+                                num_workers=0)
+        
+
+        if self.accelerator is not None:
+            dataloader = self.accelerator.prepare(dataloader)
+
+        testing_loop = tqdm(dataloader, desc="Fine-Tuning Validation")
+        outputs = []
+        for validation_data in testing_loop:
+            batch_sentences, mask, idxs = validation_data[0], validation_data[1], validation_data[2]
+            batch_sentences = batch_sentences.permute(1, 0)
+            if self.config["multi_gpu"]:
+                batch_sentences = self.uce_model.module.pe_embedding(batch_sentences.long())
+            else:
+                batch_sentences = self.uce_model.pe_embedding(batch_sentences.long())
+            batch_sentences = torch.nn.functional.normalize(batch_sentences, dim=2)  # normalize token outputs
+            output = model.forward(batch_sentences, mask=mask)
+            outputs.append(output.detach().cpu().numpy())
+        
+        return np.vstack(outputs)

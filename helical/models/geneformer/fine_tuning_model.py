@@ -214,3 +214,74 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
                     del minibatch
                     del input_data_minibatch
         logger.info(f"Fine-Tuning Complete. Epochs: {epochs}")
+
+    def get_outputs(
+        self,
+        dataset: Dataset,
+        silent = False
+    ):
+        """Predicts the labels for a dataset using the fine-tuned model.
+
+        Parameters
+        ----------
+        dataset : Dataset
+            The processed dataset to generate outputs for.
+
+        Returns
+        -------
+        np.array
+            The predicted labels in the form of a numpy array
+        """
+        model_input_size = get_model_input_size(self.geneformer_model)
+        self.to(self.device)
+        
+        dataset_length = len(dataset)
+
+        cls_present = any("<cls>" in key for key in self.gene_token_dict.keys())
+        eos_present = any("<eos>" in key for key in self.gene_token_dict.keys())
+        if self.emb_mode == "cls":
+            if cls_present is False:
+                message = "<cls> token missing in token dictionary"
+                logger.error(message)
+                raise ValueError(message)
+            assert cls_present, "<cls> token missing in token dictionary"
+            # Check to make sure that the first token of the filtered input data is cls token
+            cls_token_id = self.gene_token_dict["<cls>"]
+            if cls_token_id != dataset["input_ids"][0][0]:
+                message = "First token is not <cls> token value"
+                logger.error(message)
+            assert (
+                dataset["input_ids"][0][0] == cls_token_id
+            ), "First token is not <cls> token value"
+        elif self.emb_mode == "cell":
+            if cls_present:
+                logger.warning(
+                    "CLS token present in token dictionary, excluding from average."
+                )
+            if eos_present:
+                logger.warning(
+                    "EOS token present in token dictionary, excluding from average."
+                )
+        
+        output = []
+        testing_loop = trange(0, dataset_length, self.config["batch_size"], desc="Generating Outputs", leave=(not silent))
+        for i in testing_loop:
+            max_range = min(i + self.config["batch_size"], dataset_length)
+
+            minibatch = dataset.select([i for i in range(i, max_range)])
+            max_len = int(max(minibatch["length"]))
+            minibatch.set_format(type="torch",device=self.device)
+
+            input_data_minibatch = minibatch["input_ids"]
+            input_data_minibatch = pad_tensor_list(
+                input_data_minibatch, max_len, self.pad_token_id, model_input_size
+            ).to(self.device)
+
+            with torch.no_grad():
+                outputs = self(input_ids=input_data_minibatch, attention_mask_minibatch=gen_attention_mask(minibatch))
+                output.append(outputs.clone().detach())
+            del outputs
+            del minibatch
+            del input_data_minibatch
+
+        return torch.cat(output, dim=0).cpu().numpy()
