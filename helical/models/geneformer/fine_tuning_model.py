@@ -20,7 +20,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
     
     Parameters
     ----------
-    helical_model : Geneformer
+    geneformer_model : Geneformer
         The initialised Geneformer model to fine-tune.
     fine_tuning_head : HelicalBaseFineTuningHead
         The fine-tuning head that is appended to the model.
@@ -39,21 +39,25 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
         self.pad_token_id = geneformer_model.pad_token_id
         self.device = geneformer_model.device
         self.gene_token_dict = geneformer_model.gene_token_dict
-        self.helical_model = geneformer_model.model
+        self.geneformer_model = geneformer_model.model
         if isinstance(fine_tuning_head, str):
             if fine_tuning_head == "classification":
                 if output_size is None:
-                    raise ValueError("The output_size must be specified for a classification head.")
+                    message = "The output_size must be specified for a classification head."
+                    logger.error(message)
+                    raise ValueError(message)
                 fine_tuning_head = ClassificationHead(output_size)
             else:
-                raise ValueError(f"The fine_tuning_head must be a valid HelicalBaseFineTuningHead")
+                message = "The fine_tuning_head must be a valid HelicalBaseFineTuningHead"
+                logger.error(message)
+                raise ValueError(message)
         else:
             fine_tuning_head = fine_tuning_head
         fine_tuning_head.set_dim_size(self.config["embsize"])
         self.fine_tuning_head = fine_tuning_head
 
     def forward(self, input_ids: torch.Tensor, attention_mask_minibatch: torch.Tensor) -> torch.Tensor:
-        outputs = self.helical_model(input_ids=input_ids, attention_mask=attention_mask_minibatch)
+        outputs = self.geneformer_model(input_ids=input_ids, attention_mask=attention_mask_minibatch)
         final_layer = outputs.hidden_states[-1]
         cls_seq = final_layer[:, 0, :]
         final = self.fine_tuning_head(cls_seq)
@@ -99,14 +103,21 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
 
         """
                 
-        model_input_size = get_model_input_size(self.helical_model)
+        model_input_size = get_model_input_size(self.geneformer_model)
 
         cls_present = any("<cls>" in key for key in self.gene_token_dict.keys())
         eos_present = any("<eos>" in key for key in self.gene_token_dict.keys())
         if self.emb_mode == "cls":
+            if cls_present is False:
+                message = "<cls> token missing in token dictionary"
+                logger.error(message)
+                raise ValueError(message)
             assert cls_present, "<cls> token missing in token dictionary"
             # Check to make sure that the first token of the filtered input data is cls token
             cls_token_id = self.gene_token_dict["<cls>"]
+            if cls_token_id != train_dataset["input_ids"][0][0]:
+                message = "First token is not <cls> token value"
+                logger.error(message)
             assert (
                 train_dataset["input_ids"][0][0] == cls_token_id
             ), "First token is not <cls> token value"
@@ -130,9 +141,9 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
             lr_scheduler = get_scheduler(optimizer=optimizer, **lr_scheduler_params)
         
         if freeze_layers > 0:
-            print(f"Freezing the first {freeze_layers} encoder layers of the Geneformer model during fine-tuning.")
+            logger.info(f"Freezing the first {freeze_layers} encoder layers of the Geneformer model during fine-tuning.")
 
-            frozen_layers = self.helical_model.bert.encoder.layer[:freeze_layers]
+            frozen_layers = self.geneformer_model.bert.encoder.layer[:freeze_layers]
 
             for module in frozen_layers:
                 for param in module.parameters():
@@ -144,6 +155,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
         if validation_dataset is not None:
             validation_batch_length = len(validation_dataset)
 
+        logger.info("Starting Fine-Tuning")
         for j in range(epochs):
             training_loop = trange(0, total_batch_length, self.config["batch_size"], desc="Fine-Tuning", leave=(not silent))
             batch_loss = 0.0
@@ -201,3 +213,4 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
                     del outputs
                     del minibatch
                     del input_data_minibatch
+        logger.info(f"Fine-Tuning Complete. Epochs: {epochs}")

@@ -11,13 +11,16 @@ from tqdm import tqdm
 from transformers import get_scheduler
 from helical.models.base_models import HelicalBaseFineTuningHead, HelicalRNAModel
 from helical.models.base_models import HelicalBaseFineTuningModel
+import logging
+
+logger = logging.getLogger(__name__)
 
 class scGPTFineTuningModel(HelicalBaseFineTuningModel):
     """Fine-tuning model for the scGPT model.
 
     Parameters
     ----------
-    helical_model : scGPT
+    scgpt_model : scGPT
         The initialised scGPT model to fine-tune.
     fine_tuning_head : HelicalBaseFineTuningHead
         The fine-tuning head that is appended to the model.
@@ -34,7 +37,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
         super(scGPTFineTuningModel, self).__init__()
         self.config = scGPT_model.config
         self.vocab = scGPT_model.vocab
-        self.helical_model = scGPT_model.model
+        self.scgpt_model = scGPT_model.model
         if isinstance(fine_tuning_head, str):
             if fine_tuning_head == "classification":
                 if output_size is None:
@@ -48,7 +51,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
         self.fine_tuning_head = fine_tuning_head
 
     def forward(self, input_gene_ids, data_dict, src_key_padding_mask, use_batch_labels, device) -> torch.Tensor:
-        embeddings = self.helical_model._encode(
+        embeddings = self.scgpt_model._encode(
             input_gene_ids,
             data_dict["expr"].to(device),
             src_key_padding_mask=src_key_padding_mask,
@@ -105,7 +108,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
             The fine-tuned model.
         """
         
-        device = next(self.helical_model.parameters()).device
+        device = next(self.scgpt_model.parameters()).device
 
         try:
             use_batch_labels = train_input_data.batch_ids is not None
@@ -150,6 +153,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
         if lr_scheduler_params is not None: 
             lr_scheduler = get_scheduler(optimizer=optimizer, **lr_scheduler_params)
 
+        logger.info("Starting Fine-Tuning")
         with torch.cuda.amp.autocast(enabled=True): #torch.autocast(device_type=str(device),enabled=True): # torch.cuda.amp.autocast(enabled=True):
             for j in range(epochs):
                 batch_count = 0
@@ -193,4 +197,4 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
                         accuracy += accuracy_score(val_labels.cpu(), torch.argmax(output, dim=1).cpu())
                         count += 1.0
                         testing_loop.set_postfix({"accuracy": accuracy/count})
-    
+        logger.info(f"Fine-Tuning Complete. Epochs: {epochs}")
