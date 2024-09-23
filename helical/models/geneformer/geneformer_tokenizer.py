@@ -115,6 +115,7 @@ def sum_ensembl_ids(
             token_genes_unique = True
         else:
             token_genes_unique = False
+
         if collapse_gene_ids is False:
             if token_genes_unique:
                 return data
@@ -127,6 +128,7 @@ def sum_ensembl_ids(
         gene_ids_collapsed_in_dict = [
             gene for gene in gene_ids_collapsed if gene in gene_token_dict.keys()
         ]
+
         if (
             len(set(gene_ids_collapsed_in_dict)) == len(set(gene_ids_in_dict))
         ) and token_genes_unique:
@@ -139,6 +141,9 @@ def sum_ensembl_ids(
             dup_genes = [
                 idx for idx, count in Counter(data.var_names).items() if count > 1
             ]
+
+            if len(dup_genes) == 0:
+                return data
 
             num_chunks = int(np.ceil(data.shape[0] / chunk_size))
 
