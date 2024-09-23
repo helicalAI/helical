@@ -4,7 +4,14 @@ import numpy as np
 from scipy.sparse import lil_matrix
 
 def get_anndata_from_hf_dataset(dataset):
-    # train split
+    """
+    Convert a HuggingFace dataset to an AnnData object
+
+    Parameters
+    ----------
+    dataset : Dataset
+        A HuggingFace dataset object
+    """
     observation_columns = [obs for obs in list(dataset.features.keys()) if not obs == 'raw_counts' and not obs == "rows"]
     obs_data = pd.DataFrame(dataset.select_columns(observation_columns).data.to_pandas(),columns=observation_columns)
     lil = lil_matrix((len(dataset),dataset[0]['size']))
