@@ -439,7 +439,7 @@ class TranscriptomeTokenizer:
             filter_pass_loc = np.array([i for i in range(adata.shape[0])])
 
         tokenized_cells = []
-
+        
         for i in range(0, len(filter_pass_loc), self.chunk_size):
             idx = filter_pass_loc[i : i + self.chunk_size]
 
@@ -448,7 +448,7 @@ class TranscriptomeTokenizer:
                 n_counts = adata[idx].obs["n_counts"].values[:, None]
             else:
                 # If 'n_counts' doesn't exist, calculate it as the sum of counts for each cell
-                n_counts = np.sum(adata[idx, :].X, axis=1)[:, None]
+                n_counts = adata[idx, :].X.sum(axis=1)
 
             X_view0 = adata[idx, :].X
             X_view = X_view0[:, coding_miRNA_loc]
