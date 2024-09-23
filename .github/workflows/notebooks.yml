@@ -26,6 +26,12 @@ jobs:
         run: |
           sed -i 's/train\[:65%\]/train\[:5%\]/g' ./examples/notebooks/Cell-Type-Annotation.ipynb
           sed -i 's/train\[70%:\]/train\[5%:7%\]/g' ./examples/notebooks/Cell-Type-Annotation.ipynb
+          sed -i 's/get_anndata_from_hf_dataset(ds\["train"\])/get_anndata_from_hf_dataset(ds\["train"\])[:10]/g' ./examples/notebooks/Cell-Type-Classification-Fine-Tuning.ipynb
+          sed -i 's/get_anndata_from_hf_dataset(ds\["test"\])/get_anndata_from_hf_dataset(ds\["test"\])[:2]/g' ./examples/notebooks/Cell-Type-Classification-Fine-Tuning.ipynb
+          sed -i 's/list(np.array(train_dataset.obs\["LVL1"\].tolist()))/list(np.array(train_dataset.obs\["LVL1"\].tolist()))[:10]/g' ./examples/notebooks/Cell-Type-Classification-Fine-Tuning.ipynb
+          sed -i 's/list(np.array(test_dataset.obs\["LVL1"\].tolist()))/list(np.array(test_dataset.obs\["LVL1"\].tolist()))[:2]/g' ./examples/notebooks/Cell-Type-Classification-Fine-Tuning.ipynb
+
+
 
       - name: Run Notebooks
         run: |
