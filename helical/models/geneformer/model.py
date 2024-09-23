@@ -165,14 +165,7 @@ class Geneformer(HelicalRNAModel):
                                          token_dictionary_file = self.files_config["token_path"],
                                          gene_mapping_file = self.files_config["ensembl_dict_path"],
                                         )
-        # Pass the path to the ann_data file instead of passing the anndata object
-        with tempfile.NamedTemporaryFile(suffix='.h5ad', delete=False) as tmp:
-            adata.write(tmp.name)
-            tmp_path = tmp.name
-        try:
-            tokenized_cells, cell_metadata = self.tk.tokenize_anndata(tmp_path)
-        finally:
-            os.unlink(tmp_path) 
+        tokenized_cells, cell_metadata = self.tk.tokenize_anndata(adata)
 
         # tokenized_cells, cell_metadata =  self.tk.tokenize_anndata(adata)
         tokenized_dataset = self.tk.create_dataset(tokenized_cells, cell_metadata, use_generator=False)

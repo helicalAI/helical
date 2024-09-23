@@ -49,17 +49,16 @@ class TestGeneformerTokenizer:
         assert tokenizer_v2.model_input_size == 4096
         assert tokenizer_v2.special_token
 
-    @pytest.mark.parametrize("collapse_gene_ids, expected_shape, expected_exception", [
-    (True, (2, 2), None),
-    (False, (2, 3), ValueError)
+    @pytest.mark.parametrize("collapse_gene_ids, expected_shape, expected_exception, data_format", [
+    (True, (2, 2), None, 'h5ad'),
+    (False, (2, 3), ValueError, 'h5ad'),
+    (True, (2, 3), ValueError, 'bad_format')
     ])
-    def test_sum_ensembl_ids_h5ad(self, tmp_path, collapse_gene_ids, expected_shape, expected_exception):
+    def test_sum_ensembl_ids_h5ad(self, collapse_gene_ids, expected_shape, expected_exception, data_format):
         # Create a test AnnData object
         adata = AnnData(X=sp.csr_matrix([[1, 2, 3], [4, 5, 6]]))
         adata.var['ensembl_id'] = ['ENSG1', 'ENSG2', 'ENSG2']
         adata.obs['n_counts'] = [6, 15]
-        test_file = tmp_path / "test.h5ad"
-        adata.write_h5ad(test_file)
 
         # Mock gene_mapping_dict and gene_token_dict
         gene_mapping_dict = {'ENSG1': 'ENSG1', 'ENSG2': 'ENSG2'}
@@ -67,23 +66,21 @@ class TestGeneformerTokenizer:
 
         if expected_exception:
             with pytest.raises(expected_exception):
-                sum_ensembl_ids(test_file, collapse_gene_ids, gene_mapping_dict, gene_token_dict, file_format="h5ad")
+                sum_ensembl_ids(adata, collapse_gene_ids, gene_mapping_dict, gene_token_dict, file_format=data_format)
         else:
-            result = sum_ensembl_ids(test_file, collapse_gene_ids, gene_mapping_dict, gene_token_dict, file_format="h5ad")
+            result = sum_ensembl_ids(adata, collapse_gene_ids, gene_mapping_dict, gene_token_dict, file_format=data_format)
             assert isinstance(result, AnnData)
             assert result.shape == expected_shape
 
-    def test_tokenize_anndata(self, tokenizer_v1, tmp_path):
+    def test_tokenize_anndata(self, tokenizer_v1):
         # Create a test AnnData object
         adata = AnnData(X=sp.csr_matrix([[1, 2, 3], [4, 5, 6]]))
         adata.var['ensembl_id'] = ['ENSG1', 'ENSG2', 'ENSG3']
         adata.obs['n_counts'] = [6, 15]
         adata.obs['cell_type'] = ['A', 'B']
-        test_file = tmp_path / "test.h5ad"
-        adata.write_h5ad(test_file)
 
         tokenizer_v1.custom_attr_name_dict = {'cell_type': 'cell_type'}
-        tokenized_cells, cell_metadata = tokenizer_v1.tokenize_anndata(test_file)
+        tokenized_cells, cell_metadata = tokenizer_v1.tokenize_anndata(adata)
 
         assert len(tokenized_cells) == 2
         assert isinstance(tokenized_cells[0], np.ndarray)
@@ -123,3 +120,7 @@ class TestGeneformerTokenizer:
         tokenizer_v1.tokenize_data(tmp_path, output_dir, "test_output", file_format="h5ad")
 
         assert (output_dir / "test_output.dataset").exists()
+
+        with pytest.raises(ValueError):
+            tokenizer_v1.tokenize_data(tmp_path, output_dir, "test_output", file_format="bad_format")
+
