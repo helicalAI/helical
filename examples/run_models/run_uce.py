@@ -1,8 +1,10 @@
-from helical.models.uce.model import UCE, UCEConfig
-import anndata as ad
+from helical import UCE, UCEConfig
 import hydra
 from omegaconf import DictConfig
 import numpy as np
+from datasets import load_dataset
+from helical.utils import get_anndata_from_hf_dataset
+
 """
 Because UCE requires a lot of RAM usage, this shows an example of how to run UCE in batches.
 """
@@ -11,7 +13,9 @@ Because UCE requires a lot of RAM usage, this shows an example of how to run UCE
 def run(cfg: DictConfig):
     configurer=UCEConfig(**cfg)
     uce = UCE(configurer=configurer)
-    ann_data = ad.read_h5ad("./10k_pbmcs_proc.h5ad", backed='r')
+
+    hf_dataset = load_dataset("helical-ai/yolksac_human",split="train[:5%]", trust_remote_code=True, download_mode="reuse_cache_if_exists")
+    ann_data = get_anndata_from_hf_dataset(hf_dataset)
     
     batch_size = 10
 

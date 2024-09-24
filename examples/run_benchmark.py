@@ -7,6 +7,8 @@ from helical.models.uce.model import UCE
 from helical.models.uce.uce_config import UCEConfig
 from helical.models.classification.svm import SupportVectorMachine
 from helical.models.classification.classifier import Classifier
+from helical.utils import get_anndata_from_hf_dataset
+from datasets import load_dataset
 import anndata as ad
 from omegaconf import DictConfig
 import hydra
@@ -139,20 +141,21 @@ def run_integration_example(data: AnnData, models: list[str], data_cfg: DictConf
 def benchmark(cfg: DictConfig) -> None:
 
     cfg["device"] = "cuda"
-    dataset = "pbmc"
+    dataset = "yolksac"
 
     data_cfg = cfg["data"][dataset]
     head_cfg = cfg["svm"]
     integration_cfg = cfg["integration"]
 
-    data = ad.read_h5ad(data_cfg["path"])[:100]
+    hf_dataset = load_dataset(data_cfg["path"], split="train[:10%]", trust_remote_code=True, download_mode="reuse_cache_if_exists")
+    data = get_anndata_from_hf_dataset(hf_dataset)[:100]
     data.obs[data_cfg["label_key"]] = data.obs[data_cfg["label_key"]].astype("category")
 
     # set gene names. for example if the index is the ensemble gene id 
     # data.var_names = data.var["feature_name"]
 
     run_classification_example(data, ["geneformer", "scgpt"], data_cfg, head_cfg, device=cfg["device"])
-    run_integration_example(data, ["geneformer", "scgpt", "scanorama"], data_cfg, integration_cfg, device=cfg["device"])
+    # run_integration_example(data, ["geneformer", "scgpt", "scanorama"], data_cfg, integration_cfg, device=cfg["device"])
     LOGGER.info("Benchmarking done.")
 
 if __name__ == "__main__":

@@ -1,7 +1,6 @@
-from helical.models.geneformer.geneformer_config import GeneformerConfig
-from helical.models.geneformer.fine_tuning_model import GeneformerFineTuningModel
-from helical.models.geneformer.model import Geneformer
-import anndata as ad
+from helical import GeneformerConfig, Geneformer, GeneformerFineTuningModel
+from helical.utils import get_anndata_from_hf_dataset
+from datasets import load_dataset
 import hydra
 from omegaconf import DictConfig
 
@@ -10,9 +9,11 @@ def run_fine_tuning(cfg: DictConfig):
     geneformer_config = GeneformerConfig(**cfg)
     geneformer = Geneformer(configurer = geneformer_config)
                             
-    ann_data = ad.read_h5ad("./10k_pbmcs_proc.h5ad")
+    hf_dataset = load_dataset("helical-ai/yolksac_human",split="train[:5%]", trust_remote_code=True, download_mode="reuse_cache_if_exists")
+    ann_data = get_anndata_from_hf_dataset(hf_dataset)
 
-    cell_types = list(ann_data.obs.cell_type[:10])
+    cell_types = list(ann_data.obs["LVL1"][:10])
+
     dataset = geneformer.process_data(ann_data[:10])
 
     dataset = dataset.add_column('cell_types', cell_types)
@@ -26,7 +27,7 @@ def run_fine_tuning(cfg: DictConfig):
     dataset = dataset.map(classes_to_ids, num_proc=1)
 
     geneformer_fine_tune = GeneformerFineTuningModel(geneformer_model=geneformer, fine_tuning_head="classification", output_size=len(label_set))
-    geneformer_fine_tune.train(train_dataset=dataset["train"], validation_dataset=dataset["test"])
+    geneformer_fine_tune.train(train_dataset=dataset)
 
 if __name__ == "__main__":
     run_fine_tuning()

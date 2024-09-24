@@ -1,6 +1,6 @@
-from helical.models.scgpt.fine_tuning_model import scGPTFineTuningModel
-from helical.models.scgpt.model import scGPT,scGPTConfig
-import anndata as ad
+from helical import scGPTConfig, scGPT, scGPTFineTuningModel
+from helical.utils import get_anndata_from_hf_dataset
+from datasets import load_dataset
 from omegaconf import DictConfig
 import hydra
 
@@ -10,16 +10,16 @@ def run_fine_tuning(cfg: DictConfig):
     scgpt_config=scGPTConfig(**cfg)
     scgpt = scGPT(configurer=scgpt_config)
 
-    ann_data = ad.read_h5ad("./10k_pbmcs_proc.h5ad")
+    hf_dataset = load_dataset("helical-ai/yolksac_human",split="train[:5%]", trust_remote_code=True, download_mode="reuse_cache_if_exists")
+    ann_data = get_anndata_from_hf_dataset(hf_dataset)
+
     dataset = scgpt.process_data(ann_data[:10])
-    cell_types = list(ann_data.obs.cell_type[:10])
+    
+    cell_types = ann_data.obs["LVL1"][:10].tolist()
 
     label_set = set(cell_types)
-
-    class_id_dict = dict(zip(label_set, [i for i in range(len(label_set))]))
-
-    for i in range(len(cell_types)):
-        cell_types[i] = class_id_dict[cell_types[i]]
+    class_id_dict = {label: i for i, label in enumerate(label_set)}
+    cell_types = [class_id_dict[cell] for cell in cell_types]
 
     scgpt_fine_tune = scGPTFineTuningModel(scGPT_model=scgpt, fine_tuning_head="classification", output_size=len(label_set))
     scgpt_fine_tune.train(train_input_data=dataset, train_labels=cell_types)
