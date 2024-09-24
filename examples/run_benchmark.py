@@ -155,7 +155,7 @@ def benchmark(cfg: DictConfig) -> None:
     # data.var_names = data.var["feature_name"]
 
     run_classification_example(data, ["geneformer", "scgpt"], data_cfg, head_cfg, device=cfg["device"])
-    run_integration_example(data, ["geneformer", "scgpt", "scanorama"], data_cfg, integration_cfg, device=cfg["device"])
+    # run_integration_example(data, ["geneformer", "scgpt", "scanorama"], data_cfg, integration_cfg, device=cfg["device"])
     LOGGER.info("Benchmarking done.")
 
 if __name__ == "__main__":
