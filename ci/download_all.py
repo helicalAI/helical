@@ -66,7 +66,6 @@ def main():
     downloader.download_via_name("hyena_dna/hyenadna-tiny-1k-seqlen.ckpt")
     downloader.download_via_name("hyena_dna/hyenadna-tiny-1k-seqlen-d256.ckpt")
 
-    downloader.download_via_link(Path("./10k_pbmcs_proc.h5ad"), "https://helicalpackage.blob.core.windows.net/helicalpackage/data/10k_pbmcs_proc.h5ad")
     return True
 
 if __name__ == "__main__":

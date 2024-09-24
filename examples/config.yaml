@@ -10,16 +10,6 @@ svm:
   C: 1
   decision_function_shape: 'ovr'
 
-data:
-    pbmc:
-      base_dir: "benchmark"
-      batch_key: "batch"
-      label_key: "labels"
-      path: "./10k_pbmcs_proc.h5ad"
-      gene_names: "index"
-      name: "10k_pbmcs_proc"
-
-
 integration: 
     scib:
       isolated_labels_asw_: False
