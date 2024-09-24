@@ -1,15 +1,18 @@
 from helical.models.scgpt.model import scGPT, scGPTConfig
-import anndata as ad
 import hydra
 from omegaconf import DictConfig
+from datasets import load_dataset
+from helical.utils import get_anndata_from_hf_dataset
 
 @hydra.main(version_base=None, config_path="configs", config_name="scgpt_config")
 def run(cfg: DictConfig):
     scgpt_config = scGPTConfig(**cfg)
     scgpt = scGPT(configurer = scgpt_config)
 
-    adata = ad.read_h5ad("./10k_pbmcs_proc.h5ad")
-    data = scgpt.process_data(adata[:10])
+    hf_dataset = load_dataset("helical-ai/yolksac_human",split="train[:5%]", trust_remote_code=True, download_mode="reuse_cache_if_exists")
+    ann_data = get_anndata_from_hf_dataset(hf_dataset)
+
+    data = scgpt.process_data(ann_data[:10])
     embeddings = scgpt.get_embeddings(data)
 
     print(embeddings.shape)

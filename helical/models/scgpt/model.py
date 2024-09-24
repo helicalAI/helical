@@ -26,11 +26,14 @@ class scGPT(HelicalRNAModel):
 
         Example
         -------
-        >>> from helical.models import scGPT,scGPTConfig
+        >>> from helical import scGPT,scGPTConfig
+        >>> from datasets import load_dataset
+        >>> from helical.utils import get_anndata_from_hf_dataset
         >>> import anndata as ad
         >>> scgpt_config=scGPTConfig(batch_size=10)
         >>> scgpt = scGPT(configurer=scgpt_config)
-        >>> ann_data = ad.read_h5ad("./data/10k_pbmcs_proc.h5ad")
+        >>> hf_dataset = load_dataset("helical-ai/yolksac_human",split="train[:25%]", trust_remote_code=True, download_mode="reuse_cache_if_exists")
+        >>> ann_data = get_anndata_from_hf_dataset(hf_dataset)
         >>> dataset = scgpt.process_data(ann_data[:100])
         >>> embeddings = scgpt.get_embeddings(dataset)
 

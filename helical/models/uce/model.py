@@ -22,11 +22,14 @@ class UCE(HelicalRNAModel):
 
         Example
         -------
-        >>> from helical.models import UCE, UCEConfig
+        >>> from helical import UCE, UCEConfig
+        >>> from datasets import load_dataset
+        >>> from helical.utils import get_anndata_from_hf_dataset
         >>> import anndata as ad
         >>> configurer=UCEConfig(batch_size=10)
         >>> uce = UCE(configurer=configurer)
-        >>> ann_data = ad.read_h5ad("./10k_pbmcs_proc.h5ad")
+        >>> hf_dataset = load_dataset("helical-ai/yolksac_human",split="train[:25%]", trust_remote_code=True, download_mode="reuse_cache_if_exists")
+        >>> ann_data = get_anndata_from_hf_dataset(hf_dataset)
         >>> dataset = uce.process_data(ann_data[:100])
         >>> embeddings = uce.get_embeddings(dataset)
 
