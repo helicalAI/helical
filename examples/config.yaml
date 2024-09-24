@@ -10,6 +10,16 @@ svm:
   C: 1
   decision_function_shape: 'ovr'
 
+data:
+    yolksac:
+      base_dir: "benchmark"
+      batch_key: "batch"
+      label_key: "LVL1"
+      path: "helical-ai/yolksac_human"
+      gene_names: "gene_name"
+      name: "helical-ai/yolksac_human"
+
+
 integration: 
     scib:
       isolated_labels_asw_: False
