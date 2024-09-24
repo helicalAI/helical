@@ -1,5 +1,51 @@
 from helical.services.downloader import Downloader
 from pathlib import Path
+import logging
+LOGGER = logging.getLogger(__name__)
+
+def download_geneformer_models():
+    downloader = Downloader()
+    versions = ['v1', 'v2']
+
+    # We can decide to download more models by simply adding the model names from the full list as reported in geneformer_config.py
+    version_models_dict = {
+        "v1": ["gf-12L-30M-i2048"],
+        "v2": ["gf-12L-95M-i4096"]
+    }
+    
+    for version in versions:
+        # Download common files for each version
+        common_files = [
+            f"geneformer/{version}/gene_median_dictionary.pkl",
+            f"geneformer/{version}/token_dictionary.pkl",
+            f"geneformer/{version}/ensembl_mapping_dict.pkl",
+        ]
+        for file in common_files:
+            downloader.download_via_name(file)
+        
+        # Get all model directories
+        model_dirs = version_models_dict[version]
+        
+        for model_name in model_dirs:
+            model_files = [
+                f"geneformer/{version}/{model_name}/config.json",
+                f"geneformer/{version}/{model_name}/training_args.bin",
+            ]
+            
+            # Add version-specific files
+            if version == 'v2':
+                model_files.extend([
+                    f"geneformer/{version}/{model_name}/generation_config.json",
+                    f"geneformer/{version}/{model_name}/model.safetensors",
+                ])
+            else:
+                model_files.append(f"geneformer/{version}/{model_name}/pytorch_model.bin")
+            
+            # Download all files for the current model
+            for file in model_files:
+                downloader.download_via_name(file)
+    
+    LOGGER.info("All Geneformer models and files have been downloaded.")
 
 def main():
     downloader = Downloader()
@@ -15,16 +61,11 @@ def main():
     downloader.download_via_name("scgpt/scGPT_CP/vocab.json")
     downloader.download_via_name("scgpt/scGPT_CP/best_model.pt")
 
-    downloader.download_via_name("geneformer/gene_median_dictionary.pkl")
-    downloader.download_via_name("geneformer/token_dictionary.pkl")
-    downloader.download_via_name("geneformer/geneformer-12L-30M/config.json")
-    downloader.download_via_name("geneformer/geneformer-12L-30M/pytorch_model.bin")
-    downloader.download_via_name("geneformer/geneformer-12L-30M/training_args.bin")
+    download_geneformer_models()
 
     downloader.download_via_name("hyena_dna/hyenadna-tiny-1k-seqlen.ckpt")
     downloader.download_via_name("hyena_dna/hyenadna-tiny-1k-seqlen-d256.ckpt")
 
-    downloader.download_via_link(Path("./10k_pbmcs_proc.h5ad"), "https://helicalpackage.blob.core.windows.net/helicalpackage/data/10k_pbmcs_proc.h5ad")
     return True
 
 if __name__ == "__main__":

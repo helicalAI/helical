@@ -29,3 +29,4 @@ from .trainer import (
     eval_testdata,
     test,
 )
+from .fine_tuning_model import scGPTFineTuningModel

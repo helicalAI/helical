@@ -2,7 +2,6 @@ import logging
 import numpy as np
 from anndata import AnnData
 from torch.utils.data import DataLoader
-import scipy
 from pathlib import Path
 import scanpy as sc
 from tqdm import tqdm
@@ -23,11 +22,14 @@ class UCE(HelicalRNAModel):
 
         Example
         -------
-        >>> from helical.models import UCE, UCEConfig
+        >>> from helical import UCE, UCEConfig
+        >>> from datasets import load_dataset
+        >>> from helical.utils import get_anndata_from_hf_dataset
         >>> import anndata as ad
         >>> configurer=UCEConfig(batch_size=10)
         >>> uce = UCE(configurer=configurer)
-        >>> ann_data = ad.read_h5ad("./10k_pbmcs_proc.h5ad")
+        >>> hf_dataset = load_dataset("helical-ai/yolksac_human",split="train[:25%]", trust_remote_code=True, download_mode="reuse_cache_if_exists")
+        >>> ann_data = get_anndata_from_hf_dataset(hf_dataset)
         >>> dataset = uce.process_data(ann_data[:100])
         >>> embeddings = uce.get_embeddings(dataset)
 
@@ -70,6 +72,7 @@ class UCE(HelicalRNAModel):
     def process_data(self, 
                      adata: AnnData, 
                      gene_names: str = "index",
+                     name = "test",
                      filter_genes_min_cell: int = None
                      ) -> UCEDataset:
         """Processes the data for the Universal Cell Embedding model
@@ -83,6 +86,8 @@ class UCE(HelicalRNAModel):
             The name of the column in the AnnData object that contains the gene symbols.
             By default, the index of the AnnData object is used.
             If another column is specified, that column will be set as the index of the AnnData object.
+        name: str, optional, default = "test"
+            The name of the dataset. Needed for when slicing AnnData objects for train and validation datasets.
         filter_genes_min_cell: int, default = None
             Filter threshold that defines how many times a gene should occur in all the cells.
 
@@ -114,7 +119,7 @@ class UCE(HelicalRNAModel):
         # TODO: What about hv_genes? See orig.
         gene_expression = adata.X.toarray()
 
-        name = "test"
+        name = name
         gene_expression_folder_path = "./"
         prepare_expression_counts_file(gene_expression, name, gene_expression_folder_path)
         
@@ -202,3 +207,5 @@ class UCE(HelicalRNAModel):
                     dataset_embeds.append(embedding.detach().cpu().numpy())
         embeddings = np.vstack(dataset_embeds)
         return embeddings
+
+    

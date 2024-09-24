@@ -4,13 +4,12 @@ import json
 import pickle as pkl
 # imports
 import logging
-
 import torch
 from tqdm.auto import trange
 import re
 import torch
 from transformers import (
-    BertForMaskedLM,
+    BertForMaskedLM
 )
 
 
@@ -45,14 +44,35 @@ def get_embs(
     layer_to_quant,
     pad_token_id,
     forward_batch_size,
+    gene_token_dict,
     device,
     silent=False,
     
 ):
     model_input_size = get_model_input_size(model)
     total_batch_length = len(filtered_input_data)
-
     embs_list = []
+
+    #  Check if CLS and EOS token is present in the token dictionary
+    cls_present = any("<cls>" in key for key in gene_token_dict.keys())
+    eos_present = any("<eos>" in key for key in gene_token_dict.keys())
+    if emb_mode == "cls":
+        assert cls_present, "<cls> token missing in token dictionary"
+        # Check to make sure that the first token of the filtered input data is cls token
+        cls_token_id = gene_token_dict["<cls>"]
+        assert (
+            filtered_input_data["input_ids"][0][0] == cls_token_id
+        ), "First token is not <cls> token value"
+    elif emb_mode == "cell":
+        if cls_present:
+            logger.warning(
+                "CLS token present in token dictionary, excluding from average."
+            )
+        if eos_present:
+            logger.warning(
+                "EOS token present in token dictionary, excluding from average."
+            )
+
     overall_max_len = 0
     for i in trange(0, total_batch_length, forward_batch_size, leave=(not silent)):
         max_range = min(i + forward_batch_size, total_batch_length)
@@ -67,18 +87,36 @@ def get_embs(
         input_data_minibatch = pad_tensor_list(
             input_data_minibatch, max_len, pad_token_id, model_input_size
         ).to(device)
+
+        model = model.to(device)
         with torch.no_grad():
             outputs = model(
                 input_ids=input_data_minibatch,
                 attention_mask=gen_attention_mask(minibatch),
             )
+
         embs_i = outputs.hidden_states[layer_to_quant]
-        
+
         if emb_mode == "cell":
-            mean_embs = mean_nonpadding_embs(embs_i, original_lens)
+            if cls_present:
+                non_cls_embs = embs_i[:, 1:, :]  # Get all layers except the cls embs
+                if eos_present:
+                    mean_embs = mean_nonpadding_embs(non_cls_embs, original_lens - 2)
+                else:
+                    mean_embs = mean_nonpadding_embs(non_cls_embs, original_lens - 1)
+            else:
+                mean_embs = mean_nonpadding_embs(embs_i, original_lens)
+            
             embs_list.append(mean_embs)
+            del mean_embs
+
         elif emb_mode == "gene":
                 embs_list.append(embs_i)
+        
+        elif emb_mode == "cls":
+            cls_embs = embs_i[:, 0, :].clone().detach()  # CLS token layer
+            embs_list.append(cls_embs)
+            del cls_embs
 
         overall_max_len = max(overall_max_len, max_len)
         del outputs
@@ -86,9 +124,9 @@ def get_embs(
         del input_data_minibatch
         del embs_i
 
-        # torch.cuda.empty_cache()
+        torch.cuda.empty_cache()
 
-    if emb_mode == "cell":
+    if emb_mode == "cell" or emb_mode == "cls":
         embs_stack = torch.cat(embs_list, dim=0)
     elif emb_mode == "gene":
         embs_stack = pad_tensor_list(
@@ -127,14 +165,14 @@ def quant_layers(model):
 def get_model_input_size(model):
     return int(re.split("\(|,", str(model.bert.embeddings.position_embeddings))[1])
 
-def load_model(model_type, model_directory):
+def load_model(model_type, model_directory, device):
     if model_type == "Pretrained":
         model = BertForMaskedLM.from_pretrained(
             model_directory, output_hidden_states=True, output_attentions=False
         )
-    # put the model in eval mode for fwd pass
+    # put the model in eval mode for fwd pass and load onto the GPU if available
     model.eval()
-    # model = model.to("cuda:0")
+    model = model.to(device)
     return model
 
 def pad_tensor(tensor, pad_token_id, max_len):
@@ -203,7 +241,7 @@ def gen_attention_mask(minibatch_encoding, max_len=None):
         else [1] * max_len
         for original_len in original_lens
     ]
-    return torch.tensor(attention_mask, device= minibatch_encoding["length"].device)
+    return torch.tensor(attention_mask, device=minibatch_encoding["length"].device)
 
 
 # get cell embeddings excluding padding

@@ -6,6 +6,7 @@ import logging
 from typing import Protocol, runtime_checkable
 from datasets import Dataset
 from numpy import ndarray
+import torch
 
 LOGGER = logging.getLogger(__name__)
 
@@ -118,4 +119,34 @@ class BaseTaskModel(ABC):
 
     @abstractmethod
     def load():
+        pass
+
+class HelicalBaseFineTuningHead(ABC, torch.nn.Module):
+    """Helical Fine-Tuning Head Class which serves as the base class for all fine-tuning heads in the helical package.
+    Each new fine-tuning head should be a subclass of this class.
+    """
+    def __init__(self):
+        super(HelicalBaseFineTuningHead, self).__init__()
+
+    @abstractmethod
+    def forward():
+        pass
+
+    @abstractmethod
+    def set_dim_size():
+        pass
+
+class HelicalBaseFineTuningModel(torch.nn.Module):
+    """Helical Base Fine-Tuning Model Class which serves as the base class for all fine-tuning models in the helical package.
+    Each new fine-tuning model should be a subclass of this class.
+    """
+    def __init__(self):
+       super(HelicalBaseFineTuningModel, self).__init__()
+
+    @abstractmethod
+    def forward():
+        pass
+
+    @abstractmethod
+    def train():
         pass

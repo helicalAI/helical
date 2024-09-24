@@ -13,8 +13,9 @@ scgpt = scGPT(configurer = scgpt_config)
 For specific configurations, such as `batch_size`, a model can be provided with its own configuration (`scGPTConfig` in this case).
 Processing the data and getting the embeddings is uniform across models too:
 ```
-adata = ad.read_h5ad("./10k_pbmcs_proc.h5ad")
-data = scgpt.process_data(adata)
+hf_dataset = load_dataset("helical-ai/yolksac_human",split="train[:5%]", trust_remote_code=True, download_mode="reuse_cache_if_exists")
+ann_data = get_anndata_from_hf_dataset(hf_dataset)
+data = scgpt.process_data(ann_data)
 embeddings = scgpt.get_embeddings(data)
 ```
 
@@ -46,9 +47,11 @@ import hydra
 def benchmark(cfg: DictConfig) -> None:
     scgpt = scGPT()
 
-    data = ad.read_h5ad("./examples/10k_pbmcs_proc.h5ad")
-    train_data = data[:3000]
-    eval_data = data[3000:3500]
+    hf_dataset = load_dataset("helical-ai/yolksac_human",split="train[:50%]", trust_remote_code=True, download_mode="reuse_cache_if_exists")
+    ann_data = get_anndata_from_hf_dataset(hf_dataset)
+
+    train_data = ann_data[:3000]
+    eval_data = ann_data[3000:3500]
     
     scgpt_nn_c = Classifier().train_classifier_head(
         train_anndata = train_data, 

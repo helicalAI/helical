@@ -1,4 +1,5 @@
 from helical.models.scgpt.model import scGPT
+from helical.models.scgpt.fine_tuning_model import scGPTFineTuningModel
 from anndata import AnnData
 from helical.models.scgpt.tokenizer import GeneVocab
 import pytest
@@ -107,3 +108,12 @@ class TestSCGPTModel:
         '''The data in X must be ints. Test no error is raised for both np.ndarray and csr_matrix.'''
         self.scgpt.ensure_data_validity(data, "index", False)
         assert "total_counts" in data.obs
+
+    def test_fine_tune_classification(self):
+        tokenized_dataset = self.scgpt.process_data(self.data)
+        labels = list([0])
+        fine_tuned_model = scGPTFineTuningModel(self.scgpt, fine_tuning_head="classification", output_size=1)
+        fine_tuned_model.train(train_input_data=tokenized_dataset, train_labels=labels)
+        assert fine_tuned_model is not None
+        outputs = fine_tuned_model.get_outputs(tokenized_dataset)
+        assert outputs.shape == (len(self.data), len(labels))

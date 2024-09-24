@@ -5,6 +5,7 @@ import pytest
     ("33l_8ep_1024t_1280", 33),
     ("4layer_model", 4)
 ])
+
 def test_uce_config_valid_model_names(model_name, n_layers):
     """
     Test case for the UCE config initialization.
@@ -33,3 +34,4 @@ def test_uce_config__invalid_model_names(model_name):
     """
     with pytest.raises(ValueError):
         UCEConfig(model_name=model_name)
+

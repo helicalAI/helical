@@ -190,7 +190,6 @@ def train(
     """
     import wandb
 
-    model.train()
     total_loss, total_gep, total_cls, total_gepc, total_ecs, total_dab = (
         0.0,
         0.0,

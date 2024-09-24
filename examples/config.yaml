@@ -11,13 +11,13 @@ svm:
   decision_function_shape: 'ovr'
 
 data:
-    pbmc:
+    yolksac:
       base_dir: "benchmark"
       batch_key: "batch"
-      label_key: "labels"
-      path: "./10k_pbmcs_proc.h5ad"
-      gene_names: "index"
-      name: "10k_pbmcs_proc"
+      label_key: "LVL1"
+      path: "helical-ai/yolksac_human"
+      gene_names: "gene_name"
+      name: "helical-ai/yolksac_human"
 
 
 integration: 

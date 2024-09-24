@@ -35,7 +35,7 @@ jobs:
           pytest --cov-report=html:html_cov --cov-branch --cov-report term --cov=helical ci/
       
       - name: Upload coverage report
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: html_cov/
@@ -47,9 +47,13 @@ jobs:
       #     pytest-coverage-path: ./pytest-coverage.txt
       #     junitxml-path: ./pytest.xml
 
-      - name: Execute Geneformer
+      - name: Execute Geneformer v1
         run: |
-          python examples/run_models/run_geneformer.py
+          python examples/run_models/run_geneformer.py ++model_name="gf-12L-30M-i2048"
+
+      - name: Execute Geneformer v2
+        run: |
+          python examples/run_models/run_geneformer.py ++model_name="gf-12L-95M-i4096"
 
       - name: Execute scGPT
         run: |
@@ -65,4 +69,5 @@ jobs:
       
       - name: Execute benchmarking
         run: |
+          pip install scanorama
           python examples/run_benchmark.py
