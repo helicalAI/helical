@@ -10,7 +10,7 @@ class HyenaDNADataset(Dataset):
         labels: list
             The list
     """
-    def __init__(self, sequences, labels):
+    def __init__(self, sequences, labels=None):
         self.sequences = sequences
         self.labels = labels
 
@@ -18,4 +18,10 @@ class HyenaDNADataset(Dataset):
         return len(self.sequences)
 
     def __getitem__(self, idx):
-        return self.sequences[idx], self.labels[idx]
+        if self.labels is None:
+            return self.sequences[idx]
+        else:
+            return self.sequences[idx], self.labels[idx]
+
+    def set_labels(self, labels):
+        self.labels = labels

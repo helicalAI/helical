@@ -53,12 +53,12 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel):
         epochs: int = 1,
         lr_scheduler_params: Optional[dict] = None):
         
-        train_dataset = HyenaDNADataset(train_input_data.squeeze(0), train_labels)
-        train_data_loader = DataLoader(train_dataset, batch_size=5, shuffle=True)
-
+        train_input_data.set_labels(train_labels)
+        train_data_loader = DataLoader(train_input_data, batch_size=self.config["batch_size"], shuffle=True)
+     
         if validation_input_data is not None and validation_labels is not None:
-            validation_dataset = HyenaDNADataset(validation_input_data.squeeze(0), validation_labels)
-            validation_data_loader = DataLoader(validation_dataset, batch_size=5, shuffle=False)
+            validation_input_data.set_labels(validation_labels)
+            validation_data_loader = DataLoader(validation_input_data, batch_size=5, shuffle=False)
 
         self.to(self.config["device"])
 
