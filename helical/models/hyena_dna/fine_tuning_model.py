@@ -43,16 +43,42 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel):
 
     def train(        
         self,
-        train_input_data, 
-        train_labels,     
-        validation_input_data = None,
-        validation_labels = None,
+        train_input_data: HyenaDNADataset,
+        train_labels: list[int],     
+        validation_input_data: HyenaDNADataset = None,
+        validation_labels: list[int] = None,
         optimizer: optim = optim.AdamW,
         optimizer_params: dict = {'lr': 0.0001}, 
         loss_function: loss = loss.CrossEntropyLoss(), 
         epochs: int = 1,
         lr_scheduler_params: Optional[dict] = None):
-        
+        """Fine-tunes the Hyena-DNA model with different head modules. 
+
+        Parameters
+        ----------
+        train_input_data : HyenaDNADataset
+            A helical Hyena-DNA processed dataset for fine-tuning
+        train_labels : list[int]
+            The labels for the training data. These should be stored as unique per class integers.
+        validation_input_data : HyenaDNADataset, default = None
+            A helical Hyena-DNA processed dataset for per epoch validation. If this is not specified, no validation will be performed.
+        validation_labels : list[int], default = None
+            The labels for the validation data. These should be stored as unique per class integers.
+        optimizer : torch.optim, default = torch.optim.AdamW
+            The optimizer to be used for training.
+        optimizer_params : dict
+            The optimizer parameters to be used for the optimizer specified. This list should NOT include model parameters.
+            e.g. optimizer_params = {'lr': 0.0001}
+        loss_function : torch.nn.modules.loss, default = torch.nn.modules.loss.CrossEntropyLoss()
+            The loss function to be used.
+        epochs : int, optional, default = 10
+            The number of epochs to train the model
+        freeze_layers : int, optional, default = 0
+            The number of layers to freeze.
+        lr_scheduler_params : dict, default = None
+            The learning rate scheduler parameters for the transformers get_scheduler method. The optimizer will be taken from the optimizer input and should not be included in the learning scheduler parameters. If not specified, no scheduler will be used.
+            e.g. lr_scheduler_params = { 'name': 'linear', 'num_warmup_steps': 0, 'num_training_steps': 5 }
+        """
         train_input_data.set_labels(train_labels)
         train_data_loader = DataLoader(train_input_data, batch_size=self.config["batch_size"], shuffle=True)
      
