@@ -155,7 +155,8 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
             )
 
         self.to(device)
-
+        self.scgpt_model.train()
+        self.fine_tuning_head.train()
         optimizer = optimizer(self.parameters(), **optimizer_params)
 
         lr_scheduler = None
@@ -163,49 +164,48 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
             lr_scheduler = get_scheduler(optimizer=optimizer, **lr_scheduler_params)
 
         logger.info("Starting Fine-Tuning")
-        with torch.cuda.amp.autocast(enabled=True): #torch.autocast(device_type=str(device),enabled=True): # torch.cuda.amp.autocast(enabled=True):
-            for j in range(epochs):
-                batch_count = 0
-                batch_loss = 0.0
-                batches_processed = 0
-                training_loop = tqdm(data_loader)
-                for data_dict in training_loop:
-                    input_gene_ids = data_dict["gene"].to(device)
+        for j in range(epochs):
+            batch_count = 0
+            batch_loss = 0.0
+            batches_processed = 0
+            training_loop = tqdm(data_loader)
+            for data_dict in training_loop:
+                input_gene_ids = data_dict["gene"].to(device)
+                src_key_padding_mask = input_gene_ids.eq(
+                    self.vocab[self.config["pad_token"]]
+                )
+                output = self(input_gene_ids, data_dict, src_key_padding_mask, use_batch_labels, device)
+                labels = torch.tensor(train_labels[batch_count: batch_count + self.config["batch_size"]], device=device)
+                batch_count += self.config["batch_size"]
+                loss = loss_function(output, labels)
+                loss.backward()
+                batch_loss += loss.item()
+                batches_processed += 1
+                optimizer.step()
+                optimizer.zero_grad()
+
+                training_loop.set_postfix({"loss": batch_loss/batches_processed})
+                training_loop.set_description(f"Fine-Tuning: epoch {j+1}/{epochs}")
+
+            if lr_scheduler is not None:
+                lr_scheduler.step()
+
+            if validation_input_data is not None:
+                testing_loop = tqdm(validation_data_loader, desc="Fine-Tuning Validation")
+                accuracy = 0.0
+                count = 0.0
+                validation_batch_count = 0
+                for validation_data_dict in testing_loop:
+                    input_gene_ids = validation_data_dict["gene"].to(device)
                     src_key_padding_mask = input_gene_ids.eq(
                         self.vocab[self.config["pad_token"]]
                     )
-                    output = self(input_gene_ids, data_dict, src_key_padding_mask, use_batch_labels, device)
-                    labels = torch.tensor(train_labels[batch_count: batch_count + self.config["batch_size"]], device=device)
-                    batch_count += self.config["batch_size"]
-                    loss = loss_function(output, labels)
-                    loss.backward()
-                    batch_loss += loss.item()
-                    batches_processed += 1
-                    optimizer.step()
-                    optimizer.zero_grad()
-
-                    training_loop.set_postfix({"loss": batch_loss/batches_processed})
-                    training_loop.set_description(f"Fine-Tuning: epoch {j+1}/{epochs}")
-
-                if lr_scheduler is not None:
-                    lr_scheduler.step()
-
-                if validation_input_data is not None:
-                    testing_loop = tqdm(validation_data_loader, desc="Fine-Tuning Validation")
-                    accuracy = 0.0
-                    count = 0.0
-                    validation_batch_count = 0
-                    for validation_data_dict in testing_loop:
-                        input_gene_ids = validation_data_dict["gene"].to(device)
-                        src_key_padding_mask = input_gene_ids.eq(
-                            self.vocab[self.config["pad_token"]]
-                        )
-                        output = self(input_gene_ids, validation_data_dict, src_key_padding_mask, use_batch_labels, device)
-                        val_labels = torch.tensor(validation_labels[validation_batch_count: validation_batch_count + self.config["batch_size"]], device=device)
-                        validation_batch_count += self.config["batch_size"]
-                        accuracy += accuracy_score(val_labels.cpu(), torch.argmax(output, dim=1).cpu())
-                        count += 1.0
-                        testing_loop.set_postfix({"accuracy": accuracy/count})
+                    output = self(input_gene_ids, validation_data_dict, src_key_padding_mask, use_batch_labels, device)
+                    val_labels = torch.tensor(validation_labels[validation_batch_count: validation_batch_count + self.config["batch_size"]], device=device)
+                    validation_batch_count += self.config["batch_size"]
+                    accuracy += accuracy_score(val_labels.cpu(), torch.argmax(output, dim=1).cpu())
+                    count += 1.0
+                    testing_loop.set_postfix({"accuracy": accuracy/count})
         logger.info(f"Fine-Tuning Complete. Epochs: {epochs}")
 
     def get_outputs(
@@ -226,7 +226,8 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
         """
         device = next(self.scgpt_model.parameters()).device
         self.to(device)
-        
+        self.scgpt_model.eval()
+        self.fine_tuning_head.eval()
         try:
             use_batch_labels = dataset.batch_ids is not None
         except:
