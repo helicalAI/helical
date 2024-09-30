@@ -28,7 +28,7 @@ class scGPT(HelicalRNAModel):
         -------
         >>> from helical import scGPT,scGPTConfig
         >>> from datasets import load_dataset
-        >>> from helical.services.converter import get_anndata_from_hf_dataset
+        >>> from helical.utils import get_anndata_from_hf_dataset
         >>> import anndata as ad
         >>> scgpt_config=scGPTConfig(batch_size=10)
         >>> scgpt = scGPT(configurer=scgpt_config)

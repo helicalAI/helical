@@ -24,7 +24,7 @@ class UCE(HelicalRNAModel):
         -------
         >>> from helical import UCE, UCEConfig
         >>> from datasets import load_dataset
-        >>> from helical.services.converter import get_anndata_from_hf_dataset
+        >>> from helical.utils import get_anndata_from_hf_dataset
         >>> import anndata as ad
         >>> configurer=UCEConfig(batch_size=10)
         >>> uce = UCE(configurer=configurer)
