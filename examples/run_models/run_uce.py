@@ -3,7 +3,7 @@ import hydra
 from omegaconf import DictConfig
 import numpy as np
 from datasets import load_dataset
-from helical.utils.converter import get_anndata_from_hf_dataset
+from helical.utils import get_anndata_from_hf_dataset
 
 """
 Because UCE requires a lot of RAM usage, this shows an example of how to run UCE in batches.

@@ -1,5 +1,5 @@
 from helical import scGPTConfig, scGPT, scGPTFineTuningModel
-from helical.utils.converter import get_anndata_from_hf_dataset
+from helical.utils import get_anndata_from_hf_dataset
 from datasets import load_dataset
 from omegaconf import DictConfig
 import hydra
