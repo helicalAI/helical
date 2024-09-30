@@ -1,5 +1,20 @@
-from helical.models.base_models import HelicalBaseFoundationModel, HelicalBaseFineTuningHead
 import torch
+from abc import ABC
+from abc import abstractmethod
+class HelicalBaseFineTuningHead(torch.nn.Module, ABC):
+    """Helical Fine-Tuning Head Class which serves as the base class for all fine-tuning heads in the helical package.
+    Each new fine-tuning head should be a subclass of this class.
+    """
+    def __init__(self):
+        super().__init__()
+
+    @abstractmethod
+    def forward():
+        pass
+
+    @abstractmethod
+    def set_dim_size():
+        pass
 
 class ClassificationHead(HelicalBaseFineTuningHead):
     """Classification Head for fine-tuning a Helical foundation model.
@@ -18,7 +33,7 @@ class ClassificationHead(HelicalBaseFineTuningHead):
 
     """
     def __init__(self, num_classes: int, dropout: float = 0.02):
-        super(ClassificationHead, self).__init__()
+        super().__init__()
         self.output_size = num_classes
         self.dropout = torch.nn.Dropout(p=dropout)
         

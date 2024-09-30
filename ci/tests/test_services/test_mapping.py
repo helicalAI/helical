@@ -1,5 +1,5 @@
-from helical.services.mapping import map_gene_symbols_to_ensembl_ids
-from helical.services.mapping import map_ensembl_ids_to_gene_symbols
+from helical.utils.mapping import map_gene_symbols_to_ensembl_ids
+from helical.utils.mapping import map_ensembl_ids_to_gene_symbols
 from pyensembl.species import human
 from pyensembl.species import macaque
 import anndata as ad

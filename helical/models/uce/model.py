@@ -10,7 +10,7 @@ from accelerate import Accelerator
 from helical.models.uce.uce_config import UCEConfig
 from helical.models.base_models import HelicalRNAModel
 from helical.models.uce.uce_utils import get_ESM2_embeddings, get_positions, get_protein_embeddings_idxs, load_model, prepare_expression_counts_file
-from helical.services.downloader import Downloader
+from helical.utils.downloader import Downloader
 from helical.models.uce.uce_dataset import UCEDataset
 from helical.models.uce.gene_embeddings import load_gene_embeddings_adata
 

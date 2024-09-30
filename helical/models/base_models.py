@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from helical.services.logger import Logger
+from helical.utils.logger import Logger
 from helical.constants.enums import LoggingType, LoggingLevel
 from anndata import AnnData
 import logging
@@ -7,6 +7,8 @@ from typing import Protocol, runtime_checkable
 from datasets import Dataset
 from numpy import ndarray
 import torch
+from helical.models.fine_tune.fine_tuning_heads import ClassificationHead, HelicalBaseFineTuningHead
+from typing import Literal
 
 LOGGER = logging.getLogger(__name__)
 
@@ -121,27 +123,39 @@ class BaseTaskModel(ABC):
     def load():
         pass
 
-class HelicalBaseFineTuningHead(ABC, torch.nn.Module):
-    """Helical Fine-Tuning Head Class which serves as the base class for all fine-tuning heads in the helical package.
-    Each new fine-tuning head should be a subclass of this class.
-    """
-    def __init__(self):
-        super(HelicalBaseFineTuningHead, self).__init__()
-
-    @abstractmethod
-    def forward():
-        pass
-
-    @abstractmethod
-    def set_dim_size():
-        pass
-
 class HelicalBaseFineTuningModel(torch.nn.Module):
     """Helical Base Fine-Tuning Model Class which serves as the base class for all fine-tuning models in the helical package.
     Each new fine-tuning model should be a subclass of this class.
+
+    Parameters
+    ----------
+
+    fine_tuning_head: Literal["classification"] | HelicalBaseFineTuningHead
+        The fine-tuning head that is appended to the model. This can either be a string (options available: "classification") specifying the task or a custom fine-tuning head inheriting from HelicalBaseFineTuningHead.
+    output_size : Optional[int]
+        The output size of the fine-tuning model. This is required if the fine_tuning_head is a string specified task. For a classification task this is number of unique classes.
+
     """
-    def __init__(self):
-       super(HelicalBaseFineTuningModel, self).__init__()
+    def __init__(self, fine_tuning_head: Literal["classification"] | HelicalBaseFineTuningHead, output_size: int):
+        super().__init__()
+        if isinstance(fine_tuning_head, str):
+            if fine_tuning_head == "classification":
+                if output_size is None:
+                    message = "The output_size must be specified for a classification head."
+                    LOGGER.error(message)
+                    raise ValueError(message)
+                fine_tuning_head = ClassificationHead(output_size)
+            else:
+                message = "Not implemented fine-tuning head."
+                LOGGER.error(message)
+                raise NotImplementedError(message)
+            
+        elif not isinstance(fine_tuning_head, HelicalBaseFineTuningHead):
+            message = "The fine_tuning_head must be a valid 'HelicalBaseFineTuningHead'."
+            LOGGER.error(message)
+            raise ValueError(message)
+        
+        self.fine_tuning_head = fine_tuning_head
 
     @abstractmethod
     def forward():
