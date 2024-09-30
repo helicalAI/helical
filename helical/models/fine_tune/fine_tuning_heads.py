@@ -37,7 +37,6 @@ class ClassificationHead(HelicalBaseFineTuningHead):
         """
         drop = self.dropout(inputs)
         output = self.linear(drop)
-        output = self.softmax(output)
         return output
 
     def set_dim_size(self, dim_size: int) -> None:
