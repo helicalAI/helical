@@ -44,6 +44,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
         self.device = geneformer_model.device
         self.gene_token_dict = geneformer_model.gene_token_dict
         self.geneformer_model = geneformer_model.model
+        
         if isinstance(fine_tuning_head, str):
             if fine_tuning_head == "classification":
                 if output_size is None:
@@ -52,11 +53,15 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
                     raise ValueError(message)
                 fine_tuning_head = ClassificationHead(output_size)
             else:
-                message = "The fine_tuning_head must be a valid HelicalBaseFineTuningHead"
+                message = "Not implemented fine-tuning head."
                 logger.error(message)
-                raise ValueError(message)
-        else:
-            fine_tuning_head = fine_tuning_head
+                raise NotImplementedError(message)
+            
+        elif not isinstance(fine_tuning_head, HelicalBaseFineTuningHead):
+            message = "The fine_tuning_head must be a valid 'HelicalBaseFineTuningHead'."
+            logger.error(message)
+            raise ValueError(message)
+        
         fine_tuning_head.set_dim_size(self.config["embsize"])
         self.fine_tuning_head = fine_tuning_head
 
