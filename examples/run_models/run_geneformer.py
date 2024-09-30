@@ -1,5 +1,5 @@
 from helical import Geneformer,GeneformerConfig
-from helical.services.converter import get_anndata_from_hf_dataset
+from helical.utils.converter import get_anndata_from_hf_dataset
 import hydra
 from omegaconf import DictConfig
 from datasets import load_dataset

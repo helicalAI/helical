@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from helical.services.logger import Logger
+from helical.utils.logger import Logger
 from helical.constants.enums import LoggingType, LoggingLevel
 from anndata import AnnData
 import logging

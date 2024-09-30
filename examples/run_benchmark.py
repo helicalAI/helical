@@ -7,7 +7,7 @@ from helical.models.uce.model import UCE
 from helical.models.uce.uce_config import UCEConfig
 from helical.models.classification.svm import SupportVectorMachine
 from helical.models.classification.classifier import Classifier
-from helical.services.converter import get_anndata_from_hf_dataset
+from helical.utils.converter import get_anndata_from_hf_dataset
 from datasets import load_dataset
 import anndata as ad
 from omegaconf import DictConfig
