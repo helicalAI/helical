@@ -2,7 +2,7 @@ from helical.models.scgpt.model import scGPT, scGPTConfig
 import hydra
 from omegaconf import DictConfig
 from datasets import load_dataset
-from helical.utils import get_anndata_from_hf_dataset
+from helical.services.converter import get_anndata_from_hf_dataset
 
 @hydra.main(version_base=None, config_path="configs", config_name="scgpt_config")
 def run(cfg: DictConfig):
