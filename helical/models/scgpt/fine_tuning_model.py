@@ -39,25 +39,11 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
 
     """
     def __init__(self, scGPT_model: HelicalRNAModel, fine_tuning_head: Literal["classification"]|HelicalBaseFineTuningHead, output_size: Optional[int]=None):
-        super().__init__()
+        super().__init__(fine_tuning_head, output_size)
         self.config = scGPT_model.config
         self.vocab = scGPT_model.vocab
         self.scgpt_model = scGPT_model.model
-        if isinstance(fine_tuning_head, str):
-            if fine_tuning_head == "classification":
-                if output_size is None:
-                    message = "The output_size must be specified for a classification head."
-                    logger.error(message)
-                    raise ValueError(message)
-                fine_tuning_head = ClassificationHead(output_size)
-            else:
-                message = "The fine_tuning_head must be a valid HelicalBaseFineTuningHead"
-                logger.error(message)
-                raise ValueError(message)
-        else:
-            fine_tuning_head = fine_tuning_head
-        fine_tuning_head.set_dim_size(self.config["embsize"])
-        self.fine_tuning_head = fine_tuning_head
+        self.fine_tuning_head.set_dim_size(self.config["embsize"])
 
     def forward(self, input_gene_ids, data_dict, src_key_padding_mask, use_batch_labels, device) -> torch.Tensor:
         embeddings = self.scgpt_model._encode(

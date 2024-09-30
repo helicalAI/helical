@@ -37,33 +37,14 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
         Get outputs from the fine-tuned model on the given processed dataset.
     """
     def __init__(self, geneformer_model: HelicalRNAModel, fine_tuning_head: Literal["classification"]|HelicalBaseFineTuningHead, output_size: Optional[int]=None):
-        super().__init__()
+        super().__init__(fine_tuning_head, output_size)
         self.config = geneformer_model.config
         self.emb_mode = geneformer_model.emb_mode
         self.pad_token_id = geneformer_model.pad_token_id
         self.device = geneformer_model.device
         self.gene_token_dict = geneformer_model.gene_token_dict
         self.geneformer_model = geneformer_model.model
-        
-        if isinstance(fine_tuning_head, str):
-            if fine_tuning_head == "classification":
-                if output_size is None:
-                    message = "The output_size must be specified for a classification head."
-                    logger.error(message)
-                    raise ValueError(message)
-                fine_tuning_head = ClassificationHead(output_size)
-            else:
-                message = "Not implemented fine-tuning head."
-                logger.error(message)
-                raise NotImplementedError(message)
-            
-        elif not isinstance(fine_tuning_head, HelicalBaseFineTuningHead):
-            message = "The fine_tuning_head must be a valid 'HelicalBaseFineTuningHead'."
-            logger.error(message)
-            raise ValueError(message)
-        
-        fine_tuning_head.set_dim_size(self.config["embsize"])
-        self.fine_tuning_head = fine_tuning_head
+        self.fine_tuning_head.set_dim_size(self.config["embsize"])
 
     def forward(self, input_ids: torch.Tensor, attention_mask_minibatch: torch.Tensor) -> torch.Tensor:
         outputs = self.geneformer_model(input_ids=input_ids, attention_mask=attention_mask_minibatch)

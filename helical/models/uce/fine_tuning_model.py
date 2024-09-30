@@ -39,26 +39,12 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
 
     """
     def __init__(self, uce_model: HelicalRNAModel, fine_tuning_head: Literal["classification"]|HelicalBaseFineTuningHead, output_size: Optional[int]=None):
-        super().__init__()
+        super().__init__(fine_tuning_head, output_size)
         self.config = uce_model.config
         self.uce_model = uce_model.model
         self.device = uce_model.device
         self.accelerator = uce_model.accelerator
-        if isinstance(fine_tuning_head, str):
-            if fine_tuning_head == "classification":
-                if output_size is None:
-                    message = "The output_size must be specified for a classification head."
-                    logger.error(message)
-                    raise ValueError(message)
-                fine_tuning_head = ClassificationHead(output_size)
-            else:
-                message = "The fine_tuning_head must be a valid HelicalBaseFineTuningHead"
-                logger.error(message)
-                raise ValueError(message)
-        else:
-            fine_tuning_head = fine_tuning_head
-        fine_tuning_head.set_dim_size(self.config["embsize"])
-        self.fine_tuning_head = fine_tuning_head
+        self.fine_tuning_head.set_dim_size(self.config["embsize"])
 
     def forward(self, batch_sentences, mask) -> torch.Tensor:
         _, embeddings = self.uce_model.forward(batch_sentences, mask=mask)
