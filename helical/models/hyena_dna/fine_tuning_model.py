@@ -37,9 +37,9 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel):
         self.fine_tuning_head = fine_tuning_head
 
     def forward(self, x):
-        x = self.hyena_model(x)[:, 0, :] # take cls
-        x = self.fine_tuning_head(x)
-        return x
+        hyena = torch.mean(self.hyena_model(x), dim=1)# take cls
+        output = self.fine_tuning_head(hyena)
+        return output
 
     def train(        
         self,
@@ -82,10 +82,11 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel):
      
         if validation_input_data is not None and validation_labels is not None:
             validation_input_data.set_labels(validation_labels)
-            validation_data_loader = DataLoader(validation_input_data, batch_size=5, shuffle=False)
+            validation_data_loader = DataLoader(validation_input_data, batch_size=self.config["batch_size"], shuffle=False)
 
         self.to(self.config["device"])
-
+        self.hyena_model.train()
+        self.fine_tuning_head.train()
         optimizer = optimizer(self.parameters(), **optimizer_params)
 
         lr_scheduler = None
