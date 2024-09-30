@@ -6,7 +6,7 @@ class TestHyenaDNAFineTuning:
     @pytest.fixture(params=["hyenadna-tiny-1k-seqlen", "hyenadna-tiny-1k-seqlen-d256"])
     def hyenaDNA(self, request):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        config = HyenaDNAConfig(model_name=request.param, device=self.device)
+        config = HyenaDNAConfig(model_name=request.param, batch_size=1, device=self.device)
         return HyenaDNA(config)
 
     @pytest.fixture
