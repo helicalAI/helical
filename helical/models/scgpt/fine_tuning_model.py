@@ -38,7 +38,11 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
         Get the outputs of the fine-tuned model.
 
     """
-    def __init__(self, scGPT_model: HelicalRNAModel, fine_tuning_head: Literal["classification"]|HelicalBaseFineTuningHead, output_size: Optional[int]=None):
+    def __init__(self, 
+                 scGPT_model: HelicalRNAModel, 
+                 fine_tuning_head: Literal["classification"] | HelicalBaseFineTuningHead, 
+                 output_size: Optional[int]=None):
+        
         super().__init__(fine_tuning_head, output_size)
         self.config = scGPT_model.config
         self.vocab = scGPT_model.vocab

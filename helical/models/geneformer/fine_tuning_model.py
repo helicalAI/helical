@@ -36,7 +36,11 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
     get_outputs(dataset: Dataset, silent = False)
         Get outputs from the fine-tuned model on the given processed dataset.
     """
-    def __init__(self, geneformer_model: HelicalRNAModel, fine_tuning_head: Literal["classification"]|HelicalBaseFineTuningHead, output_size: Optional[int]=None):
+    def __init__(self, 
+                 geneformer_model: HelicalRNAModel, 
+                 fine_tuning_head: Literal["classification"] | HelicalBaseFineTuningHead, 
+                 output_size: Optional[int]=None):
+        
         super().__init__(fine_tuning_head, output_size)
         self.config = geneformer_model.config
         self.emb_mode = geneformer_model.emb_mode

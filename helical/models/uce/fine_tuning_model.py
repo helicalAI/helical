@@ -38,7 +38,11 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
         Get the outputs of the fine-tuned model on a UCE processed dataset.
 
     """
-    def __init__(self, uce_model: HelicalRNAModel, fine_tuning_head: Literal["classification"]|HelicalBaseFineTuningHead, output_size: Optional[int]=None):
+    def __init__(self, 
+                 uce_model: HelicalRNAModel, 
+                 fine_tuning_head: Literal["classification"] | HelicalBaseFineTuningHead, 
+                 output_size: Optional[int]=None):
+        
         super().__init__(fine_tuning_head, output_size)
         self.config = uce_model.config
         self.uce_model = uce_model.model
