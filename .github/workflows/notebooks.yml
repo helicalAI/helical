@@ -31,6 +31,8 @@ jobs:
           sed -i 's/get_anndata_from_hf_dataset(ds\[\\"test\\"\])/get_anndata_from_hf_dataset(ds\[\\"test\\"\])[:2]/g' ./examples/notebooks/Cell-Type-Classification-Fine-Tuning.ipynb
           sed -i 's/list(np.array(train_dataset.obs\[\\"LVL1\\"].tolist()))/list(np.array(train_dataset.obs\[\\"LVL1\\"].tolist()))[:10]/g' ./examples/notebooks/Cell-Type-Classification-Fine-Tuning.ipynb
           sed -i 's/list(np.array(test_dataset.obs\[\\"LVL1\\"].tolist()))/list(np.array(test_dataset.obs\[\\"LVL1\\"].tolist()))[:2]/g' ./examples/notebooks/Cell-Type-Classification-Fine-Tuning.ipynb
+          sed -i 's/\\"train\\"/\\"train[:5%]\\"/g' ./examples/notebooks/HyenaDNA-Fine-Tuning.ipynb
+          sed -i 's/\\"test\\"/\\"test[:5%]\\"/g' ./examples/notebooks/HyenaDNA-Fine-Tuning.ipynb
 
       - name: Run Notebooks
         run: |
