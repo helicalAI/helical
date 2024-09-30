@@ -11,8 +11,8 @@ def get_anndata_from_hf_dataset(dataset: Dataset) -> ad.AnnData:
     """
     Convert a HuggingFace dataset to an AnnData object
     It assumes that the dataset has the following columns:
-    - raw_counts
-    - rows TODO difference between these two??
+    - raw_counts (specifying the raw counts of the data, excluding 0s)
+    - rows (specifying the row indices of the raw_counts)
     - Any other column that will be used as obs
 
     The id of the raw_counts are the gene names as a string separated by commas.
@@ -46,9 +46,7 @@ def get_anndata_from_hf_dataset(dataset: Dataset) -> ad.AnnData:
         LOGGER.error(message)
         raise ValueError(message)
 
-    ann_data.var_names = var_names
-    
-    # TODO: necessary?
-    ann_data.var['gene_name'] = ann_data.var_names.str.upper()
+    ann_data.var_names = [name.upper() for name in var_names]
+    ann_data.var['gene_name'] = ann_data.var_names
 
     return ann_data
