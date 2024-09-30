@@ -114,13 +114,10 @@ class HyenaDNA(HelicalDNAModel):
             embeddings = []
             for input_data in tqdm(train_data_loader, desc="Getting embeddings"):
                 input_data = input_data.to(self.device)
-                embeddings.append(self.model(input_data))
+                embeddings.append(self.model(input_data).detach().cpu().numpy())
         
-        output = torch.stack(embeddings)
-        other_dims = output.shape[2:]
+        # output = torch.stack(embeddings)
+        # other_dims = output.shape[2:]
 
-        reshaped_tensor = output.view(-1, *other_dims)
-        return reshaped_tensor
-
-    def train(self):
-        pass #TODO: Implement fine-tuning for HyenaDNA model
+        # reshaped_tensor = output.view(-1, *other_dims)
+        return np.vstack(embeddings)

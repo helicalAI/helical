@@ -10,6 +10,7 @@ from tqdm import tqdm
 from transformers import get_scheduler
 from sklearn.metrics import accuracy_score
 import logging
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel):
         fine_tuning_head.set_dim_size(self.config["d_model"])
         self.fine_tuning_head = fine_tuning_head
 
-    def forward(self, x):
+    def _forward(self, x):
         hyena = torch.mean(self.hyena_model(x), dim=1)# take cls
         output = self.fine_tuning_head(hyena)
         return output
@@ -102,7 +103,7 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel):
                 input_data = input_data.to(self.config["device"])
                 labels = labels.to(self.config["device"])
                 optimizer.zero_grad()
-                output = self.forward(input_data)
+                output = self._forward(input_data)
                 loss = loss_function(output, labels)
                 loss.backward()
                 batch_loss += loss.item()
@@ -123,10 +124,24 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel):
                     for input_data, val_labels in validation_loop:
                         input_data = input_data.to(self.config["device"])
                         val_labels = val_labels.to(self.config["device"])
-                        output = self.forward(input_data)
+                        output = self._forward(input_data)
                         validation_batches_processed += 1
                         accuracy += accuracy_score(val_labels.cpu(), torch.argmax(output, dim=1).cpu())
                         validation_loop.set_postfix({"accuracy": accuracy/validation_batches_processed})
         logger.info(f"Fine-Tuning Complete. Epochs: {epochs}")
             
-            
+    def get_outputs(self, input_data: HyenaDNADataset):
+        data_loader = DataLoader(input_data, batch_size=self.config["batch_size"], shuffle=True)
+
+        self.to(self.config["device"])
+        self.hyena_model.eval()
+        self.fine_tuning_head.eval()
+
+        batch_loop = tqdm(data_loader)
+        outputs = []
+        for batch, *labels in batch_loop:
+            batch.to(self.config["device"])
+            output = self._forward(batch)
+            outputs.append(output.detach().cpu().numpy())
+        
+        return np.vstack(outputs)
