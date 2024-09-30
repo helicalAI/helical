@@ -39,7 +39,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
 
     """
     def __init__(self, scGPT_model: HelicalRNAModel, fine_tuning_head: Literal["classification"]|HelicalBaseFineTuningHead, output_size: Optional[int]=None):
-        super(scGPTFineTuningModel, self).__init__()
+        super().__init__()
         self.config = scGPT_model.config
         self.vocab = scGPT_model.vocab
         self.scgpt_model = scGPT_model.model

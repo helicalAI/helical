@@ -39,7 +39,7 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
 
     """
     def __init__(self, uce_model: HelicalRNAModel, fine_tuning_head: Literal["classification"]|HelicalBaseFineTuningHead, output_size: Optional[int]=None):
-        super(UCEFineTuningModel, self).__init__()
+        super().__init__()
         self.config = uce_model.config
         self.uce_model = uce_model.model
         self.device = uce_model.device

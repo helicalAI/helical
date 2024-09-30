@@ -126,7 +126,7 @@ class HelicalBaseFineTuningHead(ABC, torch.nn.Module):
     Each new fine-tuning head should be a subclass of this class.
     """
     def __init__(self):
-        super(HelicalBaseFineTuningHead, self).__init__()
+        super().__init__()
 
     @abstractmethod
     def forward():
@@ -141,7 +141,7 @@ class HelicalBaseFineTuningModel(torch.nn.Module):
     Each new fine-tuning model should be a subclass of this class.
     """
     def __init__(self):
-       super(HelicalBaseFineTuningModel, self).__init__()
+       super().__init__()
 
     @abstractmethod
     def forward():
