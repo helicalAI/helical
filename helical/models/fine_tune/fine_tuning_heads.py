@@ -21,8 +21,6 @@ class ClassificationHead(HelicalBaseFineTuningHead):
         super(ClassificationHead, self).__init__()
         self.output_size = num_classes
         self.dropout = torch.nn.Dropout(p=dropout)
-        self.softmax = torch.nn.Softmax(dim=1)
-        
     
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         """Forward method of the classification head.
