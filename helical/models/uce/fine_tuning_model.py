@@ -30,7 +30,7 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
 
     Methods
     -------
-    forward(input_gene_ids: torch.Tensor, data_dict: dict, src_key_padding_mask: torch.Tensor, use_batch_labels: bool, device: str) -> torch.Tensor
+    _forward(input_gene_ids: torch.Tensor, data_dict: dict, src_key_padding_mask: torch.Tensor, use_batch_labels: bool, device: str) -> torch.Tensor
         The forward method of the fine-tuning model.
     train(train_input_data: UCEDataset, train_labels: np.ndarray, validation_input_data = None, validation_labels = None, optimizer: optim = optim.AdamW, optimizer_params: dict = {'lr': 0.0001}, loss_function: loss = loss.CrossEntropyLoss(), epochs: int = 1, lr_scheduler_params: Optional[dict] = None)
         Fine-tunes the UCE model with different head modules.
@@ -50,7 +50,22 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
         self.accelerator = uce_model.accelerator
         self.fine_tuning_head.set_dim_size(self.config["embsize"])
 
-    def forward(self, batch_sentences, mask) -> torch.Tensor:
+    def _forward(self, batch_sentences: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+        """
+        Forward method of the fine-tuning model.
+
+        Parameters
+        ----------
+        batch_sentences : torch.Tensor
+            The input tensor of the fine-tuning model.
+        mask : torch.Tensor
+            The mask tensor for the input tensor.
+        
+        Returns
+        -------
+        torch.Tensor
+            The output tensor of the fine-tuning model.
+        """
         _, embeddings = self.uce_model.forward(batch_sentences, mask=mask)
         if self.accelerator is not None:
             self.accelerator.wait_for_everyone()
@@ -155,7 +170,7 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
                 else:
                     batch_sentences = self.uce_model.pe_embedding(batch_sentences.long())
                 batch_sentences = torch.nn.functional.normalize(batch_sentences, dim=2)  # normalize token outputs
-                output = model.forward(batch_sentences, mask=mask)
+                output = model._forward(batch_sentences, mask=mask)
                 labels = torch.tensor(train_labels[batch_count: batch_count + self.config["batch_size"]], device=self.device)
                 batch_count += self.config["batch_size"]
                 loss = loss_function(output, labels)
@@ -185,7 +200,7 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
                     else:
                         batch_sentences = self.uce_model.pe_embedding(batch_sentences.long())
                     batch_sentences = torch.nn.functional.normalize(batch_sentences, dim=2)  # normalize token outputs
-                    output = model.forward(batch_sentences, mask=mask)
+                    output = model._forward(batch_sentences, mask=mask)
                     val_labels = torch.tensor(validation_labels[validation_batch_count: validation_batch_count + self.config["batch_size"]], device=self.device)
                     validation_batch_count += self.config["batch_size"]
                     accuracy += accuracy_score(val_labels.cpu(), torch.argmax(output, dim=1).cpu())
@@ -233,7 +248,7 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
             else:
                 batch_sentences = self.uce_model.pe_embedding(batch_sentences.long())
             batch_sentences = torch.nn.functional.normalize(batch_sentences, dim=2)  # normalize token outputs
-            output = model.forward(batch_sentences, mask=mask)
+            output = model._forward(batch_sentences, mask=mask)
             outputs.append(output.detach().cpu().numpy())
         
         return np.vstack(outputs)

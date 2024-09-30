@@ -50,7 +50,22 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
         self.geneformer_model = geneformer_model.model
         self.fine_tuning_head.set_dim_size(self.config["embsize"])
 
-    def forward(self, input_ids: torch.Tensor, attention_mask_minibatch: torch.Tensor) -> torch.Tensor:
+    def _forward(self, input_ids: torch.Tensor, attention_mask_minibatch: torch.Tensor) -> torch.Tensor:
+        """
+        Forward method of the fine-tuning model.
+
+        Parameters
+        ----------
+        input_ids : torch.Tensor
+            The input ids to the fine-tuning model.
+        attention_mask_minibatch : torch.Tensor
+            The attention mask for the input tensor.
+        
+        Returns
+        -------
+        torch.Tensor
+            The output tensor of the fine-tuning model.
+        """
         outputs = self.geneformer_model(input_ids=input_ids, attention_mask=attention_mask_minibatch)
         final_layer = outputs.hidden_states[-1]
         cls_seq = final_layer[:, 0, :]
@@ -165,7 +180,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
                     input_data_minibatch, max_len, self.pad_token_id, model_input_size
                 ).to(self.device)
 
-                outputs = self(input_ids=input_data_minibatch, attention_mask_minibatch=gen_attention_mask(minibatch))
+                outputs = self._forward(input_ids=input_data_minibatch, attention_mask_minibatch=gen_attention_mask(minibatch))
                 loss = loss_function(outputs, minibatch[label])
                 loss.backward()
                 batch_loss += loss.item()
@@ -198,7 +213,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
                     ).to(self.device)
 
                     with torch.no_grad():
-                        outputs = self(input_ids=input_data_minibatch, attention_mask_minibatch=gen_attention_mask(minibatch))
+                        outputs = self._forward(input_ids=input_data_minibatch, attention_mask_minibatch=gen_attention_mask(minibatch))
                     accuracy += accuracy_score(minibatch[label].cpu(), torch.argmax(outputs, dim=1).cpu())
                     count += 1.0
                     testing_loop.set_postfix({"accuracy": accuracy/count})
@@ -271,7 +286,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
             ).to(self.device)
 
             with torch.no_grad():
-                outputs = self(input_ids=input_data_minibatch, attention_mask_minibatch=gen_attention_mask(minibatch))
+                outputs = self._forward(input_ids=input_data_minibatch, attention_mask_minibatch=gen_attention_mask(minibatch))
                 output.append(outputs.clone().detach())
             del outputs
             del minibatch
