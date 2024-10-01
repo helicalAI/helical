@@ -176,7 +176,7 @@ class TestGeneformerModel:
     def test_model_input_size(self, geneformer):
         assert geneformer.config["input_size"] == geneformer.configurer.model_map[geneformer.config["model_name"]]['input_size']
 
-    def test_fine_tune_classifier(self, geneformer, mock_data, fine_tune_mock_data):
+    def test_fine_tune_classifier_returns_correct_shape(self, geneformer, mock_data, fine_tune_mock_data):
         tokenized_dataset = geneformer.process_data(mock_data, gene_names='gene_symbols')
         tokenized_dataset = tokenized_dataset.add_column('labels', fine_tune_mock_data)
         fine_tuned_model = GeneformerFineTuningModel(geneformer, fine_tuning_head="classification", output_size=1)

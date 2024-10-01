@@ -16,24 +16,33 @@ logger = logging.getLogger(__name__)
 
 class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel):
     """HyenaDNA fine-tuning model.
+
+    This class represents the HyenaDNA fine-tuning model, which is a long-range genomic foundation model pretrained on context lengths of up to 1 million tokens at single nucleotide resolution.
+
+    Parameters
+    ----------
+    hyena_model : HelicalDNAModel
+        The HyenaDNA model to be fine-tuned.
+    fine_tuning_head : Literal["classification"]|HelicalBaseFineTuningHead
+        The fine-tuning head to be used for the model. This can be a custom fine-tuning head or one of the predefined heads.
+    output_size : Optional[int], default = None
+        The output size of the fine-tuning head. This is required if a predefined head is selected.
+    
+    Methods
+    -------
+    train(train_input_data: HyenaDNADataset, train_labels: list[int], validation_input_data: HyenaDNADataset = None, validation_labels: list[int] = None, optimizer: torch.optim, optimizer_params: dict, loss_function: torch.nn.modules.loss, epochs: int, lr_scheduler_params: dict = None)
+        Fine-tunes the Hyena-DNA model with different head modules.
+    get_outputs(input_data: HyenaDNADataset) -> np.ndarray
+        Get the outputs of the fine-tuned model.
     """
-    def __init__(self, hyena_model: HelicalDNAModel, fine_tuning_head: Literal["classification"]|HelicalBaseFineTuningHead, output_size: Optional[int]=None):
-        super(HyenaDNAFineTuningModel, self).__init__()
+    def __init__(
+            self, 
+            hyena_model: HelicalDNAModel, 
+            fine_tuning_head: Literal["classification"]|HelicalBaseFineTuningHead, 
+            output_size: Optional[int]=None):
+        super().__init__(fine_tuning_head, output_size)
         self.config = hyena_model.config
         self.hyena_model = hyena_model.model
-        if isinstance(fine_tuning_head, str):
-            if fine_tuning_head == "classification":
-                if output_size is None:
-                    message = "The output_size must be specified for a classification head."
-                    logger.error(message)
-                    raise ValueError(message)
-                fine_tuning_head = ClassificationHead(output_size)
-            else:
-                message = "The fine_tuning_head must be a valid HelicalBaseFineTuningHead"
-                logger.error(message)
-                raise ValueError(message)
-        else:
-            fine_tuning_head = fine_tuning_head
         fine_tuning_head.set_dim_size(self.config["d_model"])
         self.fine_tuning_head = fine_tuning_head
 
@@ -130,7 +139,21 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel):
                         validation_loop.set_postfix({"accuracy": accuracy/validation_batches_processed})
         logger.info(f"Fine-Tuning Complete. Epochs: {epochs}")
             
-    def get_outputs(self, input_data: HyenaDNADataset):
+    def get_outputs(
+            self, 
+            input_data: HyenaDNADataset) -> np.ndarray:
+        """Get the outputs of the fine-tuned model.
+        
+        Parameters
+        ----------
+        input_data : HyenaDNADataset
+            The input data to get the outputs for.
+
+        Returns
+        -------
+        np.ndarray
+            The outputs of the model
+        """
         data_loader = DataLoader(input_data, batch_size=self.config["batch_size"], shuffle=True)
 
         self.to(self.config["device"])

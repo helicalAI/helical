@@ -109,7 +109,7 @@ class TestSCGPTModel:
         self.scgpt.ensure_data_validity(data, "index", False)
         assert "total_counts" in data.obs
 
-    def test_fine_tune_classification(self):
+    def test_fine_tune_classification_returns_correct_shape(self):
         tokenized_dataset = self.scgpt.process_data(self.data)
         labels = list([0])
         fine_tuned_model = scGPTFineTuningModel(self.scgpt, fine_tuning_head="classification", output_size=1)

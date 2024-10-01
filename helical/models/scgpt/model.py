@@ -9,7 +9,7 @@ import logging
 from accelerate import Accelerator
 from helical.models.scgpt.scgpt_utils import load_model
 from helical.models.scgpt.dataset import Dataset
-from helical.services.downloader import Downloader
+from helical.utils.downloader import Downloader
 from helical.models.scgpt.data_collator import DataCollator
 from torch.utils.data import DataLoader, SequentialSampler
 import torch

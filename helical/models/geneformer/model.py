@@ -3,13 +3,13 @@ import logging
 from pathlib import Path
 import numpy as np
 from anndata import AnnData
-from helical.services.downloader import Downloader
+from helical.utils.downloader import Downloader
 import pickle
 from transformers import BertForMaskedLM
 from helical.models.geneformer.geneformer_utils import get_embs,quant_layers
 from helical.models.geneformer.geneformer_tokenizer import TranscriptomeTokenizer
 from helical.models.geneformer.geneformer_config import GeneformerConfig
-from helical.services.mapping import map_gene_symbols_to_ensembl_ids
+from helical.utils.mapping import map_gene_symbols_to_ensembl_ids
 from datasets import Dataset
 from typing import Optional
 from accelerate import Accelerator

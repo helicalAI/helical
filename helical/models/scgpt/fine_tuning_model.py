@@ -38,28 +38,44 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
         Get the outputs of the fine-tuned model.
 
     """
-    def __init__(self, scGPT_model: HelicalRNAModel, fine_tuning_head: Literal["classification"]|HelicalBaseFineTuningHead, output_size: Optional[int]=None):
-        super(scGPTFineTuningModel, self).__init__()
+    def __init__(self, 
+                 scGPT_model: HelicalRNAModel, 
+                 fine_tuning_head: Literal["classification"] | HelicalBaseFineTuningHead, 
+                 output_size: Optional[int]=None):
+        
+        super().__init__(fine_tuning_head, output_size)
         self.config = scGPT_model.config
         self.vocab = scGPT_model.vocab
         self.scgpt_model = scGPT_model.model
-        if isinstance(fine_tuning_head, str):
-            if fine_tuning_head == "classification":
-                if output_size is None:
-                    message = "The output_size must be specified for a classification head."
-                    logger.error(message)
-                    raise ValueError(message)
-                fine_tuning_head = ClassificationHead(output_size)
-            else:
-                message = "The fine_tuning_head must be a valid HelicalBaseFineTuningHead"
-                logger.error(message)
-                raise ValueError(message)
-        else:
-            fine_tuning_head = fine_tuning_head
-        fine_tuning_head.set_dim_size(self.config["embsize"])
-        self.fine_tuning_head = fine_tuning_head
+        self.fine_tuning_head.set_dim_size(self.config["embsize"])
 
-    def forward(self, input_gene_ids, data_dict, src_key_padding_mask, use_batch_labels, device) -> torch.Tensor:
+    def _forward(self, 
+                 input_gene_ids: torch.Tensor, 
+                 data_dict: dict, 
+                 src_key_padding_mask: torch.Tensor, 
+                 use_batch_labels: bool, 
+                 device: torch.device) -> torch.Tensor:
+        """
+        Forward method of the fine-tuning model.
+
+        Parameters
+        ----------
+        input_gene_ids : torch.Tensor
+            The input tensor to the fine-tuning model.
+        data_dict : dict
+            The data dictionary containing the expression data and batch labels.
+        src_key_padding_mask : torch.Tensor
+            The source key padding mask tensor.
+        use_batch_labels : bool
+            Whether to use batch labels.
+        device : torch.device
+            The device to run the model on.
+            
+        Returns
+        -------
+        torch.Tensor
+            The output tensor of the fine-tuning model.
+        """
         embeddings = self.scgpt_model._encode(
             input_gene_ids,
             data_dict["expr"].to(device),
@@ -169,7 +185,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
                     src_key_padding_mask = input_gene_ids.eq(
                         self.vocab[self.config["pad_token"]]
                     )
-                    output = self(input_gene_ids, data_dict, src_key_padding_mask, use_batch_labels, device)
+                    output = self._forward(input_gene_ids, data_dict, src_key_padding_mask, use_batch_labels, device)
                     labels = torch.tensor(train_labels[batch_count: batch_count + self.config["batch_size"]], device=device)
                     batch_count += self.config["batch_size"]
                     loss = loss_function(output, labels)
@@ -195,7 +211,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
                         src_key_padding_mask = input_gene_ids.eq(
                             self.vocab[self.config["pad_token"]]
                         )
-                        output = self(input_gene_ids, validation_data_dict, src_key_padding_mask, use_batch_labels, device)
+                        output = self._forward(input_gene_ids, validation_data_dict, src_key_padding_mask, use_batch_labels, device)
                         val_labels = torch.tensor(validation_labels[validation_batch_count: validation_batch_count + self.config["batch_size"]], device=device)
                         validation_batch_count += self.config["batch_size"]
                         accuracy += accuracy_score(val_labels.cpu(), torch.argmax(output, dim=1).cpu())
@@ -254,7 +270,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
             src_key_padding_mask = input_gene_ids.eq(
                 self.vocab[self.config["pad_token"]]
             )
-            output = self(input_gene_ids, validation_data_dict, src_key_padding_mask, use_batch_labels, device)
+            output = self._forward(input_gene_ids, validation_data_dict, src_key_padding_mask, use_batch_labels, device)
             outputs.append(output.detach().cpu().numpy())
         
         return np.vstack(outputs)

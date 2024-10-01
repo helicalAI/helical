@@ -6,7 +6,7 @@ from .hyena_dna_utils import HyenaDNADataset
 from helical.models.hyena_dna.pretrained_model import HyenaDNAPreTrainedModel
 import torch
 from .standalone_hyenadna import CharacterTokenizer
-from helical.services.downloader import Downloader
+from helical.utils.downloader import Downloader
 from torch.utils.data import DataLoader
 import numpy as np
 
