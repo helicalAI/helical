@@ -1,4 +1,3 @@
-from helical.models.fine_tune.fine_tuning_heads import ClassificationHead
 from helical.models.uce.uce_dataset import UCEDataset
 import numpy as np
 import torch

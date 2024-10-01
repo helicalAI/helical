@@ -1,5 +1,4 @@
-from typing import Literal, Optional, get_origin
-from helical.models.fine_tune.fine_tuning_heads import ClassificationHead
+from typing import Literal, Optional
 from helical.models.scgpt.data_collator import DataCollator
 from helical.models.scgpt.dataset import Dataset
 from sklearn.metrics import accuracy_score

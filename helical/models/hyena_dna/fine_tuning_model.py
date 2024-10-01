@@ -1,6 +1,5 @@
 from typing import Literal, Optional
 from helical.models.base_models import HelicalBaseFineTuningHead, HelicalBaseFineTuningModel, HelicalDNAModel
-from helical.models import ClassificationHead
 from torch import optim
 import torch
 from torch.nn.modules import loss

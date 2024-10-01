@@ -1,6 +1,5 @@
 from typing import Literal, Optional
 from helical.models.base_models import HelicalBaseFineTuningHead, HelicalBaseFineTuningModel, HelicalRNAModel
-from helical.models.fine_tune.fine_tuning_heads import ClassificationHead
 from sklearn.metrics import accuracy_score
 import torch
 from torch import optim
