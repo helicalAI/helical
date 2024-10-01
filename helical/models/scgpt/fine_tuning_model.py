@@ -190,7 +190,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
                 src_key_padding_mask = input_gene_ids.eq(
                     self.vocab[self.config["pad_token"]]
                 )
-                output = self(input_gene_ids, data_dict, src_key_padding_mask, use_batch_labels, device)
+                output = self._forward(input_gene_ids, data_dict, src_key_padding_mask, use_batch_labels, device)
                 labels = torch.tensor(train_labels[batch_count: batch_count + self.config["batch_size"]], device=device)
                 batch_count += self.config["batch_size"]
                 loss = loss_function(output, labels)
