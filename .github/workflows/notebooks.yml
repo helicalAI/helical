@@ -1,4 +1,4 @@
-name: Notebooks
+name: notebooks
 
 on:
   workflow_run:
