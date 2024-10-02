@@ -7,7 +7,7 @@ from typing import Protocol, runtime_checkable
 from datasets import Dataset
 from numpy import ndarray
 import torch
-from helical.models.fine_tune.fine_tuning_heads import ClassificationHead, HelicalBaseFineTuningHead
+from helical.models.fine_tune.fine_tuning_heads import ClassificationHead, RegressionHead, HelicalBaseFineTuningHead
 from typing import Literal
 
 LOGGER = logging.getLogger(__name__)
@@ -136,7 +136,7 @@ class HelicalBaseFineTuningModel(torch.nn.Module):
         The output size of the fine-tuning model. This is required if the fine_tuning_head is a string specified task. For a classification task this is number of unique classes.
 
     """
-    def __init__(self, fine_tuning_head: Literal["classification"] | HelicalBaseFineTuningHead, output_size: int):
+    def __init__(self, fine_tuning_head: Literal["classification", "regression"] | HelicalBaseFineTuningHead, output_size: int):
         super().__init__()
         if isinstance(fine_tuning_head, str):
             if fine_tuning_head == "classification":
@@ -145,6 +145,12 @@ class HelicalBaseFineTuningModel(torch.nn.Module):
                     LOGGER.error(message)
                     raise ValueError(message)
                 fine_tuning_head = ClassificationHead(output_size)
+            elif fine_tuning_head == "regression":
+                if output_size is None:
+                    message = "The output_size must be specified for a regression head."
+                    LOGGER.error(message)
+                    raise ValueError(message)
+                fine_tuning_head = RegressionHead(output_size)
             else:
                 message = "Not implemented fine-tuning head."
                 LOGGER.error(message)
