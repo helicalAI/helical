@@ -5,7 +5,7 @@ from helical.models.base_models import HelicalDNAModel
 from helical.models.hyena_dna.pretrained_model import HyenaDNAPreTrainedModel
 import torch
 from .standalone_hyenadna import CharacterTokenizer
-from helical.services.downloader import Downloader
+from helical.utils.downloader import Downloader
 LOGGER = logging.getLogger(__name__)
 
 class HyenaDNA(HelicalDNAModel):

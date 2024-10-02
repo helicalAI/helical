@@ -1,10 +1,10 @@
 name: Notebooks
 
 on:
-  pull_request:
-    branches:
-      - release
-      - main
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types:
+      - completed
 
 jobs:
   notebooks:

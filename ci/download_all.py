@@ -1,4 +1,4 @@
-from helical.services.downloader import Downloader
+from helical.utils.downloader import Downloader
 from pathlib import Path
 import logging
 LOGGER = logging.getLogger(__name__)
