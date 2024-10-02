@@ -121,8 +121,6 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
             The loss function to be used.
         epochs : int, optional, default = 10
             The number of epochs to train the model
-        freeze_layers : int, optional, default = 0
-            The number of layers to freeze.
         lr_scheduler_params : dict, default = None
             The learning rate scheduler parameters for the transformers get_scheduler method. The optimizer will be taken from the optimizer input and should not be included in the learning scheduler parameters. If not specified, no scheduler will be used.
             e.g. lr_scheduler_params = { 'name': 'linear', 'num_warmup_steps': 0, 'num_training_steps': 5 }
