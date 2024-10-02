@@ -111,8 +111,6 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
             The loss function to be used.
         epochs : int, optional, default = 10
             The number of epochs to train the model
-        freeze_layers : int, optional, default = 0
-            The number of layers to freeze.
         lr_scheduler_params : dict, default = None
             The learning rate scheduler parameters for the transformers get_scheduler method. The optimizer will be taken from the optimizer input and should not be included in the learning scheduler parameters. If not specified, no scheduler will be used.
             e.g. lr_scheduler_params = { 'name': 'linear', 'num_warmup_steps': 0, 'num_training_steps': 5 }
@@ -141,6 +139,8 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
             if validation_input_data is not None:
                 validation_dataloader = self.accelerator.prepare(validation_dataloader)
 
+        self.uce_model.train()
+        self.fine_tuning_head.train()
 
         # disable progress bar if not the main process
         # if self.accelerator is not None:
@@ -148,9 +148,9 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
         # else:
         #     pbar = tqdm(dataloader)
 
-        model = self.to(self.device)
+        self.to(self.device)
 
-        optimizer = optimizer(model.parameters(), **optimizer_params)
+        optimizer = optimizer(self.parameters(), **optimizer_params)
 
         lr_scheduler = None
         if lr_scheduler_params is not None: 
@@ -170,7 +170,7 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
                 else:
                     batch_sentences = self.uce_model.pe_embedding(batch_sentences.long())
                 batch_sentences = torch.nn.functional.normalize(batch_sentences, dim=2)  # normalize token outputs
-                output = model._forward(batch_sentences, mask=mask)
+                output = self._forward(batch_sentences, mask=mask)
                 labels = torch.tensor(train_labels[batch_count: batch_count + self.config["batch_size"]], device=self.device)
                 batch_count += self.config["batch_size"]
                 loss = loss_function(output, labels)
@@ -200,13 +200,15 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
                     else:
                         batch_sentences = self.uce_model.pe_embedding(batch_sentences.long())
                     batch_sentences = torch.nn.functional.normalize(batch_sentences, dim=2)  # normalize token outputs
-                    output = model._forward(batch_sentences, mask=mask)
+                    output = self._forward(batch_sentences, mask=mask)
                     val_labels = torch.tensor(validation_labels[validation_batch_count: validation_batch_count + self.config["batch_size"]], device=self.device)
                     validation_batch_count += self.config["batch_size"]
                     accuracy += accuracy_score(val_labels.cpu(), torch.argmax(output, dim=1).cpu())
                     count += 1.0
                     testing_loop.set_postfix({"accuracy": accuracy/count})
         logger.info(f"Fine-Tuning Complete. Epochs: {epochs}")
+        self.uce_model.eval()
+        self.fine_tuning_head.eval()
 
     def get_outputs(
         self,
@@ -225,7 +227,7 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
         np.ndarray
             The outputs of the model.
         """
-        model = self.to(self.device)
+        self.to(self.device)
 
         batch_size = self.config["batch_size"]
         dataloader = DataLoader(dataset, 
@@ -237,6 +239,9 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
 
         if self.accelerator is not None:
             dataloader = self.accelerator.prepare(dataloader)
+        
+        self.uce_model.eval()
+        self.fine_tuning_head.eval()
 
         testing_loop = tqdm(dataloader, desc="Fine-Tuning Validation")
         outputs = []
@@ -248,7 +253,7 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
             else:
                 batch_sentences = self.uce_model.pe_embedding(batch_sentences.long())
             batch_sentences = torch.nn.functional.normalize(batch_sentences, dim=2)  # normalize token outputs
-            output = model._forward(batch_sentences, mask=mask)
+            output = self._forward(batch_sentences, mask=mask)
             outputs.append(output.detach().cpu().numpy())
         
         return np.vstack(outputs)
