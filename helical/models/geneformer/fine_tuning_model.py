@@ -1,6 +1,5 @@
 from typing import Literal, Optional
 from helical.models.base_models import HelicalBaseFineTuningHead, HelicalBaseFineTuningModel, HelicalRNAModel
-from sklearn.metrics import accuracy_score
 import torch
 from torch import optim
 from torch.nn.modules import loss
@@ -197,7 +196,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
 
             if validation_dataset is not None:
                 testing_loop = trange(0, validation_batch_length, self.config["batch_size"], desc="Fine-Tuning Validation", leave=(not silent))
-                accuracy = 0.0
+                val_loss = 0.0
                 count = 0.0
                 for i in testing_loop:
                     max_range = min(i + self.config["batch_size"], validation_batch_length)
@@ -213,9 +212,9 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
 
                     with torch.no_grad():
                         outputs = self._forward(input_ids=input_data_minibatch, attention_mask_minibatch=gen_attention_mask(minibatch))
-                    accuracy += accuracy_score(minibatch[label].cpu(), torch.argmax(outputs, dim=1).cpu())
+                    val_loss += loss_function(outputs, minibatch[label]).item()
                     count += 1.0
-                    testing_loop.set_postfix({"accuracy": accuracy/count})
+                    testing_loop.set_postfix({"val_loss": val_loss/count})
 
                     del outputs
                     del minibatch

@@ -1,7 +1,6 @@
 from typing import Literal, Optional
 from helical.models.scgpt.data_collator import DataCollator
 from helical.models.scgpt.dataset import Dataset
-from sklearn.metrics import accuracy_score
 import torch
 from torch import optim
 from torch.nn.modules import loss
@@ -202,7 +201,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
 
                 if validation_input_data is not None:
                     testing_loop = tqdm(validation_data_loader, desc="Fine-Tuning Validation")
-                    accuracy = 0.0
+                    val_loss = 0.0
                     count = 0.0
                     validation_batch_count = 0
                     for validation_data_dict in testing_loop:
@@ -212,10 +211,10 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
                         )
                         output = self._forward(input_gene_ids, validation_data_dict, src_key_padding_mask, use_batch_labels, device)
                         val_labels = torch.tensor(validation_labels[validation_batch_count: validation_batch_count + self.config["batch_size"]], device=device)
+                        val_loss += loss_function(output, val_labels).item()
                         validation_batch_count += self.config["batch_size"]
-                        accuracy += accuracy_score(val_labels.cpu(), torch.argmax(output, dim=1).cpu())
                         count += 1.0
-                        testing_loop.set_postfix({"accuracy": accuracy/count})
+                        testing_loop.set_postfix({"val_loss": val_loss/count})
         logger.info(f"Fine-Tuning Complete. Epochs: {epochs}")
 
     def get_outputs(

@@ -188,7 +188,7 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
 
             if validation_input_data is not None:
                 testing_loop = tqdm(validation_dataloader, desc="Fine-Tuning Validation")
-                accuracy = 0.0
+                val_loss = 0.0
                 count = 0.0
                 validation_batch_count = 0
                 for validation_data in testing_loop:
@@ -202,9 +202,9 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
                     output = model._forward(batch_sentences, mask=mask)
                     val_labels = torch.tensor(validation_labels[validation_batch_count: validation_batch_count + self.config["batch_size"]], device=self.device)
                     validation_batch_count += self.config["batch_size"]
-                    accuracy += accuracy_score(val_labels.cpu(), torch.argmax(output, dim=1).cpu())
+                    val_loss += loss_function(output, val_labels).item()
                     count += 1.0
-                    testing_loop.set_postfix({"accuracy": accuracy/count})
+                    testing_loop.set_postfix({"val_loss": val_loss/count})
         logger.info(f"Fine-Tuning Complete. Epochs: {epochs}")
 
     def get_outputs(

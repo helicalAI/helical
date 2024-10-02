@@ -7,7 +7,6 @@ from .hyena_dna_utils import HyenaDNADataset
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from transformers import get_scheduler
-from sklearn.metrics import accuracy_score
 import logging
 import numpy as np
 
@@ -42,13 +41,13 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel):
         super().__init__(fine_tuning_head, output_size)
         self.config = hyena_model.config
         self.hyena_model = hyena_model.model
-        fine_tuning_head.set_dim_size(self.config["d_model"])
-        self.fine_tuning_head = fine_tuning_head
+        self.fine_tuning_head.set_dim_size(self.config["d_model"])
 
     def _forward(self, x):
-        hyena = torch.mean(self.hyena_model(x), dim=1)# take cls
-        output = self.fine_tuning_head(hyena)
-        return output
+        x = self.hyena_model(x)
+        x = torch.mean(x, dim=1)
+        x = self.fine_tuning_head(x)
+        return x
 
     def train(        
         self,
@@ -87,11 +86,11 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel):
             e.g. lr_scheduler_params = { 'name': 'linear', 'num_warmup_steps': 0, 'num_training_steps': 5 }
         """
         train_input_data.set_labels(train_labels)
-        train_data_loader = DataLoader(train_input_data, batch_size=self.config["batch_size"], shuffle=True)
+        train_data_loader = DataLoader(train_input_data, batch_size=self.config["batch_size"])
      
         if validation_input_data is not None and validation_labels is not None:
             validation_input_data.set_labels(validation_labels)
-            validation_data_loader = DataLoader(validation_input_data, batch_size=self.config["batch_size"], shuffle=False)
+            validation_data_loader = DataLoader(validation_input_data, batch_size=self.config["batch_size"])
 
         self.to(self.config["device"])
         self.hyena_model.train()
@@ -113,8 +112,8 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel):
                 optimizer.zero_grad()
                 output = self._forward(input_data)
                 loss = loss_function(output, labels)
-                loss.backward()
                 batch_loss += loss.item()
+                loss.backward()
                 batches_processed += 1
                 optimizer.step()
                 
@@ -127,15 +126,15 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel):
             if validation_input_data is not None and validation_labels is not None:
                 with torch.no_grad():
                     validation_batches_processed = 0
-                    accuracy = 0.0
+                    val_loss = 0.0
                     validation_loop = tqdm(validation_data_loader, desc="Fine-Tuning Validation")
                     for input_data, val_labels in validation_loop:
                         input_data = input_data.to(self.config["device"])
                         val_labels = val_labels.to(self.config["device"])
                         output = self._forward(input_data)
                         validation_batches_processed += 1
-                        accuracy += accuracy_score(val_labels.cpu(), torch.argmax(output, dim=1).cpu())
-                        validation_loop.set_postfix({"accuracy": accuracy/validation_batches_processed})
+                        val_loss += loss_function(output, val_labels).item()
+                        validation_loop.set_postfix({"val_loss": val_loss/validation_batches_processed})
         logger.info(f"Fine-Tuning Complete. Epochs: {epochs}")
             
     def get_outputs(
@@ -153,7 +152,7 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel):
         np.ndarray
             The outputs of the model
         """
-        data_loader = DataLoader(input_data, batch_size=self.config["batch_size"], shuffle=True)
+        data_loader = DataLoader(input_data, batch_size=self.config["batch_size"])
 
         self.to(self.config["device"])
         self.hyena_model.eval()
