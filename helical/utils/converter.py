@@ -28,7 +28,8 @@ def get_anndata_from_hf_dataset(dataset: Dataset) -> ad.AnnData:
         An AnnData object containing the data from the input dataset
     """
     # obs
-    observation_names = [obs for obs in list(dataset.features.keys()) if not obs == 'raw_counts' and not obs == "rows"]
+    excluded_features = ['raw_counts', 'rows', 'size']
+    observation_names = [obs for obs in dataset.features.keys() if obs not in excluded_features]
     obs_data = pd.DataFrame(dataset.select_columns(observation_names).data.to_pandas(),columns=observation_names)
     
     # raw counts
