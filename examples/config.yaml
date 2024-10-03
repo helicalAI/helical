@@ -16,7 +16,7 @@ data:
       batch_key: "batch"
       label_key: "LVL1"
       path: "helical-ai/yolksac_human"
-      gene_names: "gene_name"
+      gene_names: "index"
       name: "helical-ai/yolksac_human"
 
 
