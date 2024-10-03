@@ -112,7 +112,9 @@ class UCE(HelicalRNAModel):
         
         ## TODO : Remove double downloads. This is required since metaflow might not have stored the files in the right location and the files might have dissapeared. The downloader should check if the file already exists.
         downloader = Downloader()
-        for k,file in files_config.items():
+        for file in self.config["list_of_files_to_download"]:
+            if "torch" in file:
+                continue
             downloader.download_via_name(file)
 
         if filter_genes_min_cell is not None:
