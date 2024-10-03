@@ -20,6 +20,13 @@ class GeneformerConfig():
         The device to use. Either use "cuda" or "cpu".
     accelerator : bool, optional, default = False
         The accelerator configuration. By default same device as model.
+    nproc: int, optional, default = -1
+        Number of processes to use for data processing.
+    custom_attr_name_dict : dict, optional, default = None
+        A dictionary that contains the names of the custom attributes to be added to the dataset. 
+        The keys of the dictionary are the names of the custom attributes, and the values are the names of the columns in adata.obs. 
+        For example, if you want to add a custom attribute called "cell_type" to the dataset, you would pass custom_attr_name_dict = {"cell_type": "cell_type"}.
+        If you do not want to add any custom attributes, you can leave this parameter as None.
 
     Returns
     -------
@@ -35,6 +42,8 @@ class GeneformerConfig():
             emb_mode: Literal["cls", "cell", "gene"] = "cell",
             device: Literal["cpu", "cuda"] = "cpu",
             accelerator: Optional[bool] = False,
+            nproc: int = -1,
+            custom_attr_name_dict: Optional[dict] = None
             ):
         
         # model specific parameters
@@ -107,7 +116,9 @@ class GeneformerConfig():
             "accelerator": accelerator,
             "input_size": self.model_map[model_name]["input_size"],
             "special_token": self.model_map[model_name]["special_token"],
-            "embsize": self.model_map[model_name]["embsize"]
+            "embsize": self.model_map[model_name]["embsize"],
+            "nproc": nproc,
+            "custom_attr_name_dict": custom_attr_name_dict
         }
     
 
