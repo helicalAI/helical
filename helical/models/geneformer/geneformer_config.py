@@ -20,7 +20,7 @@ class GeneformerConfig():
         The device to use. Either use "cuda" or "cpu".
     accelerator : bool, optional, default = False
         The accelerator configuration. By default same device as model.
-    nproc: int, optional, default = -1
+    nproc: int, optional, default = 1
         Number of processes to use for data processing.
     custom_attr_name_dict : dict, optional, default = None
         A dictionary that contains the names of the custom attributes to be added to the dataset. 
@@ -42,7 +42,7 @@ class GeneformerConfig():
             emb_mode: Literal["cls", "cell", "gene"] = "cell",
             device: Literal["cpu", "cuda"] = "cpu",
             accelerator: Optional[bool] = False,
-            nproc: int = -1,
+            nproc: int = 1,
             custom_attr_name_dict: Optional[dict] = None
             ):
         
