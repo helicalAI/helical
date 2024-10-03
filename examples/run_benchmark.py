@@ -147,15 +147,19 @@ def benchmark(cfg: DictConfig) -> None:
     head_cfg = cfg["svm"]
     integration_cfg = cfg["integration"]
 
-    hf_dataset = load_dataset(data_cfg["path"], split="train[:10%]", trust_remote_code=True, download_mode="reuse_cache_if_exists")
-    data = get_anndata_from_hf_dataset(hf_dataset)[:100]
+    # either load via huggingface
+    # hf_dataset = load_dataset(data_cfg["path"], split="train[:10%]", trust_remote_code=True, download_mode="reuse_cache_if_exists")
+    # data = get_anndata_from_hf_dataset(hf_dataset)[:10]
+
+    # or load directly
+    data = ad.read_h5ad("./yolksac_human.h5ad")[:10]
     data.obs[data_cfg["label_key"]] = data.obs[data_cfg["label_key"]].astype("category")
 
     # set gene names. for example if the index is the ensemble gene id 
     # data.var_names = data.var["feature_name"]
 
-    run_classification_example(data, ["geneformer", "scgpt"], data_cfg, head_cfg, device=cfg["device"])
-    # run_integration_example(data, ["geneformer", "scgpt", "scanorama"], data_cfg, integration_cfg, device=cfg["device"])
+    run_classification_example(data, ["scgpt", "geneformer"], data_cfg, head_cfg, device=cfg["device"])
+    # run_integration_example(data, ["scgpt", "geneformer", "scanorama"], data_cfg, integration_cfg, device=cfg["device"])
     LOGGER.info("Benchmarking done.")
 
 if __name__ == "__main__":

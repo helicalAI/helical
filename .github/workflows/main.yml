@@ -7,7 +7,7 @@ on:
       - release
 
 jobs:
-  setup:
+  tests:
     runs-on: self-hosted
     steps:
       - name: Checkout repository
@@ -28,18 +28,6 @@ jobs:
         run: |
           python ci/download_all.py
 
-  tests:
-    runs-on: self-hosted
-    needs: setup
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: setup python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.11.8
-
       - name: Execute unittests
         run: |
           pytest --cov-report=html:html_cov --cov-branch --cov-report term --cov=helical ci/
@@ -57,17 +45,6 @@ jobs:
       #     pytest-coverage-path: ./pytest-coverage.txt
       #     junitxml-path: ./pytest.xml
 
-  inference:
-    runs-on: self-hosted
-    needs: tests
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: setup python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.11.8
 
       - name: Execute Geneformer v1
         run: |
@@ -88,18 +65,6 @@ jobs:
       - name: Execute Hyena
         run: |
           python examples/run_models/run_hyena_dna.py
-  
-  benchmarking:
-    needs: inference
-    runs-on: self-hosted
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: setup python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.11.8
 
       - name: Execute benchmarking
         run: |
@@ -107,7 +72,7 @@ jobs:
           python examples/run_benchmark.py
 
   notebooks:
-    needs: benchmarking
+    needs: tests
     runs-on: self-hosted
     steps:
       - name: Checkout repository
