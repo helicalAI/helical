@@ -145,7 +145,7 @@ class Geneformer(HelicalRNAModel):
 
         # map gene symbols to ensemble ids if provided
         if gene_names != "ensembl_id":
-            if (adata.var[gene_names].str.startswith("ENSG").all()) or (adata.var[gene_names].str.startswith("None").any()):
+            if (adata.var[gene_names].str.startswith("ENS").all()) or (adata.var[gene_names].str.startswith("None").any()):
                 message = "It seems an anndata with 'ensemble ids' and/or 'None' was passed. " \
                 "Please set gene_names='ensembl_id' and remove 'None's to skip mapping."
                 LOGGER.info(message)
