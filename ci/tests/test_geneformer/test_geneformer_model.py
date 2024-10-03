@@ -52,7 +52,8 @@ class TestGeneformerModel:
     
     @pytest.mark.parametrize("gene_symbols, raises_error",
                              [
-                                (['ENSGSAMD11', 'ENSGPLEKHN1', 'ENSGHES4'], True),
+                                (['ENSGSAMD11', 'ENSGPLEKHN1', 'ENSGHES4'], True), # humans
+                                (['ENSMUSG00000021033', 'ENSMUSG00000021033', 'ENSMUSG00000021033'], True), # mice
                                 (['SAMD11', 'None', 'HES4'], True),
                                 (['SAMD11', 'PLEKHN1', 'HES4'], False),
                              ]
