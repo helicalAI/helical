@@ -91,12 +91,12 @@ class RegressionHead(HelicalBaseFineTuningHead):
         Parameters
         ----------
         inputs : torch.Tensor
-            The input tensor to the classification head.
+            The input tensor to the regression head.
 
         Returns
         -------
         torch.Tensor
-            The output tensor of the classification head.
+            The output tensor of the regression head.
         """
         drop = self.dropout(inputs)
         output = self.linear(drop)
