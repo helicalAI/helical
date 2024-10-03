@@ -4,10 +4,9 @@ build-backend = "hatchling.build"
 
 [project]
 name = "helical"
-version = "0.0.1a2"
+version = "0.0.1a4"
 authors = [
-  { name="Maxime Allard", email="maxime@helical-ai.com" },
-  { name = "Benoit Putzeys", email="benoit@helical-ai.com"},
+  { name="Helical Team", email="support@helical-ai.com" },
 ]
 description = "Helical Python SDK"
 readme = "README.md"
