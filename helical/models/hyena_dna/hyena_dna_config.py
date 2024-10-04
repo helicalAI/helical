@@ -9,6 +9,7 @@ class HyenaDNAConfig():
     ----------
     model_name : Literal["hyenadna-tiny-1k-seqlen", "hyenadna-tiny-1k-seqlen-d256"], optional, default = "hyenadna-tiny-1k-seqlen"
         The name of the model.
+    batch_size : int, optional, default = 5
     n_layer : int, optional, default = 2
         The number of layers in the model.
     vocab_size : int, optional, default = 12
@@ -64,7 +65,7 @@ class HyenaDNAConfig():
     def __init__(
             self, 
             model_name: Literal["hyenadna-tiny-1k-seqlen", "hyenadna-tiny-1k-seqlen-d256"] = "hyenadna-tiny-1k-seqlen",
-            batch_size: int = 1,
+            batch_size: int = 5,
             n_layer: int = 2,
             vocab_size: int = 12,
             resid_dropout: float = 0.0,
