@@ -101,14 +101,28 @@ class Geneformer(HelicalRNAModel):
             self.model = self.accelerator.prepare(self.model)
         else:
             self.accelerator = None
+
+        # load token dictionary (Ensembl IDs:token)
+        with open(self.files_config["token_path"], "rb") as f:
+            self.gene_token_dict = pickle.load(f)
+            self.pad_token_id = self.gene_token_dict.get("<pad>")
+
+        self.tk = TranscriptomeTokenizer(custom_attr_name_dict=self.config["custom_attr_name_dict"],
+                                         nproc=self.config['nproc'], 
+                                         model_input_size=self.config["input_size"],
+                                         special_token=self.config["special_token"],
+                                         gene_median_file = self.files_config["gene_median_path"], 
+                                         token_dictionary_file = self.files_config["token_path"],
+                                         gene_mapping_file = self.files_config["ensembl_dict_path"],
+                                        )
+        
         LOGGER.info(f"Model finished initializing.")
         
     def process_data(self, 
                      adata: AnnData,  
                      gene_names: str = "index", 
-                     nproc: int = 1, 
                      output_path: Optional[str] = None,
-                     custom_attr_name_dict: Optional[dict] = None) -> Dataset:   
+                     ) -> Dataset:   
         """Processes the data for the Geneformer model
 
         Parameters 
@@ -125,15 +139,9 @@ class Geneformer(HelicalRNAModel):
             If it is changes to "ensembl_id", there will be no mapping.
             In the special case where the data has Ensemble IDs as the index, and you pass "index". This would result in invalid mappings.
             In that case, it is recommended to create a new column with the Ensemble IDs in the data and pass "ensembl_id" as the gene_names.
-        nproc : int, optional, default = 1
-            Number of processes to use for dataset processing.
         output_path : str, default = None
             Whether to save the tokenized dataset to the specified output_path.
-        custom_attr_name_dict : dict, optional, default = None
-            A dictionary that contains the names of the custom attributes to be added to the dataset. 
-            The keys of the dictionary are the names of the custom attributes, and the values are the names of the columns in adata.obs. 
-            For example, if you want to add a custom attribute called "cell_type" to the dataset, you would pass custom_attr_name_dict = {"cell_type": "cell_type"}.
-            If you do not want to add any custom attributes, you can leave this parameter as None.
+        
 
         Returns
         -------
@@ -145,26 +153,14 @@ class Geneformer(HelicalRNAModel):
 
         # map gene symbols to ensemble ids if provided
         if gene_names != "ensembl_id":
-            if (adata.var[gene_names].str.startswith("ENSG").all()) or (adata.var[gene_names].str.startswith("None").any()):
+            if (adata.var[gene_names].str.startswith("ENS").all()) or (adata.var[gene_names].str.startswith("None").any()):
                 message = "It seems an anndata with 'ensemble ids' and/or 'None' was passed. " \
                 "Please set gene_names='ensembl_id' and remove 'None's to skip mapping."
                 LOGGER.info(message)
                 raise ValueError(message)
             adata = map_gene_symbols_to_ensembl_ids(adata, gene_names)
 
-        # load token dictionary (Ensembl IDs:token)
-        with open(self.files_config["token_path"], "rb") as f:
-            self.gene_token_dict = pickle.load(f)
-            self.pad_token_id = self.gene_token_dict.get("<pad>")
-
-        self.tk = TranscriptomeTokenizer(custom_attr_name_dict=custom_attr_name_dict,
-                                         nproc=nproc, 
-                                         model_input_size=self.config["input_size"],
-                                         special_token=self.config["special_token"],
-                                         gene_median_file = self.files_config["gene_median_path"], 
-                                         token_dictionary_file = self.files_config["token_path"],
-                                         gene_mapping_file = self.files_config["ensembl_dict_path"],
-                                        )
+        
         tokenized_cells, cell_metadata = self.tk.tokenize_anndata(adata)
 
         # tokenized_cells, cell_metadata =  self.tk.tokenize_anndata(adata)

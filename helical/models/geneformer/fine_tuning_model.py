@@ -100,7 +100,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
             The column in the dataset containing the training labels. These should be stored as unique per class integers.
         epochs : int, optional, default = 10
             The number of epochs to train the model
-        freeze_layers : int, optional, default = 0
+        freeze_layers : int, optional, default = 2
             The number of layers to freeze.
         validation_dataset : Dataset, default = None
             A helical processed dataset for per epoch validation. If this is not specified, no validation will be performed.
