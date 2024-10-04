@@ -194,32 +194,6 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
                 training_loop.set_postfix({"loss": batch_loss/batches_processed})
                 training_loop.set_description(f"Fine-Tuning: epoch {j+1}/{epochs}")
 
-            if lr_scheduler is not None:
-                lr_scheduler.step()
-
-            if validation_input_data is not None:
-                testing_loop = tqdm(validation_data_loader, desc="Fine-Tuning Validation")
-                accuracy = 0.0
-                count = 0.0
-                validation_batch_count = 0
-                for validation_data_dict in testing_loop:
-                    input_gene_ids = validation_data_dict["gene"].to(device)
-                    src_key_padding_mask = input_gene_ids.eq(
-                        self.vocab[self.config["pad_token"]]
-                    )
-                    output = self._forward(input_gene_ids, data_dict, src_key_padding_mask, use_batch_labels, device)
-                    labels = torch.tensor(train_labels[batch_count: batch_count + self.config["batch_size"]], device=device)
-                    batch_count += self.config["batch_size"]
-                    loss = loss_function(output, labels)
-                    loss.backward()
-                    batch_loss += loss.item()
-                    batches_processed += 1
-                    optimizer.step()
-                    optimizer.zero_grad()
-
-                    training_loop.set_postfix({"loss": batch_loss/batches_processed})
-                    training_loop.set_description(f"Fine-Tuning: epoch {j+1}/{epochs}")
-
                 if lr_scheduler is not None:
                     lr_scheduler.step()
 
