@@ -13,8 +13,6 @@ from helical.utils.mapping import map_gene_symbols_to_ensembl_ids
 from datasets import Dataset
 from typing import Optional
 from accelerate import Accelerator
-import tempfile
-import os 
 
 LOGGER = logging.getLogger(__name__)
 class Geneformer(HelicalRNAModel):

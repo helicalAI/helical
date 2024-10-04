@@ -1,13 +1,12 @@
-from helical.models.fine_tune.fine_tuning_heads import ClassificationHead
 from helical.models.uce.uce_dataset import UCEDataset
 import numpy as np
 import torch
 from torch import optim
 from torch.nn.modules import loss
 from torch.utils.data import DataLoader
-from helical.models.base_models import HelicalBaseFineTuningHead, HelicalRNAModel
+from helical.models.base_models import HelicalBaseFineTuningHead
 from helical.models.base_models import HelicalBaseFineTuningModel
-from sklearn.metrics import accuracy_score
+from helical.models.uce import UCE
 from typing import Literal, Optional
 from tqdm import tqdm
 from transformers import get_scheduler
@@ -23,8 +22,8 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
     ----------
     uce_model : UCE
         The initialised UCE model to fine-tune.
-    fine_tuning_head : Literal["classification"] | HelicalBaseFineTuningHead
-        The fine-tuning head that is appended to the model. This can either be a string (options available: "classification") specifying the task or a custom fine-tuning head inheriting from HelicalBaseFineTuningHead.
+    fine_tuning_head : Literal["classification", "regression"] | HelicalBaseFineTuningHead
+        The fine-tuning head that is appended to the model. This can either be a string (options available: "classification", "regression") specifying the task or a custom fine-tuning head inheriting from HelicalBaseFineTuningHead.
     output_size : Optional[int]
         The output size of the fine-tuning model. This is required if the fine_tuning_head is a string specified task. For a classification task this is number of unique classes.
 
@@ -39,7 +38,7 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
 
     """
     def __init__(self, 
-                 uce_model: HelicalRNAModel, 
+                 uce_model: UCE, 
                  fine_tuning_head: Literal["classification"] | HelicalBaseFineTuningHead, 
                  output_size: Optional[int]=None):
         
@@ -189,7 +188,7 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
 
             if validation_input_data is not None:
                 testing_loop = tqdm(validation_dataloader, desc="Fine-Tuning Validation")
-                accuracy = 0.0
+                val_loss = 0.0
                 count = 0.0
                 validation_batch_count = 0
                 for validation_data in testing_loop:
@@ -203,9 +202,9 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
                     output = self._forward(batch_sentences, mask=mask)
                     val_labels = torch.tensor(validation_labels[validation_batch_count: validation_batch_count + self.config["batch_size"]], device=self.device)
                     validation_batch_count += self.config["batch_size"]
-                    accuracy += accuracy_score(val_labels.cpu(), torch.argmax(output, dim=1).cpu())
+                    val_loss += loss_function(output, val_labels).item()
                     count += 1.0
-                    testing_loop.set_postfix({"accuracy": accuracy/count})
+                    testing_loop.set_postfix({"val_loss": val_loss/count})
         logger.info(f"Fine-Tuning Complete. Epochs: {epochs}")
         self.uce_model.eval()
         self.fine_tuning_head.eval()
