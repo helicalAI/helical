@@ -7,8 +7,8 @@ class HyenaDNADataset(Dataset):
     ----------
         sequences: list
             The list of sequences.
-        labels: list
-            The list
+        labels: list, default = None
+            The list of labels.
     """
     def __init__(self, sequences, labels=None):
         self.sequences = sequences

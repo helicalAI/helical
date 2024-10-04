@@ -1,5 +1,6 @@
 from typing import Literal, Optional
-from helical.models.base_models import HelicalBaseFineTuningHead, HelicalBaseFineTuningModel, HelicalDNAModel
+from helical.models.base_models import HelicalBaseFineTuningHead, HelicalBaseFineTuningModel
+from helical.models.hyena_dna import HyenaDNA
 from torch import optim
 import torch
 from torch.nn.modules import loss
@@ -21,8 +22,8 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel):
     ----------
     hyena_model : HelicalDNAModel
         The HyenaDNA model to be fine-tuned.
-    fine_tuning_head : Literal["classification"]|HelicalBaseFineTuningHead
-        The fine-tuning head to be used for the model. This can be a custom fine-tuning head or one of the predefined heads.
+    fine_tuning_head : Literal["classification", "regression"]|HelicalBaseFineTuningHead
+        The fine-tuning head that is appended to the model. This can either be a string (options available: "classification", "regression") specifying the task or a custom fine-tuning head inheriting from HelicalBaseFineTuningHead.
     output_size : Optional[int], default = None
         The output size of the fine-tuning head. This is required if a predefined head is selected.
     
@@ -35,7 +36,7 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel):
     """
     def __init__(
             self, 
-            hyena_model: HelicalDNAModel, 
+            hyena_model: HyenaDNA, 
             fine_tuning_head: Literal["classification"]|HelicalBaseFineTuningHead, 
             output_size: Optional[int]=None):
         super().__init__(fine_tuning_head, output_size)

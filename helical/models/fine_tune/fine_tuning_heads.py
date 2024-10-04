@@ -69,7 +69,7 @@ class RegressionHead(HelicalBaseFineTuningHead):
 
     Parameters
     ----------
-    num_classes : int
+    num_outputs : int
         The number of outputs to predict.
     dropout : float, optional, default=0.02
         The dropout rate to apply to the input tensor before the linear layer.

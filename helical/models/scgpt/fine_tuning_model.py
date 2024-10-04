@@ -7,7 +7,8 @@ from torch.nn.modules import loss
 from torch.utils.data import DataLoader, SequentialSampler
 from tqdm import tqdm
 from transformers import get_scheduler
-from helical.models.base_models import HelicalBaseFineTuningHead, HelicalRNAModel
+from helical.models.base_models import HelicalBaseFineTuningHead
+from helical.models.scgpt import scGPT
 from helical.models.base_models import HelicalBaseFineTuningModel
 import logging
 import numpy as np
@@ -21,8 +22,8 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
     ----------
     scgpt_model : scGPT
         The initialised scGPT model to fine-tune.
-    fine_tuning_head : Literal["classification"] | HelicalBaseFineTuningHead
-        The fine-tuning head that is appended to the model. This can either be a string (options available: "classification") specifying the task or a custom fine-tuning head inheriting from HelicalBaseFineTuningHead.
+    fine_tuning_head : Literal["classification", "regression"] | HelicalBaseFineTuningHead
+        The fine-tuning head that is appended to the model. This can either be a string (options available: "classification", "regression") specifying the task or a custom fine-tuning head inheriting from HelicalBaseFineTuningHead.
     output_size : Optional[int]
         The output size of the fine-tuning model. This is required if the fine_tuning_head is a string specified task. For a classification task this is number of unique classes.
 
@@ -37,7 +38,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
 
     """
     def __init__(self, 
-                 scGPT_model: HelicalRNAModel, 
+                 scGPT_model: scGPT, 
                  fine_tuning_head: Literal["classification"] | HelicalBaseFineTuningHead, 
                  output_size: Optional[int]=None):
         

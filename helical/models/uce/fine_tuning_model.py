@@ -4,9 +4,9 @@ import torch
 from torch import optim
 from torch.nn.modules import loss
 from torch.utils.data import DataLoader
-from helical.models.base_models import HelicalBaseFineTuningHead, HelicalRNAModel
+from helical.models.base_models import HelicalBaseFineTuningHead
 from helical.models.base_models import HelicalBaseFineTuningModel
-from sklearn.metrics import accuracy_score
+from helical.models.uce import UCE
 from typing import Literal, Optional
 from tqdm import tqdm
 from transformers import get_scheduler
@@ -22,8 +22,8 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
     ----------
     uce_model : UCE
         The initialised UCE model to fine-tune.
-    fine_tuning_head : Literal["classification"] | HelicalBaseFineTuningHead
-        The fine-tuning head that is appended to the model. This can either be a string (options available: "classification") specifying the task or a custom fine-tuning head inheriting from HelicalBaseFineTuningHead.
+    fine_tuning_head : Literal["classification", "regression"] | HelicalBaseFineTuningHead
+        The fine-tuning head that is appended to the model. This can either be a string (options available: "classification", "regression") specifying the task or a custom fine-tuning head inheriting from HelicalBaseFineTuningHead.
     output_size : Optional[int]
         The output size of the fine-tuning model. This is required if the fine_tuning_head is a string specified task. For a classification task this is number of unique classes.
 
@@ -38,7 +38,7 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel):
 
     """
     def __init__(self, 
-                 uce_model: HelicalRNAModel, 
+                 uce_model: UCE, 
                  fine_tuning_head: Literal["classification"] | HelicalBaseFineTuningHead, 
                  output_size: Optional[int]=None):
         

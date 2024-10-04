@@ -15,14 +15,10 @@ class TestHyenaDNAFineTuning:
         labels = [0, 0, 0, 0, 0, 0, 0]
         tokenized_sequences = hyenaDNA.process_data(input_sequences)
         return tokenized_sequences, labels
-    
-    @pytest.fixture
-    def hyena_dna_fine_tune(self, hyenaDNA, mock_data):
+
+    def test_output_dimensionality_of_fine_tuned_model(self, hyenaDNA, hyena_dna_fine_tune, mock_data):
         input_sequences, labels = mock_data
         model = HyenaDNAFineTuningModel(hyena_model=hyenaDNA, fine_tuning_head="classification", output_size=1)
-        model.train(train_input_data=input_sequences, train_labels=labels)
-        return model
-
-    def test_output_dimensionality_of_fine_tuned_model(self, hyena_dna_fine_tune, mock_data):
+        model.train(train_input_data=input_sequences, train_labels=labels, validation_input_data=input_sequences, validation_labels=labels)
         outputs = hyena_dna_fine_tune.get_outputs(mock_data[0])
         assert outputs.shape == (len(mock_data[0]), 1)

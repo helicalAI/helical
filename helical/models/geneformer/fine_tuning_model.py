@@ -1,5 +1,6 @@
 from typing import Literal, Optional
-from helical.models.base_models import HelicalBaseFineTuningHead, HelicalBaseFineTuningModel, HelicalRNAModel
+from helical.models.base_models import HelicalBaseFineTuningHead, HelicalBaseFineTuningModel
+from helical.models.geneformer.geneformer import Geneformer
 import torch
 from torch import optim
 from torch.nn.modules import loss
@@ -20,8 +21,8 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
     ----------
     geneformer_model : Geneformer
         The initialised Geneformer model to fine-tune.
-    fine_tuning_head : Literal["classification"] | HelicalBaseFineTuningHead
-        The fine-tuning head that is appended to the model. This can either be a string (options available: "classification") specifying the task or a custom fine-tuning head inheriting from HelicalBaseFineTuningHead.
+    fine_tuning_head : Literal["classification", "regression"] | HelicalBaseFineTuningHead
+        The fine-tuning head that is appended to the model. This can either be a string (options available: "classification", "regression") specifying the task or a custom fine-tuning head inheriting from HelicalBaseFineTuningHead.
     output_size : Optional[int]
         The output size of the fine-tuning model. This is required if the fine_tuning_head is a string specified task. For a classification task this is number of unique classes.
 
@@ -35,8 +36,8 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
         Get outputs from the fine-tuned model on the given processed dataset.
     """
     def __init__(self, 
-                 geneformer_model: HelicalRNAModel, 
-                 fine_tuning_head: Literal["classification"] | HelicalBaseFineTuningHead, 
+                 geneformer_model: Geneformer, 
+                 fine_tuning_head: Literal["classification", "regression"] | HelicalBaseFineTuningHead, 
                  output_size: Optional[int]=None):
         
         super().__init__(fine_tuning_head, output_size)
