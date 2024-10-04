@@ -1,6 +1,6 @@
 from typing import Literal, Optional
 from helical.models.base_models import HelicalBaseFineTuningHead, HelicalBaseFineTuningModel
-from helical.models.geneformer.geneformer import Geneformer
+from helical.models.geneformer import Geneformer
 import torch
 from torch import optim
 from torch.nn.modules import loss
