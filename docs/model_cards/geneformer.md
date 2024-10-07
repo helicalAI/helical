@@ -167,7 +167,7 @@ Key improvements in v2.0:
 
 **Example Usage:**
 ```python
-from helical.models.geneformer.model import Geneformer,GeneformerConfig
+from helical import Geneformer, GeneformerConfig
 import anndata as ad
 
 # Example configuration
@@ -197,13 +197,9 @@ print("Cancer-tuned model embeddings shape:", cancer_embeddings.shape)
 ## How To Fine-Tune
 
 ```python
-from helical.models.geneformer.geneformer_config import Geneformer,GeneformerConfig
-from helical.models.geneformer.fine_tuning_model import GeneformerFineTuningModel
+from helical import GeneformerConfig, GeneformerFineTuningModel
 
-# Create the Geneformer model with relevant configs
-model_config = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
-geneformer = Geneformer(configurer = model_config)
-                        
+# Prepare the data
 ann_data = ad.read_h5ad("dataset.h5ad")
 
 # Process the data for training
@@ -223,10 +219,17 @@ for i in range(len(cell_types)):
 dataset = dataset.add_column('cell_types', cell_types)
 
 # Create the fine-tuning model
-geneformer_fine_tune = GeneformerFineTuningModel(geneformer_model=geneformer, fine_tuning_head="classification", label="cell_types", output_size=len(label_set))
+model_config = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
+geneformer_fine_tune = GeneformerFineTuningModel(geneformer_config=model_config, fine_tuning_head="classification", label="cell_types", output_size=len(label_set))
 
 # Fine-tune
-geneformer_fine_tune.train(train_dataset=dataset["train"])
+geneformer_fine_tune.train(train_dataset=dataset)
+
+# Get outputs of the fine-tuned model
+outputs = geneformer_fine_tune.get_outputs(dataset)
+
+# Get the embeddings of the fine-tuned model
+embeddings = geneformer_fine_tune.get_embeddings(dataset)
 
 ```
 
