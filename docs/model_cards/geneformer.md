@@ -202,9 +202,6 @@ from helical import GeneformerConfig, GeneformerFineTuningModel
 # Prepare the data
 ann_data = ad.read_h5ad("dataset.h5ad")
 
-# Process the data for training
-dataset = geneformer.process_data(ann_data)
-
 # Get the desired label class
 cell_types = list(ann_data.obs.cell_type)
 
@@ -221,6 +218,9 @@ dataset = dataset.add_column('cell_types', cell_types)
 # Create the fine-tuning model
 model_config = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
 geneformer_fine_tune = GeneformerFineTuningModel(geneformer_config=model_config, fine_tuning_head="classification", label="cell_types", output_size=len(label_set))
+
+# Process the data for training
+dataset = geneformer_fine_tune.process_data(ann_data)
 
 # Fine-tune
 geneformer_fine_tune.train(train_dataset=dataset)
