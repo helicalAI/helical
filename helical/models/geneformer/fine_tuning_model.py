@@ -42,12 +42,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
         
         HelicalBaseFineTuningModel.__init__(self, fine_tuning_head, output_size)
         Geneformer.__init__(self, geneformer_config)
-       
-        # self.config = geneformer_model.config
-        # self.emb_mode = geneformer_model.emb_mode
-        # self.pad_token_id = geneformer_model.pad_token_id
-        # self.device = geneformer_model.device
-        # self.gene_token_dict = geneformer_model.gene_token_dict
+
         self.fine_tuning_head.set_dim_size(self.config["embsize"])
 
     def _forward(self, input_ids: torch.Tensor, attention_mask_minibatch: torch.Tensor) -> torch.Tensor:
