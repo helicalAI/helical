@@ -8,20 +8,20 @@ from torch.utils.data import DataLoader, SequentialSampler
 from tqdm import tqdm
 from transformers import get_scheduler
 from helical.models.base_models import HelicalBaseFineTuningHead
-from helical.models.scgpt import scGPT
+from helical.models.scgpt import scGPT, scGPTConfig
 from helical.models.base_models import HelicalBaseFineTuningModel
 import logging
 import numpy as np
 
 logger = logging.getLogger(__name__)
 
-class scGPTFineTuningModel(HelicalBaseFineTuningModel):
+class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
     """Fine-tuning model for the scGPT model.
 
     Parameters
     ----------
-    scgpt_model : scGPT
-        The initialised scGPT model to fine-tune.
+    scgpt_config : scGPTConfig
+        The scGPT configs for fine-tuning model, the same configs that would be used to instantiate the standard scGPT model.
     fine_tuning_head : Literal["classification", "regression"] | HelicalBaseFineTuningHead
         The fine-tuning head that is appended to the model. This can either be a string (options available: "classification", "regression") specifying the task or a custom fine-tuning head inheriting from HelicalBaseFineTuningHead.
     output_size : Optional[int]
@@ -38,14 +38,12 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
 
     """
     def __init__(self, 
-                 scGPT_model: scGPT, 
+                 scGPT_config: scGPTConfig, 
                  fine_tuning_head: Literal["classification"] | HelicalBaseFineTuningHead, 
                  output_size: Optional[int]=None):
+        HelicalBaseFineTuningModel.__init__(self, fine_tuning_head, output_size)
+        scGPT.__init__(self, scGPT_config)
         
-        super().__init__(fine_tuning_head, output_size)
-        self.config = scGPT_model.config
-        self.vocab = scGPT_model.vocab
-        self.scgpt_model = scGPT_model.model
         self.fine_tuning_head.set_dim_size(self.config["embsize"])
 
     def _forward(self, 
@@ -75,7 +73,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
         torch.Tensor
             The output tensor of the fine-tuning model.
         """
-        embeddings = self.scgpt_model._encode(
+        embeddings = self.model._encode(
             input_gene_ids,
             data_dict["expr"].to(device),
             src_key_padding_mask=src_key_padding_mask,
@@ -125,7 +123,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
             e.g. lr_scheduler_params = { 'name': 'linear', 'num_warmup_steps': 0, 'num_training_steps': 5 }
         """
         
-        device = next(self.scgpt_model.parameters()).device
+        device = next(self.model.parameters()).device
 
         try:
             use_batch_labels = train_input_data.batch_ids is not None
@@ -163,7 +161,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
             )
 
         self.to(device)
-        self.scgpt_model.train()
+        self.model.train()
         self.fine_tuning_head.train()
         optimizer = optimizer(self.parameters(), **optimizer_params)
 
@@ -232,9 +230,9 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel):
         np.ndarray
             The outputs of the fine-tuned model.
         """
-        device = next(self.scgpt_model.parameters()).device
+        device = next(self.model.parameters()).device
         self.to(device)
-        self.scgpt_model.eval()
+        self.model.eval()
         self.fine_tuning_head.eval()
         try:
             use_batch_labels = dataset.batch_ids is not None
