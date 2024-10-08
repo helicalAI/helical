@@ -1,4 +1,4 @@
-from helical import scGPTConfig, scGPT, scGPTFineTuningModel
+from helical import scGPTConfig, scGPTFineTuningModel
 from helical.utils import get_anndata_from_hf_dataset
 from datasets import load_dataset
 from omegaconf import DictConfig
