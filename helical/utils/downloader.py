@@ -78,6 +78,9 @@ class Downloader(Logger):
         Args:
             output: Path to the output file.
             link: URL to download the file from.
+        
+        Raises:
+            Exception: If the download fails.
         '''
        
         if output.is_file():
@@ -87,6 +90,12 @@ class Downloader(Logger):
             LOGGER.info(f"Starting to download: '{link}'")
             with open(output, "wb") as f:
                 response = requests.get(link, stream=True)
+
+                if response.status_code != 200:
+                    message = f"Failed downloading file from '{link}' with status code: {response.status_code}"
+                    LOGGER.error(message)
+                    raise Exception
+                
                 total_length = response.headers.get('content-length')
 
                 # Resetting for visualization
