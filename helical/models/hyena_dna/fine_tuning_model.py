@@ -1,6 +1,6 @@
 from typing import Literal, Optional
 from helical.models.base_models import HelicalBaseFineTuningHead, HelicalBaseFineTuningModel
-from helical.models.hyena_dna import HyenaDNA
+from helical.models.hyena_dna import HyenaDNA, HyenaDNAConfig
 from torch import optim
 import torch
 from torch.nn.modules import loss
@@ -13,15 +13,15 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel):
+class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
     """HyenaDNA fine-tuning model.
 
     This class represents the HyenaDNA fine-tuning model, which is a long-range genomic foundation model pretrained on context lengths of up to 1 million tokens at single nucleotide resolution.
 
     Parameters
     ----------
-    hyena_model : HelicalDNAModel
-        The HyenaDNA model to be fine-tuned.
+    hyena_config : HyenaDNAConfig
+        The HyenaDNA configs for fine-tuning model, the same configs that would be used to instantiate the standard HyenaDNA model.
     fine_tuning_head : Literal["classification", "regression"]|HelicalBaseFineTuningHead
         The fine-tuning head that is appended to the model. This can either be a string (options available: "classification", "regression") specifying the task or a custom fine-tuning head inheriting from HelicalBaseFineTuningHead.
     output_size : Optional[int], default = None
@@ -36,16 +36,16 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel):
     """
     def __init__(
             self, 
-            hyena_model: HyenaDNA, 
+            hyena_config: HyenaDNAConfig, 
             fine_tuning_head: Literal["classification"]|HelicalBaseFineTuningHead, 
             output_size: Optional[int]=None):
-        super().__init__(fine_tuning_head, output_size)
-        self.config = hyena_model.config
-        self.hyena_model = hyena_model.model
+        HelicalBaseFineTuningModel.__init__(self, fine_tuning_head, output_size)
+        HyenaDNA.__init__(self, hyena_config)
+
         self.fine_tuning_head.set_dim_size(self.config["d_model"])
 
     def _forward(self, x):
-        x = self.hyena_model(x)
+        x = self.model(x)
         x = torch.mean(x, dim=1)
         x = self.fine_tuning_head(x)
         return x
@@ -94,7 +94,7 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel):
             validation_data_loader = DataLoader(validation_input_data, batch_size=self.config["batch_size"])
 
         self.to(self.config["device"])
-        self.hyena_model.train()
+        self.model.train()
         self.fine_tuning_head.train()
         optimizer = optimizer(self.parameters(), **optimizer_params)
 
@@ -156,7 +156,7 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel):
         data_loader = DataLoader(input_data, batch_size=self.config["batch_size"])
 
         self.to(self.config["device"])
-        self.hyena_model.eval()
+        self.model.eval()
         self.fine_tuning_head.eval()
 
         batch_loop = tqdm(data_loader)

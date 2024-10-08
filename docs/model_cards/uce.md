@@ -107,30 +107,30 @@ print(embeddings.shape)
 ## How To Fine-Tune
 
 ```python
-from helical.models.uce.model import UCE, UCEConfig
-from helical.models.uce.fine_tuning_model import UCEFineTuningModel
+from helical import UCEConfig, UCEFineTuningModel
 import anndata as ad
 
-configurer=UCEConfig(batch_size=10)
-uce = UCE(configurer=configurer)
-
+# Load the data
 ann_data = ad.read_h5ad("dataset.h5ad")
 
+# Get unique output labels
+label_set = set(cell_types)
+
+# Create the fine-tuning model with the desired configs
+configurer=UCEConfig(batch_size=10)
+uce_fine_tune = UCEFineTuningModel(uce_config=configurer, fine_tuning_head="classification", output_size=len(label_set))
+
 # Process the data for training
-dataset = uce.process_data(ann_data)
+dataset = uce_fine_tune.process_data(ann_data)
 
 # Get the desired label class
 cell_types = list(ann_data.obs.cell_type)
 
 # Create a dictionary mapping the classes to unique integers for training
-label_set = set(cell_types)
 class_id_dict = dict(zip(label_set, [i for i in range(len(label_set))]))
 
 for i in range(len(cell_types)):
     cell_types[i] = class_id_dict[cell_types[i]]
-
-# Create the fine-tuning model
-uce_fine_tune = UCEFineTuningModel(uce_model=uce, fine_tuning_head="classification", output_size=len(label_set))
 
 # Fine-tune
 uce_fine_tune.train(train_input_data=dataset, train_labels=cell_types)
