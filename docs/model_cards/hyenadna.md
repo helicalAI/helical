@@ -97,7 +97,7 @@
 
 **Example Usage:**
 ```python
-from helical.models.hyena_dna.model import HyenaDNA, HyenaDNAConfig
+from helical import HyenaDNA, HyenaDNAConfig
 
 hyena_config = HyenaDNAConfig(model_name = "hyenadna-tiny-1k-seqlen-d256")
 model = HyenaDNA(configurer = hyena_config)   
@@ -106,6 +106,31 @@ tokenized_sequence = model.process_data(sequence)
 embeddings = model.get_embeddings(tokenized_sequence)
 
 print(embeddings.shape)
+```
+
+## How to Fine-Tune
+```python
+from datasets import load_dataset
+from helical import HyenaDNAConfig, HyenaDNAFineTuningModel
+import torch
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+# Load a Hugging Face dataset and task type
+ds = load_dataset("dataset", "task")
+
+# Define the desired configs
+config = HyenaDNAConfig(device=device, batch_size=10)
+
+# Define the fine-tuning model with the configs we instantiated above
+hyena_fine_tune = HyenaDNAFineTuningModel(config, "classification", number_unique_outputs)
+
+# Prepare the sequences for input to the model
+input_dataset = hyena_fine_tune.process_data(ds["train"]["sequence"])
+
+# train the fine-tuning model on some downstream task
+hyena_fine_tune.train(input_dataset, ds["train"]["label"])
+
 ```
 
 ## Citation

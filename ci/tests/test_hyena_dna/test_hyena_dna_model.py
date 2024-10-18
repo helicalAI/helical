@@ -2,6 +2,7 @@ from helical.models.hyena_dna.model import HyenaDNAConfig
 import pytest
 import torch
 from helical.models.hyena_dna.model import HyenaDNA
+from helical.models.hyena_dna.hyena_dna_utils import HyenaDNADataset
 
 @pytest.mark.parametrize("model_name, d_model, d_inner", [
     ("hyenadna-tiny-1k-seqlen", 128, 512),
@@ -68,6 +69,6 @@ def test_hyena_dna_process_data(input_sequence, expected_output):
         AssertionError: If the output of the process_data method does not match the expected output.
     """
     model = HyenaDNA()
-    output = model.process_data(input_sequence)
+    output = model.process_data([input_sequence])
     expected = torch.tensor([expected_output])
-    assert torch.equal(output, expected)
+    assert torch.equal(output.sequences, expected)

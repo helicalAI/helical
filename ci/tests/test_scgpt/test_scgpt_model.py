@@ -1,4 +1,4 @@
-from helical.models.scgpt.model import scGPT
+from helical.models.scgpt.model import scGPT, scGPTConfig
 from helical.models.scgpt.fine_tuning_model import scGPTFineTuningModel
 from anndata import AnnData
 from helical.models.scgpt.tokenizer import GeneVocab
@@ -110,9 +110,9 @@ class TestSCGPTModel:
         assert "total_counts" in data.obs
 
     def test_fine_tune_classification_returns_correct_shape(self):
-        tokenized_dataset = self.scgpt.process_data(self.data)
         labels = list([0])
-        fine_tuned_model = scGPTFineTuningModel(self.scgpt, fine_tuning_head="classification", output_size=1)
+        fine_tuned_model = scGPTFineTuningModel(scGPTConfig(), fine_tuning_head="classification", output_size=1)
+        tokenized_dataset = fine_tuned_model.process_data(self.data)
         fine_tuned_model.train(train_input_data=tokenized_dataset, train_labels=labels)
         assert fine_tuned_model is not None
         outputs = fine_tuned_model.get_outputs(tokenized_dataset)

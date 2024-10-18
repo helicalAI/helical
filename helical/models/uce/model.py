@@ -96,7 +96,9 @@ class UCE(HelicalRNAModel):
         UCEDataset
             Inherits from Dataset class.
         """
-                
+        
+
+
         self.ensure_rna_data_validity(adata, gene_names)
 
         if gene_names != "index":
@@ -107,6 +109,13 @@ class UCE(HelicalRNAModel):
             "protein_embeddings_dir": self.model_dir / "protein_embeddings/",
             "offset_pkl_path": self.model_dir / "species_offsets.pkl"
         }
+        
+        ## TODO : Remove double downloads. This is required since metaflow might not have stored the files in the right location and the files might have dissapeared. The downloader should check if the file already exists.
+        downloader = Downloader()
+        for file in self.config["list_of_files_to_download"]:
+            if "torch" in file:
+                continue
+            downloader.download_via_name(file)
 
         if filter_genes_min_cell is not None:
             sc.pp.filter_genes(adata, min_cells=filter_genes_min_cell)

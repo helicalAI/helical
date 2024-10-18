@@ -1,4 +1,4 @@
-FROM python:3.11
+FROM python:3.10
 
 RUN apt-get update -y \
     && apt-get upgrade -y \
@@ -10,9 +10,9 @@ RUN apt-get update -y \
         gfortran \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
-   
 
-RUN pip install --upgrade --force-reinstall git+https://github.com/helicalAI/helical.git
+# RUN pip install --upgrade helical
+RUN pip install git+https://github.com/helicalAI/helical.git@main
 
 # Define the entry point for the container
-ENTRYPOINT ["/bin/bash"]
+# ENTRYPOINT ["/bin/bash"]

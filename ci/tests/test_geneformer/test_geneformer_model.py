@@ -177,10 +177,12 @@ class TestGeneformerModel:
     def test_model_input_size(self, geneformer):
         assert geneformer.config["input_size"] == geneformer.configurer.model_map[geneformer.config["model_name"]]['input_size']
 
-    def test_fine_tune_classifier_returns_correct_shape(self, geneformer, mock_data, fine_tune_mock_data):
-        tokenized_dataset = geneformer.process_data(mock_data, gene_names='gene_symbols')
+    def test_fine_tune_classifier_returns_correct_shape(self, mock_data, fine_tune_mock_data):
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        fine_tuned_model = GeneformerFineTuningModel(GeneformerConfig(device=device), fine_tuning_head="classification", output_size=1)
+        tokenized_dataset = fine_tuned_model.process_data(mock_data, gene_names='gene_symbols')
         tokenized_dataset = tokenized_dataset.add_column('labels', fine_tune_mock_data)
-        fine_tuned_model = GeneformerFineTuningModel(geneformer, fine_tuning_head="classification", output_size=1)
+        
         fine_tuned_model.train(train_dataset=tokenized_dataset, label='labels')
         assert fine_tuned_model is not None
         outputs = fine_tuned_model.get_outputs(tokenized_dataset)
