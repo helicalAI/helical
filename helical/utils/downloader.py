@@ -1,7 +1,4 @@
 import requests
-import json
-import pickle as pkl
-import pandas as pd
 from helical.utils.logger import Logger
 from helical.constants.enums import LoggingType, LoggingLevel
 import logging
@@ -10,8 +7,6 @@ import sys
 from pathlib import Path
 from tqdm import tqdm
 from azure.storage.blob import  BlobClient
-from azure.core.pipeline.transport import RequestsTransport
-from git import Repo
 from helical.constants.paths import CACHE_DIR_HELICAL
 
 LOGGER = logging.getLogger(__name__)
