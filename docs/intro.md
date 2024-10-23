@@ -120,16 +120,12 @@ Please use this BibTeX to cite this repository in your publications:
 
 ```
 @software{allard_2024_13135902,
-  author       = {Allard, Maxime and
-                  Benoit Putzeys and
-                  Schneider, Rick and
-                  Quiroga Londoño, Mariana and
-                  Klop, Mathieu},
+  author       = {Helical Team},
   title        = {helicalAI/helical: v0.0.1-alpha},
   month        = jul,
   year         = 2024,
   publisher    = {Zenodo},
-  version      = {0.0.1a0},
+  version      = {0.0.1a5},
   doi          = {10.5281/zenodo.13135902},
   url          = {https://doi.org/10.5281/zenodo.13135902}
 }

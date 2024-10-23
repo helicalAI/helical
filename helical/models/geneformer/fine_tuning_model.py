@@ -1,7 +1,6 @@
 from typing import Literal, Optional
-from helical.models.base_models import HelicalBaseFineTuningHead, HelicalBaseFineTuningModel, HelicalRNAModel
-from helical.models.fine_tune.fine_tuning_heads import ClassificationHead
-from sklearn.metrics import accuracy_score
+from helical.models.base_models import HelicalBaseFineTuningHead, HelicalBaseFineTuningModel
+from helical.models.geneformer import Geneformer, GeneformerConfig
 import torch
 from torch import optim
 from torch.nn.modules import loss
@@ -14,16 +13,16 @@ from transformers import get_scheduler
 
 logger = logging.getLogger(__name__)
 
-class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
+class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
     """GeneformerFineTuningModel
     Fine-tuning model for the Geneformer model.
     
     Parameters
     ----------
-    geneformer_model : Geneformer
-        The initialised Geneformer model to fine-tune.
-    fine_tuning_head : Literal["classification"] | HelicalBaseFineTuningHead
-        The fine-tuning head that is appended to the model. This can either be a string (options available: "classification") specifying the task or a custom fine-tuning head inheriting from HelicalBaseFineTuningHead.
+    geneformer_config : GeneformerConfig
+        The Geneformer configs to fine-tune, the same as instantiating the standard Geneformer model.
+    fine_tuning_head : Literal["classification", "regression"] | HelicalBaseFineTuningHead
+        The fine-tuning head that is appended to the model. This can either be a string (options available: "classification", "regression") specifying the task or a custom fine-tuning head inheriting from HelicalBaseFineTuningHead.
     output_size : Optional[int]
         The output size of the fine-tuning model. This is required if the fine_tuning_head is a string specified task. For a classification task this is number of unique classes.
 
@@ -36,18 +35,14 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
     get_outputs(dataset: Dataset, silent = False)
         Get outputs from the fine-tuned model on the given processed dataset.
     """
-    def __init__(self, 
-                 geneformer_model: HelicalRNAModel, 
-                 fine_tuning_head: Literal["classification"] | HelicalBaseFineTuningHead, 
+    def __init__(self,
+                 geneformer_config: GeneformerConfig, 
+                 fine_tuning_head: Literal["classification", "regression"] | HelicalBaseFineTuningHead, 
                  output_size: Optional[int]=None):
         
-        super().__init__(fine_tuning_head, output_size)
-        self.config = geneformer_model.config
-        self.emb_mode = geneformer_model.emb_mode
-        self.pad_token_id = geneformer_model.pad_token_id
-        self.device = geneformer_model.device
-        self.gene_token_dict = geneformer_model.gene_token_dict
-        self.geneformer_model = geneformer_model.model
+        HelicalBaseFineTuningModel.__init__(self, fine_tuning_head, output_size)
+        Geneformer.__init__(self, geneformer_config)
+
         self.fine_tuning_head.set_dim_size(self.config["embsize"])
 
     def _forward(self, input_ids: torch.Tensor, attention_mask_minibatch: torch.Tensor) -> torch.Tensor:
@@ -66,7 +61,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
         torch.Tensor
             The output tensor of the fine-tuning model.
         """
-        outputs = self.geneformer_model(input_ids=input_ids, attention_mask=attention_mask_minibatch)
+        outputs = self.model(input_ids=input_ids, attention_mask=attention_mask_minibatch)
         final_layer = outputs.hidden_states[-1]
         cls_seq = final_layer[:, 0, :]
         final = self.fine_tuning_head(cls_seq)
@@ -112,7 +107,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
 
         """
                 
-        model_input_size = get_model_input_size(self.geneformer_model)
+        model_input_size = get_model_input_size(self.model)
 
         cls_present = any("<cls>" in key for key in self.gene_token_dict.keys())
         eos_present = any("<eos>" in key for key in self.gene_token_dict.keys())
@@ -151,7 +146,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
         if freeze_layers > 0:
             logger.info(f"Freezing the first {freeze_layers} encoder layers of the Geneformer model during fine-tuning.")
 
-            frozen_layers = self.geneformer_model.bert.encoder.layer[:freeze_layers]
+            frozen_layers = self.model.bert.encoder.layer[:freeze_layers]
 
             for module in frozen_layers:
                 for param in module.parameters():
@@ -198,7 +193,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
 
             if validation_dataset is not None:
                 testing_loop = trange(0, validation_batch_length, self.config["batch_size"], desc="Fine-Tuning Validation", leave=(not silent))
-                accuracy = 0.0
+                val_loss = 0.0
                 count = 0.0
                 for i in testing_loop:
                     max_range = min(i + self.config["batch_size"], validation_batch_length)
@@ -214,9 +209,9 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
 
                     with torch.no_grad():
                         outputs = self._forward(input_ids=input_data_minibatch, attention_mask_minibatch=gen_attention_mask(minibatch))
-                    accuracy += accuracy_score(minibatch[label].cpu(), torch.argmax(outputs, dim=1).cpu())
+                    val_loss += loss_function(outputs, minibatch[label]).item()
                     count += 1.0
-                    testing_loop.set_postfix({"accuracy": accuracy/count})
+                    testing_loop.set_postfix({"val_loss": val_loss/count})
 
                     del outputs
                     del minibatch
@@ -240,7 +235,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel):
         np.array
             The predicted labels in the form of a numpy array
         """
-        model_input_size = get_model_input_size(self.geneformer_model)
+        model_input_size = get_model_input_size(self.model)
         self.to(self.device)
 
         dataset_length = len(dataset)
