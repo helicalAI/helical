@@ -139,13 +139,6 @@ class scGPT(HelicalRNAModel):
             cell_embeddings, axis=1, keepdims=True
         )
 
-        # TODO?
-        # return_new_adata (bool): Whether to return a new AnnData object. If False, will
-        #     add the cell embeddings to a new :attr:`adata.obsm` with key "X_scGPT".
-        # if return_new_adata:
-        #     obs_df = adata.obs[obs_to_save] if obs_to_save is not None else None
-        #     return sc.AnnData(X=cell_embeddings, obs=obs_df, dtype="float32")
-        
         return cell_embeddings
     
     def process_data(self,
@@ -154,7 +147,8 @@ class scGPT(HelicalRNAModel):
                      fine_tuning: bool = False,
                      n_top_genes: int = 1800, 
                      flavor: Literal["seurat", "cell_ranger", "seurat_v3", "seurat_v3_paper"] = "seurat_v3",
-                     use_batch_labels: bool = False
+                     use_batch_labels: bool = False,
+                     use_raw_counts: bool = True
     ) -> Dataset:
         """Processes the data for the scGPT model
 
@@ -176,6 +170,8 @@ class scGPT(HelicalRNAModel):
             Seurat passes the cutoffs whereas Cell Ranger passes n_top_genes.
         use_batch_labels: Bool, default = False
             Whether to use batch labels. Defaults to False.
+        use_raw_counts: Bool, default = True
+            Whether to use raw counts or not.
 
         Returns
         -------
@@ -183,7 +179,7 @@ class scGPT(HelicalRNAModel):
             The processed dataset.
         """
  
-        self.ensure_data_validity(adata, gene_names, use_batch_labels)
+        self.ensure_data_validity(adata, gene_names, use_batch_labels, use_raw_counts)
         self.gene_names = gene_names
         if fine_tuning:
             # Preprocess the dataset and select `N_HVG` highly variable genes for downstream analysis.
@@ -220,7 +216,7 @@ class scGPT(HelicalRNAModel):
         return dataset
 
 
-    def ensure_data_validity(self, adata: AnnData, gene_names: str, use_batch_labels: bool) -> None:
+    def ensure_data_validity(self, adata: AnnData, gene_names: str, use_batch_labels: bool, use_raw_counts = True) -> None:
         """Checks if the data is eligible for processing by the scGPT model  
 
         Parameters
@@ -229,15 +225,17 @@ class scGPT(HelicalRNAModel):
             The AnnData object containing the data to be validated. 
         gene_names : str
             The name of the column containing gene names.
-        use_batch_labels : str
+        use_batch_labels : bool
             Wheter to use batch labels.
+        use_raw_counts : bool, default = True
+            Whether to use raw counts or not.
 
         Raises
         ------
         KeyError
             If the data is missing column names.
         """
-        self.ensure_rna_data_validity(adata, gene_names)
+        self.ensure_rna_data_validity(adata, gene_names, use_raw_counts)
 
         if use_batch_labels:
             if not "batch_id" in adata.obs:

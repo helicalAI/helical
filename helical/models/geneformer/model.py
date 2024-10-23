@@ -120,6 +120,7 @@ class Geneformer(HelicalRNAModel):
                      adata: AnnData,  
                      gene_names: str = "index", 
                      output_path: Optional[str] = None,
+                     use_raw_counts: bool = True,
                      ) -> Dataset:   
         """Processes the data for the Geneformer model
 
@@ -139,7 +140,8 @@ class Geneformer(HelicalRNAModel):
             In that case, it is recommended to create a new column with the Ensemble IDs in the data and pass "ensembl_id" as the gene_names.
         output_path : str, default = None
             Whether to save the tokenized dataset to the specified output_path.
-        
+        use_raw_counts : bool, default = True
+            Whether to use raw counts or not.
 
         Returns
         -------
@@ -147,7 +149,7 @@ class Geneformer(HelicalRNAModel):
             The tokenized dataset in the form of a Hugginface Dataset object.
             
         """ 
-        self.ensure_data_validity(adata, gene_names)
+        self.ensure_rna_data_validity(adata, gene_names, use_raw_counts)
 
         # map gene symbols to ensemble ids if provided
         if gene_names != "ensembl_id":
@@ -195,23 +197,3 @@ class Geneformer(HelicalRNAModel):
         ).cpu().detach().numpy()
 
         return embeddings
-
-    def ensure_data_validity(self, adata: AnnData, gene_names: str) -> None:
-        """Ensure that the data is eligible for processing by the Geneformer model. This checks 
-        if the data contains the gene_names, and sets the total_counts column in adata.obs.
-
-        Parameters
-        ----------
-        adata : AnnData
-            The AnnData object containing the data to be processed.
-        gene_names: str
-            The column in adata.var that contains the gene names.
-
-        Raises
-        ------
-        KeyError
-            If the data is missing column names.
-        """
-        self.ensure_rna_data_validity(adata, gene_names)
-
-

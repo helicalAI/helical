@@ -126,10 +126,6 @@ def load_model(model_path: Union[str, Path], model_config: Dict[str, str], all_p
     model.pe_embedding = torch.nn.Embedding.from_pretrained(empty_pe)
     model.load_state_dict(torch.load(model_path, map_location=model_config["device"]), strict=True)
 
-    # TODO: Why load the protein embeddings from the `all_tokens.torch` file, pass it to this function but never use it?
-    # Cause in the lines above, we populate model.pe_embeddings with the empty_pe and this if clause will be true with the
-    # `all_tokens.torch` file
-    # From the original, this was the comment:
     # This will make sure that you don't overwrite the tokens in case you're embedding species from the training data
     # We avoid doing that just in case the random seeds are different across different versions. 
     if all_pe.shape[0] != 145469: 

@@ -49,7 +49,7 @@ class HelicalBaseFoundationModel(ABC, Logger):
         pass
 
 class HelicalRNAModel(HelicalBaseFoundationModel):
-    def ensure_rna_data_validity(self, adata: AnnData, gene_names: str) -> None:
+    def ensure_rna_data_validity(self, adata: AnnData, gene_names: str, use_raw_counts: bool = True) -> None:
         """Ensures that the data contains the gene_names and has integer counts for adata.X which is saved 
         in 'total_counts'.  
 
@@ -59,6 +59,8 @@ class HelicalRNAModel(HelicalBaseFoundationModel):
             The data to be checked.
         gene_names : str
             The name of the column containing gene names in adata.var.
+        use_raw_counts : bool, default = True
+            Whether to use raw counts or not.
 
         Raises
         ------
@@ -84,7 +86,7 @@ class HelicalRNAModel(HelicalBaseFoundationModel):
     
         # verify that the data in X are integers
         adata.obs["total_counts"] = adata.X.sum(axis=1)
-        if not (adata.obs["total_counts"] % 1  == 0).all():
+        if use_raw_counts and not (adata.obs["total_counts"] % 1  == 0).all():
             message = "The data in X must be integers."
             LOGGER.error(message)
             raise ValueError(message)
