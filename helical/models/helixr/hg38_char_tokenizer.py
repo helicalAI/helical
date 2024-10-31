@@ -9,7 +9,6 @@ class CharTokenizer(PreTrainedTokenizer):
     model_input_names = ["input_ids"]
 
     def __init__(self,
-                 model_max_length: int,
                  characters: Sequence[str] = ("A", "C", "G", "U", "N"),
                  complement_map=None,
                  bos_token="[BOS]",
@@ -39,9 +38,9 @@ class CharTokenizer(PreTrainedTokenizer):
             complement_map (Optional[Dict[str, str]]): Dictionary with string complements for each character.
         """
         if complement_map is None:
-            complement_map = {"A": "T", "C": "G", "G": "C", "T": "A", "N": "N"}
+            complement_map = {"A": "U", "C": "G", "G": "C", "U": "A", "N": "N"}
         self.characters = characters
-        self.model_max_length = model_max_length
+        # self.model_max_length = 0
 
         self._vocab_str_to_int = {
             "[CLS]": 0,
@@ -71,7 +70,7 @@ class CharTokenizer(PreTrainedTokenizer):
             mask_token=mask_token,
             unk_token=unk_token,
             add_prefix_space=add_prefix_space,
-            model_max_length=model_max_length,
+            # model_max_length=model_max_length,
             padding_side=padding_side,
             **kwargs,
         )

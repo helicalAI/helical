@@ -1,11 +1,12 @@
 from datasets import Dataset
+import torch
 
 class HelixRDataset(Dataset):
-    def __init__(self, sequences, tokenizer, max_length):
+    def __init__(self, sequences, tokenizer):
         self.sequences = sequences
         # self.values = values
         self.tokenizer = tokenizer
-        self.max_length = max_length
+        self.max_length = 0
 
         # if len(self.sequences) != len(self.values):
         #     raise ValueError("The number of sequences and values must be the same.")

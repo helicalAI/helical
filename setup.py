@@ -20,7 +20,7 @@ setup(
         'torch>=2.0.0,<=2.3.0',
         'torchvision>=0.15.0,<=0.18.0',
         'accelerate==0.29.3',
-        'transformers==4.26.1',
+        'transformers==4.45.1',
         'loompy==3.0.7',
         'scib==1.1.5',
         'scikit-misc==0.3.1',
@@ -35,5 +35,7 @@ setup(
         'louvain==0.8.2',
         'pyensembl',
         'datasets==2.20.0',
+        'mamba-ssm==2.2.2',
+        'causal-conv1d==1.4.0'
     ],  
 )
