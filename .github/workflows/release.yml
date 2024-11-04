@@ -1,9 +1,12 @@
-name: CI Pipeline
+name: Release
 
 on:
   pull_request:
     branches:
-      - main
+      - release
+
+permissions:
+  contents: write
 
 jobs:
   tests:
@@ -98,3 +101,44 @@ jobs:
       - name: Run Notebooks
         run: |
           pytest --durations=0 --nbmake ./examples/notebooks/*.ipynb
+
+  release:
+    needs: notebooks
+    runs-on: self-hosted
+    steps:
+            
+      - name: Install dependencies
+        run: |
+          pip install build
+
+      - name: Extract version
+        id: get_version
+        run: |
+          # Extract version from setup.py (or adjust for your version file)
+          VERSION=$(python setup.py --version)
+          echo "::set-output name=version::$VERSION"
+        
+      - name: Check if tag exists
+        id: check_tag
+        run: |
+          if git rev-parse "v${{ steps.get_version.outputs.version }}" >/dev/null 2>&1; then
+            echo "Tag v${{ steps.get_version.outputs.version }} already exists."
+            exit 1
+          fi
+
+      - name: Create Git tag
+        if: steps.check_tag.outcome == 'success'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag "v${{ steps.get_version.outputs.version }}"
+          git push origin "v${{ steps.get_version.outputs.version }}"
+
+      - name: Build package
+        run: python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+
