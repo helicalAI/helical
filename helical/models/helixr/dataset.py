@@ -4,12 +4,12 @@ import torch
 class HelixRDataset(Dataset):
     def __init__(self, sequences, tokenizer):
         self.sequences = sequences
-        # self.values = values
         self.tokenizer = tokenizer
-        self.max_length = 0
+        self.max_length = len(max(sequences, key=len))+10
+        self.labels = None
 
-        # if len(self.sequences) != len(self.values):
-        #     raise ValueError("The number of sequences and values must be the same.")
+    def set_labels(self, labels):
+        self.labels = labels
 
     def __len__(self):
         return len(self.sequences)
@@ -24,9 +24,14 @@ class HelixRDataset(Dataset):
             return_special_tokens_mask=True,
             return_tensors='pt'
         )
-
-        return {
-            'input_ids': encoded['input_ids'],
-            'special_tokens_mask': encoded['special_tokens_mask'],
-            # 'labels': torch.tensor(self.values[idx], dtype=torch.long)
-        }
+        if self.labels is not None:
+            return {
+                'input_ids': encoded['input_ids'],
+                'special_tokens_mask': encoded['special_tokens_mask'],
+                'labels': torch.tensor(self.labels[idx])
+            }
+        else:
+            return {
+                'input_ids': encoded['input_ids'],
+                'special_tokens_mask': encoded['special_tokens_mask'],
+            }
