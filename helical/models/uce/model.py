@@ -73,7 +73,8 @@ class UCE(HelicalRNAModel):
                      adata: AnnData, 
                      gene_names: str = "index",
                      name = "test",
-                     filter_genes_min_cell: int = None
+                     filter_genes_min_cell: int = None,
+                     use_raw_counts: bool = True
                      ) -> UCEDataset:
         """Processes the data for the Universal Cell Embedding model
 
@@ -90,6 +91,8 @@ class UCE(HelicalRNAModel):
             The name of the dataset. Needed for when slicing AnnData objects for train and validation datasets.
         filter_genes_min_cell: int, default = None
             Filter threshold that defines how many times a gene should occur in all the cells.
+        use_raw_counts: bool, default = True
+            Whether to use raw counts or not.
 
         Returns
         -------
@@ -97,9 +100,7 @@ class UCE(HelicalRNAModel):
             Inherits from Dataset class.
         """
         
-
-
-        self.ensure_rna_data_validity(adata, gene_names)
+        self.ensure_rna_data_validity(adata, gene_names, use_raw_counts)
 
         if gene_names != "index":
             adata.var.index = adata.var[gene_names]
