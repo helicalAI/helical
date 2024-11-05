@@ -11,6 +11,7 @@ API documentation
 
    helical.models.uce.model.UCE
    helical.models.geneformer.model.Geneformer
+   helical.models.helixr.model.HelixR
 
    .. helical.models.helical.HelicalBaseFoundationModel
    .. helical.models.uce.model.UCE
