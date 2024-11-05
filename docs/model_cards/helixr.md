@@ -1,4 +1,4 @@
-# Model Card for Geneformer
+# Model Card for HelixR
 
 ## Model Details
 

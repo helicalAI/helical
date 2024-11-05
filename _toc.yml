@@ -6,6 +6,7 @@ root: docs/intro
 parts:
 - caption: Helical API Documentation 📚
   chapters:
+  - file: docs/HelixR.rst
   - file: docs/Geneformer.rst
   - file: docs/UCE.rst
   - file: docs/scGPT.rst
@@ -21,6 +22,7 @@ parts:
 - caption: Fine-Tuning 🎛️
   chapters:
   - file: examples/notebooks/Cell-Type-Classification-Fine-Tuning.ipynb
+  - file: examples/notebooks/HyenaDNA-Fine-Tuning.ipynb
 - caption: Benchmarking 📊
   chapters:
   - file: docs/benchmarking/description
