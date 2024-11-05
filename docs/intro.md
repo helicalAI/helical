@@ -49,6 +49,7 @@ apptainer shell --nv --fakeroot singularity/helical/
 
 ## Installation
 ### RNA models:
+- [HelixR](https://helical.readthedocs.io/en/latest/docs/HelixR.html)
 - [Geneformer](https://helical.readthedocs.io/en/latest/docs/Geneformer.html)
 - [scGPT](https://helical.readthedocs.io/en/latest/docs/scGPT.html)
 - [Universal Cell Embedding (UCE)](https://helical.readthedocs.io/en/latest/docs/UCE.html)
@@ -75,6 +76,8 @@ Within the `example/notebooks` folder, open the notebook of your choice. We reco
 |[Geneformer-vs-UCE.ipynb](https://github.com/helicalAI/helical/blob/main/examples/notebooks/Geneformer-vs-UCE.ipynb) | Zero-Shot Reference Mapping with Geneformer & UCE and compare the outcomes. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Geneformer-vs-UCE.ipynb) |
 |[Hyena-DNA-Inference.ipynb](https://github.com/helicalAI/helical/blob/main/examples/notebooks/Hyena-DNA-Inference.ipynb)|An example how to do probing with HyenaDNA by training a neural network on 18 downstream classification tasks.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Hyena-DNA-Inference.ipynb)|
 |[Cell-Type-Annotation.ipynb](https://github.com/helicalAI/helical/blob/main/examples/notebooks/Cell-Type-Annotation.ipynb)|An example how to do probing with scGPT by training a neural network to predict cell type annotations.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Cell-Type-Annotation.ipynb) |
+|[Cell-Type-Classification-Fine-Tuning.ipynb](https://github.com/helicalAI/helical/blob/main/examples/notebooks/Cell-Type-Classification-Fine-Tuning.ipynb)|An example how to fine-tune the different RNA models on downstream classification tasks.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Cell-Type-Annotation.ipynb) |
+|[HyenaDNA-Fine-Tuning.ipynb](https://github.com/helicalAI/helical/blob/main/examples/notebooks/HyenaDNA-Fine-Tuning.ipynb)|An example how to fine-tune the different RNA models on downstream classification tasks.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/HyenaDNA-Fine-Tuning.ipynb) |
 | Coming Soon | New models such as SCimilarity, scVI; benchmarking scripts; new use cases; others |
 
 ## Stuck somewhere ? Other ideas ?
@@ -94,7 +97,7 @@ We will continuously upload the latest model, publish benchmarks and make our co
 
 ## Acknowledgements
 
-A lot of our models have been published by talend authors developing these exciting technologies. We sincerely thank the authors of the following open-source projects:
+A lot of our models have been published by talented authors developing these exciting technologies. We sincerely thank the authors of the following open-source projects:
 
 - [scGPT](https://github.com/bowang-lab/scGPT/)
 - [Geneformer](https://huggingface.co/ctheodoris/Geneformer)

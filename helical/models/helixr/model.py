@@ -1,7 +1,7 @@
 from helical.models.base_models import HelicalRNAModel
 from helical.models.helixr.helixr_config import HelixRConfig
 from helical.models.helixr.hg38_char_tokenizer import CharTokenizer
-from helical.models.helixr.dataset import HelixRDataset
+from helical.models.helixr.helixr_utils import HelixRDataset
 from transformers import Mamba2Model, AutoConfig
 from helical.utils.downloader import Downloader
 import torch
@@ -77,7 +77,11 @@ class HelixR(HelicalRNAModel):
             characters=["A", "C", "G", "U", "N"]
         )
 
-        return HelixRDataset(sequences, tokenizer)
+        arr_sequences = []
+        for sequence in tqdm(sequences, "Processing sequences"):
+            arr_sequences.append(sequence)
+
+        return HelixRDataset(arr_sequences, tokenizer)
 
     def get_embeddings(self, dataset: HelixRDataset) -> np.ndarray:
         """Get the embeddings for the RNA sequences.
@@ -102,11 +106,35 @@ class HelixR(HelicalRNAModel):
             for batch in progress_bar:
                 input_ids = batch["input_ids"].to(self.config["device"])
                 special_tokens_mask = batch["special_tokens_mask"].to(self.config["device"])
-                
+
                 output = self.model(input_ids, special_tokens_mask=special_tokens_mask)
 
+                last_hidden_states = output[0]
+
+                if input_ids is not None:
+                    batch_size, _ = input_ids.shape[:2]
+
+                if self.pretrained_config.pad_token_id is None and batch_size > 1:
+                    message = "Cannot handle batch sizes > 1 if no padding token is defined."
+                    logger.error(message)
+                    raise ValueError(message)
+
+                if self.pretrained_config.pad_token_id is None:
+                    sequence_lengths = -1
+                else:
+                    if input_ids is not None:
+                        sequence_lengths = torch.eq(input_ids, self.pretrained_config.pad_token_id).int().argmax(-1) - 1
+                        sequence_lengths = sequence_lengths % input_ids.shape[-1]
+                        sequence_lengths = sequence_lengths.to(last_hidden_states.device)
+                    else:
+                        sequence_lengths = -1
+
+                pooled_last_hidden_states = last_hidden_states[
+                    torch.arange(batch_size, device=last_hidden_states.device), sequence_lengths
+                ]
+                
                 # Take second last element from the output as last element is a special token
-                embeddings.append(output.last_hidden_state[-2].cpu().numpy())
+                embeddings.append(pooled_last_hidden_states.cpu().numpy())
 
                 del batch
                 del output

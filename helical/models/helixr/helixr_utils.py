@@ -1,4 +1,4 @@
-from datasets import Dataset
+from torch.utils.data import Dataset
 import torch
 
 class HelixRDataset(Dataset):
@@ -15,23 +15,26 @@ class HelixRDataset(Dataset):
         return len(self.sequences)
 
     def __getitem__(self, idx):
-        seq = self.sequences[idx]
+        seqs = self.sequences[idx]
+        
+        # Tokenize all sequences in the batch
         encoded = self.tokenizer(
-            seq.astype(str).tolist(),
+            seqs,
             truncation=True,
             padding="max_length",
             max_length=self.max_length,
             return_special_tokens_mask=True,
             return_tensors='pt'
         )
+        
+        # Prepare output dictionary
+        output = {
+            'input_ids': encoded['input_ids'].squeeze(0),
+            'special_tokens_mask': encoded['special_tokens_mask'].squeeze(0),
+        }
+        
+        # Add labels if they exist
         if self.labels is not None:
-            return {
-                'input_ids': encoded['input_ids'],
-                'special_tokens_mask': encoded['special_tokens_mask'],
-                'labels': torch.tensor(self.labels[idx])
-            }
-        else:
-            return {
-                'input_ids': encoded['input_ids'],
-                'special_tokens_mask': encoded['special_tokens_mask'],
-            }
+            output['labels'] = torch.tensor(self.labels[idx])
+
+        return output

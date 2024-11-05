@@ -1,7 +1,7 @@
 from typing import Literal, Optional
 from helical.models.base_models import HelicalBaseFineTuningHead, HelicalBaseFineTuningModel
 from helical.models.helixr.model import HelixR, HelixRConfig
-from helical.models.helixr.dataset import HelixRDataset
+from helical.models.helixr.helixr_utils import HelixRDataset
 from transformers import get_scheduler
 import torch
 from torch import optim
@@ -149,10 +149,10 @@ class HelixRFineTuningModel(HelicalBaseFineTuningModel, HelixR):
         self.model.train()
         self.fine_tuning_head.train()
 
-        train_dataloader = DataLoader(train_dataset, batch_size=self.config["batch_size"], shuffle=False)
+        train_dataloader = DataLoader(train_dataset, batch_size=self.config["batch_size"])
 
         if validation_dataset is not None:
-            validation_dataloader = DataLoader(validation_dataset, batch_size=self.config["batch_size"], shuffle=False)
+            validation_dataloader = DataLoader(validation_dataset, batch_size=self.config["batch_size"])
 
         logger.info("Starting Fine-Tuning")
         for j in range(epochs):
@@ -166,7 +166,7 @@ class HelixRFineTuningModel(HelicalBaseFineTuningModel, HelixR):
                 
                 outputs = self._forward(input_ids, special_tokens_mask=special_tokens_mask)
 
-                loss = loss_function(outputs, labels.unsqueeze(1))
+                loss = loss_function(outputs, labels)
                 loss.backward()
                 optimizer.step()
                 optimizer.zero_grad()
@@ -195,7 +195,7 @@ class HelixRFineTuningModel(HelicalBaseFineTuningModel, HelixR):
                     with torch.no_grad():
                         outputs = self._forward(input_ids, special_tokens_mask=special_tokens_mask)
 
-                    val_loss += loss_function(outputs, labels.unsqueeze(1)).item()
+                    val_loss += loss_function(outputs, labels).item()
                     count += 1.0
                     testing_loop.set_postfix({"val_loss": val_loss/count})
 
@@ -212,7 +212,7 @@ class HelixRFineTuningModel(HelicalBaseFineTuningModel, HelixR):
 
         self.model.to(self.config["device"])
 
-        progress_bar = tqdm(dataloader, desc="Getting embeddings")
+        progress_bar = tqdm(dataloader, desc="Generating outputs")
         for batch in progress_bar:
             input_ids = batch["input_ids"].to(self.config["device"])
             special_tokens_mask = batch["special_tokens_mask"].to(self.config["device"])
