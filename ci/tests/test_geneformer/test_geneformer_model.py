@@ -48,7 +48,7 @@ class TestGeneformerModel:
     def test_ensure_data_validity_raising_error_with_missing_ensembl_id_column(self, geneformer, mock_data):
         del mock_data.var['ensembl_id']
         with pytest.raises(KeyError):
-            geneformer.ensure_data_validity(mock_data, "ensembl_id")
+            geneformer.ensure_rna_data_validity(mock_data, "ensembl_id")
     
     @pytest.mark.parametrize("gene_symbols, raises_error",
                              [
