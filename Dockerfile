@@ -1,4 +1,4 @@
-FROM python:3.10
+FROM pytorch/pytorch:2.5.0-cuda12.4-cudnn9-runtime
 
 RUN apt-get update -y \
     && apt-get upgrade -y \
@@ -13,6 +13,8 @@ RUN apt-get update -y \
 
 # RUN pip install --upgrade helical
 RUN pip install git+https://github.com/helicalAI/helical.git@main
-
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility 
+ENV NVIDIA_DRIVER_CAPABILITIES=all
+RUN pip install lightning wandb
 # Define the entry point for the container
 # ENTRYPOINT ["/bin/bash"]
