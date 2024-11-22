@@ -1,0 +1,1631 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://helical.readthedocs.io/1.0/model_cards/geneformer/">
+      
+      
+      
+        <link rel="next" href="../../configs/geneformer_config/">
+      
+      
+      <link rel="icon" href="../../assets/official_logo_fav.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.44">
+    
+    
+      
+        <title>Model Card - Helical Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.0253249f.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Montserrat";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#model-card-for-geneformer" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Helical Docs" class="md-header__button md-logo" aria-label="Helical Docs" data-md-component="logo">
+      
+  <img src="../../assets/logo1.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Helical Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Model Card
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/helicalAI/helical" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    helicalAI/helical
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Helical Docs" class="md-nav__button md-logo" aria-label="Helical Docs" data-md-component="logo">
+      
+  <img src="../../assets/logo1.png" alt="logo">
+
+    </a>
+    Helical Docs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/helicalAI/helical" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    helicalAI/helical
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Geneformer
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            Geneformer
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Model Card
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Model Card
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#model-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Details
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-versions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Versions
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#available-models-for-each-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      Available Models for each Version
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Available Models for each Version">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#version-10-30m-dataset" class="md-nav__link">
+    <span class="md-ellipsis">
+      Version 1.0 (30M dataset)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#version-20-95m-dataset" class="md-nav__link">
+    <span class="md-ellipsis">
+      Version 2.0 (95M dataset)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-developers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Developers
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Type
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Purpose
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#training-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      Training Data
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Performance
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Limitations
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-use" class="md-nav__link">
+    <span class="md-ellipsis">
+      How to Use
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contact" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contact
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#citation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Citation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#author-contributions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Author contributions
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configs/geneformer_config/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Config
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/geneformer/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Model
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../fine_tuning_models/geneformer_fine_tune/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Fine-Tuning Model
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    scGPT
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            scGPT
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scgpt/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Model Card
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configs/scgpt_config/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Config
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/scgpt/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Model
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../fine_tuning_models/scgpt_fine_tune/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Fine-Tuning Model
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    HyenaDNA
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            HyenaDNA
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hyenadna/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Model Card
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configs/hyenadna_config/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Config
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/hyenadna/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Model
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../fine_tuning_models/hyenadna_fine_tune/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Fine-Tuning Model
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    UCE
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            UCE
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../uce/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Model Card
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configs/uce_config/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Config
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/uce/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Model
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../fine_tuning_models/uce_fine_tune/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Fine-Tuning Model
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/base_models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Helical Base Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/fine_tuning_heads/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Fine-Tuning Heads
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Notebooks
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Notebooks
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../examples/notebooks/Quick-Start-Tutorial.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quick-Start-Tutorial
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/Cell-Type-Annotation.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cell-Type Annotation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/Cell-Type-Classification-Fine-Tuning.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cell-Type-Classification-Fine-Tuning
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/Geneformer-vs-UCE.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Geneformer-vs-UCE
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/Hyena-DNA-Inference.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hyena-DNA-Inference
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../notebooks/HyenaDNA-Fine-Tuning.ipynb" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    HyenaDNA-Fine-Tuning
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#model-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Details
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-versions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Versions
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#available-models-for-each-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      Available Models for each Version
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Available Models for each Version">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#version-10-30m-dataset" class="md-nav__link">
+    <span class="md-ellipsis">
+      Version 1.0 (30M dataset)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#version-20-95m-dataset" class="md-nav__link">
+    <span class="md-ellipsis">
+      Version 2.0 (95M dataset)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-developers" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Developers
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Type
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Purpose
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#training-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      Training Data
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-performance" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Performance
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Model Limitations
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-use" class="md-nav__link">
+    <span class="md-ellipsis">
+      How to Use
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contact" class="md-nav__link">
+    <span class="md-ellipsis">
+      Contact
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#citation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Citation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#author-contributions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Author contributions
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="model-card-for-geneformer">Model Card for Geneformer</h1>
+<h2 id="model-details">Model Details</h2>
+<p><strong>Model Name:</strong> Geneformer<br />
+<strong>Model Versions:</strong> 1.0 and 2.0<br />
+<strong>Model Description:</strong> Geneformer is a context-aware, attention-based deep learning model pretrained on a large-scale corpus of single-cell transcriptomes. It is designed to enable context-specific predictions in settings with limited data in network biology. The model performs various downstream tasks such as gene network mapping, disease modeling, and therapeutic target identification.</p>
+<p>In version 2.0, Geneformer introduces a cancer-tuned model variant using domain-specific continual learning. This variant was developed to address the exclusion of malignant cells from the initial pretraining due to their propensity for gain-of-function mutations. The cancer-tuned model underwent additional training with ~14 million cells from cancer studies, including matched healthy controls, to provide contrasting context. This approach allows the model to better understand gene network rewiring in malignancy while maintaining its general knowledge of gene network dynamics.</p>
+<p>When to use each model:
+- Base pretrained model: Use for general transcriptomic analysis tasks and non-cancer-specific applications.
+- Cancer-tuned model: Use for cancer-specific analyses, tumor microenvironment studies, and predicting factors that could shift cells to tumor-restricting or immune-activating states.</p>
+<h2 id="model-versions">Model Versions</h2>
+<p>Geneformer has two main versions:</p>
+<p><strong>Version 1.0:</strong></p>
+<ul>
+<li>Pretrained on approximately 30 million single-cell transcriptomes</li>
+<li>Input size of 2048 genes per cell</li>
+<li>Focused on single-task learning</li>
+</ul>
+<p><strong>Version 2.0:</strong></p>
+<ul>
+<li>Pretrained on Genecorpus-103M, comprising ~103 million human single-cell transcriptomes</li>
+<li>Initial self-supervised pretraining with ~95 million cells, excluding cells with high mutational burdens</li>
+<li>Expanded input/context size of 4096 genes per cell</li>
+<li>Employs multi-task learning to jointly learn cell types, tissues, disease states, and developmental stages</li>
+<li>Includes a cancer-tuned model variant using domain-specific continual learning</li>
+<li>Supports model quantization for resource-efficient fine-tuning and inference</li>
+</ul>
+<p>Key improvements in v2.0:
+- Larger and more diverse pretraining corpus
+- Increased model parameters and expanded input size
+- Multi-task learning for context-specific representations of gene network dynamics
+- Improved zero-shot predictions in diverse downstream tasks
+- Cancer-specific tuning for tumor microenvironment analysis</p>
+<h2 id="available-models-for-each-version">Available Models for each Version</h2>
+<h3 id="version-10-30m-dataset">Version 1.0 (30M dataset)</h3>
+<ul>
+<li><strong>gf-6L-30M-i2048</strong><ul>
+<li>6 layers</li>
+<li>2048 input size</li>
+<li>Trained on ~30 million cells</li>
+</ul>
+</li>
+<li><strong>gf-12L-30M-i2048</strong><ul>
+<li>12 layers</li>
+<li>2048 input size</li>
+<li>Trained on ~30 million cells</li>
+</ul>
+</li>
+</ul>
+<h3 id="version-20-95m-dataset">Version 2.0 (95M dataset)</h3>
+<ul>
+<li><strong>gf-12L-95M-i4096</strong><ul>
+<li>12 layers</li>
+<li>4096 input size</li>
+<li>Trained on ~95 million cells</li>
+</ul>
+</li>
+<li><strong>gf-20L-95M-i4096</strong><ul>
+<li>20 layers</li>
+<li>4096 input size</li>
+<li>Trained on ~95 million cells</li>
+</ul>
+</li>
+<li><strong>gf-12L-95M-i4096-CLcancer</strong><ul>
+<li>12 layers</li>
+<li>4096 input size</li>
+<li>Initially trained on ~95 million cells</li>
+<li>Further tuned on ~14 million cancer cells</li>
+</ul>
+</li>
+</ul>
+<h2 id="model-developers">Model Developers</h2>
+<p><strong>Developed by:</strong> 
+Christina V. Theodoris conceived of the work, developed Geneformer, assembled Genecorpus-30M and designed and performed computational analyses.  </p>
+<p><strong>Contact Information:</strong> 
+christina.theodoris@gladstone.ucsf.edu  </p>
+<p><strong>License:</strong> 
+Apache-2.0 </p>
+<h2 id="model-type">Model Type</h2>
+<p><strong>Architecture:</strong> 
+Transformer-based  </p>
+<p><strong>Domain:</strong> 
+Cell Biology, Bioinformatics  </p>
+<p><strong>Input Data:</strong> 
+Single-cell transcriptomes</p>
+<h2 id="model-purpose">Model Purpose</h2>
+<p><strong>Technical usage:</strong></p>
+<ul>
+<li>Tokenizing transcriptomes</li>
+<li>Pre-training</li>
+<li>Hyperparameter tuning</li>
+<li>Fine-tuning</li>
+<li>Extracting and plotting cell embeddings</li>
+<li>In silico perturbation</li>
+</ul>
+<p><strong>Broader research applications:</strong>  </p>
+<ul>
+<li>Research in genomics and network biology</li>
+<li>Disease modeling with limited patient data</li>
+<li>Identification of candidate therapeutic targets</li>
+<li>Prediction of gene dosage sensitivity and chromatin dynamics</li>
+<li>Context-specific predictions in gene regulatory networks</li>
+</ul>
+<h2 id="training-data">Training Data</h2>
+<p><strong>Data Sources:</strong>  </p>
+<ul>
+<li>Publicly available single-cell transcriptomic datasets</li>
+<li>GeneCorpus-30M is available on the <a href="https://huggingface.co/datasets/ctheodoris/Genecorpus-30M">Hugging Face Dataset Hub</a></li>
+<li>Genecorpus-103M will be available on Hugging Face Dataset Hub (coming soon)</li>
+</ul>
+<p><strong>Data Volume:</strong>  </p>
+<ul>
+<li>Version 1.0: 29.9 million single-cell transcriptomes across a wide range of tissues</li>
+<li>Version 2.0: ~103 million human single-cell transcriptomes (Genecorpus-103M), including:<ul>
+<li>~95 million cells for initial self-supervised pretraining</li>
+<li>~14 million cells from cancer studies for domain-specific continual learning</li>
+</ul>
+</li>
+</ul>
+<p><strong>Preprocessing:</strong>  </p>
+<ul>
+<li>Exclusion of cells with high mutational burdens</li>
+<li>Metrics established for scalable filtering to exclude possible doublets and/or damaged cells</li>
+<li>Rank value encoding of transcriptomes where genes are ranked by scaled expression within each cell</li>
+</ul>
+<h2 id="model-performance">Model Performance</h2>
+<p><strong>Evaluation Metrics:</strong>  </p>
+<ul>
+<li>Predictive accuracy in distinguishing:<ul>
+<li>With <em>fine-tuning</em>:<ul>
+<li>Transcription factor dosage sensitivity</li>
+<li>Chromatin dynamics (bivalently marked promoters)</li>
+<li>Transcription factor regulatory range</li>
+<li>Gene network centrality</li>
+<li>Transcription factor targets</li>
+<li>Cell type annotation</li>
+<li>Batch integration</li>
+<li>Cell state classification across differentiation</li>
+<li>Disease classification</li>
+<li>In silico perturbation to determine disease-driving genes</li>
+<li>In silico treatment to determine candidate therapeutic targets</li>
+</ul>
+</li>
+<li>With <em>Zero-shot learning</em>:<ul>
+<li>Batch integration</li>
+<li>Gene context specificity</li>
+<li>In silico reprogramming</li>
+<li>In silico differentiation</li>
+<li>In silico perturbation to determine impact on cell state</li>
+<li>In silico perturbation to determine transcription factor targets</li>
+<li>In silico perturbation to determine transcription factor cooperativity</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p><strong>Testing Data:</strong>  </p>
+<ul>
+<li>Held-out subsets of the training dataset</li>
+<li>Additional validation using publicly available datasets </li>
+<li>Experimental validation for: <ul>
+<li>Prediction of novel transcription factor in cardiomyocytes with zero-shot learning that had a functional impact on cardiomyocytes' contractile force generation </li>
+<li>Prediction of candidate therapeutic targets with in silico treatment analysis that significantly improved contractile force generation of cardiac microtissues in an iPS cell model of cardiomyopathy</li>
+</ul>
+</li>
+</ul>
+<h2 id="model-limitations">Model Limitations</h2>
+<p><strong>Known Limitations:</strong>  </p>
+<ul>
+<li>May not generalize well to newly discovered tissues or rare gene variants</li>
+<li>Performance may vary across different single-cell sequencing technologies</li>
+</ul>
+<p><strong>Future Improvements:</strong>  </p>
+<ul>
+<li>Integration of new data sources to improve model robustness</li>
+<li>Enhancements in model architecture to better handle diverse transcriptomic profiles</li>
+</ul>
+<h2 id="how-to-use">How to Use</h2>
+<p><strong>Input Format:</strong>  </p>
+<ul>
+<li>Rank value encoded single-cell transcriptomes</li>
+</ul>
+<p><strong>Output Format:</strong>  </p>
+<ul>
+<li>Contextual gene and cell embeddings</li>
+<li>Contextual attention weights</li>
+<li>Contextual predictions</li>
+</ul>
+<p><strong>Example Usage:</strong>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">helical</span> <span class="kn">import</span> <span class="n">Geneformer</span><span class="p">,</span> <span class="n">GeneformerConfig</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span> <span class="nn">anndata</span> <span class="k">as</span> <span class="nn">ad</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Example configuration</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">model_config</span> <span class="o">=</span> <span class="n">GeneformerConfig</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;gf-12L-95M-i4096&quot;</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">geneformer</span> <span class="o">=</span> <span class="n">Geneformer</span><span class="p">(</span><span class="n">model_config</span><span class="o">=</span><span class="n">model_config</span><span class="p">)</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="c1"># Example usage for base pretrained model</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">ann_data</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">read_h5ad</span><span class="p">(</span><span class="s2">&quot;general_dataset.h5ad&quot;</span><span class="p">)</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">dataset</span> <span class="o">=</span> <span class="n">geneformer_v2</span><span class="o">.</span><span class="n">process_data</span><span class="p">(</span><span class="n">ann_data</span><span class="p">)</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="n">embeddings</span> <span class="o">=</span> <span class="n">geneformer_v2</span><span class="o">.</span><span class="n">get_embeddings</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Base model embeddings shape:&quot;</span><span class="p">,</span> <span class="n">embeddings</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="c1"># Example usage for cancer-tuned model</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="n">cancer_ann_data</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">read_h5ad</span><span class="p">(</span><span class="s2">&quot;cancer_dataset.h5ad&quot;</span><span class="p">)</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="n">cancer_dataset</span> <span class="o">=</span> <span class="n">geneformer_v2_cancer</span><span class="o">.</span><span class="n">process_data</span><span class="p">(</span><span class="n">cancer_ann_data</span><span class="p">)</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="n">cancer_embeddings</span> <span class="o">=</span> <span class="n">geneformer_v2_cancer</span><span class="o">.</span><span class="n">get_embeddings</span><span class="p">(</span><span class="n">cancer_dataset</span><span class="p">)</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Cancer-tuned model embeddings shape:&quot;</span><span class="p">,</span> <span class="n">cancer_embeddings</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</span></code></pre></div></p>
+<p><strong>Example Fine-Tuning:</strong></p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span> <span class="nn">helical</span> <span class="kn">import</span> <span class="n">GeneformerConfig</span><span class="p">,</span> <span class="n">GeneformerFineTuningModel</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># Prepare the data</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">ann_data</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">read_h5ad</span><span class="p">(</span><span class="s2">&quot;dataset.h5ad&quot;</span><span class="p">)</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="c1"># Get the desired label class</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="n">cell_types</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ann_data</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">cell_type</span><span class="p">)</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="c1"># Create a dictionary mapping the classes to unique integers for training</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="n">label_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">cell_types</span><span class="p">)</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="n">class_id_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">label_set</span><span class="p">,</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">label_set</span><span class="p">))]))</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cell_types</span><span class="p">)):</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    <span class="n">cell_types</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">class_id_dict</span><span class="p">[</span><span class="n">cell_types</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="c1"># Add this column to the Dataset</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">add_column</span><span class="p">(</span><span class="s1">&#39;cell_types&#39;</span><span class="p">,</span> <span class="n">cell_types</span><span class="p">)</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="c1"># Create the fine-tuning model</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="n">model_config</span> <span class="o">=</span> <span class="n">GeneformerConfig</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;gf-12L-95M-i4096&quot;</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="n">geneformer_fine_tune</span> <span class="o">=</span> <span class="n">GeneformerFineTuningModel</span><span class="p">(</span>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>    <span class="n">geneformer_config</span><span class="o">=</span><span class="n">model_config</span><span class="p">,</span> 
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>    <span class="n">fine_tuning_head</span><span class="o">=</span><span class="s2">&quot;classification&quot;</span><span class="p">,</span> 
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>    <span class="n">label</span><span class="o">=</span><span class="s2">&quot;cell_types&quot;</span><span class="p">,</span> 
+</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>    <span class="n">output_size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">label_set</span><span class="p">)</span>
+</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="p">)</span>
+</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>
+</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="c1"># Process the data for training</span>
+</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="n">dataset</span> <span class="o">=</span> <span class="n">geneformer_fine_tune</span><span class="o">.</span><span class="n">process_data</span><span class="p">(</span><span class="n">ann_data</span><span class="p">)</span>
+</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>
+</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="c1"># Fine-tune</span>
+</span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="n">geneformer_fine_tune</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">train_dataset</span><span class="o">=</span><span class="n">dataset</span><span class="p">)</span>
+</span><span id="__span-1-33"><a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a>
+</span><span id="__span-1-34"><a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="c1"># Get outputs of the fine-tuned model</span>
+</span><span id="__span-1-35"><a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="n">outputs</span> <span class="o">=</span> <span class="n">geneformer_fine_tune</span><span class="o">.</span><span class="n">get_outputs</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+</span><span id="__span-1-36"><a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a>
+</span><span id="__span-1-37"><a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a><span class="c1"># Get the embeddings of the fine-tuned model</span>
+</span><span id="__span-1-38"><a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a><span class="n">embeddings</span> <span class="o">=</span> <span class="n">geneformer_fine_tune</span><span class="o">.</span><span class="n">get_embeddings</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+</span></code></pre></div>
+<h2 id="contact">Contact</h2>
+<p>christina.theodoris@gladstone.ucsf.edu</p>
+<h2 id="citation">Citation</h2>
+<div class="language-bibtex highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nc">@article</span><span class="p">{</span><span class="nl">theodoris2023transfer</span><span class="p">,</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="na">title</span><span class="p">=</span><span class="s">{Transfer learning enables predictions in network biology}</span><span class="p">,</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="na">author</span><span class="p">=</span><span class="s">{Theodoris, Christos V and Xiao, Liang and Chopra, Arun and Chaffin, Mark D and Al Sayed, Zainab R and Hill, Michael C and Mantineo, Hannah and Brydon, Ellen M and Zeng, Zexian and Liu, X Shirley and Ellinor, Patrick T}</span><span class="p">,</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span><span class="na">journal</span><span class="p">=</span><span class="s">{Nature}</span><span class="p">,</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span><span class="na">volume</span><span class="p">=</span><span class="s">{618}</span><span class="p">,</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">  </span><span class="na">pages</span><span class="p">=</span><span class="s">{616--624}</span><span class="p">,</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">  </span><span class="na">year</span><span class="p">=</span><span class="s">{2023}</span><span class="p">,</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">  </span><span class="na">doi</span><span class="p">=</span><span class="s">{10.1038/s41586-023-06139-9}</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="p">}</span>
+</span></code></pre></div>
+<div class="language-bibtex highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nc">@article</span><span class="p">{</span><span class="nl">chen2024quantized</span><span class="p">,</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="na">title</span><span class="p">=</span><span class="s">{Quantized multi-task learning for context-specific representations of gene network dynamics}</span><span class="p">,</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="na">author</span><span class="p">=</span><span class="s">{Chen, H and Venkatesh, M S and Gomez Ortega, J and Mahesh, S V and Nandi, T and Madduri, R and Pelka, K and Theodoris, C V}</span><span class="p">,</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="na">journal</span><span class="p">=</span><span class="s">{bioRxiv}</span><span class="p">,</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span><span class="na">year</span><span class="p">=</span><span class="s">{2024}</span><span class="p">,</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">  </span><span class="na">month</span><span class="p">=</span><span class="s">{aug}</span><span class="p">,</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">  </span><span class="na">day</span><span class="p">=</span><span class="s">{19}</span><span class="p">,</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">  </span><span class="na">doi</span><span class="p">=</span><span class="s">{10.1101/2024.08.16.608180}</span><span class="p">,</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">  </span><span class="na">note</span><span class="p">=</span><span class="s">{co-first authors: H Chen, M S Venkatesh; co-senior authors: K Pelka, C V Theodoris; corresponding author: C V Theodoris}</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="p">}</span>
+</span></code></pre></div>
+<h2 id="author-contributions">Author contributions</h2>
+<p>C.V.T. conceived of the work, developed Geneformer, assembled Genecorpus-30M and designed and performed computational analyses. L.X., A.C., Z.R.A.S., M.C.H., H.M. and E.M.B. performed experimental validation in engineered cardiac microtissues. M.D.C. performed preprocessing, cell annotation and differential expression analysis of the cardiomyopathy dataset. Z.Z. provided data from the TISCH database for inclusion in Genecorpus-30M. X.S.L. and P.T.E. designed analyses and supervised the work. C.V.T., X.S.L. and P.T.E. </p>
+<p>HC and MSV developed the models and designed/performed computational analyses. HC assembled the pretraining corpuses and developed the continual learning method. MSV developed the multi-task learning method and quantization strategy. JGO contributed to model pretraining and corpus assembly. </p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      <a href="https://www.helical-ai.com/">Helical Team</a> <br> Copyright &copy; 2024
+    </div>
+  
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.code.copy"], "search": "../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.83f73b43.min.js"></script>
+      
+    
+  </body>
+</html>
