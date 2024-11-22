@@ -4,29 +4,30 @@ repo_url: https://github.com/helicalAI/helical
 repo_name: helicalAI/helical
 copyright: <a href="https://www.helical-ai.com/">Helical Team</a> <br> Copyright &copy; 2024
 nav:
-  - Geneformer: 
-    - Model Card: ./model_cards/geneformer.md
-    - Config: ./configs/geneformer_config.md
-    - Model: ./models/geneformer.md
-    - Fine-Tuning Model: ./fine_tuning_models/geneformer_fine_tune.md
-  - scGPT: 
-    - Model Card: ./model_cards/scgpt.md
-    - Config: ./configs/scgpt_config.md
-    - Model: ./models/scgpt.md
-    - Fine-Tuning Model: ./fine_tuning_models/scgpt_fine_tune.md
-  - HyenaDNA:
-    - Model Card: ./model_cards/hyenadna.md
-    - Config: ./configs/hyenadna_config.md
-    - Model: ./models/hyenadna.md
-    - Fine-Tuning Model: ./fine_tuning_models/hyenadna_fine_tune.md
-  - UCE: 
-    - Model Card: ./model_cards/uce.md
-    - Config: ./configs/uce_config.md
-    - Model: ./models/uce.md
-    - Fine-Tuning Model: ./fine_tuning_models/uce_fine_tune.md
-  - Helical Base Models: ./models/base_models.md
-  - Fine-Tuning Heads: ./models/fine_tuning_heads.md
-  - Notebooks:
+  - Models:
+    - Geneformer: 
+      - Model Card: ./model_cards/geneformer.md
+      - Config: ./configs/geneformer_config.md
+      - Model: ./models/geneformer.md
+      - Fine-Tuning Model: ./fine_tuning_models/geneformer_fine_tune.md
+    - scGPT: 
+      - Model Card: ./model_cards/scgpt.md
+      - Config: ./configs/scgpt_config.md
+      - Model: ./models/scgpt.md
+      - Fine-Tuning Model: ./fine_tuning_models/scgpt_fine_tune.md
+    - HyenaDNA:
+      - Model Card: ./model_cards/hyenadna.md
+      - Config: ./configs/hyenadna_config.md
+      - Model: ./models/hyenadna.md
+      - Fine-Tuning Model: ./fine_tuning_models/hyenadna_fine_tune.md
+    - UCE: 
+      - Model Card: ./model_cards/uce.md
+      - Config: ./configs/uce_config.md
+      - Model: ./models/uce.md
+      - Fine-Tuning Model: ./fine_tuning_models/uce_fine_tune.md
+    - Helical Base Models: ./models/base_models.md
+    - Fine-Tuning Heads: ./models/fine_tuning_heads.md
+  - Example Notebooks:
     - Quick-Start-Tutorial: ../examples/notebooks/Quick-Start-Tutorial.ipynb
     - Cell-Type Annotation: ./notebooks/Cell-Type-Annotation.ipynb
     - Cell-Type-Classification-Fine-Tuning: ./notebooks/Cell-Type-Classification-Fine-Tuning.ipynb
