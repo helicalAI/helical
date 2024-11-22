@@ -28,7 +28,7 @@ nav:
     - Helical Base Models: ./models/base_models.md
     - Fine-Tuning Heads: ./models/fine_tuning_heads.md
   - Example Notebooks:
-    - Quick-Start-Tutorial: ./examples/notebooks/Quick-Start-Tutorial.ipynb
+    - Quick-Start-Tutorial: ./notebooks/Quick-Start-Tutorial.ipynb
     - Cell-Type Annotation: ./notebooks/Cell-Type-Annotation.ipynb
     - Cell-Type-Classification-Fine-Tuning: ./notebooks/Cell-Type-Classification-Fine-Tuning.ipynb
     - Geneformer-vs-UCE: ./notebooks/Geneformer-vs-UCE.ipynb
