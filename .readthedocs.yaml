@@ -6,7 +6,7 @@ build:
 
   jobs:
     pre_build:
-      - "cp examples/notebooks/*.ipynb docs/notebooks"
+      - "cp ./examples/notebooks/*.ipynb ./docs/notebooks"
       - "pip install -r ./docs/requirements.txt"
       - ""
       # Build the MkDocs site
