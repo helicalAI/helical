@@ -21,43 +21,41 @@ class UCEConfig():
     
     Parameters
     ----------
-    model_name : Literal["33l_8ep_1024t_1280", "4layer_model"], optional, default = "4layer_model"
+    model_name : Literal["33l_8ep_1024t_1280", "4layer_model"], optional, default="4layer_model"
         The model name
-    batch_size : int, optional, default = 24
+    batch_size : int, optional, default=24
         The batch size
-    species : Literal['human', 'mouse', 'frog', 'zebrafish', "mouse_lemur", "pig", "macaca_fascicularis", "macaca_mulatta"], optional, default = "human"
+    species : Literal['human', 'mouse', 'frog', 'zebrafish', "mouse_lemur", "pig", "macaca_fascicularis", "macaca_mulatta"], optional, default="human"
         The species of the data.
-    gene_embedding_model: Literal['ESM2'], optional, default = "ESM2"
+    gene_embedding_model: Literal['ESM2'], optional, default="ESM2"
         The gene embedding model to use. For now, we only support ESM2.
-    pad_length : int, optional, default = 1536
+    pad_length : int, optional, default=1536
         The padding length
-    pad_token_idx : int, optional, default = 0
+    pad_token_idx : int, optional, default=0
         The padding token index
-    chrom_token_left_idx : int, optional, default = 1
+    chrom_token_left_idx : int, optional, default=1
         The left chrom token index
-    chrom_token_right_idx : int, optional, default = 2 
+    chrom_token_right_idx : int, optional, default=2 
         The right chrom token index 
-    cls_token_idx : int, optional, default = 3
+    cls_token_idx : int, optional, default=3
         The cls token index
-    CHROM_TOKEN_OFFSET : int, optional, default = 143574
+    CHROM_TOKEN_OFFSET : int, optional, default=143574
         The chrom token offset
-    sample_size : int, optional, default = 1024
+    sample_size : int, optional, default=1024
         The sample size
-    CXG : bool, optional, default = True
+    CXG : bool, optional, default=True
         Whether to use CXG or not
-    n_layers : int, optional, default = 4
-        The number of layers. Currently the two pre-trained models available have either 4 layers or 33 layers.
-    output_dim : int, optional, default = 1280
+    output_dim : int, optional, default=1280
         The output dimension
-    d_hid : int, optional, default = 5120
+    d_hid : int, optional, default=5120
         The hidden dimension
-    token_dim : int, optional, default = 5120
+    token_dim : int, optional, default=5120
         The token dimension
-    multi_gpu : bool, optional, default = False
+    multi_gpu : bool, optional, default=False
         Whether to use multiple GPUs or not
-    device : Literal["cpu", "cuda"], optional, default = "cpu"
+    device : Literal["cpu", "cuda"], optional, default="cpu"
         The device to use. Either use "cuda" or "cpu".
-    accelerator : bool, optional, default = False
+    accelerator : bool, optional, default=False
         The accelerator configuration. By default same device as model.
 
     Returns

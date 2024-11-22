@@ -18,28 +18,29 @@ class HyenaDNA(HelicalDNAModel):
     
     Example
     -------
-    >>> from helical.models.hyena_dna.model import HyenaDNA, HyenaDNAConfig
-    >>> hyena_config = HyenaDNAConfig(model_name = "hyenadna-tiny-1k-seqlen-d256")
-    >>> model = HyenaDNA(configurer = hyena_config)   
-    >>> sequence = 'ACTG' * int(1024/4)
-    >>> tokenized_sequence = model.process_data(sequence)
-    >>> embeddings = model.get_embeddings(tokenized_sequence)
-    >>> print(embeddings.shape)
+    ```python
+    from helical.models.hyena_dna.model import HyenaDNA, HyenaDNAConfig
+
+    hyena_config = HyenaDNAConfig(model_name = "hyenadna-tiny-1k-seqlen-d256")
+    model = HyenaDNA(configurer = hyena_config)   
+
+    sequence = 'ACTG' * int(1024/4)
+
+    tokenized_sequence = model.process_data(sequence)
+    embeddings = model.get_embeddings(tokenized_sequence)
+
+    print(embeddings.shape)
+    ```
 
     Parameters
     ----------
-        default_configurer : HyenaDNAConfig, optional, default = default_configurer
-            The model configuration.
-    
-    Returns
-    -------
-    None
+    configurer : HyenaDNAConfig, optional, default=default_configurer
+        The model configuration.
 
     Notes
     -----
-    The link to the paper can be found `here <https://arxiv.org/abs/2306.15794>`_. 
-    We use the implementation from the `hyena-dna <https://github.com/HazyResearch/hyena-dna>`_ repository.
-
+    The link to the paper can be found [here](https://arxiv.org/abs/2306.15794. 
+    We use the implementation from the [HyenaDNA](https://github.com/HazyResearch/hyena-dna) repository.
     """
 
     default_configurer = HyenaDNAConfig()
@@ -73,8 +74,8 @@ class HyenaDNA(HelicalDNAModel):
 
         Parameters 
         ----------
-            sequences: list[str]
-                The input DNA sequences to be processed.
+        sequences : list[str]
+            The input DNA sequences to be processed.
 
         Returns
         -------
@@ -100,11 +101,15 @@ class HyenaDNA(HelicalDNAModel):
     def get_embeddings(self, dataset: HyenaDNADataset) -> torch.Tensor:
         """Get the embeddings for the tokenized sequence.
 
-        Args:
-            dataset (HyenaDNADataset): The tokenized sequences.
+        Parameters
+        ----------
+        dataset : HyenaDNADataset
+            The output dataset from `process_data`.
 
-        Returns:
-            torch.Tensor: The embeddings for the tokenized sequences with a shape [batch_size, sequence_length, embeddings_size].
+        Returns
+        ----------
+        np.ndarray
+            The embeddings for the tokenized sequence in the form of a numpy array.
 
         """
         LOGGER.info(f"Inference started")

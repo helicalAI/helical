@@ -1,0 +1,74 @@
+site_name: "Helical Docs"
+site_url: https://helical.readthedocs.io/
+repo_url: https://github.com/helicalAI/helical
+repo_name: helicalAI/helical
+copyright: <a href="https://www.helical-ai.com/">Helical Team</a> <br> Copyright &copy; 2024
+nav:
+  - Geneformer: 
+    - Model Card: ./model_cards/geneformer.md
+    - Config: ./configs/geneformer_config.md
+    - Model: ./models/geneformer.md
+    - Fine-Tuning Model: ./fine_tuning_models/geneformer_fine_tune.md
+  - scGPT: 
+    - Model Card: ./model_cards/scgpt.md
+    - Config: ./configs/scgpt_config.md
+    - Model: ./models/scgpt.md
+    - Fine-Tuning Model: ./fine_tuning_models/scgpt_fine_tune.md
+  - HyenaDNA:
+    - Model Card: ./model_cards/hyenadna.md
+    - Config: ./configs/hyenadna_config.md
+    - Model: ./models/hyenadna.md
+    - Fine-Tuning Model: ./fine_tuning_models/hyenadna_fine_tune.md
+  - UCE: 
+    - Model Card: ./model_cards/uce.md
+    - Config: ./configs/uce_config.md
+    - Model: ./models/uce.md
+    - Fine-Tuning Model: ./fine_tuning_models/uce_fine_tune.md
+  - Helical Base Models: ./models/base_models.md
+  - Fine-Tuning Heads: ./models/fine_tuning_heads.md
+  - Notebooks:
+    - Quick-Start-Tutorial: ../examples/notebooks/Quick-Start-Tutorial.ipynb
+    - Cell-Type Annotation: ./notebooks/Cell-Type-Annotation.ipynb
+    - Cell-Type-Classification-Fine-Tuning: ./notebooks/Cell-Type-Classification-Fine-Tuning.ipynb
+    - Geneformer-vs-UCE: ./notebooks/Geneformer-vs-UCE.ipynb
+    - Hyena-DNA-Inference: ./notebooks/Hyena-DNA-Inference.ipynb
+    - HyenaDNA-Fine-Tuning: ./notebooks/HyenaDNA-Fine-Tuning.ipynb
+  - Benchmarking: ./benchmarking/description.md
+   
+theme:
+  name: material
+  logo: assets/logo1.png
+  favicon: assets/official_logo_fav.png
+  icon:
+    repo: fontawesome/brands/git-alt 
+  font:
+    text: Montserrat
+  palette:
+    scheme: slate
+    primary: custom
+  features:
+    - content.code.copy
+extra_css:
+  - stylesheets/extra.css
+extra:
+  generator: false
+  version:
+    provider: mike
+    default: latest
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+plugins:
+  - search
+  - mkdocstrings:
+      # default_handler: python
+      handlers:
+        python: 
+          options:
+            docstring_style: numpy
+  - mkdocs-jupyter

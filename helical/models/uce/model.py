@@ -22,29 +22,33 @@ class UCE(HelicalRNAModel):
 
         Example
         -------
-        >>> from helical import UCE, UCEConfig
-        >>> from datasets import load_dataset
-        >>> from helical.utils import get_anndata_from_hf_dataset
-        >>> import anndata as ad
-        >>> configurer=UCEConfig(batch_size=10)
-        >>> uce = UCE(configurer=configurer)
-        >>> hf_dataset = load_dataset("helical-ai/yolksac_human",split="train[:25%]", trust_remote_code=True, download_mode="reuse_cache_if_exists")
-        >>> ann_data = get_anndata_from_hf_dataset(hf_dataset)
-        >>> dataset = uce.process_data(ann_data[:100])
-        >>> embeddings = uce.get_embeddings(dataset)
+        ```python
+        from helical import UCE, UCEConfig
+        from datasets import load_dataset
+        from helical.utils import get_anndata_from_hf_dataset
+        import anndata as ad
+
+        configurer=UCEConfig(batch_size=10)
+        uce = UCE(configurer=configurer)
+
+        hf_dataset = load_dataset("helical-ai/yolksac_human",split="train[:25%]", trust_remote_code=True, download_mode="reuse_cache_if_exists")
+        ann_data = get_anndata_from_hf_dataset(hf_dataset)
+
+        dataset = uce.process_data(ann_data[:100])
+
+        embeddings = uce.get_embeddings(dataset)
+
+        print("UCE embeddings ", embeddings[:10])
+        ```
 
         Parameters
         ----------
-        configurer : UCEConfig, optional, default = default_configurer
+        configurer : UCEConfig, optional, default=default_configurer
             The model configuration.
-
-        Returns
-        -------
-        None
 
         Notes
         -----
-        The Universal Cell Embedding Papers has been published on `BioRxiv <https://www.biorxiv.org/content/10.1101/2023.11.28.568918v1>`_ and it is built on top of `SATURN <https://www.nature.com/articles/s41592-024-02191-z>`_ published in Nature.
+        The Universal Cell Embedding Paper has been published on [bioRxiv](https://www.biorxiv.org/content/10.1101/2023.11.28.568918v1) and it is built on top of SATURN published in [Nature](https://www.nature.com/articles/s41592-024-02191-z).
         """
     default_configurer = UCEConfig()
 
@@ -76,29 +80,32 @@ class UCE(HelicalRNAModel):
                      filter_genes_min_cell: int = None,
                      use_raw_counts: bool = True
                      ) -> UCEDataset:
-        """Processes the data for the Universal Cell Embedding model
+        """
+        Processes the data for the Universal Cell Embedding model.
 
-        Parameters 
+        Parameters
         ----------
         adata : AnnData
             The AnnData object containing the data to be processed. 
-            The UCE model requires the gene expression data as input and the gene symbols as variable names (i.e. as adata.var_names).
-        gene_names: str, optional, default = "index"
-            The name of the column in the AnnData object that contains the gene symbols.
-            By default, the index of the AnnData object is used.
-            If another column is specified, that column will be set as the index of the AnnData object.
-        name: str, optional, default = "test"
+            The UCE model requires the gene expression data as input and the gene symbols 
+            as variable names (i.e., `adata.var_names`).
+        gene_names : str, optional, default="index"
+            The name of the column in the AnnData object that contains the gene symbols. 
+            By default, the index of the AnnData object is used. If another column is specified, 
+            that column will be set as the index of the AnnData object.
+        name : str, optional, default="test"
             The name of the dataset. Needed for when slicing AnnData objects for train and validation datasets.
-        filter_genes_min_cell: int, default = None
+        filter_genes_min_cell : int, optional, default=None
             Filter threshold that defines how many times a gene should occur in all the cells.
-        use_raw_counts: bool, default = True
+        use_raw_counts : bool, optional, default=True
             Whether to use raw counts or not.
 
         Returns
         -------
         UCEDataset
-            Inherits from Dataset class.
+            An object that inherits from the `Dataset` class.
         """
+
         
         self.ensure_rna_data_validity(adata, gene_names, use_raw_counts)
 
@@ -170,7 +177,7 @@ class UCE(HelicalRNAModel):
 
         Returns
         -------
-        np.array
+        np.ndarray
             The gene embeddings in the form of a numpy array
         """
      
