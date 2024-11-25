@@ -1,0 +1,129 @@
+:root {
+  --md-primary-fg-color:        rgba(2, 109, 98, 0.8);
+  --md-code-hl-string-color: #77ff62; 
+  --md-primary-bg-color:  #2a2a2a;
+  --md-secondary-bg-color: #000000;
+  /* --md-default-fg-color--lightest: #026D63; */
+  --md-code-font: Fira Code;
+  color: white;
+}
+
+body {
+  background-color: var(--md-primary-bg-color);
+}
+.md-header {
+  background: linear-gradient(0deg, rgb(2, 109, 98) 0%, rgb(12, 12, 12) 100%);
+}
+
+.md-search__input{
+  background-color: #03574f;
+}
+
+.md-search-result__meta {
+  background-color: #00766a;
+}
+
+.md-ellipsis {
+  /* font-weight: bold; */
+  font-weight: normal;
+  color: white;
+}
+
+.md-ellipsis:hover {
+  font-weight: bold;
+}
+
+::before {
+  background-color: #026D63;
+} 
+
+.md-typeset code {
+  border-radius: 0.2rem;
+  background-color: #1d1d1d;
+  color: rgb(232, 230, 230);
+}
+
+.md-grid {
+  max-width: 75rem; 
+}
+
+body {
+  background-color: var(--md-primary-bg-color);
+  color: rgb(218, 217, 217);
+}
+
+.md-typeset h1 {
+  color: white;
+  font-weight: bold;
+}
+
+.md-typeset h2 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.md-typeset h3 {
+  font-size: 1rem;
+  font-weight: 550;
+}
+
+/* .md-typeset .quote>.admonition-title, .md-typeset .quote>summary {
+  background-color: #b1b1b1;
+} */
+
+.md-nav--primary .md-nav__title~.md-nav__list {
+    /* background-color: #1a1a1a; */
+    color: white;
+}
+
+.md-nav--secondary .md-nav__title {
+    background-color: var(--md-primary-bg-color);
+    color: white;
+    box-shadow: 0 0 .4rem .4rem var(--md-primary-bg-color); 
+}
+
+.md-nav--primary .md-nav__title {
+    background-color: var(--md-primary-bg-color);
+    color: white;
+    box-shadow: 0 0 .4rem .4rem var(--md-primary-bg-color);
+} 
+
+.md-nav__item .md-nav__link--active, .md-nav__item .md-nav__link--active code {
+  color: inherit;
+} 
+
+.md-nav__link--passed {
+  color: #a9a9a9;
+}
+
+a:link {
+  color: aqua;
+}
+
+a:visited {
+  color: aqua;
+}
+
+.md-search-result .md-typeset {
+  background-color: #3d3d3d;
+  text-decoration-color: #026D63;
+}
+
+a.md-nav__link:hover {
+  color: #ba0000 !important;
+}
+
+.jp-OutputPrompt.jp-OutputArea-prompt {
+  background-color: transparent;
+} 
+
+.jupyter-wrapper .jp-RenderedText[data-mime-type="application/vnd.jupyter.stderr"] {
+  background: transparent !important;
+}
+
+.md-header__button.md-logo img, .md-header__button.md-logo svg {
+  fill: currentcolor;
+  display: block;
+  height: 2rem;
+  width: auto;
+}
