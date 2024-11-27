@@ -118,15 +118,16 @@ You can find the Licenses for each model implementation in the model repositorie
 
 Please use this BibTeX to cite this repository in your publications:
 
-```
+```bibtex
 @software{allard_2024_13135902,
   author       = {Helical Team},
   title        = {helicalAI/helical: v0.0.1-alpha3},
-  month        = jul,
+  month        = nov,
   year         = 2024,
   publisher    = {Zenodo},
-  version      = {0.0.1a5},
+  version      = {0.0.1a6},
   doi          = {10.5281/zenodo.13135902},
   url          = {https://doi.org/10.5281/zenodo.13135902}
 }
+```
 
