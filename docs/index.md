@@ -101,10 +101,10 @@ A lot of our models have been published by talend authors developing these excit
 
 You can find the Licenses for each model implementation in the model repositories:
 
-- [scGPT](helical/models/scgpt/LICENSE)
-- [Geneformer](helical/models/geneformer/LICENSE)
-- [UCE](helical/models/uce/LICENSE)
-- [HyenaDNA](helical/models/hyena_dna/LICENSE)
+- [scGPT](https://github.com/helicalAI/helical/blob/release/helical/models/scgpt/LICENSE)
+- [Geneformer](https://github.com/helicalAI/helical/blob/release/helical/models/geneformer/LICENSE)
+- [UCE](https://github.com/helicalAI/helical/blob/release/helical/models/uce/LICENSE)
+- [HyenaDNA](https://github.com/helicalAI/helical/blob/release/helical/models/hyena_dna/LICENSE)
 
 
 ## Citation
@@ -114,7 +114,7 @@ Please use this BibTeX to cite this repository in your publications:
 ```bibtex
 @software{allard_2024_13135902,
   author       = {Helical Team},
-  title        = {helicalAI/helical: v0.0.1-alpha},
+  title        = {helicalAI/helical: v0.0.1-alpha6},
   month        = nov,
   year         = 2024,
   publisher    = {Zenodo},
