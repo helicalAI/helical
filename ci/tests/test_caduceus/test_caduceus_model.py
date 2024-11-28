@@ -63,16 +63,15 @@ def test_hyena_dna_process_data(input_sequence):
     return dataset
 
 
-@pytest.mark.parametrize("input_sequence", [
-    # Valid DNA sequences
-    "",
-    "A",
-    "CC",
-    "TTTT", 
-    "ACGTN",
-    "ACGT" * 256
+@pytest.mark.parametrize("input_sequence,model_name", [
+    ("", "caduceus-ph-4L-seqlen-1k-d118"),
+    ("A", "caduceus-ps-4L-seqlen-1k-d118"),
+    ("CC", "caduceus-ph-16L-seqlen-131k-d256"),
+    ("TTTT", "caduceus-ps-4L-seqlen-1k-d256"),
+    ("ACGTN", "caduceus-ps-4L-seqlen-1k-d118"),
+    ("ACGT" * 256, "caduceus-ps-4L-seqlen-1k-d256")
 ])
-def test_hyena_dna_get_embeddings(input_sequence):
+def test_hyena_dna_get_embeddings(input_sequence, model_name):
     """
     Test the get_embeddings method of the Caduceus model.
     The embeddings are computed and the output shape is verified.
@@ -80,7 +79,7 @@ def test_hyena_dna_get_embeddings(input_sequence):
     Raises:
         AssertionError: If the output shape doesn't match expected dimensions.
     """
-    model = Caduceus(CaduceusConfig(model_name="caduceus-ph-4L-seqlen-1k-d118", device="cuda"))
+    model = Caduceus(CaduceusConfig(model_name=model_name, device="cuda"))
     dataset = test_hyena_dna_process_data(input_sequence)
     embeddings = model.get_embeddings(dataset)
     assert embeddings.shape[0] == 1
