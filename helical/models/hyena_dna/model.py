@@ -70,7 +70,7 @@ class HyenaDNA(HelicalDNAModel):
         LOGGER.info(f"Model finished initializing.")
 
     def process_data(self, sequence: list[str]) -> HyenaDNADataset:
-        """Process the input DNA sequence.
+        """Process the input DNA sequences.
 
         Parameters 
         ----------

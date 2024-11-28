@@ -34,3 +34,4 @@ from .models.scgpt.model import scGPT, scGPTConfig
 from .models.scgpt.fine_tuning_model import scGPTFineTuningModel
 from .models.hyena_dna.model import HyenaDNA, HyenaDNAConfig
 from .models.hyena_dna.fine_tuning_model import HyenaDNAFineTuningModel
+from .models.caduceus.model import Caduceus, CaduceusConfig
