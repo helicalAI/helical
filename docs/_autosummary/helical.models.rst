@@ -4,32 +4,17 @@
 .. automodule:: helical.models
 
    
-   
-   
-
-   
-   
-   
-
-   
-   
-   
-
-   
-   
-   
-
-
-
 .. rubric:: Modules
 
 .. autosummary::
    :toctree:
    :recursive:
 
-   helical.models.geneformer
-   helical.models.helical
-   helical.models.hyena_dna
-   helical.models.scgpt
-   helical.models.uce
-
+   base_models
+   classification
+   fine_tune
+   geneformer
+   helix_mrna
+   hyena_dna
+   scgpt
+   uce

@@ -1,23 +1,6 @@
-helical.version
+﻿helical.version
 ===============
 
 .. automodule:: helical.version
 
    
-   
-   
-
-   
-   
-   
-
-   
-   
-   
-
-   
-   
-   
-
-
-

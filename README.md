@@ -46,7 +46,7 @@ apptainer shell --nv --fakeroot singularity/helical/
 
 ## Installation
 ### RNA models:
-- [HelixR](https://helical.readthedocs.io/en/latest/docs/HelixR.html)
+- [Helix-mRNA](https://helical.readthedocs.io/en/latest/docs/Helix-mRNA.html)
 - [Geneformer](https://helical.readthedocs.io/en/latest/docs/Geneformer.html)
 - [scGPT](https://helical.readthedocs.io/en/latest/docs/scGPT.html)
 - [Universal Cell Embedding (UCE)](https://helical.readthedocs.io/en/latest/docs/UCE.html)

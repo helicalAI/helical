@@ -4,15 +4,6 @@ helical.constants.enums
 .. automodule:: helical.constants.enums
 
    
-   
-   
-
-   
-   
-   
-
-   
-   
    .. rubric:: Classes
 
    .. autosummary::
@@ -20,11 +11,3 @@ helical.constants.enums
       LoggingLevel
       LoggingType
    
-   
-
-   
-   
-   
-
-
-

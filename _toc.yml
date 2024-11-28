@@ -6,7 +6,7 @@ root: docs/intro
 parts:
 - caption: Helical API Documentation 📚
   chapters:
-  - file: docs/HelixR.rst
+  - file: docs/Helix-mRNA.rst
   - file: docs/Geneformer.rst
   - file: docs/UCE.rst
   - file: docs/scGPT.rst

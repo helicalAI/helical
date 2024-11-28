@@ -4,11 +4,6 @@ helical.models.geneformer.geneformer\_utils
 .. automodule:: helical.models.geneformer.geneformer_utils
 
    
-   
-   
-
-   
-   
    .. rubric:: Functions
 
    .. autosummary::
@@ -25,15 +20,3 @@ helical.models.geneformer.geneformer\_utils
       pad_tensor_list
       quant_layers
    
-   
-
-   
-   
-   
-
-   
-   
-   
-
-
-
