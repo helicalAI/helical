@@ -10,11 +10,11 @@ class GeneformerConfig():
     ----------
     model_name : Literal["gf-6L-30M-i2048", "gf-12L-30M-i2048", "gf-12L-95M-i4096", "gf-20L-95M-i4096", "gf-12L-95M-i4096-CLcancer"], optional, default="gf-12L-30M-i2048"
         The name of the model.
-    batch_size : int, optional, default=24
+    batch_size : int, optional, default = 24
         The batch size
-    emb_layer : int, optional, default=-1
+    emb_layer : int, optional, default = -1
         The embedding layer
-    emb_mode : str, optional, default="cell"
+    emb_mode : Literal["cls", "cell", "gene"], optional, default="cell"
         The embedding mode
     device : Literal["cpu", "cuda"], optional, default="cpu"
         The device to use. Either use "cuda" or "cpu".
@@ -27,7 +27,6 @@ class GeneformerConfig():
         The keys of the dictionary are the names of the custom attributes, and the values are the names of the columns in adata.obs. 
         For example, if you want to add a custom attribute called "cell_type" to the dataset, you would pass custom_attr_name_dict = {"cell_type": "cell_type"}.
         If you do not want to add any custom attributes, you can leave this parameter as None.
-
     Returns
     -------
     GeneformerConfig
