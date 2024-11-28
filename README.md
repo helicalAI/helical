@@ -14,12 +14,15 @@ Helical simplifies the entire application lifecycle when building with bio found
 
 We will update this repo on a regular basis with new models, benchmarks, modalities and functions - so stay tuned.
 Let’s build the most exciting AI-for-Bio community together!
+<div align="center">
 
 ![Workflow](https://github.com/helicalAI/helical/actions/workflows/main.yml/badge.svg) &nbsp;
 ![Workflow](https://github.com/helicalAI/helical/actions/workflows/github-code-scanning/codeql/badge.svg) &nbsp;
 [![Docs](https://img.shields.io/badge/docs-available-brightgreen)](https://helical.readthedocs.io/) &nbsp;
 [![PyPI version](https://badge.fury.io/py/helical.svg)](https://badge.fury.io/py/helical) &nbsp;
 ![GitHub contributors](https://img.shields.io/github/contributors/helicalAI/helical) &nbsp;
+
+</div>
 
 ## Installation
 
