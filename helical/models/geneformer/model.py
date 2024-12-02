@@ -33,38 +33,36 @@ class Geneformer(HelicalRNAModel):
 
     Example
     -------
-    >>> from helical.models import Geneformer, GeneformerConfig
-    >>> import anndata as ad
-    >>> 
-    >>> # For Version 2.0
-    >>> geneformer_config_v2 = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
-    >>> geneformer_v2 = Geneformer(configurer=geneformer_config_v2)
-    >>>
-    >>> # You can use other model names in the config, such as:
-    >>> # "gf-12L-30M-i2048" (Version 1.0)
-    >>> # "gf-12L-95M-i4096-CLcancer" (Version 2.0, Cancer-tuned)
-    >>> # "gf-20L-95M-i4096" (Version 2.0, 20-layer model)
-    >>> 
-    >>> # Example usage for base pretrained model (for general transcriptomic analysis, v1 and v2)
-    >>> ann_data = ad.read_h5ad("general_dataset.h5ad")
-    >>> dataset = geneformer_v2.process_data(ann_data)
-    >>> embeddings = geneformer_v2.get_embeddings(dataset)
-    >>> print("Base model embeddings shape:", embeddings.shape)
-    >>>
-    >>> # Example usage for cancer-tuned model (for cancer-specific analysis)
-    >>> cancer_ann_data = ad.read_h5ad("cancer_dataset.h5ad")
-    >>> cancer_dataset = geneformer_v2_cancer.process_data(cancer_ann_data)
-    >>> cancer_embeddings = geneformer_v2_cancer.get_embeddings(cancer_dataset)
-    >>> print("Cancer-tuned model embeddings shape:", cancer_embeddings.shape)
+    ```python
+     from helical.models import Geneformer, GeneformerConfig
+     import anndata as ad
+     
+     # For Version 2.0
+     geneformer_config_v2 = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
+     geneformer_v2 = Geneformer(configurer=geneformer_config_v2)
+    
+     # You can use other model names in the config, such as:
+     # "gf-12L-30M-i2048" (Version 1.0)
+     # "gf-12L-95M-i4096-CLcancer" (Version 2.0, Cancer-tuned)
+     # "gf-20L-95M-i4096" (Version 2.0, 20-layer model)
+     
+     # Example usage for base pretrained model (for general transcriptomic analysis, v1 and v2)
+     ann_data = ad.read_h5ad("general_dataset.h5ad")
+     dataset = geneformer_v2.process_data(ann_data)
+     embeddings = geneformer_v2.get_embeddings(dataset)
+     print("Base model embeddings shape:", embeddings.shape)
+    
+     # Example usage for cancer-tuned model (for cancer-specific analysis)
+     cancer_ann_data = ad.read_h5ad("cancer_dataset.h5ad")
+     cancer_dataset = geneformer_v2_cancer.process_data(cancer_ann_data)
+     cancer_embeddings = geneformer_v2_cancer.get_embeddings(cancer_dataset)
+     print("Cancer-tuned model embeddings shape:", cancer_embeddings.shape)
+    ```
 
     Parameters
     ----------
     configurer : GeneformerConfig, optional, default = default_configurer
         The model configration
-
-    Returns
-    -------
-    None
 
     Notes
     -----
@@ -122,33 +120,36 @@ class Geneformer(HelicalRNAModel):
                      output_path: Optional[str] = None,
                      use_raw_counts: bool = True,
                      ) -> Dataset:   
-        """Processes the data for the Geneformer model
+        """
+        Processes the data for the Geneformer model.
 
-        Parameters 
+        Parameters
         ----------
         adata : AnnData
-            The AnnData object containing the data to be processed. It is important to note that the Geneformer uses Ensembl IDs to identify genes.
-            Currently the Geneformer only supports human genes.
-            If you already have the ensembl_id column, you can skip the mapping step.
-        gene_names: str, optional, default = "index"
-            The column in adata.var that contains the gene names. If you set this string to something other than "ensembl_id", 
-            we will map the gene symbols in that column to Ensembl IDs with a mapping taken from the 'pyensembl' package, which ultimately gets the mappings from 
-            the Ensembl FTP server and loads them into a local database.
-            If this variable is left at "index", the index of the AnnData object will be used and mapped to Ensembl IDs.
-            If it is changes to "ensembl_id", there will be no mapping.
-            In the special case where the data has Ensemble IDs as the index, and you pass "index". This would result in invalid mappings.
-            In that case, it is recommended to create a new column with the Ensemble IDs in the data and pass "ensembl_id" as the gene_names.
-        output_path : str, default = None
-            Whether to save the tokenized dataset to the specified output_path.
-        use_raw_counts : bool, default = True
-            Whether to use raw counts or not.
+            The AnnData object containing the data to be processed. Geneformer uses Ensembl IDs to identify genes 
+            and currently supports only human genes. If the AnnData object already has an 'ensembl_id' column, 
+            the mapping step can be skipped.
+        gene_names : str, optional, default="index"
+            The column in `adata.var` that contains the gene names. If set to a value other than "ensembl_id", 
+            the gene symbols in that column will be mapped to Ensembl IDs using the 'pyensembl' package, 
+            which retrieves mappings from the Ensembl FTP server and loads them into a local database.
+            - If set to "index", the index of the AnnData object will be used and mapped to Ensembl IDs.
+            - If set to "ensembl_id", no mapping will occur.
+            Special case:
+                If the index of `adata` already contains Ensembl IDs, setting this to "index" will result in 
+                invalid mappings. In such cases, create a new column containing Ensembl IDs and pass "ensembl_id" 
+                as the value of `gene_names`.
+        output_path : str, optional, default=None
+            If specified, saves the tokenized dataset to the given output path.
+        use_raw_counts : bool, optional, default=True
+            Determines whether raw counts should be used.
 
         Returns
         -------
         Dataset
-            The tokenized dataset in the form of a Hugginface Dataset object.
-            
-        """ 
+            The tokenized dataset in the form of a Huggingface Dataset object.
+        """
+
         self.ensure_rna_data_validity(adata, gene_names, use_raw_counts)
 
         # map gene symbols to ensemble ids if provided

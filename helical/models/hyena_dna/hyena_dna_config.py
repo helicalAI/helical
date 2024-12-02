@@ -7,45 +7,34 @@ class HyenaDNAConfig():
 
     Parameters
     ----------
-    model_name : Literal["hyenadna-tiny-1k-seqlen", "hyenadna-tiny-1k-seqlen-d256"], optional, default = "hyenadna-tiny-1k-seqlen"
+    model_name : Literal["hyenadna-tiny-1k-seqlen", "hyenadna-tiny-1k-seqlen-d256"], optional, default="hyenadna-tiny-1k-seqlen"
         The name of the model.
-    batch_size : int, optional, default = 5
-    n_layer : int, optional, default = 2
+    batch_size : int, optional, default=5
+    n_layer : int, optional, default=2
         The number of layers in the model.
-    vocab_size : int, optional, default = 12
+    vocab_size : int, optional, default=12
         The size of the vocabulary.
-    resid_dropout : float, optional, default = 0.0
+    resid_dropout : float, optional, default=0.0
         The dropout rate for residual connections.
-    embed_dropout : float, optional, default = 0.1
+    embed_dropout : float, optional, default=0.1
         The dropout rate for embedding layer.
-    fused_mlp : bool, optional, default = False
+    fused_mlp : bool, optional, default=False
         Whether to use fused MLP.
-    fused_dropout_add_ln : bool, optional, default = True
+    fused_dropout_add_ln : bool, optional, default=True
         Whether to use fused dropout and layer normalization.
-    residual_in_fp32 : bool, optional, default = True
+    residual_in_fp32 : bool, optional, default=True
         Whether to use FP32 for residual connections.
-    checkpoint_mixer : bool, optional, default = False
+    checkpoint_mixer : bool, optional, default=False
         Whether to use checkpointing for mixer layers.
-    checkpoint_mlp : bool, optional, default = False
+    checkpoint_mlp : bool, optional, default=False
         Whether to use checkpointing for MLP layers.
-    pad_vocab_size_multiple : int, optional, default = 8
+    pad_vocab_size_multiple : int, optional, default=8
         The multiple to pad the vocabulary size.
-    return_hidden_state : bool, optional, default = True
+    return_hidden_state : bool, optional, default=True
         Whether to return the hidden state.
-    device : Literal["cpu", "cuda"], optional, default = "cpu"
+    device : Literal["cpu", "cuda"], optional, default="cpu"
         The device to use.
-    layer : dict, optional, default = {
-        "_name_": "hyena",
-        "emb_dim": 5,
-        "filter_order": 64,
-        "local_order": 3,
-        "l_max": 1026,
-        "modulate": True,
-        "w": 10,
-        "lr": 6e-4,
-        "wd": 0.0,
-        "lr_pos_emb": 0.0
-    }
+    layer : dict, optional, default={"_name_": "hyena", "emb_dim": 5, "filter_order": 64, "local_order": 3, "l_max": 1026, "modulate": True, "w": 10, "lr": 6e-4, "wd": 0.0, "lr_pos_emb": 0.0}
         Dictionary containing layer-specific parameters.
 
     Attributes
