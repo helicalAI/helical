@@ -60,7 +60,8 @@ apptainer shell --nv --fakeroot singularity/helical/
 
 ## Installation
 ### RNA models:
-- [Helix-mRNA]()
+- [Helix-mRNA]((https://helical.readthedocs.io/en/latest/model_cards/helix_mrna/))
+- [Mamba2-mRNA]((https://helical.readthedocs.io/en/latest/model_cards/mamba2_mrna/))
 - [Geneformer](https://helical.readthedocs.io/en/latest/model_cards/geneformer/)
 - [scGPT](https://helical.readthedocs.io/en/latest/model_cards/scgpt/)
 - [Universal Cell Embedding (UCE)](https://helical.readthedocs.io/en/latest/model_cards/uce/)
@@ -123,6 +124,8 @@ A lot of our models have been published by talend authors developing these excit
 
 You can find the Licenses for each model implementation in the model repositories:
 
+- [Helix-mRNA](https://github.com/helicalAI/helical/blob/release/helical/models/helix_mrna/LICENSE)
+- [Mamba2-mRNA](https://github.com/helicalAI/helical/blob/release/helical/models/mamba2_mrna/LICENSE)
 - [scGPT](https://github.com/helicalAI/helical/blob/release/helical/models/scgpt/LICENSE)
 - [Geneformer](https://github.com/helicalAI/helical/blob/release/helical/models/geneformer/LICENSE)
 - [UCE](https://github.com/helicalAI/helical/blob/release/helical/models/uce/LICENSE)

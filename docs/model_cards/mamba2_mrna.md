@@ -1,112 +1,132 @@
-# Model Card for Bio-Foundation Model
+# Model Card for Mamba2-mRNA
 
 ## Model Details
 
-**Model Name:** Bio-Foundation Model v1.0  
-**Model Version:** 1.0  
-**Model Description:** A large pre-trained model for analyzing DNA and RNA sequences. The model is designed to perform tasks such as sequence alignment, mutation detection, and gene prediction.
+**Model Name:** Mamba2-mRNA  
+**Model Versions:** 1.0  
+**Model Description:** Mamba2-mRNA is a single nucleotide resolution model built using the Mamba2 architecture. The model employs 16 Mamba layers (16L) to enable precise nucleotide-level analysis and prediction of mRNA sequences. By leveraging the efficient sequence processing capabilities of Mamba2's state space architecture, Mamba2-mRNA can process mRNA sequences at individual nucleotide resolution, making it suitable for detailed mRNA sequence analysis tasks.
 
 ## Model Developers
 
-**Developed By:** BioAI Research Team  
-**Contact Information:** bioai@researchlab.com  
-**License:** Apache 2.0
+**Developed By:** 
+Helical Team 
+
+**Contact Information:** 
+support@helical-ai.com
+
+**License:** 
+CC-BY-NC-SA 4.0 
 
 ## Model Type
 
-**Architecture:** Transformer-based  
-**Domain:** Genomics, Bioinformatics  
-**Input Data:** Single-cell transcriptomics data
+**Architecture:**
+Mamba2-based  
+
+**Domain:** 
+mRNA Bioinformatics 
+
+**Input Data:** 
+mRNA Sequence Data (A, C, U, G and N)
 
 ## Model Purpose
 
 **Intended Use:**  
-- Research in genomics and bioinformatics
-- Clinical diagnostics support
-- Educational purposes
 
-**Out-of-Scope Use Cases:**  
-- Direct clinical decision making without human oversight
-- Any applications outside the scope of DNA/RNA analysis
+- Tokenizing mRNA sequences at single-nucleotide resolution
+- Generating rich embeddings for embedding and plotting
+- Pretraining
+- Downstream task fine-tuning
 
 ## Training Data
 
 **Data Sources:**  
-- Publicly available DNA/RNA sequence databases (e.g., NCBI GenBank, ENCODE)
-- Synthetic data generated to balance dataset
 
-**Data Volume:**  
-- 1TB of raw DNA/RNA sequence data
+- Publicly available mRNA sequence databases
 
 **Preprocessing:**  
-- Standardized to remove low-quality sequences
-- Balanced to include diverse species and sequence types
+
+- Check that mRNA sequences only contains valid input characters
 
 ## Model Performance
 
 **Evaluation Metrics:**  
-- Accuracy, Precision, Recall, F1-Score for various tasks (e.g., mutation detection, gene prediction)
-- Specific benchmarks include sequence alignment accuracy and variant calling accuracy
 
-**Performance Benchmarks:**  
-- Mutation Detection: Precision 0.95, Recall 0.93
-- Gene Prediction: Precision 0.90, Recall 0.88
-
-**Testing Data:**  
-- Held-out subset of the training dataset
-- Additional external validation datasets
-
-## Ethical Considerations
-
-**Bias and Fairness:**  
-- Ensured diverse representation of species and sequence types in the training data
-- Ongoing evaluation for any biases, particularly those that may impact underrepresented species
-
-**Privacy:**  
-- All training data sourced from public databases with appropriate usage permissions
-- No use of private or sensitive genetic data without explicit consent
-
-**Mitigations:**  
-- Regular audits of model outputs to detect and correct biases
-- Collaboration with ethicists and domain experts to ensure responsible use
+- Accuracy, Precision, Pearson, Spearmanr, ROC AUC
 
 ## Model Limitations
 
 **Known Limitations:**  
-- May not generalize well to newly discovered species or rare sequence variants
-- Performance may vary across different sequencing technologies
-
-**Future Improvements:**  
-- Continuous integration of new data sources
-- Enhancements in model architecture to better handle rare variants
+- Model performance may vary based on sequence length.
+- Model performance degrades for sequences longer than those used during pretraining.
+- Specific to mRNA sequence analysis tasks.
 
 ## How to Use
 
-**Input Format:**  
-- FASTA format for DNA/RNA sequences
+**Input Format** 
 
-**Output Format:**  
-- JSON format with predicted sequence alignments, mutations, and gene locations
+- mRNA sequences at nucleotide-level resolution.
+- Supports standard mRNA sequence formats (A, U, G, C)
 
-**Example Usage:**
+**Output Format** 
+
+- Nucleotide-level embeddings
+
+**Example Usage**
+
 ```python
-from bio_foundation_model import BioFoundationModel
+from helical import Mamba2mRNA, Mamba2mRNAConfig
+import torch
 
-# Initialize model
-model = BioFoundationModel()
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# Load DNA sequence
-sequence = ">seq1\nATGCGTACGTAGCTAGCTAGCTA"
+input_sequences = ["ACUG"*20, "AUGC"*20, "AUGC"*20, "ACUG"*20, "AUUG"*20]
 
-# Predict
-result = model.predict(sequence)
+mamba2_mrna_config = Mamba2mRNAConfig(batch_size=5, device=device)
+mamba2_mrna = Mamba2mRNA(configurer=mamba2_mrna_config)
 
-print(result)
+processed_input_data = mamba2_mrna.process_data(input_sequences)
+
+embeddings = mamba2_mrna.get_embeddings(processed_input_data)
+
+print("Mamba2-mRNA embeddings shape: ", embeddings.shape)
 ```
 
+**Example Fine-Tuning:**
 
-## Developers
+```python
+from helical import Mamba2mRNAFineTuningModel, Mamba2mRNAConfig
+import torch
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+input_sequences = ["ACUG"*20, "AUGC"*20, "AUGC"*20, "ACUG"*20, "AUUG"*20]
+labels = [0, 2, 2, 0, 1]
+
+mamba2_mrna_config = Mamba2mRNAConfig(batch_size=5, device=device, max_length=100)
+mamba2_mrna_fine_tune = Mamba2mRNAFineTuningModel(mamba2_mrna_config=mamba2_mrna_config, output_size=3)
+
+train_dataset = mamba2_mrna_fine_tune.process_data(input_sequences)
+
+mamba2_mrna_fine_tune.train(train_dataset=train_dataset, train_labels=labels)
+
+outputs = mamba2_mrna_fine_tune.get_outputs(train_dataset)
+
+print("Mamba2-mRNA fine-tuned model output shape", outputs.shape)
+```
 
 ## Contact
+support@helical-ai.com
 
 ## Citation
+```bibtex
+@software{allard_2024_13135902,
+  author       = {Helical Team},
+  title        = {helicalAI/helical: v0.0.1-alpha6},
+  month        = nov,
+  year         = 2024,
+  publisher    = {Zenodo},
+  version      = {0.0.1a6},
+  doi          = {10.5281/zenodo.13135902},
+  url          = {https://doi.org/10.5281/zenodo.13135902}
+}
+```

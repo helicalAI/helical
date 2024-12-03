@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 class HelixmRNA(HelicalRNAModel):
     """Helix-mRNA Model.
     
-    The Helix-mRNA Model is a transformer-based model that can be used to extract RNA embeddings from RNA sequences. 
-    The model is based on the Mamba2 model, which is a transformer-based model trained on RNA sequences. The model is available through this interface.
+    The Helix-mRNA Model is a transformer-based model that can be used to extract mRNA embeddings from mRNA sequences. 
+    The model is based on the Mamba2 model, which is a transformer-based model trained on mRNA sequences. The model is available through this interface.
     
     Example
     -------
@@ -31,7 +31,7 @@ class HelixmRNA(HelicalRNAModel):
     helix_mrna_config = HelimRNAConfig(batch_size=5, max_length=100, device=device)
     helix_mrna = HelixmRNA(configurer=helix_mrna_config)
     
-    rna_sequences = ["ACUEGGG", "ACUEGGG", "ACUEGGG", "ACUEGGG", "ACUEGGG"]
+    rna_sequences = ["EACUEGGG", "EACUEGGG", "EACUEGGG", "EACUEGGG", "EACUEGGG"]
     dataset = helix_mrna.process_data(rna_sequences)
 
     rna_embeddings = helix_mrna.get_embeddings(dataset)
@@ -45,9 +45,9 @@ class HelixmRNA(HelicalRNAModel):
 
     Notes
     ----------
-    Helix_mRNA was trained using a character in between each codon of the RNA sequence. 
-    This is done to ensure that the model can learn the structure of the RNA sequence. 
-    Although it can take a standard RNA sequence as input, it is recommended to add the letter E between each codon of the RNA sequence to get better embeddings.
+    Helix_mRNA was trained using a character in between each codon of the mRNA sequence. 
+    This is done to ensure that the model can learn the structure of the mRNA sequence. 
+    Although it can take a standard RNA sequence as input, it is recommended to add the letter E between each codon of the mRNA sequence to get better embeddings.
     """
     default_configurer = HelixmRNAConfig()
     def __init__(self, configurer: HelixmRNAConfig = default_configurer):
@@ -61,12 +61,12 @@ class HelixmRNA(HelicalRNAModel):
         logger.info("Helix-mRNA initialized successfully.")
 
     def process_data(self, sequences: str) -> Dataset:
-        """Process the RNA sequences and return a Dataset object.
+        """Process the mRNA sequences and return a Dataset object.
 
         Parameters
         ----------
         sequences : str
-            The RNA sequences.
+            The mRNA sequences.
 
         Returns
         -------
@@ -87,7 +87,7 @@ class HelixmRNA(HelicalRNAModel):
         return dataset
 
     def get_embeddings(self, dataset: Dataset) -> np.ndarray:
-        """Get the embeddings for the RNA sequences.
+        """Get the embeddings for the mRNA sequences.
         
         Parameters
         ----------

@@ -30,7 +30,7 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
     labels = [0, 2, 2, 0, 1]
 
     mamba2_mrna_config = Mamba2mRNAConfig(batch_size=5, device=device, max_length=100)
-    mamba2_mrna_fine_tune = Mamba2mRNAFineTuningModel(mamba2_mrna_config=mamba2_mrna_config, output_size=3)
+    mamba2_mrna_fine_tune = Mamba2mRNAFineTuningModel(mamba2_mrna_config=mamba2_mrna_config, fine_tuning_head="classification", output_size=3)
 
     train_dataset = mamba2_mrna_fine_tune.process_data(input_sequences)
 

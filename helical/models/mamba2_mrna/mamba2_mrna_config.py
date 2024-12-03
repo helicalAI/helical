@@ -23,7 +23,7 @@ class Mamba2mRNAConfig:
             max_length: int = 8192,
             nproc: int = 1):
         
-        model_name = "helical-ai/Mamba2-mRNA"
+        model_name = "helical-ai/mamba2-mRNA"
 
         self.config = {
             'model_name': model_name,

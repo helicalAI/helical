@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 class Mamba2mRNA(HelicalRNAModel):
     """Mamba2-mRNA Model.
     
-    The Mamba2-mRNA Model is a transformer-based model that can be used to extract RNA embeddings from RNA sequences. 
-    The model is based on the Mamba2 model, which is a transformer-based model trained on RNA sequences. The model is available through this interface.
+    The Mamba2-mRNA Model is a transformer-based model that can be used to extract mRNA embeddings from mRNA sequences. 
+    The model is based on the Mamba2 model, which is a transformer-based model trained on mRNA sequences. The model is available through this interface.
     
     Example
     ----------
@@ -42,10 +42,6 @@ class Mamba2mRNA(HelicalRNAModel):
     ----------
     configurer : Mamba2mRNAConfig
         The configuration object for the Mamba2-mRNA model.
-
-    Notes
-    ----------
-    Mamba2_mRNA notes
     """
     default_configurer = Mamba2mRNAConfig()
     def __init__(self, configurer: Mamba2mRNAConfig = default_configurer):
@@ -61,12 +57,12 @@ class Mamba2mRNA(HelicalRNAModel):
         logger.info("Mamba2-mRNA initialized successfully.")
 
     def process_data(self, sequences: str) -> Dataset:
-        """Process the RNA sequences and return a Dataset object.
+        """Process the mRNA sequences and return a Dataset object.
 
         Parameters
         ----------
         sequences : str
-            The RNA sequences.
+            The mRNA sequences.
 
         Returns
         -------
@@ -87,7 +83,7 @@ class Mamba2mRNA(HelicalRNAModel):
         return dataset
 
     def get_embeddings(self, dataset: Dataset) -> np.ndarray:
-        """Get the embeddings for the RNA sequences.
+        """Get the embeddings for the mRNA sequences.
         
         Parameters
         ----------

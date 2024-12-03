@@ -92,7 +92,7 @@ class HelicalRNAModel(HelicalBaseFoundationModel):
             raise ValueError(message)
         
     def ensure_rna_sequence_validity(self, sequences: List[str]) -> None:
-        """Ensures that the RNA sequences only contain the characters A, C, U, G, and N.  
+        """Ensures that the RNA sequences only contain the characters A, C, U, G, N and E.  
 
         Parameters
         ----------
@@ -102,10 +102,10 @@ class HelicalRNAModel(HelicalBaseFoundationModel):
         Raises
         ------
         ValueError
-            If the sequences contain characters other than A, C, U, G, and N.
+            If the sequences contain characters other than A, C, U, G, N and E.
         """
 
-        valid_chars = set('ACUGN')
+        valid_chars = set('ACUGNE')
     
         for sequence in sequences:
             if not set(sequence.upper()).issubset(valid_chars):

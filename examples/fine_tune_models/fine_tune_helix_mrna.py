@@ -4,7 +4,7 @@ from omegaconf import DictConfig
 
 @hydra.main(version_base=None, config_path="../run_models/configs", config_name="helix_mrna_config")
 def run_fine_tuning(cfg: DictConfig):
-    input_sequences = ["ACUG"*20, "AUGC"*20, "AUGC"*20, "ACUG"*20, "AUUG"*20]
+    input_sequences = ["EACU"*20, "EAUG"*20, "EAUG"*20, "EACU"*20, "EAUU"*20]
     labels = [0, 2, 2, 0, 1]
 
     helix_mrna_config = HelixmRNAConfig(**cfg)

@@ -26,11 +26,11 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    input_sequences = ["ACUG"*20, "AUGC"*20, "AUGC"*20, "ACUG"*20, "AUUG"*20]
+    input_sequences = ["EACU"*20, "EAUG"*20, "EUGC"*20, "ECUG"*20, "EUUG"*20]
     labels = [0, 2, 2, 0, 1]
 
     helix_mrna_config = HelixmRNAConfig(batch_size=5, device=device, max_length=100)
-    helix_mrna_fine_tune = HelixmRNAFineTuningModel(helix_mrna_config=helix_mrna_config, output_size=3)
+    helix_mrna_fine_tune = HelixmRNAFineTuningModel(helix_mrna_config=helix_mrna_config, fine_tuning_head="classification", output_size=3)
 
     train_dataset = helix_mrna_fine_tune.process_data(input_sequences)
 
