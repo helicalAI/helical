@@ -1,7 +1,7 @@
 from helical.models.base_models import HelicalRNAModel
 from helical.models.helix_mrna.helix_mrna_config import HelixmRNAConfig
 from datasets import Dataset
-from transformers import AutoModel, AutoConfig, AutoTokenizer
+from transformers import BatchEncoding
 from .modeling_helix_mrna import HelixmRNAPretrainedModel
 from .helix_mrna_tokenizer import CharTokenizer
 from .helix_mrna_pretrained_config import HelixmRNAPretrainedConfig
@@ -25,14 +25,16 @@ class HelixmRNA(HelicalRNAModel):
     ```python
     from helical import HelixmRNA, HelixmRNAConfig
     import torch
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     
-    helix_mrna_config = HelimRNAConfig(batch_size=5)
+    helix_mrna_config = HelimRNAConfig(batch_size=5, max_length=100, device=device)
     helix_mrna = HelixmRNA(configurer=helix_mrna_config)
     
     rna_sequences = ["ACUEGGG", "ACUEGGG", "ACUEGGG", "ACUEGGG", "ACUEGGG"]
     dataset = helix_mrna.process_data(rna_sequences)
+
     rna_embeddings = helix_mrna.get_embeddings(dataset)
-    
     print("Helix_mRNA embeddings shape: ", rna_embeddings.shape)
     ```
 
@@ -52,16 +54,10 @@ class HelixmRNA(HelicalRNAModel):
         super().__init__()
         self.configurer = configurer
         self.config = configurer.config
-
-        # downloader = Downloader()
-        # for file in self.configurer.list_of_files_to_download:
-        #         downloader.download_via_name(file)
         
         self.model = HelixmRNAPretrainedModel.from_pretrained(self.config["model_name"])
         self.pretrained_config = HelixmRNAPretrainedConfig.from_pretrained(self.config["model_name"], trust_remote=True)
         self.tokenizer = CharTokenizer.from_pretrained(self.config["model_name"], trust_remote=True)
-
-        self.model.post_init()
         logger.info("Helix-mRNA initialized successfully.")
 
     def process_data(self, sequences: str) -> Dataset:
@@ -78,21 +74,17 @@ class HelixmRNA(HelicalRNAModel):
             The dataset object.
         """
         self.ensure_rna_sequence_validity(sequences)
-
-        # arr_sequences = []
-        # for sequence in tqdm(sequences, "Processing sequences"):
-        #     arr_sequences.append(sequence)
-
-        # tokenizer = AutoTokenizer.from_pretrained(self.config["model_name"], trust_remote_code=True)
-
-        # return HelixmRNADataset(arr_sequences, tokenizer)
     
-        tokenized_sequences = []
-        for seq in sequences:
-            tokenized_seq = self.tokenizer(seq, return_tensors="pt", padding="max_length", truncation=True, max_length=self.config['input_size'])
-            tokenized_sequences.append(tokenized_seq)
-
-        return Dataset.from_list(tokenized_sequences)
+        tokenized_sequences = self.tokenizer(sequences, 
+                                             return_tensors="pt", 
+                                             padding="max_length", 
+                                             truncation=True, 
+                                             max_length=self.config['input_size'], 
+                                             return_special_tokens_mask=True)
+            
+        dataset = Dataset.from_dict(tokenized_sequences)
+        
+        return dataset
 
     def get_embeddings(self, dataset: Dataset) -> np.ndarray:
         """Get the embeddings for the RNA sequences.
@@ -107,7 +99,7 @@ class HelixmRNA(HelicalRNAModel):
         np.ndarray
             The embeddings array.
         """
-        dataloader = DataLoader(dataset, batch_size=self.config["batch_size"], shuffle=False)
+        dataloader = DataLoader(dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"], shuffle=False)
         embeddings = []
 
         self.model.to(self.config["device"])
@@ -117,38 +109,32 @@ class HelixmRNA(HelicalRNAModel):
             for batch in progress_bar:
                 input_ids = batch["input_ids"].to(self.config["device"])
                 special_tokens_mask = batch["special_tokens_mask"].to(self.config["device"])
+                attention_mask = 1-special_tokens_mask
 
-                output = self.model(input_ids, special_tokens_mask=special_tokens_mask)
+                output = self.model(input_ids=input_ids, attention_mask=attention_mask)
 
                 last_hidden_states = output[0]
 
-                if input_ids is not None:
-                    batch_size, _ = input_ids.shape[:2]
-
-                if self.pretrained_config.pad_token_id is None and batch_size > 1:
-                    message = "Cannot handle batch sizes > 1 if no padding token is defined."
-                    logger.error(message)
-                    raise ValueError(message)
-
-                if self.pretrained_config.pad_token_id is None:
-                    sequence_lengths = -1
-                else:
-                    if input_ids is not None:
-                        sequence_lengths = torch.eq(input_ids, self.pretrained_config.pad_token_id).int().argmax(-1) - 1
-                        sequence_lengths = sequence_lengths % input_ids.shape[-1]
-                        sequence_lengths = sequence_lengths.to(last_hidden_states.device)
-                    else:
-                        sequence_lengths = -1
-
-                pooled_last_hidden_states = last_hidden_states[
-                    torch.arange(batch_size, device=last_hidden_states.device), sequence_lengths
-                ]
-                
-                # Take second last element from the output as last element is a special token
-                embeddings.append(pooled_last_hidden_states.cpu().numpy())
+                embeddings.append(last_hidden_states.cpu().numpy())
 
                 del batch
                 del output
 
         return np.concatenate(embeddings)
+    
+
+    def _collate_fn(self, batch):
+        input_ids = torch.tensor([item["input_ids"] for item in batch])
+        special_tokens_mask = torch.tensor([item["special_tokens_mask"] for item in batch])
+
+        batch_dict = {
+            "input_ids": input_ids,
+            "special_tokens_mask": special_tokens_mask,
+            "attention_mask": 1-special_tokens_mask
+        }
+
+        if "labels" in batch[0]:
+            batch_dict["labels"] = torch.tensor([item["labels"] for item in batch])
+            
+        return BatchEncoding(batch_dict)
     

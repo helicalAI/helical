@@ -29,7 +29,7 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
     input_sequences = ["ACUG"*20, "AUGC"*20, "AUGC"*20, "ACUG"*20, "AUUG"*20]
     labels = [0, 2, 2, 0, 1]
 
-    mamba2_mrna_config = Mamba2mRNAConfig(batch_size=5, device=device)
+    mamba2_mrna_config = Mamba2mRNAConfig(batch_size=5, device=device, max_length=100)
     mamba2_mrna_fine_tune = Mamba2mRNAFineTuningModel(mamba2_mrna_config=mamba2_mrna_config, output_size=3)
 
     train_dataset = mamba2_mrna_fine_tune.process_data(input_sequences)
@@ -37,6 +37,7 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
     mamba2_mrna_fine_tune.train(train_dataset=train_dataset, train_labels=labels)
 
     outputs = mamba2_mrna_fine_tune.get_outputs(train_dataset)
+    print(outputs.shape)
     ```
 
     Parameters
@@ -64,7 +65,7 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
 
         self.fine_tuning_head.set_dim_size(self.pretrained_config.hidden_size)
 
-    def _forward(self, input_ids, special_tokens_mask):
+    def _forward(self, input_ids, special_tokens_mask, attention_mask):
         """Forward pass for the Mamba2-mRNA fine-tuning model.
         
         Parameters
@@ -73,12 +74,14 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
             The input_ids tensor for the model.
         special_tokens_mask : torch.Tensor
             The special_tokens_mask tensor for the model.
+        attention_mask : torch.Tensor
+            The attention_mask tensor for the model.
         
         Returns
         -------
         torch.Tensor
             The output tensor from the model."""
-        outputs = self.model(input_ids, special_tokens_mask=special_tokens_mask)
+        outputs = self.model(input_ids, special_tokens_mask=special_tokens_mask, attention_mask=attention_mask)
         last_hidden_states = outputs[0]
 
         if input_ids is not None:
@@ -106,19 +109,18 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
         head_outputs = self.fine_tuning_head(mean_last_hidden_states)
         return head_outputs
     
-    def train(
-            self,
-            train_dataset: Dataset, 
-            train_labels: np.ndarray,
-            optimizer: optim = optim.AdamW,
-            optimizer_params: dict = {'lr': 0.0001}, 
-            loss_function: loss = loss.CrossEntropyLoss(), 
-            epochs: int = 1,
-            trainable_layers: int = 2,
-            shuffle: bool = True,
-            validation_dataset: Optional[Dataset] = None,
-            validation_labels: Optional[np.ndarray] = None,
-            lr_scheduler_params: Optional[dict] = None):
+    def train(self,
+              train_dataset: Dataset, 
+              train_labels: np.ndarray,
+              optimizer: optim = optim.AdamW,
+              optimizer_params: dict = {'lr': 0.0001}, 
+              loss_function: loss = loss.CrossEntropyLoss(), 
+              epochs: int = 1,
+              trainable_layers: int = 2,
+              shuffle: bool = True,
+              validation_dataset: Optional[Dataset] = None,
+              validation_labels: Optional[np.ndarray] = None,
+              lr_scheduler_params: Optional[dict] = None):
         """Fine-tunes the Mamba2-mRNA model on the given dataset.
         
         Parameters
@@ -127,22 +129,22 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
             A helical processed dataset for fine-tuning.
         train_labels : np.ndarray
             The labels for the training dataset.
-        optimizer : torch.optim, default = torch.optim.AdamW
+        optimizer : torch.optim, default=torch.optim.AdamW
             The optimizer to be used for training.
-        optimizer_params : dict
+        optimizer_params : dict, optional, default={'lr': 0.0001}
             The optimizer parameters to be used for the optimizer specified. This list should NOT include model parameters.
             e.g. optimizer_params = {'lr': 0.0001}
-        loss_function : torch.nn.modules.loss, default = torch.nn.modules.loss.CrossEntropyLoss()
+        loss_function : torch.nn.modules.loss, default=torch.nn.modules.loss.CrossEntropyLoss()
             The loss function to be used.
-        epochs : int, optional, default = 10
+        epochs : int, optional, default=10
             The number of epochs to train the model
-        trainable_layers : int, optional, default = 2
+        trainable_layers : int, optional, default=2
             The number of layers to train in the model. The last n layers will be trained and the rest will be frozen.
-        shuffle : bool, default = True
+        shuffle : bool, default=True
             Whether to shuffle the training dataset during training.
-        validation_dataset : Dataset, default = None
+        validation_dataset : Dataset, default=None
             A helical processed dataset for per epoch validation. If this is not specified, no validation will be performed.
-        lr_scheduler_params : dict, default = None
+        lr_scheduler_params : dict, default=None
             The learning rate scheduler parameters for the transformers get_scheduler method. The optimizer will be taken from the optimizer input and should not be included in the learning scheduler parameters. If not specified, no scheduler will be used.
             e.g. lr_scheduler_params = { 'name': 'linear', 'num_warmup_steps': 0 }. num_steps will be calculated based on the number of epochs and the length of the training dataset.
         """
@@ -167,9 +169,7 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
         self.model.train()
         self.fine_tuning_head.train()
 
-        train_dataloader = DataLoader(train_dataset, 
-                                      batch_size=self.config["batch_size"],
-                                      shuffle=shuffle)
+        train_dataloader = DataLoader(train_dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"], shuffle=shuffle)
 
         # initialise lr_scheduler
         lr_scheduler = None
@@ -177,7 +177,7 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
             lr_scheduler = get_scheduler(optimizer=optimizer, num_training_steps=epochs*len(train_dataloader),  **lr_scheduler_params)
 
         if validation_dataset is not None:
-            validation_dataloader = DataLoader(validation_dataset, batch_size=self.config["batch_size"])
+            validation_dataloader = DataLoader(validation_dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"])
 
         logger.info("Starting Fine-Tuning")
         for j in range(epochs):
@@ -187,9 +187,10 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
             for batch in training_loop:
                 input_ids = batch["input_ids"].to(self.config["device"])
                 special_tokens_mask = batch["special_tokens_mask"].to(self.config["device"])
+                attention_mask = batch["attention_mask"].to(self.config["device"])
                 labels = batch['labels'].to(self.config["device"])
                 
-                outputs = self._forward(input_ids, special_tokens_mask=special_tokens_mask)
+                outputs = self._forward(input_ids, special_tokens_mask=special_tokens_mask, attention_mask=attention_mask)
 
                 loss = loss_function(outputs, labels)
                 loss.backward()
@@ -215,10 +216,11 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
                 for test_batch in testing_loop:
                     input_ids = test_batch["input_ids"].to(self.config["device"])
                     special_tokens_mask = test_batch["special_tokens_mask"].to(self.config["device"])
+                    attention_mask = test_batch["attention_mask"].to(self.config["device"])
                     labels = test_batch['labels'].to(self.config["device"])
                 
                     with torch.no_grad():
-                        outputs = self._forward(input_ids, special_tokens_mask=special_tokens_mask)
+                        outputs = self._forward(input_ids, special_tokens_mask=special_tokens_mask, attention_mask=attention_mask)
 
                     val_loss += loss_function(outputs, labels).item()
                     count += 1.0
@@ -245,7 +247,7 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
         np.ndarray
             The outputs of the model for the given dataset.
         """
-        dataloader = DataLoader(dataset, batch_size=self.config["batch_size"], shuffle=False)
+        dataloader = DataLoader(dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"], shuffle=False)
         outputs = []
 
         self.model.to(self.config["device"])
@@ -254,9 +256,10 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
         for batch in progress_bar:
             input_ids = batch["input_ids"].to(self.config["device"])
             special_tokens_mask = batch["special_tokens_mask"].to(self.config["device"])
+            attention_mask = batch["attention_mask"].to(self.config["device"])
 
             with torch.no_grad():
-                output = self._forward(input_ids, special_tokens_mask=special_tokens_mask)
+                output = self._forward(input_ids, special_tokens_mask=special_tokens_mask, attention_mask=attention_mask)
 
             outputs.append(output.cpu().numpy())
 

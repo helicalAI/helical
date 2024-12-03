@@ -1,14 +1,18 @@
 from helical import HelixmRNA, HelixmRNAConfig
-import pandas as pd
+import hydra
+from omegaconf import DictConfig
 
+@hydra.main(version_base=None, config_path="../run_models/configs", config_name="helix_mrna_config")
+def run(cfg: DictConfig):
+    input_sequences = ["ACUG"*20, "AUGC"*20, "AUGC"*20, "ACUG"*20, "AUUG"*20]
 
-data_path = '/home/data/mamba2_benchmark_data/mRFP_Expression.csv'
-data = pd.read_csv(data_path)
-train_data = data[data['Split'] == 'train'][:10]
+    helix_mrna_config = HelixmRNAConfig(**cfg)
+    helix_mrna = HelixmRNA(helix_mrna_config)
 
-helixr = HelixmRNA(HelixmRNAConfig(batch_size=2, device='cuda'))
+    processed_input_data = helix_mrna.process_data(input_sequences)
 
-dataset = helixr.process_data(train_data['Sequence'])
+    embeddings = helix_mrna.get_embeddings(processed_input_data)
+    print(embeddings.shape)
 
-embeddings = helixr.get_embeddings(dataset)
-print(embeddings[:15])
+if __name__ == "__main__":
+    run()

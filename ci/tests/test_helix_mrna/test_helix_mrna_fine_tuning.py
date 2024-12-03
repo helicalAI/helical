@@ -3,16 +3,16 @@ import torch
 from helical import HelixmRNAConfig, HelixmRNAFineTuningModel
 
 class TestHelixmRNAFineTuning:
-    @pytest.fixture(params=["helical-ai/Helix-mRNA"])
-    def helixmRNAFineTune(self, request):
+    @pytest.fixture
+    def helixmRNAFineTune(self):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        config = HelixmRNAConfig(model_name=request.param, batch_size=1, device=self.device)
+        config = HelixmRNAConfig(batch_size=1, device=self.device, max_length=20)
         return HelixmRNAFineTuningModel(helix_mrna_config=config, fine_tuning_head="classification", output_size=1)
 
     @pytest.fixture
     def mock_data(self, helixmRNAFineTune):
         input_sequences = ["AAAA", "CCCC", "UUUU", "ACGU", "ACGN", "ANNU"]
-        labels = [0, 0, 0, 0, 0, 0, 0]
+        labels = [0, 0, 0, 0, 0, 0]
         tokenized_sequences = helixmRNAFineTune.process_data(input_sequences)
         return tokenized_sequences, labels
 

@@ -36,6 +36,7 @@ debug.log
 /docs/_build
 /docs/_autosummary/
 _build
+_static
 /docs/source
 
 # From unit tests

@@ -10,7 +10,7 @@
 
 **Developed By:** Helical Team 
 **Contact Information:** hello@helical-ai.com
-**License:** CC BY-NC-SA 4.0 
+**License:** CC-BY-NC-SA 4.0 
 
 ## Model Type
 
@@ -92,6 +92,7 @@ HelixmRNA = HelixmRNA(HelixmRNAConfig(batch_size=5, device='cuda'))
 dataset = HelixmRNA.process_data(rna_sequence_strings_list)
 
 embeddings = HelixmRNA.get_embeddings(dataset)
+
 print("Helix-mRNA embeddings shape: ", embeddings.shape)
 ```
 

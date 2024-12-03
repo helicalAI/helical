@@ -1,7 +1,8 @@
 from helical.models.base_models import HelicalRNAModel
 from helical.models.mamba2_mrna.mamba2_mrna_config import Mamba2mRNAConfig
+from .mamba2_mrna_tokenizer import CharTokenizer
 from datasets import Dataset
-from transformers import Mamba2Model, Mamba2Config, AutoTokenizer
+from transformers import Mamba2Model, Mamba2Config, BatchEncoding
 import torch
 from torch.utils.data import DataLoader
 import numpy as np
@@ -27,43 +28,37 @@ class Mamba2mRNA(HelicalRNAModel):
 
     input_sequences = ["ACUG"*20, "AUGC"*20, "AUGC"*20, "ACUG"*20, "AUUG"*20]
 
-    mamba2_mrna_config = Mamba2mRNAConfig(model_name="helix-mRNA", batch_size=5, device=device)
+    mamba2_mrna_config = Mamba2mRNAConfig(batch_size=5, device=device)
     mamba2_mrna = Mamba2mRNA(configurer=mamba2_mrna_config)
 
-    # prepare data for input to the model
     processed_input_data = mamba2_mrna.process_data(input_sequences)
 
-    # generate the embeddings for the processed data
     embeddings = mamba2_mrna.get_embeddings(processed_input_data)
+    print(embeddings.shape)
     ```
 
     
     Parameters
     ----------
     configurer : Mamba2mRNAConfig
-        The configuration object for the Helix-mRNA model.
+        The configuration object for the Mamba2-mRNA model.
 
     Notes
     ----------
-    Helix_mRNA notes
+    Mamba2_mRNA notes
     """
     default_configurer = Mamba2mRNAConfig()
     def __init__(self, configurer: Mamba2mRNAConfig = default_configurer):
         super().__init__()
         self.configurer = configurer
         self.config = configurer.config
-
-        # downloader = Downloader()
-        # for file in self.configurer.list_of_files_to_download:
-        #         downloader.download_via_name(file)
         
-        if self.config["model_name"] == "helix-mRNA-mamba":
-            self.model = Mamba2Model.from_pretrained('helical-ai/Helix-mRNA', trust_remote=True)
-            self.pretrained_config = Mamba2Config.from_pretrained('helical-ai/Helix-mRNA', trust_remote=True)
-            self.tokenizer = AutoTokenizer.from_pretrained('helical-ai/Helix-mRNA', trust_remote=True)
+        self.model = Mamba2Model.from_pretrained(self.config["model_name"])
+        self.pretrained_config = Mamba2Config.from_pretrained(self.config["model_name"], trust_remote=True)
+        self.tokenizer = CharTokenizer.from_pretrained(self.config["model_name"], trust_remote=True)
 
         self.model.post_init()
-        logger.info("Helix-mRNA initialized successfully.")
+        logger.info("Mamba2-mRNA initialized successfully.")
 
     def process_data(self, sequences: str) -> Dataset:
         """Process the RNA sequences and return a Dataset object.
@@ -79,28 +74,24 @@ class Mamba2mRNA(HelicalRNAModel):
             The dataset object.
         """
         self.ensure_rna_sequence_validity(sequences)
-
-        # arr_sequences = []
-        # for sequence in tqdm(sequences, "Processing sequences"):
-        #     arr_sequences.append(sequence)
-
-        # tokenizer = AutoTokenizer.from_pretrained(self.config["model_name"], trust_remote_code=True)
-
-        # return HelixmRNADataset(arr_sequences, tokenizer)
     
-        tokenized_sequences = []
-        for seq in sequences:
-            tokenized_seq = self.tokenizer(seq, return_tensors="pt", padding="max_length", truncation=True, max_length=self.config['input_size'])
-            tokenized_sequences.append(tokenized_seq)
-
-        return Dataset.from_list(tokenized_sequences)
+        tokenized_sequences = self.tokenizer(sequences, 
+                                             return_tensors="pt", 
+                                             padding="max_length", 
+                                             truncation=True, 
+                                             max_length=self.config['input_size'], 
+                                             return_special_tokens_mask=True)
+        
+        dataset = Dataset.from_dict(tokenized_sequences)
+        
+        return dataset
 
     def get_embeddings(self, dataset: Dataset) -> np.ndarray:
         """Get the embeddings for the RNA sequences.
         
         Parameters
         ----------
-        dataset : HelixmRNADataset
+        dataset : Dataset
             The dataset object.
         
         Returns
@@ -108,7 +99,7 @@ class Mamba2mRNA(HelicalRNAModel):
         np.ndarray
             The embeddings array.
         """
-        dataloader = DataLoader(dataset, batch_size=self.config["batch_size"], shuffle=False)
+        dataloader = DataLoader(dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"], shuffle=False)
         embeddings = []
 
         self.model.to(self.config["device"])
@@ -118,8 +109,9 @@ class Mamba2mRNA(HelicalRNAModel):
             for batch in progress_bar:
                 input_ids = batch["input_ids"].to(self.config["device"])
                 special_tokens_mask = batch["special_tokens_mask"].to(self.config["device"])
+                attention_mask = batch["attention_mask"].to(self.config["device"])
 
-                output = self.model(input_ids, special_tokens_mask=special_tokens_mask)
+                output = self.model(input_ids, special_tokens_mask=special_tokens_mask, attention_mask=attention_mask)
 
                 last_hidden_states = output[0]
 
@@ -152,4 +144,19 @@ class Mamba2mRNA(HelicalRNAModel):
                 del output
 
         return np.concatenate(embeddings)
+    
+    def _collate_fn(self, batch):
+        input_ids = torch.tensor([item["input_ids"] for item in batch])
+        special_tokens_mask = torch.tensor([item["special_tokens_mask"] for item in batch])
+
+        batch_dict = {
+            "input_ids": input_ids,
+            "special_tokens_mask": special_tokens_mask,
+            "attention_mask": 1-special_tokens_mask
+        }
+
+        if "labels" in batch[0]:
+            batch_dict["labels"] = torch.tensor([item["labels"] for item in batch])
+            
+        return BatchEncoding(batch_dict)
     

@@ -18,6 +18,28 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
     """HelixmRNAFineTuningModel
     Fine-tuning model for the Helix-mRNA model. This model can be used to fine-tune the Helix-mRNA model on a downstream task.
 
+    Example
+    ----------
+    ```python
+    from helical import HelixmRNAFineTuningModel, HelixmRNAConfig
+    import torch
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    input_sequences = ["ACUG"*20, "AUGC"*20, "AUGC"*20, "ACUG"*20, "AUUG"*20]
+    labels = [0, 2, 2, 0, 1]
+
+    helix_mrna_config = HelixmRNAConfig(batch_size=5, device=device, max_length=100)
+    helix_mrna_fine_tune = HelixmRNAFineTuningModel(helix_mrna_config=helix_mrna_config, output_size=3)
+
+    train_dataset = helix_mrna_fine_tune.process_data(input_sequences)
+
+    helix_mrna_fine_tune.train(train_dataset=train_dataset, train_labels=labels)
+
+    outputs = helix_mrna_fine_tune.get_outputs(train_dataset)
+    print(outputs.shape)
+    ```
+
     Parameters
     ----------
     helix_mrna_config : HelixmRNAConfig
@@ -45,16 +67,13 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
 
     def _forward(self, 
                  input_ids, 
-                 attention_mask=None,
-                 position_ids=None,
-                 past_key_values=None,):
+                 special_tokens_mask=None):
 
-        transformer_outputs = self.backbone(
-            input_ids,
-            attention_mask=attention_mask,
-            position_ids=position_ids,
-            past_key_values=past_key_values,
+        transformer_outputs = self.model(
+            input_ids=input_ids,
+            attention_mask=1-special_tokens_mask
         )
+
         hidden_states = transformer_outputs[0]
         logits = self.fine_tuning_head(hidden_states)
 
@@ -65,14 +84,14 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
             LOGGER.error(message)
             raise ValueError(message)
 
-        if self.config.pad_token_id is None and batch_size != 1:
+        if self.pretrained_config.pad_token_id is None and batch_size != 1:
             raise ValueError("Cannot handle batch sizes > 1 if no padding token is defined.")
-        if self.config.pad_token_id is None:
+        if self.pretrained_config.pad_token_id is None:
             sequence_lengths = -1
         else:
             if input_ids is not None:
                 # if no pad token found, use modulo instead of reverse indexing for ONNX compatibility
-                sequence_lengths = torch.eq(input_ids, self.config.pad_token_id).int().argmax(-1) - 1
+                sequence_lengths = torch.eq(input_ids, self.pretrained_config.pad_token_id).int().argmax(-1) - 1
                 sequence_lengths = sequence_lengths % input_ids.shape[-1]
                 sequence_lengths = sequence_lengths.to(logits.device)
             else:
@@ -81,40 +100,39 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
 
         return pooled_logits
     
-    def train(
-            self,
-            train_dataset: Dataset, 
-            train_labels: np.ndarray,
-            optimizer: optim = optim.AdamW,
-            optimizer_params: dict = {'lr': 0.0001}, 
-            loss_function: loss = loss.CrossEntropyLoss(), 
-            epochs: int = 1,
-            trainable_layers: int = 4,
-            validation_dataset: Optional[Dataset] = None,
-            validation_labels: Optional[np.ndarray] = None,
-            lr_scheduler_params: Optional[dict] = None):
+    def train(self,
+              train_dataset: Dataset, 
+              train_labels: np.ndarray,
+              optimizer: optim = optim.AdamW,
+              optimizer_params: dict = {'lr': 0.0001}, 
+              loss_function: loss = loss.CrossEntropyLoss(), 
+              epochs: int = 1,
+              trainable_layers: int = 2,
+              validation_dataset: Optional[Dataset] = None,
+              validation_labels: Optional[np.ndarray] = None,
+              lr_scheduler_params: Optional[dict] = None):
         """Fine-tunes the Helix-mRNA model on the given dataset.
         
         Parameters
         ----------
         train_dataset : Dataset
             A helical processed dataset for fine-tuning
-        optimizer : torch.optim, default = torch.optim.AdamW
+        optimizer : torch.optim, default=torch.optim.AdamW
             The optimizer to be used for training.
-        optimizer_params : dict
+        optimizer_params : dict, optional, default={'lr': 0.0001}
             The optimizer parameters to be used for the optimizer specified. This list should NOT include model parameters.
             e.g. optimizer_params = {'lr': 0.0001}
-        loss_function : torch.nn.modules.loss, default = torch.nn.modules.loss.CrossEntropyLoss()
+        loss_function : torch.nn.modules.loss, default=torch.nn.modules.loss.CrossEntropyLoss()
             The loss function to be used.
-        label : str, optional, default = "cell_types"
+        label : str, optional, default="cell_types"
             The column in the dataset containing the training labels. These should be stored as unique per class integers.
-        epochs : int, optional, default = 10
+        epochs : int, optional, default=10
             The number of epochs to train the model
-        trainable_layers : int, optional, default = 4
+        trainable_layers : int, optional, default=2
             The number of layers to train in the model. The last n layers will be trained and the rest will be frozen.
-        validation_dataset : Dataset, default = None
+        validation_dataset : Dataset, default=None
             A helical processed dataset for per epoch validation. If this is not specified, no validation will be performed.
-        lr_scheduler_params : dict, default = None
+        lr_scheduler_params : dict, default=None
             The learning rate scheduler parameters for the transformers get_scheduler method. The optimizer will be taken from the optimizer input and should not be included in the learning scheduler parameters. If not specified, no scheduler will be used.
             e.g. lr_scheduler_params = { 'name': 'linear', 'num_warmup_steps': 0 }. num_steps will be calculated based on the number of epochs and the length of the training dataset.
 
@@ -141,14 +159,14 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
         self.model.train()
         self.fine_tuning_head.train()
 
-        train_dataloader = DataLoader(train_dataset, batch_size=self.config["batch_size"])
+        train_dataloader = DataLoader(train_dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"])
 
         lr_scheduler = None
         if lr_scheduler_params is not None: 
             lr_scheduler = get_scheduler(optimizer=optimizer, num_training_steps=epochs*len(train_dataloader),  **lr_scheduler_params)
 
         if validation_dataset is not None:
-            validation_dataloader = DataLoader(validation_dataset, batch_size=self.config["batch_size"])
+            validation_dataloader = DataLoader(validation_dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"])
 
         LOGGER.info("Starting Fine-Tuning")
         for j in range(epochs):
@@ -159,8 +177,7 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
                 input_ids = batch["input_ids"].to(self.config["device"])
                 special_tokens_mask = batch["special_tokens_mask"].to(self.config["device"])
                 labels = batch['labels'].to(self.config["device"])
-                
-                outputs = self._forward(input_ids, special_tokens_mask=special_tokens_mask)
+                outputs = self._forward(input_ids=input_ids, special_tokens_mask=special_tokens_mask)
 
                 loss = loss_function(outputs, labels)
                 loss.backward()
@@ -189,7 +206,7 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
                     labels = test_batch['labels'].to(self.config["device"])
                 
                     with torch.no_grad():
-                        outputs = self._forward(input_ids, special_tokens_mask=special_tokens_mask)
+                        outputs = self._forward(input_ids=input_ids, special_tokens_mask=special_tokens_mask)
 
                     val_loss += loss_function(outputs, labels).item()
                     count += 1.0
@@ -203,7 +220,7 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
         LOGGER.info(f"Fine-Tuning Complete. Epochs: {epochs}")
 
     def get_outputs(self, dataset: Dataset) -> np.ndarray:
-        dataloader = DataLoader(dataset, batch_size=self.config["batch_size"], shuffle=False)
+        dataloader = DataLoader(dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"], shuffle=False)
         outputs = []
 
         self.model.to(self.config["device"])

@@ -1,23 +1,21 @@
 from helical import HelixmRNAFineTuningModel, HelixmRNAConfig
-import pandas as pd
-import torch
+import hydra
+from omegaconf import DictConfig
 
-data_path = '/home/data/mamba2_benchmark_data/Tc-Riboswitches.csv'
-data = pd.read_csv(data_path)
-train_data = data[data['Split'] == 'train']
-eval_data = data[data['Split'] == 'test']
+@hydra.main(version_base=None, config_path="../run_models/configs", config_name="helix_mrna_config")
+def run_fine_tuning(cfg: DictConfig):
+    input_sequences = ["ACUG"*20, "AUGC"*20, "AUGC"*20, "ACUG"*20, "AUUG"*20]
+    labels = [0, 2, 2, 0, 1]
 
-helixr_config = HelixmRNAConfig(batch_size=5, device='cuda')
-helixr_fine_tune = HelixmRNAFineTuningModel(helix_mrna_config=helixr_config, fine_tuning_head='regression', output_size=1)
+    helix_mrna_config = HelixmRNAConfig(**cfg)
+    helix_mrna_fine_tune = HelixmRNAFineTuningModel(helix_mrna_config=helix_mrna_config, fine_tuning_head="classification", output_size=3)
 
-train_dataset = helixr_fine_tune.process_data(train_data['Sequence'].values)
-eval_dataset = helixr_fine_tune.process_data(eval_data['Sequence'].values)
+    train_dataset = helix_mrna_fine_tune.process_data(input_sequences)
 
-train_labels = train_data["Value"].values.astype('float32').reshape(-1, 1)
-eval_labels = eval_data["Value"].values.astype('float32').reshape(-1, 1)
+    helix_mrna_fine_tune.train(train_dataset=train_dataset, train_labels=labels)
 
-helixr_fine_tune.train(train_dataset=train_dataset, train_labels=train_labels, loss_function=torch.nn.MSELoss(), validation_dataset=eval_dataset, validation_labels=eval_labels)
+    outputs = helix_mrna_fine_tune.get_outputs(train_dataset)
+    print(outputs.shape)
 
-outputs = helixr_fine_tune.get_outputs(eval_dataset)
-
-print(outputs[:15])
+if __name__ == "__main__":
+    run_fine_tuning()
