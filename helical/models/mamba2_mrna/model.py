@@ -1,10 +1,7 @@
 from helical.models.base_models import HelicalRNAModel
-from helical.models.helix_mrna.helix_mrna_config import HelixmRNAConfig
+from helical.models.mamba2_mrna.mamba2_mrna_config import Mamba2mRNAConfig
 from datasets import Dataset
-from transformers import AutoModel, AutoConfig, AutoTokenizer
-from .modeling_helix_mrna import HelixmRNAPretrainedModel
-from .helix_mrna_tokenizer import CharTokenizer
-from .helix_mrna_pretrained_config import HelixmRNAPretrainedConfig
+from transformers import Mamba2Model, Mamba2Config, AutoTokenizer
 import torch
 from torch.utils.data import DataLoader
 import numpy as np
@@ -14,41 +11,44 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class HelixmRNA(HelicalRNAModel):
-    """Helix-mRNA Model.
+class Mamba2mRNA(HelicalRNAModel):
+    """Mamba2-mRNA Model.
     
-    The Helix-mRNA Model is a transformer-based model that can be used to extract RNA embeddings from RNA sequences. 
+    The Mamba2-mRNA Model is a transformer-based model that can be used to extract RNA embeddings from RNA sequences. 
     The model is based on the Mamba2 model, which is a transformer-based model trained on RNA sequences. The model is available through this interface.
     
     Example
-    -------
+    ----------
     ```python
-    from helical import HelixmRNA, HelixmRNAConfig
+    from helical import Mamba2mRNA, Mamba2mRNAConfig
     import torch
-    
-    helix_mrna_config = HelimRNAConfig(batch_size=5)
-    helix_mrna = HelixmRNA(configurer=helix_mrna_config)
-    
-    rna_sequences = ["ACUEGGG", "ACUEGGG", "ACUEGGG", "ACUEGGG", "ACUEGGG"]
-    dataset = helix_mrna.process_data(rna_sequences)
-    rna_embeddings = helix_mrna.get_embeddings(dataset)
-    
-    print("Helix_mRNA embeddings shape: ", rna_embeddings.shape)
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    input_sequences = ["ACUG"*20, "AUGC"*20, "AUGC"*20, "ACUG"*20, "AUUG"*20]
+
+    mamba2_mrna_config = Mamba2mRNAConfig(model_name="helix-mRNA", batch_size=5, device=device)
+    mamba2_mrna = Mamba2mRNA(configurer=mamba2_mrna_config)
+
+    # prepare data for input to the model
+    processed_input_data = mamba2_mrna.process_data(input_sequences)
+
+    # generate the embeddings for the processed data
+    embeddings = mamba2_mrna.get_embeddings(processed_input_data)
     ```
 
+    
     Parameters
     ----------
-    configurer : HelixmRNAConfig
+    configurer : Mamba2mRNAConfig
         The configuration object for the Helix-mRNA model.
 
     Notes
     ----------
-    Helix_mRNA was trained using a character in between each codon of the RNA sequence. 
-    This is done to ensure that the model can learn the structure of the RNA sequence. 
-    Although it can take a standard RNA sequence as input, it is recommended to add the letter E between each codon of the RNA sequence to get better embeddings.
+    Helix_mRNA notes
     """
-    default_configurer = HelixmRNAConfig()
-    def __init__(self, configurer: HelixmRNAConfig = default_configurer):
+    default_configurer = Mamba2mRNAConfig()
+    def __init__(self, configurer: Mamba2mRNAConfig = default_configurer):
         super().__init__()
         self.configurer = configurer
         self.config = configurer.config
@@ -57,9 +57,10 @@ class HelixmRNA(HelicalRNAModel):
         # for file in self.configurer.list_of_files_to_download:
         #         downloader.download_via_name(file)
         
-        self.model = HelixmRNAPretrainedModel.from_pretrained(self.config["model_name"])
-        self.pretrained_config = HelixmRNAPretrainedConfig.from_pretrained(self.config["model_name"], trust_remote=True)
-        self.tokenizer = CharTokenizer.from_pretrained(self.config["model_name"], trust_remote=True)
+        if self.config["model_name"] == "helix-mRNA-mamba":
+            self.model = Mamba2Model.from_pretrained('helical-ai/Helix-mRNA', trust_remote=True)
+            self.pretrained_config = Mamba2Config.from_pretrained('helical-ai/Helix-mRNA', trust_remote=True)
+            self.tokenizer = AutoTokenizer.from_pretrained('helical-ai/Helix-mRNA', trust_remote=True)
 
         self.model.post_init()
         logger.info("Helix-mRNA initialized successfully.")
