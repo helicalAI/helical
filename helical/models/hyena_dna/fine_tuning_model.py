@@ -18,13 +18,38 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
 
     This class represents the HyenaDNA fine-tuning model, which is a long-range genomic foundation model pretrained on context lengths of up to 1 million tokens at single nucleotide resolution.
 
+    Example
+    ----------
+    ```python
+    from datasets import load_dataset
+    from helical import HyenaDNAConfig, HyenaDNAFineTuningModel
+    import torch
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    # Load a Hugging Face dataset and task type
+    ds = load_dataset("dataset", "task")
+
+    # Define the desired configs
+    config = HyenaDNAConfig(device=device, batch_size=10)
+
+    # Define the fine-tuning model with the configs we instantiated above
+    hyena_fine_tune = HyenaDNAFineTuningModel(config, "classification", number_unique_outputs)
+
+    # Prepare the sequences for input to the model
+    input_dataset = hyena_fine_tune.process_data(ds["train"]["sequence"])
+
+    # train the fine-tuning model on some downstream task
+    hyena_fine_tune.train(input_dataset, ds["train"]["label"])
+    ```
+    
     Parameters
     ----------
     hyena_config : HyenaDNAConfig
         The HyenaDNA configs for fine-tuning model, the same configs that would be used to instantiate the standard HyenaDNA model.
     fine_tuning_head : Literal["classification", "regression"]|HelicalBaseFineTuningHead
         The fine-tuning head that is appended to the model. This can either be a string (options available: "classification", "regression") specifying the task or a custom fine-tuning head inheriting from HelicalBaseFineTuningHead.
-    output_size : Optional[int], default = None
+    output_size : Optional[int], default=None
         The output size of the fine-tuning head. This is required if a predefined head is selected.
     
     Methods
@@ -69,20 +94,20 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
             A helical Hyena-DNA processed dataset for fine-tuning
         train_labels : list[int]
             The labels for the training data. These should be stored as unique per class integers.
-        validation_input_data : HyenaDNADataset, default = None
+        validation_input_data : HyenaDNADataset, default=None
             A helical Hyena-DNA processed dataset for per epoch validation. If this is not specified, no validation will be performed.
-        validation_labels : list[int], default = None
+        validation_labels : list[int], default=None
             The labels for the validation data. These should be stored as unique per class integers.
-        optimizer : torch.optim, default = torch.optim.AdamW
+        optimizer : torch.optim, default=torch.optim.AdamW
             The optimizer to be used for training.
         optimizer_params : dict
             The optimizer parameters to be used for the optimizer specified. This list should NOT include model parameters.
             e.g. optimizer_params = {'lr': 0.0001}
-        loss_function : torch.nn.modules.loss, default = torch.nn.modules.loss.CrossEntropyLoss()
+        loss_function : torch.nn.modules.loss, default=torch.nn.CrossEntropyLoss()
             The loss function to be used.
-        epochs : int, optional, default = 10
+        epochs : int, optional, default=10
             The number of epochs to train the model for.
-        lr_scheduler_params : dict, default = None
+        lr_scheduler_params : dict, default=None
             The learning rate scheduler parameters for the transformers get_scheduler method. The optimizer will be taken from the optimizer input and should not be included in the learning scheduler parameters. If not specified, no scheduler will be used.
             e.g. lr_scheduler_params = { 'name': 'linear', 'num_warmup_steps': 0, 'num_training_steps': 5 }
         """
