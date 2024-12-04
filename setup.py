@@ -33,5 +33,6 @@ setup(
         'pyensembl',
         'datasets==2.20.0',
         'mamba-ssm==2.2.2',
+        'causal-conv1d==1.4.0'
     ],  
 )
