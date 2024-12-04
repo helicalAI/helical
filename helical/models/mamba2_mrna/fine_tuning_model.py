@@ -152,9 +152,9 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
         optimizer = optimizer(self.parameters(), **optimizer_params)
 
         # set labels for the dataset
-        train_dataset = train_dataset.add_column("labels", train_labels)
+        train_dataset = self._add_data_column(train_dataset, "labels", np.array(train_labels))
         if validation_labels is not None and validation_dataset is not None:
-            validation_dataset = validation_dataset.add_column("labels", validation_labels)
+            validation_dataset = self._add_data_column(validation_dataset, "labels", np.array(validation_labels))
         
         if trainable_layers > 0:
             logger.info(f"Unfreezing the last {trainable_layers} layers of the Mamba2_mRNA model.")
@@ -268,3 +268,11 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
 
         return np.concatenate(outputs)
 
+
+    def _add_data_column(self, dataset, column_name, data):
+        if len(data.shape) > 1:
+            for i in range(len(data[0])):  # Assume all inner lists are the same length
+                dataset = dataset.add_column(f"{column_name}", [row[i] for row in data])
+        else:  # If 1D
+            dataset = dataset.add_column(column_name, data)
+        return dataset

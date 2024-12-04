@@ -39,6 +39,7 @@ nav:
     - Fine-Tuning Heads: ./models/fine_tuning_heads.md
   - Example Notebooks:
     - Quick-Start-Tutorial: ./notebooks/Quick-Start-Tutorial.ipynb
+    - Helix-mRNA: ./notebooks/Helix-mRNA.ipynb
     - Cell-Type Annotation: ./notebooks/Cell-Type-Annotation.ipynb
     - Cell-Type-Classification-Fine-Tuning: ./notebooks/Cell-Type-Classification-Fine-Tuning.ipynb
     - Geneformer-vs-UCE: ./notebooks/Geneformer-vs-UCE.ipynb
