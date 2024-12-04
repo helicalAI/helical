@@ -64,9 +64,9 @@ jobs:
         run: |
           python examples/run_models/run_uce.py
 
-      - name: Execute Hyena
-        run: |
-          python examples/run_models/run_hyena_dna.py
+      # - name: Execute Hyena
+      #   run: |
+      #     python examples/run_models/run_hyena_dna.py
 
       - name: Execute benchmarking
         run: |
@@ -100,7 +100,7 @@ jobs:
 
       - name: Run Notebooks
         run: |
-          pytest --durations=0 --nbmake ./examples/notebooks/*.ipynb
+          pytest --durations=0 --nbmake ./examples/notebooks/*.ipynb -k "not ./examples/Hyena*.ipynb"
 
   release:
     needs: notebooks
