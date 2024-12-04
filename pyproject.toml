@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "helical"
-version = "0.0.1a8"
+version = "0.0.1a9"
 authors = [
   { name="Helical Team", email="support@helical-ai.com" },
 ]
@@ -46,7 +46,7 @@ dependencies = [
     'pyensembl',
     'datasets==2.20.0',
     'mamba-ssm==2.2.2',
-    'causal-conv1d==1.4.0'
+    'causal-conv1d==1.4.0',
 ]
 
 
