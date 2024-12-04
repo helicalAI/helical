@@ -18,6 +18,38 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel, UCE):
     """
     Fine-tuning model for the UCE model.
 
+    Example
+    ----------
+    ```python
+    from helical import UCEConfig, UCEFineTuningModel
+    import anndata as ad
+
+    # Load the data
+    ann_data = ad.read_h5ad("dataset.h5ad")
+
+    # Get unique output labels
+    label_set = set(cell_types)
+
+    # Create the fine-tuning model with the desired configs
+    configurer=UCEConfig(batch_size=10)
+    uce_fine_tune = UCEFineTuningModel(uce_config=configurer, fine_tuning_head="classification", output_size=len(label_set))
+
+    # Process the data for training
+    dataset = uce_fine_tune.process_data(ann_data)
+
+    # Get the desired label class
+    cell_types = list(ann_data.obs.cell_type)
+
+    # Create a dictionary mapping the classes to unique integers for training
+    class_id_dict = dict(zip(label_set, [i for i in range(len(label_set))]))
+
+    for i in range(len(cell_types)):
+        cell_types[i] = class_id_dict[cell_types[i]]
+
+    # Fine-tune
+    uce_fine_tune.train(train_input_data=dataset, train_labels=cell_types)
+    ```
+
     Parameters
     ----------
     uce_config : UCE
@@ -29,8 +61,6 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel, UCE):
 
     Methods
     -------
-    _forward(input_gene_ids: torch.Tensor, data_dict: dict, src_key_padding_mask: torch.Tensor, use_batch_labels: bool, device: str) -> torch.Tensor
-        The forward method of the fine-tuning model.
     train(train_input_data: UCEDataset, train_labels: np.ndarray, validation_input_data = None, validation_labels = None, optimizer: optim = optim.AdamW, optimizer_params: dict = {'lr': 0.0001}, loss_function: loss = loss.CrossEntropyLoss(), epochs: int = 1, lr_scheduler_params: Optional[dict] = None)
         Fine-tunes the UCE model with different head modules.
     get_outputs(dataset: UCEDataset) -> np.ndarray
@@ -95,27 +125,22 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel, UCE):
             A helical UCE processed dataset for fine-tuning
         train_labels : ndarray
             The labels for the training data. These should be stored as unique per class integers.
-        validation_input_data : Dataset, default = None
+        validation_input_data : Dataset, default=None
             A helical UCE processed dataset for per epoch validation. If this is not specified, no validation will be performed.
-        validation_labels : ndarray, default = None,
+        validation_labels : ndarray, default=None,
             The labels for the validation data. These should be stored as unique per class integers.
-        optimizer : torch.optim, default = torch.optim.AdamW
+        optimizer : torch.optim, default=torch.optim.AdamW
             The optimizer to be used for training.
         optimizer_params : dict
             The optimizer parameters to be used for the optimizer specified. This list should NOT include model parameters.
-            e.g. optimizer_params = {'lr': 0.0001}
-        loss_function : torch.nn.modules.loss, default = torch.nn.modules.loss.CrossEntropyLoss()
+            e.g. optimizer_params={'lr': 0.0001}
+        loss_function : torch.nn.modules.loss, default=torch.nn.CrossEntropyLoss()
             The loss function to be used.
-        epochs : int, optional, default = 10
+        epochs : int, optional, default=10
             The number of epochs to train the model
-        lr_scheduler_params : dict, default = None
+        lr_scheduler_params : dict, default=None
             The learning rate scheduler parameters for the transformers get_scheduler method. The optimizer will be taken from the optimizer input and should not be included in the learning scheduler parameters. If not specified, no scheduler will be used.
-            e.g. lr_scheduler_params = { 'name': 'linear', 'num_warmup_steps': 0, 'num_training_steps': 5 }
-
-        Returns
-        -------
-        torch.nn.Module
-            The fine-tuned model.
+            e.g. lr_scheduler_params={'name': 'linear', 'num_warmup_steps': 0, 'num_training_steps': 5}
         """
         batch_size = self.config["batch_size"]
         dataloader = DataLoader(train_input_data, 
@@ -217,12 +242,12 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel, UCE):
         Parameters
         ----------
         dataset : UCEDataset
-            The dataset to get the outputs for.
+            The dataset to get the outputs for. This is the dataset returned from the `process_data` method.
         
         Returns
         -------
         np.ndarray
-            The outputs of the model.
+            The outputs of the model as a numpy array.
         """
         self.to(self.device)
 

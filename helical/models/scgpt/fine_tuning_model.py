@@ -18,9 +18,40 @@ logger = logging.getLogger(__name__)
 class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
     """Fine-tuning model for the scGPT model.
 
+    Example
+    ----------
+    ```python
+    from helical import scGPTFineTuningModel, scGPTConfig
+
+    # Load the desired dataset
+    adata = ad.read_h5ad("dataset.h5ad")
+
+    # Get the desired label class
+    cell_types = list(ann_data.obs.cell_type)
+
+    # Get unique labels
+    label_set = set(cell_types)
+
+    # Create the fine-tuning model with the relevant configs
+    scgpt_config=scGPTConfig(batch_size=10)
+    scgpt_fine_tune = scGPTFineTuningModel(scGPT_config=scgpt_config, fine_tuning_head="classification", output_size=len(label_set))
+
+    # Process the data for training
+    data = scgpt_fine_tune.process_data(adata)
+
+    # Create a dictionary mapping the classes to unique integers for training
+    class_id_dict = dict(zip(label_set, [i for i in range(len(label_set))]))
+
+    for i in range(len(cell_types)):
+        cell_types[i] = class_id_dict[cell_types[i]]
+
+    # Fine-tune
+    scgpt_fine_tune.train(train_input_data=dataset, train_labels=cell_types)
+    ```
+
     Parameters
     ----------
-    scgpt_config : scGPTConfig
+    scGPT_config : scGPTConfig
         The scGPT configs for fine-tuning model, the same configs that would be used to instantiate the standard scGPT model.
     fine_tuning_head : Literal["classification", "regression"] | HelicalBaseFineTuningHead
         The fine-tuning head that is appended to the model. This can either be a string (options available: "classification", "regression") specifying the task or a custom fine-tuning head inheriting from HelicalBaseFineTuningHead.
@@ -29,8 +60,6 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
 
     Methods
     -------
-    forward(input_gene_ids: torch.Tensor, data_dict: dict, src_key_padding_mask: torch.Tensor, use_batch_labels: bool, device: str) -> torch.Tensor
-        The forward method of the fine-tuning model.
     train(train_input_data: Dataset, train_labels: np.ndarray, validation_input_data: Optional[Dataset], validation_labels: Optional[np.ndarray], optimizer: optim, optimizer_params: dict, loss_function: loss, epochs: int, lr_scheduler_params: Optional[dict])
         Fine-tunes the scGPT model with different head modules.
     get_outputs(dataset: Dataset) -> np.ndarray

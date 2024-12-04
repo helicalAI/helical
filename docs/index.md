@@ -1,12 +1,3 @@
-```{image} assets/logo_and_text_v2.png
-:alt: "Logo"
-:width: 400px
-:align: center
-:target: https://helical.readthedocs.io/
-
-```
-
-
 # What is Helical ?
 
 Helical provides a framework for state-of-the-art pre-trained bio foundation models on genomics and transcriptomics modalities.
@@ -21,12 +12,12 @@ Let’s build the most exciting AI-for-Bio community together!
 ## Installation
 
 We recommend installing Helical within a conda environment with the commands below (run them in your terminal) - this step is optional:
-```
+```shell
 conda create --name helical-package python=3.11.8
 conda activate helical-package
 ```
 To install the latest pip release of our Helical package, you can run the command below:
-```
+```shell
 pip install helical
 ```
 
@@ -36,7 +27,7 @@ pip install --upgrade git+https://github.com/helicalAI/helical.git
 ```
 
 ### Singularity (Optional)
-If you desire to run your code in a singularity file, you can use the [singularity.def](../../helical/singularity.def) file and build an apptainer with it:
+If you desire to run your code in a singularity file, you can use the <a href="https://github.com/helicalAI/helical/blob/release/singularity.def" target="_blank">singularity.def</a> file and build an apptainer with it:
 ```
 apptainer build --sandbox singularity/helical singularity.def
 ```
@@ -49,12 +40,12 @@ apptainer shell --nv --fakeroot singularity/helical/
 
 ## Installation
 ### RNA models:
-- [Geneformer](https://helical.readthedocs.io/en/latest/docs/Geneformer.html)
-- [scGPT](https://helical.readthedocs.io/en/latest/docs/scGPT.html)
-- [Universal Cell Embedding (UCE)](https://helical.readthedocs.io/en/latest/docs/UCE.html)
+- [Geneformer](./model_cards/geneformer.md)
+- [scGPT](./model_cards/scgpt.md)
+- [Universal Cell Embedding (UCE)](./model_cards/uce.md)
 
 ### DNA models:
-- [HyenaDNA](https://helical.readthedocs.io/en/latest/docs/hyena_dna.html)
+- [HyenaDNA](./model_cards/hyenadna.md)
 
 
 ## Demo & Use Cases
@@ -75,6 +66,8 @@ Within the `example/notebooks` folder, open the notebook of your choice. We reco
 |[Geneformer-vs-UCE.ipynb](https://github.com/helicalAI/helical/blob/main/examples/notebooks/Geneformer-vs-UCE.ipynb) | Zero-Shot Reference Mapping with Geneformer & UCE and compare the outcomes. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Geneformer-vs-UCE.ipynb) |
 |[Hyena-DNA-Inference.ipynb](https://github.com/helicalAI/helical/blob/main/examples/notebooks/Hyena-DNA-Inference.ipynb)|An example how to do probing with HyenaDNA by training a neural network on 18 downstream classification tasks.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Hyena-DNA-Inference.ipynb)|
 |[Cell-Type-Annotation.ipynb](https://github.com/helicalAI/helical/blob/main/examples/notebooks/Cell-Type-Annotation.ipynb)|An example how to do probing with scGPT by training a neural network to predict cell type annotations.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Cell-Type-Annotation.ipynb) |
+|[Cell-Type-Classification-Fine-Tuning.ipynb](./examples/notebooks/Cell-Type-Classification-Fine-Tuning.ipynb)|An example how to fine-tune different models on classification tasks.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Cell-Type-Classification-Fine-Tuning.ipynb) |
+|[HyenaDNA-Fine-Tuning.ipynb](./examples/notebooks/HyenaDNA-Fine-Tuning.ipynb)|An example of how to fine-tune the HyenaDNA model on downstream benchmarks.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/HyenaDNA-Fine-Tuning.ipynb) |
 | Coming Soon | New models such as SCimilarity, scVI; benchmarking scripts; new use cases; others |
 
 ## Stuck somewhere ? Other ideas ?
@@ -108,24 +101,25 @@ A lot of our models have been published by talend authors developing these excit
 
 You can find the Licenses for each model implementation in the model repositories:
 
-- [scGPT](helical/models/scgpt/LICENSE)
-- [Geneformer](helical/models/geneformer/LICENSE)
-- [UCE](helical/models/uce/LICENSE)
-- [HyenaDNA](helical/models/hyena_dna/LICENSE)
+- [scGPT](https://github.com/helicalAI/helical/blob/release/helical/models/scgpt/LICENSE)
+- [Geneformer](https://github.com/helicalAI/helical/blob/release/helical/models/geneformer/LICENSE)
+- [UCE](https://github.com/helicalAI/helical/blob/release/helical/models/uce/LICENSE)
+- [HyenaDNA](https://github.com/helicalAI/helical/blob/release/helical/models/hyena_dna/LICENSE)
 
 
 ## Citation
 
 Please use this BibTeX to cite this repository in your publications:
 
-```
+```bibtex
 @software{allard_2024_13135902,
   author       = {Helical Team},
-  title        = {helicalAI/helical: v0.0.1-alpha},
-  month        = jul,
+  title        = {helicalAI/helical: v0.0.1-alpha6},
+  month        = nov,
   year         = 2024,
   publisher    = {Zenodo},
   version      = {0.0.1a5},
   doi          = {10.5281/zenodo.13135902},
   url          = {https://doi.org/10.5281/zenodo.13135902}
 }
+```

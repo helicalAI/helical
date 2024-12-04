@@ -19,38 +19,42 @@ LOGGER = logging.getLogger(__name__)
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 class scGPT(HelicalRNAModel):
-    """scGPT Model. 
-        The scGPT Model is a transformer-based model that can be used to extract gene embeddings from single-cell RNA-seq data.
-        Currently we load the continous pre-training model from the scGPT repository as default model which works best on zero-shot tasks.
+    """
+    scGPT Model.
+    
+    The scGPT Model is a transformer-based model that can be used to extract gene embeddings from single-cell RNA-seq data.
+    Currently we load the continous pre-training model from the scGPT repository as default model which works best on zero-shot tasks.
 
 
-        Example
-        -------
-        >>> from helical import scGPT,scGPTConfig
-        >>> from datasets import load_dataset
-        >>> from helical.utils import get_anndata_from_hf_dataset
-        >>> import anndata as ad
-        >>> scgpt_config=scGPTConfig(batch_size=10)
-        >>> scgpt = scGPT(configurer=scgpt_config)
-        >>> hf_dataset = load_dataset("helical-ai/yolksac_human",split="train[:25%]", trust_remote_code=True, download_mode="reuse_cache_if_exists")
-        >>> ann_data = get_anndata_from_hf_dataset(hf_dataset)
-        >>> dataset = scgpt.process_data(ann_data[:100])
-        >>> embeddings = scgpt.get_embeddings(dataset)
+    Example
+    -------
+    ```python
+    from helical import scGPT,scGPTConfig
+    from datasets import load_dataset
+    from helical.utils import get_anndata_from_hf_dataset
+    import anndata as ad
 
+    scgpt_config=scGPTConfig(batch_size=10)
+    scgpt = scGPT(configurer=scgpt_config)
 
-        Parameters
-        ----------
-        configurer : scGPTConfig, optional, default = configurer
-            The model configuration.
+    hf_dataset = load_dataset("helical-ai/yolksac_human",split="train[:25%]", trust_remote_code=True, download_mode="reuse_cache_if_exists")
+    ann_data = get_anndata_from_hf_dataset(hf_dataset)
 
-        Returns
-        -------
-        None
+    dataset = scgpt.process_data(ann_data[:100])
 
-        Notes
-        -----
-        We use the implementation from this `repository <https://github.com/bowang-lab/scGPT>`_ , which comes from the original authors. You can find the description of the method in this `paper <https://www.nature.com/articles/s41592-024-02201-0>`_.
-        """
+    embeddings = scgpt.get_embeddings(dataset)
+    print("scGPT embeddings: ", embeddings[:10])
+    ```
+
+    Parameters
+    ----------
+    configurer : scGPTConfig, optional, default=configurer
+        The model configuration.
+
+    Notes
+    -----
+    We use the implementation from [this repository](https://github.com/bowang-lab/scGPT), which comes from the original authors. You can find the description of the method in [this paper](https://www.nature.com/articles/s41592-024-02201-0).
+    """
     configurer = scGPTConfig()
 
     def __init__(self, configurer: scGPTConfig = configurer) -> None:
@@ -81,7 +85,7 @@ class scGPT(HelicalRNAModel):
 
         Returns
         -------
-        np.array
+        np.ndarray
             The gene embeddings in the form of a numpy array
         """
         LOGGER.info(f"Inference started:")
@@ -150,27 +154,30 @@ class scGPT(HelicalRNAModel):
                      use_batch_labels: bool = False,
                      use_raw_counts: bool = True
     ) -> Dataset:
-        """Processes the data for the scGPT model
+        """
+        Processes the data for the scGPT model.
 
-        Parameters 
+        Parameters
         ----------
-        data : AnnData
+        adata : AnnData
             The AnnData object containing the data to be processed. 
-            The Anndata requires the expression counts as the data matrix and the column with the gene symbols is defined by the argument gene_names.
-        gene_names: str, optional, default = "index"
-            The column in adata.var that contains the gene names. Default is to use the index column.
-        fine_tuning: bool, optional, default = False
+            The AnnData requires the expression counts as the data matrix, and the column with 
+            the gene symbols is defined by the argument `gene_names`.
+        gene_names : str, optional, default="index"
+            The column in `adata.var` that contains the gene names. Default is to use the index column.
+        fine_tuning : bool, optional, default=False
             If you intend to use the data to fine-tune the model on a downstream task, set this to True.
-        n_top_genes: int, optional, default = 1800
-           Only taken into account if you use the dataset for fine-tuning the model. Number of highly-variable genes to keep. Mandatory if flavor='seurat_v3'.
-        flavor: Literal["seurat", "cell_ranger", "seurat_v3", "seurat_v3_paper"], optional, default = "seurat_v3",
-            Only taken into account if you use the dataset for fine-tuning the model.
+        n_top_genes : int, optional, default=1800
+            Only taken into account if you use the dataset for fine-tuning the model. 
+            Number of highly-variable genes to keep. Mandatory if `flavor='seurat_v3'`.
+        flavor : Literal["seurat", "cell_ranger", "seurat_v3", "seurat_v3_paper"], optional, default="seurat_v3"
+            Only taken into account if you use the dataset for fine-tuning the model. 
             Choose the flavor for identifying highly variable genes. 
-            For the dispersion based methods in their default workflows, 
-            Seurat passes the cutoffs whereas Cell Ranger passes n_top_genes.
-        use_batch_labels: Bool, default = False
+            For the dispersion-based methods in their default workflows, 
+            Seurat passes the cutoffs whereas Cell Ranger passes `n_top_genes`.
+        use_batch_labels : bool, optional, default=False
             Whether to use batch labels. Defaults to False.
-        use_raw_counts: Bool, default = True
+        use_raw_counts : bool, optional, default=True
             Whether to use raw counts or not.
 
         Returns
@@ -178,6 +185,7 @@ class scGPT(HelicalRNAModel):
         Dataset
             The processed dataset.
         """
+
  
         self.ensure_data_validity(adata, gene_names, use_batch_labels, use_raw_counts)
         self.gene_names = gene_names

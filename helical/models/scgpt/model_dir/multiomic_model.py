@@ -10,13 +10,14 @@ import torch.nn.functional as F
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 from torch.distributions import Bernoulli
 from tqdm import trange
+import logging
+
+LOGGER = logging.getLogger(__name__)
 
 try:
     from flash_attn.flash_attention import FlashMHA
 except ImportError:
-    import warnings
-
-    warnings.warn("flash_attn is not installed")
+    LOGGER.warning("flash_attn is not installed.")
 
 from .dsbn import DomainSpecificBatchNorm1d
 from .grad_reverse import grad_reverse

@@ -14,8 +14,52 @@ from transformers import get_scheduler
 logger = logging.getLogger(__name__)
 
 class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
-    """GeneformerFineTuningModel
+    """GeneformerFineTuningModel.
+    
     Fine-tuning model for the Geneformer model.
+
+    Example
+    ----------
+    ```python
+    from helical import GeneformerConfig, GeneformerFineTuningModel
+
+    # Prepare the data
+    ann_data = ad.read_h5ad("dataset.h5ad")
+
+    # Get the desired label class
+    cell_types = list(ann_data.obs.cell_type)
+
+    # Create a dictionary mapping the classes to unique integers for training
+    label_set = set(cell_types)
+    class_id_dict = dict(zip(label_set, [i for i in range(len(label_set))]))
+
+    for i in range(len(cell_types)):
+        cell_types[i] = class_id_dict[cell_types[i]]
+
+    # Add this column to the Dataset
+    dataset = dataset.add_column('cell_types', cell_types)
+
+    # Create the fine-tuning model
+    model_config = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
+    geneformer_fine_tune = GeneformerFineTuningModel(
+        geneformer_config=model_config, 
+        fine_tuning_head="classification", 
+        label="cell_types", 
+        output_size=len(label_set)
+    )
+
+    # Process the data for training
+    dataset = geneformer_fine_tune.process_data(ann_data)
+
+    # Fine-tune
+    geneformer_fine_tune.train(train_dataset=dataset)
+
+    # Get outputs of the fine-tuned model
+    outputs = geneformer_fine_tune.get_outputs(dataset)
+
+    # Get the embeddings of the fine-tuned model
+    embeddings = geneformer_fine_tune.get_embeddings(dataset)
+    ```
     
     Parameters
     ----------
@@ -24,12 +68,10 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
     fine_tuning_head : Literal["classification", "regression"] | HelicalBaseFineTuningHead
         The fine-tuning head that is appended to the model. This can either be a string (options available: "classification", "regression") specifying the task or a custom fine-tuning head inheriting from HelicalBaseFineTuningHead.
     output_size : Optional[int]
-        The output size of the fine-tuning model. This is required if the fine_tuning_head is a string specified task. For a classification task this is number of unique classes.
+        The output size of the fine-tuning model. This is required if the `fine_tuning_head` is a string specified task. For a classification task this is number of unique classes.
 
     Methods
     -------
-    forward(input_ids: torch.Tensor, attention_mask_minibatch: torch.Tensor) -> torch.Tensor
-        The forward method of the fine-tuning model.
     train(train_dataset: Dataset, optimizer: optim, optimizer_params: dict, loss_function: loss, label: str, epochs: int, freeze_layers: int, validation_dataset: Optional[Dataset], lr_scheduler_params: Optional[dict], silent = False)
         Fine-tunes the Geneformer model.
     get_outputs(dataset: Dataset, silent = False)
@@ -79,33 +121,45 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
             validation_dataset: Optional[Dataset] = None,
             lr_scheduler_params: Optional[dict] = None,
             silent = False):
-        """Fine-tunes the Geneformer model for classification tasks. 
+        """
+        Fine-tunes the Geneformer model for classification tasks.
 
         Parameters
         ----------
-
         train_dataset : Dataset
-            A helical processed dataset for fine-tuning
-        optimizer : torch.optim, default = torch.optim.AdamW
-            The optimizer to be used for training.
-        optimizer_params : dict
-            The optimizer parameters to be used for the optimizer specified. This list should NOT include model parameters.
-            e.g. optimizer_params = {'lr': 0.0001}
-        loss_function : torch.nn.modules.loss, default = torch.nn.modules.loss.CrossEntropyLoss()
-            The loss function to be used.
-        label : str, optional, default = "cell_types"
-            The column in the dataset containing the training labels. These should be stored as unique per class integers.
-        epochs : int, optional, default = 10
-            The number of epochs to train the model
-        freeze_layers : int, optional, default = 2
-            The number of layers to freeze.
-        validation_dataset : Dataset, default = None
-            A helical processed dataset for per epoch validation. If this is not specified, no validation will be performed.
-        lr_scheduler_params : dict, default = None
-            The learning rate scheduler parameters for the transformers get_scheduler method. The optimizer will be taken from the optimizer input and should not be included in the learning scheduler parameters. If not specified, no scheduler will be used.
-            e.g. lr_scheduler_params = { 'name': 'linear', 'num_warmup_steps': 0, 'num_training_steps': 5 }
+            A helical-processed dataset for fine-tuning.
 
+        optimizer : torch.optim.Optimizer, optional, default=torch.optim.AdamW
+            The optimizer to be used for training.
+
+        optimizer_params : dict
+            Parameters to be passed to the specified optimizer. This dictionary should *NOT* include model parameters.
+            Example:
+                optimizer_params = {'lr': 0.0001}
+
+        loss_function : torch.nn.loss, optional, default=torch.nn.CrossEntropyLoss()
+            The loss function to be used for training.
+
+        label : str, optional, default="cell_types"
+            The column in the dataset containing the training labels. Labels should be stored as unique integers per class.
+
+        epochs : int, optional, default=10
+            The number of epochs to train the model.
+
+        freeze_layers : int, optional, default=2
+            The number of layers to freeze during training.
+
+        validation_dataset : Dataset, optional, default=None
+            A helical-processed dataset used for per-epoch validation. If not specified, no validation will be performed.
+
+        lr_scheduler_params : dict, optional, default=None
+            Parameters for the learning rate scheduler from the Transformers [`get_scheduler`](https://huggingface.co/docs/transformers/en/main_classes/optimizer_schedules#transformers.get_scheduler) method. The optimizer should not be included 
+            in this dictionary, as it will be inferred from the [`optimizer`](https://pytorch.org/docs/main/optim.html) parameter. If not specified, no learning rate scheduler 
+            will be used.
+            Example:
+                lr_scheduler_params = {'name': 'linear', 'num_warmup_steps': 0, 'num_training_steps': 5}
         """
+
                 
         model_input_size = get_model_input_size(self.model)
 
@@ -232,7 +286,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
 
         Returns
         -------
-        np.array
+        np.ndarray
             The predicted labels in the form of a numpy array
         """
         model_input_size = get_model_input_size(self.model)

@@ -8,41 +8,41 @@ class scGPTConfig():
     
     Parameters
     ----------
-    pad_token : str, optional, default = "<pad>"
+    pad_token : str, optional, default="<pad>"
         The padding token
-    batch_size : int, optional, default = 24
+    batch_size : int, optional, default=24
         The batch size
-    fast_transformer : bool, optional, default = True
+    fast_transformer : bool, optional, default=True
         Whether to use fast transformer or not
-    nlayers : int, optional, default = 12
+    nlayers : int, optional, default=12
         The number of layers
-    nheads : int, optional, default = 8
+    nheads : int, optional, default=8
         The number of heads
-    embsize : int, optional, default = 512
+    embsize : int, optional, default=512
         The embedding size
-    d_hid : int, optional, default = 512    
+    d_hid : int, optional, default=512    
         The hidden dimension
-    dropout : float, optional, default = 0.2
+    dropout : float, optional, default=0.2
         The dropout rate
-    n_layers_cls : int, optional, default = 3
+    n_layers_cls : int, optional, default=3
         The number of classification layers
-    mask_value : int, optional, default = -1
+    mask_value : int, optional, default=-1
         The mask value
-    pad_value : int, optional, default = -2
+    pad_value : int, optional, default=-2
         The padding value
-    world_size : int, optional, default = 8
+    world_size : int, optional, default=8
         The world size
-    accelerator : bool, optional, default = False
+    accelerator : bool, optional, default=False
         The accelerator configuration. By default same device as model.
-    device : Literal["cpu", "cuda"], optional, default = "cpu"
+    device : Literal["cpu", "cuda"], optional, default="cpu"
         The device to use. Either use "cuda" or "cpu".
-    use_fast_transformer : bool, optional, default = False
+    use_fast_transformer : bool, optional, default=False
         Wheter to use fast transformer or nots
 
     Returns
     -------
     scGPTConfig 
-       The scGPT configuration object
+        The scGPT configuration object
 
     Notes
     -----
