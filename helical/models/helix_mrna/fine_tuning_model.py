@@ -63,7 +63,7 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
         HelicalBaseFineTuningModel.__init__(self, fine_tuning_head, output_size)
         HelixmRNA.__init__(self, helix_mrna_config)
 
-        self.fine_tuning_head.set_dim_size(self.pretrained_config.hidden_size)
+        self.fine_tuning_head.set_dim_size(self.pretrained_config.hidden_size*2)
 
     def _forward(self, 
                  input_ids, 
@@ -75,30 +75,30 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
         )
 
         hidden_states = transformer_outputs[0]
+
+        batch_size = input_ids.shape[0]
+
+        ## We Average the hidden states to get the pooled output
+        sequence_lengths = torch.eq(input_ids, self.pretrained_config.pad_token_id).int().argmax(-1) - 1
+        sequence_beginnings = (~torch.eq(input_ids, self.pretrained_config.pad_token_id)).int().argmax(-1).to(hidden_states.device)
+        sequence_lengths = sequence_lengths % input_ids.shape[-1]-1
+        sequence_lengths = sequence_lengths.to(hidden_states.device)
+        # print(sequence_lengths)
+        # print(input_ids)
+        mask = sequence_beginnings[:, None] < torch.arange(hidden_states.size(1), device=hidden_states.device)[None, :] #< sequence_lengths[:, None]
+        masked_tensor = hidden_states * mask.unsqueeze(-1)
+        sum_tensor = masked_tensor.sum(dim=1)
+        mean_states = sum_tensor / (sequence_lengths.unsqueeze(-1).float()-sequence_beginnings.unsqueeze(-1).float())
+
+        selected_last_hidden_states = hidden_states[
+            torch.arange(batch_size, device=hidden_states.device), sequence_lengths
+        ]
+
+        hidden_states = torch.cat([selected_last_hidden_states, mean_states], dim=-1)
+
         logits = self.fine_tuning_head(hidden_states)
 
-        if input_ids is not None:
-            batch_size = input_ids.shape[0]
-        else:
-            message = "input_ids must be provided to calculate pooled logits."
-            LOGGER.error(message)
-            raise ValueError(message)
-
-        if self.pretrained_config.pad_token_id is None and batch_size != 1:
-            raise ValueError("Cannot handle batch sizes > 1 if no padding token is defined.")
-        if self.pretrained_config.pad_token_id is None:
-            sequence_lengths = -1
-        else:
-            if input_ids is not None:
-                # if no pad token found, use modulo instead of reverse indexing for ONNX compatibility
-                sequence_lengths = torch.eq(input_ids, self.pretrained_config.pad_token_id).int().argmax(-1) - 1
-                sequence_lengths = sequence_lengths % input_ids.shape[-1]
-                sequence_lengths = sequence_lengths.to(logits.device)
-            else:
-                sequence_lengths = -1
-        pooled_logits = logits[torch.arange(batch_size, device=logits.device), sequence_lengths]
-
-        return pooled_logits
+        return logits
     
     def train(self,
               train_dataset: Dataset, 
