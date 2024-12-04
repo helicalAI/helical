@@ -118,7 +118,7 @@ Please use this BibTeX to cite this repository in your publications:
 ```bibtex
 @software{allard_2024_13135902,
   author       = {Helical Team},
-  title        = {helicalAI/helical: v0.0.1-alpha6},
+  title        = {helicalAI/helical: v0.0.1-alpha8},
   month        = nov,
   year         = 2024,
   publisher    = {Zenodo},
