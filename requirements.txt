@@ -24,4 +24,3 @@ tensorflow>=2.15.0,<=2.17.0
 louvain==0.8.2
 pyensembl==2.3.13
 mamba-ssm==2.2.2
-causal-conv1d==1.4.0
