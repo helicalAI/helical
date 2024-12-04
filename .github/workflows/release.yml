@@ -100,7 +100,7 @@ jobs:
 
       - name: Run Notebooks
         run: |
-          pytest --durations=0 --nbmake ./examples/notebooks/*.ipynb -k "not ./examples/Hyena*.ipynb"
+          pytest --durations=0 --nbmake ./examples/notebooks/*.ipynb --ignore=./examples/notebooks/Hyena*.ipynb
 
   release:
     needs: notebooks
