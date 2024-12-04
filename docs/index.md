@@ -40,6 +40,8 @@ apptainer shell --nv --fakeroot singularity/helical/
 
 ## Installation
 ### RNA models:
+- [Helix-mRNA](./model_cards/helix_mrna.md)
+- [Mamba2-mRNA](./model_cards/mamba2_mrna.md)
 - [Geneformer](./model_cards/geneformer.md)
 - [scGPT](./model_cards/scgpt.md)
 - [Universal Cell Embedding (UCE)](./model_cards/uce.md)
@@ -63,6 +65,7 @@ Within the `example/notebooks` folder, open the notebook of your choice. We reco
 | Example | Description | Colab |
 | ----------- | ----------- |----------- |                                                        
 |[Quick-Start-Tutorial.ipynb](https://github.com/helicalAI/helical/blob/main/examples/notebooks/Quick-Start-Tutorial.ipynb)| A tutorial to quickly get used to the helical package and environment. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Quick-Start-Tutorial.ipynb)|
+|[Helix-mRNA.ipynb](./examples/notebooks/Helix-mRNA.ipynb)|An example of how to use the Helix-mRNA model.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Helix-mRNA.ipynb) |
 |[Geneformer-vs-UCE.ipynb](https://github.com/helicalAI/helical/blob/main/examples/notebooks/Geneformer-vs-UCE.ipynb) | Zero-Shot Reference Mapping with Geneformer & UCE and compare the outcomes. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Geneformer-vs-UCE.ipynb) |
 |[Hyena-DNA-Inference.ipynb](https://github.com/helicalAI/helical/blob/main/examples/notebooks/Hyena-DNA-Inference.ipynb)|An example how to do probing with HyenaDNA by training a neural network on 18 downstream classification tasks.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Hyena-DNA-Inference.ipynb)|
 |[Cell-Type-Annotation.ipynb](https://github.com/helicalAI/helical/blob/main/examples/notebooks/Cell-Type-Annotation.ipynb)|An example how to do probing with scGPT by training a neural network to predict cell type annotations.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Cell-Type-Annotation.ipynb) |
@@ -87,7 +90,7 @@ We will continuously upload the latest model, publish benchmarks and make our co
 
 ## Acknowledgements
 
-A lot of our models have been published by talend authors developing these exciting technologies. We sincerely thank the authors of the following open-source projects:
+A lot of our models have been published by talented authors developing these exciting technologies. We sincerely thank the authors of the following open-source projects:
 
 - [scGPT](https://github.com/bowang-lab/scGPT/)
 - [Geneformer](https://huggingface.co/ctheodoris/Geneformer)
@@ -101,6 +104,8 @@ A lot of our models have been published by talend authors developing these excit
 
 You can find the Licenses for each model implementation in the model repositories:
 
+- [Helix-mRNA](https://github.com/helicalAI/helical/blob/release/helical/models/helix_mrna/LICENSE)
+- [Mamba2-mRNA](https://github.com/helicalAI/helical/blob/release/helical/models/mamba2_mrna/LICENSE)
 - [scGPT](https://github.com/helicalAI/helical/blob/release/helical/models/scgpt/LICENSE)
 - [Geneformer](https://github.com/helicalAI/helical/blob/release/helical/models/geneformer/LICENSE)
 - [UCE](https://github.com/helicalAI/helical/blob/release/helical/models/uce/LICENSE)
@@ -114,7 +119,7 @@ Please use this BibTeX to cite this repository in your publications:
 ```bibtex
 @software{allard_2024_13135902,
   author       = {Helical Team},
-  title        = {helicalAI/helical: v0.0.1-alpha6},
+  title        = {helicalAI/helical: v0.0.1-alpha8},
   month        = nov,
   year         = 2024,
   publisher    = {Zenodo},

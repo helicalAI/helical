@@ -1,0 +1,3 @@
+batch_size: 10
+device: "cuda"
+max_length: 100

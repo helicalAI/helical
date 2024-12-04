@@ -3,7 +3,7 @@ from helical.utils.logger import Logger
 from helical.constants.enums import LoggingType, LoggingLevel
 from anndata import AnnData
 import logging
-from typing import Protocol, runtime_checkable
+from typing import List, Protocol, runtime_checkable
 from datasets import Dataset
 from numpy import ndarray
 import torch
@@ -90,7 +90,29 @@ class HelicalRNAModel(HelicalBaseFoundationModel):
             message = "The data in X must be integers."
             LOGGER.error(message)
             raise ValueError(message)
+        
+    def ensure_rna_sequence_validity(self, sequences: List[str]) -> None:
+        """Ensures that the RNA sequences only contain the characters A, C, U, G, N and E.  
 
+        Parameters
+        ----------
+        sequences : List[str]
+            The RNA sequences to be checked.
+
+        Raises
+        ------
+        ValueError
+            If the sequences contain characters other than A, C, U, G, N and E.
+        """
+
+        valid_chars = set('ACUGNE')
+    
+        for sequence in sequences:
+            if not set(sequence.upper()).issubset(valid_chars):
+                invalid_chars = set(sequence.upper()) - valid_chars
+                message = f"Invalid RNA sequence: found invalid characters {invalid_chars}"
+                LOGGER.error(message)
+                raise ValueError(message)
         
 class HelicalDNAModel(HelicalBaseFoundationModel):
     def check_dna_data_validity(self) -> None:

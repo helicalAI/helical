@@ -5,6 +5,16 @@ repo_name: helicalAI/helical
 copyright: <a href="https://www.helical-ai.com/">Helical Team</a> <br> Copyright &copy; 2024
 nav:
   - Models:
+    - Helix-mRNA: 
+      - Model Card: ./model_cards/helix_mrna.md
+      - Config: ./configs/helix_mrna_config.md
+      - Model: ./models/helix_mrna.md
+      - Fine-Tuning Model: ./fine_tuning_models/helix_mrna_fine_tune.md
+    - Mamba2-mRNA: 
+      - Model Card: ./model_cards/mamba2_mrna.md
+      - Config: ./configs/mamba2_mrna_config.md
+      - Model: ./models/mamba2_mrna.md
+      - Fine-Tuning Model: ./fine_tuning_models/mamba2_mrna_fine_tune.md
     - Geneformer: 
       - Model Card: ./model_cards/geneformer.md
       - Config: ./configs/geneformer_config.md
@@ -29,6 +39,7 @@ nav:
     - Fine-Tuning Heads: ./models/fine_tuning_heads.md
   - Example Notebooks:
     - Quick-Start-Tutorial: ./notebooks/Quick-Start-Tutorial.ipynb
+    - Helix-mRNA: ./notebooks/Helix-mRNA.ipynb
     - Cell-Type Annotation: ./notebooks/Cell-Type-Annotation.ipynb
     - Cell-Type-Classification-Fine-Tuning: ./notebooks/Cell-Type-Classification-Fine-Tuning.ipynb
     - Geneformer-vs-UCE: ./notebooks/Geneformer-vs-UCE.ipynb
