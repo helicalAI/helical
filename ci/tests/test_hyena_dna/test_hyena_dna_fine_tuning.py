@@ -18,6 +18,6 @@ class TestHyenaDNAFineTuning:
 
     def test_output_dimensionality_of_fine_tuned_model(self, hyenaDNAFineTune, mock_data):
         input_sequences, labels = mock_data
-        hyenaDNAFineTune.train(train_input_data=input_sequences, train_labels=labels, validation_input_data=input_sequences, validation_labels=labels)
+        hyenaDNAFineTune.train(train_dataset=input_sequences, train_labels=labels, validation_dataset=input_sequences, validation_labels=labels)
         outputs = hyenaDNAFineTune.get_outputs(input_sequences)
         assert outputs.shape == (len(input_sequences), 1)
