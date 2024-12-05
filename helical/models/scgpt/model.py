@@ -101,7 +101,7 @@ class scGPT(HelicalRNAModel):
             pad_value=self.config["pad_value"],
             do_mlm=False,
             do_binning=True,
-            max_length=1200,
+            max_length=self.config["MAX_LENGTH"],
             sampling=True,
             keep_first_n_tokens=1,
         )
@@ -116,9 +116,16 @@ class scGPT(HelicalRNAModel):
 
         device = next(self.model.parameters()).device
 
-        cell_embeddings = np.zeros(
-            (len(dataset), self.config["embsize"]), dtype=np.float32
-        )
+        # provision numpy ndarray for gene, cell and cls embeddings
+        if self.config["emb_mode"] == "gene":
+            cell_embeddings = np.zeros(
+                (len(dataset), self.config["MAX_LENGTH"]-1, self.config["embsize"]), dtype=np.float32
+            )
+        else:
+            cell_embeddings = np.zeros(
+                (len(dataset), self.config["embsize"]), dtype=np.float32
+            )
+        
         with torch.no_grad(), torch.cuda.amp.autocast(enabled=True): #torch.autocast(device_type=str(device),enabled=True): # torch.cuda.amp.autocast(enabled=True):
             count = 0
             for data_dict in tqdm(data_loader, desc="Embedding cells"):
@@ -135,8 +142,17 @@ class scGPT(HelicalRNAModel):
                     else None,
                 )
 
-                embeddings = embeddings[:, 0, :]  # get the <cls> position embedding
-                embeddings = embeddings.cpu().numpy()
+                if self.config["emb_mode"] == "cls":
+                    embeddings = embeddings[:, 0, :]  # get the <cls> position embedding
+                    embeddings = embeddings.cpu().numpy()
+                elif self.config["emb_mode"] == "cell":
+                    embeddings = embeddings[: 1:, :] # get all embeddings except the <cls> position
+                    embeddings = torch.mean(embeddings, dim=1) # mean embeddings to get cell embedding
+                    embeddings = embeddings.cpu().numpy()
+                elif self.config["emb_mode"] == "gene":
+                    embeddings = embeddings[:, 1:, :] # get all embeddings except the <cls> position
+                    embeddings = embeddings.cpu().numpy() # keep all gene embeddings
+                    
                 cell_embeddings[count : count + len(embeddings)] = embeddings
                 count += len(embeddings)
         cell_embeddings = cell_embeddings / np.linalg.norm(
