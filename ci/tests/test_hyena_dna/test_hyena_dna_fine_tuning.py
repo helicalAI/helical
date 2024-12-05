@@ -2,7 +2,6 @@ import pytest
 import torch
 from helical import HyenaDNAConfig, HyenaDNAFineTuningModel
 
-@pytest.mark.skip(reason="Work in progress.")
 class TestHyenaDNAFineTuning:
     @pytest.fixture(params=["hyenadna-tiny-1k-seqlen", "hyenadna-tiny-1k-seqlen-d256"])
     def hyenaDNAFineTune(self, request):
