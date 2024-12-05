@@ -100,7 +100,7 @@ jobs:
 
       - name: Run Notebooks
         run: |
-          pytest --durations=0 --nbmake $(find ./examples/notebooks -name "*.ipynb" ! -name "Hyena*")
+          pytest --durations=0 --nbmake ./examples/notebooks/*.ipynb
 
   release:
     needs: notebooks
