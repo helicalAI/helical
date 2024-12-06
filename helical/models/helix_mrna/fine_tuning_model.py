@@ -117,6 +117,8 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
         ----------
         train_dataset : Dataset
             A helical processed dataset for fine-tuning
+        train_labels : np.ndarray
+            The labels for the training dataset
         optimizer : torch.optim, default=torch.optim.AdamW
             The optimizer to be used for training.
         optimizer_params : dict, optional, default={'lr': 0.0001}
@@ -124,14 +126,14 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
             e.g. optimizer_params = {'lr': 0.0001}
         loss_function : torch.nn.modules.loss, default=torch.nn.modules.loss.CrossEntropyLoss()
             The loss function to be used.
-        label : str, optional, default="cell_types"
-            The column in the dataset containing the training labels. These should be stored as unique per class integers.
         epochs : int, optional, default=10
             The number of epochs to train the model
         trainable_layers : int, optional, default=2
             The number of layers to train in the model. The last n layers will be trained and the rest will be frozen.
         validation_dataset : Dataset, default=None
             A helical processed dataset for per epoch validation. If this is not specified, no validation will be performed.
+        validation_labels : np.ndarray, default=None
+            The labels for the validation dataset. This is required if a validation dataset is specified.
         lr_scheduler_params : dict, default=None
             The learning rate scheduler parameters for the transformers get_scheduler method. The optimizer will be taken from the optimizer input and should not be included in the learning scheduler parameters. If not specified, no scheduler will be used.
             e.g. lr_scheduler_params = { 'name': 'linear', 'num_warmup_steps': 0 }. num_steps will be calculated based on the number of epochs and the length of the training dataset.

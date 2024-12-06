@@ -1,5 +1,6 @@
 pad_token: "<pad>"
 batch_size: 24
+emb_mode: "gene"
 fast_transformer: True
 nlayers: 12
 nheads: 8
