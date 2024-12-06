@@ -7,13 +7,7 @@ on:
 
 jobs:
   tests:
-    strategy:
-      matrix:
-        # os: [self-hosted, ubuntu-24.04]
-        os: [ubuntu-24.04]
-    runs-on: ${{ matrix.os }}
-    env:
-      CUDA_VISIBLE_DEVICES: 0
+    runs-on: [self-hosted, ubuntu-24.04]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -49,19 +43,29 @@ jobs:
       #   with:
       #     pytest-coverage-path: ./pytest-coverage.txt
       #     junitxml-path: ./pytest.xml
+  
+  integration-tests:
+    runs-on: self-hosted
+    env:
+      CUDA_VISIBLE_DEVICES: 0
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11.8
 
-      - name: Execute Geneformer v1
+      - name: Install dependencies
         run: |
-          python examples/run_models/run_geneformer.py ++model_name="gf-12L-30M-i2048"
-
-      - name: Fine-tune Geneformer v1
+            pip install -r requirements-dev.txt
+            pip install .[mamba-ssm]
+            
+      # First download before tests as they make use of the downloaded files 
+      - name: Download all files
         run: |
-          python examples/fine_tune_models/fine_tune_geneformer.py ++model_name="gf-12L-30M-i2048"
-
-      - name: Execute Geneformer v2
-        run: |
-          python examples/run_models/run_geneformer.py ++model_name="gf-12L-95M-i4096"
+          python ci/download_all.py
 
       - name: Fine-tune Geneformer v2
         run: |
@@ -111,10 +115,10 @@ jobs:
         run: |
           pip install scanorama
           python examples/run_benchmark.py
-
+    
   notebooks:
     needs: tests
-    runs-on: ubuntu-24.04
+    runs-on: self-hosted
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
