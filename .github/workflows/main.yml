@@ -58,7 +58,7 @@ jobs:
             # pip install .[mamba-ssm]
             pip install .
             pip install mamba-ssm==2.2.2
-            causal-conv1d==1.4.0
+            pip install causal-conv1d==1.4.0
 
       # First download before tests as they make use of the downloaded files 
       - name: Download all files
