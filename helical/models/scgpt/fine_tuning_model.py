@@ -114,7 +114,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
         if self.config["emb_mode"] == "cls":
             embeddings = embeddings[:, 0, :]
         else:
-            embeddings = embeddings[:, 1:, 0].mean(dim=1)
+            embeddings = embeddings[:, 1:, :].mean(dim=1)
 
         output = self.fine_tuning_head(embeddings)
         return output
