@@ -45,10 +45,16 @@ dependencies = [
     'louvain==0.8.2',
     'pyensembl',
     'datasets==2.20.0',
-    'mamba-ssm==2.2.2',
+]
+
+[project.optional-dependencies]
+mamba-ssm = [
+    'mamba-ssm @ git+https://github.com/state-spaces/mamba.git@v2.2.3',
     'causal-conv1d==1.4.0',
 ]
 
+[tool.hatch.metadata]
+allow-direct-references = true # Allows installing package from git
 
 [project.urls]
 Homepage = "https://github.com/helicalAI/helical"
