@@ -12,7 +12,7 @@ class TestSCGPTModel:
 
     # Create a dummy AnnData object
     data = AnnData()
-    data.var["gene_names"] = ['SAMD11', 'PLEKHN1', "NOT_IN_VOCAB", "<pad>", 'HES4']
+    data.var["gene_names"] = ['SAMD11', 'PLEKHN1', "NOT_IN_VOCAB", 'HES4']
     data.obs["cell_type"] = ["CD4 T cells"]
     
     vocab = {
@@ -23,7 +23,7 @@ class TestSCGPTModel:
     }
     scgpt.vocab = GeneVocab.from_dict(vocab)
     
-    data.X = [[1, 2, 5, 6, 0]]
+    data.X = [[1, 2, 5, 6]]
     
     def test_process_data(self):
         dataset = self.scgpt.process_data(self.data, gene_names = "gene_names")
@@ -33,16 +33,16 @@ class TestSCGPTModel:
 
         # asserts that all the genes in gene_names have been correctly translated 
         # to the corresponding ids based on the vocabulary
-        assert (self.data.var["id_in_vocab"] == [0, 1, -1, 3, 2]).all()
+        assert (self.data.var["id_in_vocab"] == [0, 1, -1, 2]).all()
 
         # make sure that the genes not present in the vocabulary are filtered out
         # meaning -1 is not present in the gene_ids
-        assert (dataset.gene_ids == [0, 1, 3, 2]).all()
+        assert (dataset.gene_ids == [0, 1, 2]).all()
 
         # ensure that the default index of the vocabulary is set to the id of the pad token
         assert self.scgpt.vocab.get_default_index() == 3
 
-        assert (dataset.count_matrix == [1, 2, 6, 0]).all()
+        assert (dataset.count_matrix == [1, 2, 6]).all()
 
     def test_correct_handling_of_batch_ids(self):
         batch_id_array = [1]
@@ -51,20 +51,27 @@ class TestSCGPTModel:
         assert (dataset.batch_ids == batch_id_array).all()
 
     def test_direct_assignment_of_genes_to_index(self):
-        self.data.var.index = ['SAMD11', 'PLEKHN1', "NOT_IN_VOCAB", "<pad>", 'HES4']
+        self.data.var.index = ['SAMD11', 'PLEKHN1', "NOT_IN_VOCAB", 'HES4']
         self.scgpt.process_data(self.data, gene_names = "index")
         
         # as set above, the gene column can also be direclty assigned to the index column
         assert self.scgpt.gene_names == "index"
         assert self.scgpt.gene_names in self.data.var
 
-
-    def test_get_embeddings(self):
+    # test get_embeddings for all three embedding modes
+    @pytest.mark.parametrize("emb_mode", ["cell", "gene", "cls"])
+    def test_get_embeddings(self, emb_mode):
+        self.scgpt.config["emb_mode"] = emb_mode
         dataset = self.scgpt.process_data(self.data, gene_names = "gene_names")
         embeddings = self.scgpt.get_embeddings(dataset)
-        assert embeddings.shape == (1, 512)
+        if emb_mode == "gene":
+            assert list(embeddings[0].keys()) == ["SAMD11", "PLEKHN1", "HES4"]
+            for key in embeddings[0].keys():
+                assert len(embeddings[0][key]) == 512
+        else:
+            assert embeddings.shape == (1, 512)
 
-    dummy_data = ad.read_h5ad("ci/tests/data/cell_type_sample.h5ad")
+    dummy_data = ad.read_h5ad("data/cell_type_sample.h5ad")
     @pytest.mark.parametrize("data, gene_names, batch_labels", 
                              [
                                 #  missing gene_names in data.var
@@ -77,11 +84,11 @@ class TestSCGPTModel:
         with pytest.raises(KeyError):
             self.scgpt.ensure_data_validity(data, gene_names, batch_labels)
     
-    err_np_arr_data = ad.read_h5ad("ci/tests/data/cell_type_sample.h5ad")
+    err_np_arr_data = ad.read_h5ad("data/cell_type_sample.h5ad")
     err_np_arr_data.X.dtype=float
     err_np_arr_data.X[0,0] = 0.5
 
-    err_csr_data = ad.read_h5ad("ci/tests/data/cell_type_sample.h5ad")
+    err_csr_data = ad.read_h5ad("data/cell_type_sample.h5ad")
     err_csr_data.X = csr_matrix(np.random.rand(100, 5), dtype=np.float32)
     @pytest.mark.parametrize("data",
                              [
@@ -95,8 +102,8 @@ class TestSCGPTModel:
             self.scgpt.ensure_data_validity(data, "index", False)
         assert "total_counts" in data.obs
 
-    np_arr_data = ad.read_h5ad("ci/tests/data/cell_type_sample.h5ad")
-    csr_data = ad.read_h5ad("ci/tests/data/cell_type_sample.h5ad")
+    np_arr_data = ad.read_h5ad("data/cell_type_sample.h5ad")
+    csr_data = ad.read_h5ad("data/cell_type_sample.h5ad")
     csr_data.X = csr_matrix(np.random.poisson(1, size=(100, 5)), dtype=np.float32)
     @pytest.mark.parametrize("data",
                              [
