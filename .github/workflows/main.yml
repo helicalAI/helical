@@ -9,7 +9,8 @@ jobs:
   tests:
     strategy:
       matrix:
-        os: [self-hosted, ubuntu-24.04]
+        # os: [self-hosted, ubuntu-24.04]
+        os: [ubuntu-24.04]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
@@ -83,7 +84,7 @@ jobs:
 
   notebooks:
     needs: tests
-    runs-on: self-hosted
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
