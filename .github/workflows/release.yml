@@ -11,6 +11,8 @@ permissions:
 jobs:
   tests:
     runs-on: self-hosted
+    env:
+      CUDA_VISIBLE_DEVICES: 0
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -32,7 +34,7 @@ jobs:
 
       - name: Execute unittests
         run: |
-          pytest --cov-report=html:html_cov --cov-branch --cov-report term --cov=helical ci/
+          CUDA_VISIBLE_DEVICES=-1 pytest --cov-report=html:html_cov --cov-branch --cov-report term --cov=helical ci/
       
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
@@ -52,21 +54,57 @@ jobs:
         run: |
           python examples/run_models/run_geneformer.py ++model_name="gf-12L-30M-i2048"
 
+      - name: Fine-tune Geneformer v1
+        run: |
+          python examples/fine_tune_models/fine_tune_geneformer.py ++model_name="gf-12L-30M-i2048"
+
       - name: Execute Geneformer v2
         run: |
           python examples/run_models/run_geneformer.py ++model_name="gf-12L-95M-i4096"
+
+      - name: Fine-tune Geneformer v2
+        run: |
+          python examples/fine_tune_models/fine_tune_geneformer.py ++model_name="gf-12L-30M-i2048"
 
       - name: Execute scGPT
         run: |
           python examples/run_models/run_scgpt.py
 
+      - name: Fine-tune scGPT
+        run: |
+          python examples/fine_tune_models/fine_tune_scgpt.py
+
       - name: Execute UCE
         run: |
           python examples/run_models/run_uce.py
 
-      # - name: Execute Hyena
-      #   run: |
-      #     python examples/run_models/run_hyena_dna.py
+      - name: Fine-tune UCE
+        run: |
+          python examples/fine_tune_models/fine_tune_UCE.py
+
+      - name: Execute Hyena
+        run: |
+          python examples/run_models/run_hyena_dna.py
+
+      - name: Execute Hyena
+        run: |
+          python examples/fine_tune_models/fine_tune_hyena_dna.py
+
+      - name: Execute Helix-mRNA
+        run: |
+          python examples/run_models/run_helix_mrna.py
+
+      - name: Fine-tune Helix-mRNA
+        run: |
+          python examples/fine_tune_models/fine_tune_helix_mrna.py
+
+      - name: Execute Mamba2-mRNA
+        run: |
+          python examples/run_models/run_mamba2_mrna.py
+
+      - name: Fine-tune Mamba2-mRNA
+        run: |
+          python examples/fine_tune_models/fine_tune_mamba2_mrna.py
 
       - name: Execute benchmarking
         run: |
