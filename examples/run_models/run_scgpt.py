@@ -16,7 +16,7 @@ def run(cfg: DictConfig):
     # ann_data = get_anndata_from_hf_dataset(hf_dataset)
 
     # or load directly
-    ann_data = ad.read_h5ad("./10k_pbmcs_proc.h5ad")
+    ann_data = ad.read_h5ad("./yolksac_human.h5ad")
 
     data = scgpt.process_data(ann_data[:10])
     embeddings = scgpt.get_embeddings(data)
