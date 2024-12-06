@@ -110,8 +110,13 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
             if use_batch_labels
             else None,
         )
-        cls_emb = embeddings[:, 0, :]
-        output = self.fine_tuning_head(cls_emb)
+
+        if self.config["emb_mode"] == "cls":
+            embeddings = embeddings[:, 0, :]
+        else:
+            embeddings = embeddings[:, 1:, 0].mean(dim=1)
+
+        output = self.fine_tuning_head(embeddings)
         return output
     
     def train(

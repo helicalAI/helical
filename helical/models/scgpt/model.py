@@ -81,13 +81,15 @@ class scGPT(HelicalRNAModel):
 
         Parameters 
         ----------
-        dataset: Dataset
+        dataset : Dataset
             The processed dataset to get the embeddings from.
 
         Returns
         -------
-        np.ndarray
-            The gene embeddings in the form of a numpy array
+        np.ndarray | List[pd.Series]
+            The embeddings produced by the model. 
+            The return type depends on the `emb_mode` parameter in the configuration.
+            If `emb_mode` is set to "gene", the embeddings are returned as a list of pd.Series which contain a mapping of gene_name:embedding for each cell.
         """
         LOGGER.info(f"Inference started:")
 
