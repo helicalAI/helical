@@ -221,6 +221,19 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
         LOGGER.info(f"Fine-Tuning Complete. Epochs: {epochs}")
 
     def get_outputs(self, dataset: Dataset) -> np.ndarray:
+        """
+        Returns the outputs of the model for the given dataset.
+        
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset object returned by the `process_data` function.
+        
+        Returns
+        ----------
+        np.ndarray
+            The outputs of the model for the given dataset
+        """
         dataloader = DataLoader(dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"], shuffle=False)
         outputs = []
 

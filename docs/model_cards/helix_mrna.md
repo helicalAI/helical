@@ -3,7 +3,9 @@
 ## Model Details
 
 **Model Name:** Helix-mRNA  
+
 **Model Versions:** v0 
+
 **Model Description:** Helix-mRNA is a single nucleotide resolution model that combines the Mamba2 architecture with transformer components, including attention and MLP blocks. The hybrid architecture enables precise nucleotide-level analysis and prediction of mRNA sequences. By leveraging both the efficient sequence processing capabilities of Mamba2's state space architecture and the contextual understanding of transformer attention mechanisms, Helix-mRNA processes mRNA sequences at individual nucleotide resolution. The model incorporates a special 'E' character to denote the beginning of each codon, enhancing its ability to recognize and analyze codon-level patterns in mRNA sequences.
 
 ## Model Developers
