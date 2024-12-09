@@ -42,14 +42,6 @@ jobs:
           name: coverage-report
           path: html_cov/
 
-      # Does not seem to work but would be nice to have
-      # - name: Pytest coverage comment
-      #   uses: MishaKav/pytest-coverage-comment@main
-      #   with:
-      #     pytest-coverage-path: ./pytest-coverage.txt
-      #     junitxml-path: ./pytest.xml
-
-
       - name: Execute Geneformer v1
         run: |
           python examples/run_models/run_geneformer.py ++model_name="gf-12L-30M-i2048"
@@ -160,7 +152,7 @@ jobs:
         id: get_version
         run: |
           # Extract version from setup.py (or adjust for your version file)
-          VERSION=$(python setup.py --version)
+          VERSION=$(grep "version =" pyproject.toml | cut -d '"' -f 2)
           echo "::set-output name=version::$VERSION"
         
       - name: Check if tag exists
