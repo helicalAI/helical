@@ -5,7 +5,6 @@ import anndata as ad
 from datasets import load_dataset
 from helical.utils import get_anndata_from_hf_dataset
 
-
 @hydra.main(version_base=None, config_path="configs", config_name="geneformer_config")
 def run(cfg: DictConfig):
     geneformer_config = GeneformerConfig(**cfg)

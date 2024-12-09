@@ -8,9 +8,6 @@ build:
     pre_build:
       - "mkdir -p ./docs/notebooks"
       - "cp ./examples/notebooks/*.ipynb ./docs/notebooks"
-      - "pip install -r ./docs/requirements.txt"
-      # Build the MkDocs site
-      # - "mike deploy --push --update-aliases 1.0 latest"
 
 mkdocs:
   configuration: mkdocs.yml

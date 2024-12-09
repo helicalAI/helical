@@ -10,6 +10,7 @@ def run(cfg: DictConfig):
     scgpt_config = scGPTConfig(**cfg)
     scgpt = scGPT(configurer = scgpt_config)
 
+    # print(scgpt.model)
     # either load via huggingface
     # hf_dataset = load_dataset("helical-ai/yolksac_human",split="train[:5%]", trust_remote_code=True, download_mode="reuse_cache_if_exists")
     # ann_data = get_anndata_from_hf_dataset(hf_dataset)
@@ -20,7 +21,7 @@ def run(cfg: DictConfig):
     data = scgpt.process_data(ann_data[:10])
     embeddings = scgpt.get_embeddings(data)
 
-    print(embeddings.shape)
+    print(embeddings)
 
 if __name__ == "__main__":
     run()
