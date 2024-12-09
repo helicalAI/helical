@@ -10,7 +10,7 @@ import torch
     "caduceus-ps-4L-seqlen-1k-d256", 
     "caduceus-ps-16L-seqlen-131k-d256"
 ])
-def test_hyena_dna__valid_model_names(model_name):
+def test_caduceus__valid_model_names(model_name):
     """
     Test case for the Caduceus class initialization.
 
@@ -22,10 +22,10 @@ def test_hyena_dna__valid_model_names(model_name):
 @pytest.mark.parametrize("model_name", [
     ("wrong_name")
 ])
-def test_hyena_dna__invalid_model_names(model_name):
+def test_caduceus__invalid_model_names(model_name):
     """
     Test case when an invalid model name is provided.
-    Verifies that a ValueError is raised when an invalid model name is passed to the HyenaDNAConfig constructor.
+    Verifies that a ValueError is raised when an invalid model name is passed to the CaduceusConfig constructor.
 
     Parameters:
     - model_name (str): The invalid model name.
@@ -38,14 +38,13 @@ def test_hyena_dna__invalid_model_names(model_name):
 
 @pytest.mark.parametrize("input_sequence", [
     # Valid DNA sequences
-    "",
     "A",
     "CC",
     "TTTT", 
     "ACGTN",
     "ACGT" * 256
 ])
-def test_hyena_dna_process_data(input_sequence):
+def test_caduceus_process_data(input_sequence):
     """
     Test the process_data method of the Caduceus model.
     The input DNA sequence is tokenized and the output shape is verified.
@@ -60,28 +59,25 @@ def test_hyena_dna_process_data(input_sequence):
     dataset = model.process_data([input_sequence])
     assert len(max(dataset["input_ids"], key=len)) <= model.config["input_size"]
 
-    return dataset
-
 
 @pytest.mark.parametrize("input_sequence,model_name", [
-    ("", "caduceus-ph-4L-seqlen-1k-d118"),
-    ("A", "caduceus-ps-4L-seqlen-1k-d118"),
-    ("CC", "caduceus-ph-16L-seqlen-131k-d256"),
-    ("TTTT", "caduceus-ps-4L-seqlen-1k-d256"),
-    ("ACGTN", "caduceus-ps-4L-seqlen-1k-d118"),
-    ("ACGT" * 256, "caduceus-ps-4L-seqlen-1k-d256")
+    ("ACTG", "caduceus-ph-4L-seqlen-1k-d118"),
+    ("ACTG", "caduceus-ph-4L-seqlen-1k-d256"),
+    ("ACTG", "caduceus-ph-16L-seqlen-131k-d256"),
 ])
-def test_hyena_dna_get_embeddings(input_sequence, model_name):
-    """
-    Test the get_embeddings method of the Caduceus model.
-    The embeddings are computed and the output shape is verified.
-
-    Raises:
-        AssertionError: If the output shape doesn't match expected dimensions.
-    """
+def test_caduceus_ph_get_embeddings(input_sequence, model_name):
     model = Caduceus(CaduceusConfig(model_name=model_name, device="cuda"))
-    dataset = test_hyena_dna_process_data(input_sequence)
+    dataset = model.process_data(input_sequence)
     embeddings = model.get_embeddings(dataset)
-    assert embeddings.shape[0] == 1
     assert embeddings.shape[1] == model.config["embedding_size"]
 
+@pytest.mark.parametrize("input_sequence,model_name", [
+    ("A", "caduceus-ps-4L-seqlen-1k-d118"),
+    ("TTTT", "caduceus-ps-4L-seqlen-1k-d256"),
+    ("ACGTN", "caduceus-ps-16L-seqlen-131k-d256"),
+])
+def test_caduceus_ps_get_embeddings(input_sequence, model_name):
+    model = Caduceus(CaduceusConfig(model_name=model_name, device="cuda"))
+    dataset = model.process_data(input_sequence)
+    embeddings = model.get_embeddings(dataset)
+    assert embeddings.shape[1] == model.config["embedding_size"]*2

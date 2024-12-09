@@ -51,15 +51,15 @@ class CaduceusConfig():
             },
             "caduceus-ps-4L-seqlen-1k-d118": {
                 "input_size": 1024,
-                "embedding_size": 236,
+                "embedding_size": 118,
             },
             "caduceus-ps-4L-seqlen-1k-d256": {
                 "input_size": 1024,
-                "embedding_size": 512,
+                "embedding_size": 256,
             },
             "caduceus-ps-16L-seqlen-131k-d256": {
                 "input_size": 1024*128,
-                "embedding_size": 512,
+                "embedding_size": 256,
             }
         }
 

@@ -84,6 +84,9 @@ class HyenaDNA(HelicalDNAModel):
 
         """
         LOGGER.info(f"Processing data")
+
+        self.ensure_dna_sequence_validity(sequence)
+        
         processed_sequences = []
         for seq in tqdm(sequence, desc="Processing sequences"):
             tok_seq = self.tokenizer(seq)

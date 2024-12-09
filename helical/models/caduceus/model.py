@@ -2,7 +2,7 @@ from typing import List
 from helical.models.base_models import HelicalDNAModel
 from helical.utils.downloader import Downloader
 from .caduceus_config import CaduceusConfig
-from .pretrained_model import CaduceusModel
+from .modeling_caduceus import CaduceusModel
 from .caduceus_tokenizer import CaduceusTokenizer
 from datasets import Dataset
 import torch
@@ -69,7 +69,7 @@ class Caduceus(HelicalDNAModel):
         LOGGER.info("Caduceus model initialized")
 
     def _collate_fn(self, batch):
-        input_ids = torch.tensor([item["input_ids"] for item in batch]).squeeze(0)
+        input_ids = torch.tensor([item["input_ids"] for item in batch]).squeeze(1)
         batch_dict = {
             "input_ids": input_ids,
         }
@@ -104,6 +104,10 @@ class Caduceus(HelicalDNAModel):
             Containing processed DNA sequences.
 
         """
+        LOGGER.info("Processing data")
+
+        self.ensure_dna_sequence_validity(sequences)
+        
         tokenized_sequences = []
         for seq in sequences:
             tokenized_seq = self.tokenizer(seq, return_tensors="pt", padding="max_length", truncation=True, max_length=self.config['input_size'])
@@ -125,6 +129,7 @@ class Caduceus(HelicalDNAModel):
             The embeddings for the tokenized sequence in the form of a numpy array. 
             NOTE: This method returns the embeddings using the pooling strategy specified in the config.
         """
+        LOGGER.info("Inference started")
         dataloader = DataLoader(dataset, collate_fn=self._collate_fn, batch_size=self.config['batch_size'], shuffle=False, num_workers=self.config['nproc'])
 
         embeddings = []

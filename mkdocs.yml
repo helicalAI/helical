@@ -4,7 +4,7 @@ repo_url: https://github.com/helicalAI/helical
 repo_name: helicalAI/helical
 copyright: <a href="https://www.helical-ai.com/">Helical Team</a> <br> Copyright &copy; 2024
 nav:
-  - Models:
+  - RNA Models:
     - Helix-mRNA: 
       - Model Card: ./model_cards/helix_mrna.md
       - Config: ./configs/helix_mrna_config.md
@@ -25,16 +25,22 @@ nav:
       - Config: ./configs/scgpt_config.md
       - Model: ./models/scgpt.md
       - Fine-Tuning Model: ./fine_tuning_models/scgpt_fine_tune.md
-    - HyenaDNA:
-      - Model Card: ./model_cards/hyenadna.md
-      - Config: ./configs/hyenadna_config.md
-      - Model: ./models/hyenadna.md
-      - Fine-Tuning Model: ./fine_tuning_models/hyenadna_fine_tune.md
     - UCE: 
       - Model Card: ./model_cards/uce.md
       - Config: ./configs/uce_config.md
       - Model: ./models/uce.md
       - Fine-Tuning Model: ./fine_tuning_models/uce_fine_tune.md
+  - DNA Models:
+    - HyenaDNA:
+      - Model Card: ./model_cards/hyenadna.md
+      - Config: ./configs/hyenadna_config.md
+      - Model: ./models/hyenadna.md
+      - Fine-Tuning Model: ./fine_tuning_models/hyenadna_fine_tune.md
+    - Caduceus:
+      - Model Card: ./model_cards/caduceus.md
+      - Config: ./configs/caduceus_config.md
+      - Model: ./models/caduceus.md
+      - Fine-Tuning Model: ./fine_tuning_models/caduceus_fine_tune.md
     - Helical Base Models: ./models/base_models.md
     - Fine-Tuning Heads: ./models/fine_tuning_heads.md
   - Example Notebooks:
