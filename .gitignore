@@ -34,8 +34,9 @@ debug.log
 
 /docs/conf.py
 /docs/_build
-/docs/_autosummary
+/docs/_autosummary/
 _build
+_static
 /docs/source
 
 # From unit tests

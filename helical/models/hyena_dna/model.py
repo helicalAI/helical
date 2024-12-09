@@ -59,7 +59,7 @@ class HyenaDNA(HelicalDNAModel):
         self.tokenizer = CharacterTokenizer(
             characters=['A', 'C', 'G', 'T', 'N'],  # add DNA characters, N is uncertain
             model_max_length=self.config['max_length'] + 2,  # to account for special tokens, like EOS
-            add_special_tokens=False,  # we handle special tokens elsewhere
+            # add_special_tokens=False,  # we handle special tokens elsewhere
             padding_side='left', # since HyenaDNA is causal, we pad on the left
         )
 
@@ -117,12 +117,8 @@ class HyenaDNA(HelicalDNAModel):
         train_data_loader = DataLoader(dataset, batch_size=self.config["batch_size"])
         with torch.inference_mode():
             embeddings = []
-            for input_data in tqdm(train_data_loader, desc="Getting embeddings"):
-                input_data = input_data.to(self.device)
+            for batch in tqdm(train_data_loader, desc="Getting embeddings"):
+                input_data = batch["input_ids"].to(self.device)
                 embeddings.append(self.model(input_data).detach().cpu().numpy())
         
-        # output = torch.stack(embeddings)
-        # other_dims = output.shape[2:]
-
-        # reshaped_tensor = output.view(-1, *other_dims)
         return np.vstack(embeddings)

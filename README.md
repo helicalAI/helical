@@ -47,6 +47,23 @@ To install the latest Helical package, you can run the command below:
 pip install --upgrade git+https://github.com/helicalAI/helical.git
 ```
 
+Alternatively, clone the repo and install it:
+```
+git clone https://github.com/helicalAI/helical.git
+pip install .
+```
+
+[Optional] To install mamba-ssm and causal-conv1d use the command below:
+```
+pip install helical[mamba-ssm]
+```
+or in case you're installing from the Helical repo cloned locally:
+```
+pip install .[mamba-ssm]
+```
+
+Note: make sure your machine has GPU(s) and Cuda installed. Currently this is a requirement for the packages mamba-ssm and causal-conv1d.
+
 ### Singularity (Optional)
 If you desire to run your code in a singularity file, you can use the [singularity.def](./singularity.def) file and build an apptainer with it:
 ```
@@ -60,6 +77,8 @@ apptainer shell --nv --fakeroot singularity/helical/
 
 ## Installation
 ### RNA models:
+- [Helix-mRNA]((https://helical.readthedocs.io/en/latest/model_cards/helix_mrna/))
+- [Mamba2-mRNA]((https://helical.readthedocs.io/en/latest/model_cards/mamba2_mrna/))
 - [Geneformer](https://helical.readthedocs.io/en/latest/model_cards/geneformer/)
 - [scGPT](https://helical.readthedocs.io/en/latest/model_cards/scgpt/)
 - [Universal Cell Embedding (UCE)](https://helical.readthedocs.io/en/latest/model_cards/uce/)
@@ -83,6 +102,7 @@ Within the `examples/notebooks` folder, open the notebook of your choice. We rec
 | Example | Description | Colab |
 | ----------- | ----------- |----------- |                                                        
 |[Quick-Start-Tutorial.ipynb](./examples/notebooks/Quick-Start-Tutorial.ipynb)| A tutorial to quickly get used to the helical package and environment. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Quick-Start-Tutorial.ipynb)|
+|[Helix-mRNA.ipynb](./examples/notebooks/Helix-mRNA.ipynb)|An example of how to use the Helix-mRNA model.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Helix-mRNA.ipynb) |
 |[Geneformer-vs-UCE.ipynb](./examples/notebooks/Geneformer-vs-UCE.ipynb) | Zero-Shot Reference Mapping with Geneformer & UCE and compare the outcomes. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Geneformer-vs-UCE.ipynb) |
 |[Hyena-DNA-Inference.ipynb](./examples/notebooks/Hyena-DNA-Inference.ipynb)|An example how to do probing with HyenaDNA by training a neural network on 18 downstream classification tasks.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Hyena-Dna-Inference.ipynb) |
 |[Cell-Type-Annotation.ipynb](./examples/notebooks/Cell-Type-Annotation.ipynb)|An example how to do probing with scGPT by training a neural network to predict cell type annotations.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Cell-Type-Annotation.ipynb) |
@@ -122,6 +142,8 @@ A lot of our models have been published by talend authors developing these excit
 
 You can find the Licenses for each model implementation in the model repositories:
 
+- [Helix-mRNA](https://github.com/helicalAI/helical/blob/release/helical/models/helix_mrna/LICENSE)
+- [Mamba2-mRNA](https://github.com/helicalAI/helical/blob/release/helical/models/mamba2_mrna/LICENSE)
 - [scGPT](https://github.com/helicalAI/helical/blob/release/helical/models/scgpt/LICENSE)
 - [Geneformer](https://github.com/helicalAI/helical/blob/release/helical/models/geneformer/LICENSE)
 - [UCE](https://github.com/helicalAI/helical/blob/release/helical/models/uce/LICENSE)
@@ -134,7 +156,7 @@ Please use this BibTeX to cite this repository in your publications:
 ```bibtex
 @software{allard_2024_13135902,
   author       = {Helical Team},
-  title        = {helicalAI/helical: v0.0.1-alpha6},
+  title        = {helicalAI/helical: v0.0.1-alpha8},
   month        = nov,
   year         = 2024,
   publisher    = {Zenodo},

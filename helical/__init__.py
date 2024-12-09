@@ -35,3 +35,6 @@ from .models.scgpt.fine_tuning_model import scGPTFineTuningModel
 from .models.hyena_dna.model import HyenaDNA, HyenaDNAConfig
 from .models.hyena_dna.fine_tuning_model import HyenaDNAFineTuningModel
 from .models.caduceus.model import Caduceus, CaduceusConfig
+from .models.helix_mrna import HelixmRNA, HelixmRNAConfig, HelixmRNAFineTuningModel
+from .models.mamba2_mrna import Mamba2mRNA, Mamba2mRNAConfig, Mamba2mRNAFineTuningModel
+
