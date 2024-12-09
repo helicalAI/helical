@@ -151,7 +151,7 @@ jobs:
       - name: Extract version
         id: get_version
         run: |
-          # Extract version from setup.py (or adjust for your version file)
+          # Extract version from pyproject.toml (or adjust for your version file)
           VERSION=$(grep "version =" pyproject.toml | cut -d '"' -f 2)
           echo "::set-output name=version::$VERSION"
         
