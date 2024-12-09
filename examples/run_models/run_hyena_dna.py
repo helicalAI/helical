@@ -7,7 +7,7 @@ def run(cfg: DictConfig):
 
     hyena_config = HyenaDNAConfig(**cfg)
     model = HyenaDNA(configurer = hyena_config)   
-    sequence = 'ACTG' * int(1024/4)
+    sequence = ['ACTG' * int(1024/4)]
     tokenized_sequence = model.process_data(sequence)
     embeddings = model.get_embeddings(tokenized_sequence)
     print(embeddings.shape)

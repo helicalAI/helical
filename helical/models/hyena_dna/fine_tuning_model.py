@@ -21,26 +21,24 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
     Example
     ----------
     ```python
-    from datasets import load_dataset
-    from helical import HyenaDNAConfig, HyenaDNAFineTuningModel
+    from helical import HyenaDNAFineTuningModel, HyenaDNAConfig
     import torch
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    # Load a Hugging Face dataset and task type
-    ds = load_dataset("dataset", "task")
+    input_sequences = ["ACT"*20, "ATG"*20, "ATG"*20, "ACT"*20, "ATT"*20]
+    labels = [0, 2, 2, 0, 1]
 
-    # Define the desired configs
-    config = HyenaDNAConfig(device=device, batch_size=10)
+    hyena_dna_config = HyenaDNAConfig(batch_size=1, device=device)
+    hyena_dna_fine_tune = HyenaDNAFineTuningModel(hyena_config=hyena_dna_config, fine_tuning_head="classification", output_size=3)
 
-    # Define the fine-tuning model with the configs we instantiated above
-    hyena_fine_tune = HyenaDNAFineTuningModel(config, "classification", number_unique_outputs)
+    train_dataset = hyena_dna_fine_tune.process_data(input_sequences)
 
-    # Prepare the sequences for input to the model
-    input_dataset = hyena_fine_tune.process_data(ds["train"]["sequence"])
+    hyena_dna_fine_tune.train(train_dataset=train_dataset, train_labels=labels)
 
-    # train the fine-tuning model on some downstream task
-    hyena_fine_tune.train(input_dataset, ds["train"]["label"])
+    outputs = hyena_dna_fine_tune.get_outputs(train_dataset)
+    
+    print(outputs.shape)
     ```
     
     Parameters
@@ -54,7 +52,7 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
     
     Methods
     -------
-    train(train_input_data: HyenaDNADataset, train_labels: list[int], validation_input_data: HyenaDNADataset = None, validation_labels: list[int] = None, optimizer: torch.optim, optimizer_params: dict, loss_function: torch.nn.modules.loss, epochs: int, lr_scheduler_params: dict = None)
+    train(train_dataset: HyenaDNADataset, train_labels: list[int], validation_dataset: HyenaDNADataset = None, validation_labels: list[int] = None, optimizer: torch.optim, optimizer_params: dict, loss_function: torch.nn.modules.loss, epochs: int, lr_scheduler_params: dict = None)
         Fine-tunes the Hyena-DNA model with different head modules.
     get_outputs(input_data: HyenaDNADataset) -> np.ndarray
         Get the outputs of the fine-tuned model.
@@ -77,9 +75,9 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
 
     def train(        
         self,
-        train_input_data: HyenaDNADataset,
+        train_dataset: HyenaDNADataset,
         train_labels: list[int],     
-        validation_input_data: HyenaDNADataset = None,
+        validation_dataset: HyenaDNADataset = None,
         validation_labels: list[int] = None,
         optimizer: optim = optim.AdamW,
         optimizer_params: dict = {'lr': 0.0001}, 
@@ -90,11 +88,11 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
 
         Parameters
         ----------
-        train_input_data : HyenaDNADataset
+        train_dataset : HyenaDNADataset
             A helical Hyena-DNA processed dataset for fine-tuning
         train_labels : list[int]
             The labels for the training data. These should be stored as unique per class integers.
-        validation_input_data : HyenaDNADataset, default=None
+        validation_dataset : HyenaDNADataset, default=None
             A helical Hyena-DNA processed dataset for per epoch validation. If this is not specified, no validation will be performed.
         validation_labels : list[int], default=None
             The labels for the validation data. These should be stored as unique per class integers.
@@ -108,15 +106,15 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
         epochs : int, optional, default=10
             The number of epochs to train the model for.
         lr_scheduler_params : dict, default=None
-            The learning rate scheduler parameters for the transformers get_scheduler method. The optimizer will be taken from the optimizer input and should not be included in the learning scheduler parameters. If not specified, no scheduler will be used.
-            e.g. lr_scheduler_params = { 'name': 'linear', 'num_warmup_steps': 0, 'num_training_steps': 5 }
+            The learning rate scheduler parameters for the transformers get_scheduler method. The optimizer will be taken from the optimizer input and should not be included in the learning scheduler parameters. If not specified, a constant learning rate will be used.
+            e.g. lr_scheduler_params = { 'name': 'linear', 'num_warmup_steps': 0 }. num_steps will be calculated based on the number of epochs and the length of the training dataset.
         """
-        train_input_data.set_labels(train_labels)
-        train_data_loader = DataLoader(train_input_data, batch_size=self.config["batch_size"])
+        train_dataset.set_labels(train_labels)
+        train_dataloader = DataLoader(train_dataset, batch_size=self.config["batch_size"])
      
-        if validation_input_data is not None and validation_labels is not None:
-            validation_input_data.set_labels(validation_labels)
-            validation_data_loader = DataLoader(validation_input_data, batch_size=self.config["batch_size"])
+        if validation_dataset is not None and validation_labels is not None:
+            validation_dataset.set_labels(validation_labels)
+            validation_dataloader = DataLoader(validation_dataset, batch_size=self.config["batch_size"])
 
         self.to(self.config["device"])
         self.model.train()
@@ -125,16 +123,16 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
 
         lr_scheduler = None
         if lr_scheduler_params is not None: 
-            lr_scheduler = get_scheduler(optimizer=optimizer, **lr_scheduler_params)
+            lr_scheduler = get_scheduler(optimizer=optimizer, num_training_steps=epochs*len(train_dataloader),  **lr_scheduler_params)
 
         logger.info("Starting Fine-Tuning")
         for i in range(epochs):
             batch_loss = 0.0
             batches_processed = 0
-            training_loop = tqdm(train_data_loader)
-            for input_data, labels in training_loop:
-                input_data = input_data.to(self.config["device"])
-                labels = labels.to(self.config["device"])
+            training_loop = tqdm(train_dataloader)
+            for batch in training_loop:
+                input_data = batch["input_ids"].to(self.config["device"])
+                labels = batch["labels"].to(self.config["device"])
                 optimizer.zero_grad()
                 output = self._forward(input_data)
                 loss = loss_function(output, labels)
@@ -146,17 +144,17 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
                 training_loop.set_postfix({"loss": batch_loss/batches_processed})
                 training_loop.set_description(f"Fine-Tuning: epoch {i+1}/{epochs}")
             
-            if lr_scheduler is not None:
-                lr_scheduler.step()
+                if lr_scheduler is not None:
+                    lr_scheduler.step()
 
-            if validation_input_data is not None and validation_labels is not None:
+            if validation_dataset is not None and validation_labels is not None:
                 with torch.no_grad():
                     validation_batches_processed = 0
                     val_loss = 0.0
-                    validation_loop = tqdm(validation_data_loader, desc="Fine-Tuning Validation")
-                    for input_data, val_labels in validation_loop:
-                        input_data = input_data.to(self.config["device"])
-                        val_labels = val_labels.to(self.config["device"])
+                    validation_loop = tqdm(validation_dataloader, desc="Fine-Tuning Validation")
+                    for batch in validation_loop:
+                        input_data = batch["input_ids"].to(self.config["device"])
+                        val_labels = batch["labels"].to(self.config["device"])
                         output = self._forward(input_data)
                         validation_batches_processed += 1
                         val_loss += loss_function(output, val_labels).item()
@@ -165,12 +163,12 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
             
     def get_outputs(
             self, 
-            input_data: HyenaDNADataset) -> np.ndarray:
+            dataset: HyenaDNADataset) -> np.ndarray:
         """Get the outputs of the fine-tuned model.
         
         Parameters
         ----------
-        input_data : HyenaDNADataset
+        dataset : HyenaDNADataset
             The input data to get the outputs for.
 
         Returns
@@ -178,7 +176,7 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
         np.ndarray
             The outputs of the model
         """
-        data_loader = DataLoader(input_data, batch_size=self.config["batch_size"])
+        data_loader = DataLoader(dataset, batch_size=self.config["batch_size"])
 
         self.to(self.config["device"])
         self.model.eval()
@@ -186,9 +184,9 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
 
         batch_loop = tqdm(data_loader)
         outputs = []
-        for batch, *labels in batch_loop:
-            batch.to(self.config["device"])
-            output = self._forward(batch)
+        for batch in batch_loop:
+            input_data = batch["input_ids"].to(self.config["device"])
+            output = self._forward(input_data)
             outputs.append(output.detach().cpu().numpy())
         
         return np.vstack(outputs)

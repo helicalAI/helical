@@ -18,10 +18,18 @@ class HyenaDNADataset(Dataset):
         return len(self.sequences)
 
     def __getitem__(self, idx):
-        if self.labels is None:
-            return self.sequences[idx]
-        else:
-            return self.sequences[idx], self.labels[idx]
+        seqs = self.sequences[idx]
+        
+        # Prepare output dictionary
+        output = {
+            'input_ids': seqs,
+        }
+        
+        # Add labels if they exist
+        if self.labels is not None:
+            output['labels'] = self.labels[idx]
+
+        return output
 
     def set_labels(self, labels):
         self.labels = labels

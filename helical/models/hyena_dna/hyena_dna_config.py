@@ -10,6 +10,7 @@ class HyenaDNAConfig():
     model_name : Literal["hyenadna-tiny-1k-seqlen", "hyenadna-tiny-1k-seqlen-d256"], optional, default="hyenadna-tiny-1k-seqlen"
         The name of the model.
     batch_size : int, optional, default=5
+        The batch size to use for all tasks.
     n_layer : int, optional, default=2
         The number of layers in the model.
     vocab_size : int, optional, default=12

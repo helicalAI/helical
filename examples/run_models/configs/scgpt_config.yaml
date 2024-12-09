@@ -11,5 +11,5 @@ mask_value: -1
 pad_value: -2
 world_size: 8
 accelerator: False
-device: "cpu"
+device: "cuda"
 use_fast_transformer: False
