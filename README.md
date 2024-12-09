@@ -47,6 +47,23 @@ To install the latest Helical package, you can run the command below:
 pip install --upgrade git+https://github.com/helicalAI/helical.git
 ```
 
+Alternatively, clone the repo and install it:
+```
+git clone https://github.com/helicalAI/helical.git
+pip install .
+```
+
+[Optional] To install mamba-ssm and causal-conv1d use the command below:
+```
+pip install helical[mamba-ssm]
+```
+or in case you're installing from the Helical repo cloned locally:
+```
+pip install .[mamba-ssm]
+```
+
+Note: make sure your machine has GPU(s) and Cuda installed. Currently this is a requirement for the packages mamba-ssm and causal-conv1d.
+
 ### Singularity (Optional)
 If you desire to run your code in a singularity file, you can use the [singularity.def](./singularity.def) file and build an apptainer with it:
 ```
