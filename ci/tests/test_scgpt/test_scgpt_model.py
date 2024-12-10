@@ -1,7 +1,6 @@
 from helical.models.scgpt.model import scGPT, scGPTConfig
 from helical.models.scgpt.fine_tuning_model import scGPTFineTuningModel
 from anndata import AnnData
-from helical.models.scgpt.tokenizer import GeneVocab
 import pytest
 import anndata as ad
 import numpy as np
@@ -21,7 +20,7 @@ class TestSCGPTModel:
         "HES4": 2,
         "<pad>": 3,
     }
-    scgpt.vocab = GeneVocab.from_dict(vocab)
+    scgpt.vocab = vocab
     
     data.X = [[1, 2, 5, 6, 0]]
     
