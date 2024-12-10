@@ -205,9 +205,14 @@ class scGPT(HelicalRNAModel):
 
         # Binning will be applied after tokenization. A possible way to do is to use the unified way of binning in the data collator.
 
-        self.vocab.set_default_index(self.vocab["<pad>"])
-        genes = adata.var[self.gene_names].tolist()
-        gene_ids = np.array(self.vocab(genes), dtype=int)
+        # no need to set default index when we load it from static file always
+        # self.vocab.set_default_index(self.vocab["<pad>"])
+        
+        present_gene_names = adata.var[self.gene_names].tolist()
+        present_gene_vocab = {key: self.vocab[key] for key in present_gene_names}
+        gene_ids = np.array(list(present_gene_vocab.values()), dtype=int)
+
+        # gene_ids = np.array(self.vocab(genes), dtype=int)
         count_matrix = (adata.X if isinstance(adata.X, np.ndarray) else adata.X.A)
 
         # gene vocabulary ids

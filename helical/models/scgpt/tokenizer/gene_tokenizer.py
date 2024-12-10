@@ -78,7 +78,8 @@ class GeneVocab(Vocab):
         elif file_path.suffix == ".json":
             with file_path.open("r") as f:
                 token2idx = json.load(f)
-                return cls.from_dict(token2idx)
+                return token2idx
+                # return cls.from_dict(token2idx)
         else:
             raise ValueError(
                 f"{file_path} is not a valid file type. "

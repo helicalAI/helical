@@ -14,13 +14,16 @@ def load_model(model_configs: scGPTConfig):
 
     # vocabulary
     vocab = GeneVocab.from_file(vocab_file)
-    for s in special_tokens:
-        if s not in vocab:
-            vocab.append_token(s)
+
+    # no need to set special tokens when we load it from static file always and it has it loaded already
+    # for s in special_tokens:
+    #     if s not in vocab:
+    #         vocab.append_token(s)
 
     # Binning will be applied after tokenization. A possible way to do is to use the unified way of binning in the data collator.
 
-    vocab.set_default_index(vocab[model_configs["pad_token"]])
+    # no need to set default index when we load it from static file always
+    # vocab.set_default_index(vocab[model_configs["pad_token"]])
 
     model = TransformerModel(
         ntoken=len(vocab),
