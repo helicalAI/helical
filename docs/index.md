@@ -9,22 +9,50 @@ Helical simplifies the entire application lifecycle when building with bio found
 We will update this repo on a regular basis with new models, benchmarks, modalities and functions - so stay tuned.
 Let’s build the most exciting AI-for-Bio community together!
 
+## What's new?
+### 🧬 Introducing Helix-mRNA-v0: Unlocking new frontiers & use cases in mRNA therapy 🧬
+We’re thrilled to announce the release of our first-ever mRNA Bio Foundation Model, designed to:
+
+1) Be Efficient, handling long sequence lengths effortlessly
+2) Balance Diversity & Specificity, leveraging a 2-step pre-training approach
+3) Deliver High-Resolution, using single nucleotides as a resolution
+
+Check out our <a href="https://www.helical-ai.com/blog/helix-mrna-v0" target="_blank">blog post</a> to learn more about our approach and read the <a href="https://helical.readthedocs.io/en/latest/model_cards/helix_mrna/" target="_blank">model card</a> to get started.
+
 ## Installation
 
 We recommend installing Helical within a conda environment with the commands below (run them in your terminal) - this step is optional:
-```shell
+```bash
 conda create --name helical-package python=3.11.8
 conda activate helical-package
 ```
+
 To install the latest pip release of our Helical package, you can run the command below:
-```shell
+```bash
 pip install helical
 ```
 
 To install the latest Helical package, you can run the command below:
-```
+```bash
 pip install --upgrade git+https://github.com/helicalAI/helical.git
 ```
+
+Alternatively, clone the repo and install it:
+```bash
+git clone https://github.com/helicalAI/helical.git
+pip install .
+```
+
+[Optional] To install mamba-ssm and causal-conv1d use the command below:
+```bash
+pip install helical[mamba-ssm]
+```
+or in case you're installing from the Helical repo cloned locally:
+```bash
+pip install .[mamba-ssm]
+```
+
+Note: make sure your machine has GPU(s) and Cuda installed. Currently this is a requirement for the packages mamba-ssm and causal-conv1d.
 
 ### Singularity (Optional)
 If you desire to run your code in a singularity file, you can use the <a href="https://github.com/helicalAI/helical/blob/release/singularity.def" target="_blank">singularity.def</a> file and build an apptainer with it:
@@ -37,8 +65,6 @@ and then shell into the sandbox container (use the --nv flag if you have a GPU a
 apptainer shell --nv --fakeroot singularity/helical/
 ```
 
-
-## Installation
 ### RNA models:
 - [Helix-mRNA](./model_cards/helix_mrna.md)
 - [Mamba2-mRNA](./model_cards/mamba2_mrna.md)
