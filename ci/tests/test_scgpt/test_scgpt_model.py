@@ -6,6 +6,8 @@ import pytest
 import anndata as ad
 import numpy as np
 from scipy.sparse import csr_matrix
+import torch
+import pandas as pd
 
 class TestSCGPTModel:
     scgpt = scGPT()
@@ -57,19 +59,6 @@ class TestSCGPTModel:
         # as set above, the gene column can also be direclty assigned to the index column
         assert self.scgpt.gene_names == "index"
         assert self.scgpt.gene_names in self.data.var
-
-    # test get_embeddings for all three embedding modes
-    @pytest.mark.parametrize("emb_mode", ["cell", "gene", "cls"])
-    def test_get_embeddings(self, emb_mode):
-        self.scgpt.config["emb_mode"] = emb_mode
-        dataset = self.scgpt.process_data(self.data, gene_names = "gene_names")
-        embeddings = self.scgpt.get_embeddings(dataset)
-        if emb_mode == "gene":
-            assert list(embeddings[0].keys()) == ["SAMD11", "PLEKHN1", "HES4"]
-            for key in embeddings[0].keys():
-                assert len(embeddings[0][key]) == 512
-        else:
-            assert embeddings.shape == (1, 512)
 
     dummy_data = ad.read_h5ad("ci/tests/data/cell_type_sample.h5ad")
     @pytest.mark.parametrize("data, gene_names, batch_labels", 
@@ -124,3 +113,42 @@ class TestSCGPTModel:
         assert fine_tuned_model is not None
         outputs = fine_tuned_model.get_outputs(tokenized_dataset)
         assert outputs.shape == (len(self.data), len(labels))
+
+    @pytest.mark.parametrize("emb_mode", ["cell", "gene", "cls"])
+    def test_get_embeddings_of_different_modes(self, mocker, emb_mode):
+        self.scgpt.config["emb_mode"] = emb_mode
+        self.scgpt.config["embsize"] = 5
+
+        # Mock the method directly on the instance
+        mocked_embeddings = torch.tensor([
+                                        [[1.0, 1.0, 1.0, 1.0, 1.0], 
+                                         [5.0, 5.0, 5.0, 5.0, 5.0], 
+                                         [1.0, 2.0, 3.0, 2.0, 1.0], 
+                                         [6.0, 6.0, 6.0, 6.0, 6.0]],
+                                        ])
+        mocker.patch.object(self.scgpt.model, "_encode", return_value=mocked_embeddings)
+
+        # mocking the normalization of embeddings makes it easier to test the output
+        mocker.patch.object(self.scgpt, "_normalize_embeddings", return_value=None)
+
+        dataset = self.scgpt.process_data(self.data, gene_names = "gene_names")
+        embeddings = self.scgpt.get_embeddings(dataset)
+        if emb_mode == "gene":
+            data_list = pd.Series({
+                            "SAMD11": np.array([5.0, 5.0, 5.0, 5.0, 5.0]),
+                            "PLEKHN1": np.array([1.0, 2.0, 3.0, 2.0, 1.0]),
+                            "HES4": np.array([6.0, 6.0, 6.0, 6.0, 6.0])
+                        })  
+            assert data_list.equals(embeddings[0])
+
+        if emb_mode == "cls":
+            assert (embeddings == np.array([1.0, 1.0, 1.0, 1.0, 1.0])).all()
+        if emb_mode == "cell":  
+            # average column wise excluding first row
+            expected = np.array([[4.       , 4.3333335, 4.6666665, 4.3333335, 4.       ]])
+            np.testing.assert_allclose(
+                embeddings, 
+                expected, 
+                rtol=1e-4,  # relative tolerance
+                atol=1e-4   # absolute tolerance
+            )

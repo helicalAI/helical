@@ -119,18 +119,10 @@ class scGPT(HelicalRNAModel):
 
         device = next(self.model.parameters()).device
 
-        # provision numpy ndarray for gene, cell and cls embeddings
-        if self.config["emb_mode"] == "gene":
-            # create dictionary mapping gene id to gene name, can't seem to find one in the vocab object
-            id_gene_dict = {i: gene for i, gene in enumerate(self.vocab.get_itos())}
-            gene_embs = []
-        else:
-            cell_embeddings = np.zeros(
-                (len(dataset), self.config["embsize"]), dtype=np.float32
-            )
-        
+        self._initialize_embeddings()
+
         with torch.no_grad(), torch.cuda.amp.autocast(enabled=True): #torch.autocast(device_type=str(device),enabled=True): # torch.cuda.amp.autocast(enabled=True):
-            count = 0
+            self.count = 0
             for data_dict in tqdm(data_loader, desc="Embedding cells"):
                 input_gene_ids = data_dict["gene"].to(device)
 
@@ -146,41 +138,71 @@ class scGPT(HelicalRNAModel):
                     else None,
                 )
 
-                if self.config["emb_mode"] == "cls":
-                    embeddings = embeddings[:, 0, :]  # get the <cls> position embedding
-                    embeddings = embeddings.cpu().numpy()
-                elif self.config["emb_mode"] == "cell":
-                    embeddings = embeddings[: 1:, :] # get all embeddings except the <cls> position
-                    embeddings = torch.mean(embeddings, dim=1) # mean embeddings to get cell embedding
-                    embeddings = embeddings.cpu().numpy()
-                elif self.config["emb_mode"] == "gene":
-                    embeddings = embeddings[:, 1:, :].cpu().numpy() # get all embeddings except the <cls> position
-                    gene_ids = data_dict["gene"].cpu().numpy()
-                    series = []
+                self._compute_embeddings_depending_on_mode(embeddings, data_dict)
 
-                    # create a dictionary with gene name to gene embedding mappings and create pd series for each cell in batch
-                    for i, embedding in enumerate(embeddings):
-                        dict = {}
-                        for j, gene in enumerate(embedding, 1):
-                            if data_dict["gene"][i][j] != self.vocab[self.config["pad_token"]]:
-                                print(gene_ids[i][j])
-                                dict[id_gene_dict[gene_ids[i][j]]] = gene / np.linalg.norm(gene)
-                        
-                        series.append(pd.Series(dict))
-                if self.config["emb_mode"] != "gene":   
-                    cell_embeddings[count : count + len(embeddings)] = embeddings
-                    count += len(embeddings)
-                else:
-                    gene_embs.extend(series)
+        self._normalize_embeddings()
+        return self.resulting_embeddings
+        
+    def _normalize_embeddings(self) -> None:
+        """
+        Normalize the embeddings of the member variable self.resulting_embeddings.
+        """
         if self.config["emb_mode"] != "gene":
-            cell_embeddings = cell_embeddings / np.linalg.norm(
-                cell_embeddings, axis=1, keepdims=True
-            )
-
-            return cell_embeddings
+            self.resulting_embeddings = self.resulting_embeddings / np.linalg.norm(self.resulting_embeddings, axis=1, keepdims=True)
         else:
-            return gene_embs
+            for _, series in enumerate(self.resulting_embeddings):
+                for gene in series.keys():
+                    series[gene] = series[gene] / np.linalg.norm(series[gene])    
+        
+    def _initialize_embeddings(self):
+        """
+        Initialize the embeddings of the member variable self.resulting_embeddings.
+        Including a dictionary mapping gene id to gene name.
+        """
+        if self.config["emb_mode"] == "gene":
+            self.id_gene_dict = {i: gene for i, gene in enumerate(self.vocab.get_itos())}
+        self.resulting_embeddings = []
 
+    def _compute_embeddings_depending_on_mode(self, embeddings: torch.Tensor, data_dict: dict) -> None:
+        """
+        Compute the embeddings depending on the mode set in the configuration.
+
+        Parameters
+        ----------
+        embeddings : torch.Tensor
+            The embeddings to be processed.
+        data_dict : dict
+            The data dictionary containing the data to be processed.
+        
+        Returns
+        -------
+        None
+        """
+        if self.config["emb_mode"] == "cls":
+            embeddings = embeddings[:, 0, :]  # get the <cls> position embedding
+            embeddings = embeddings.cpu().numpy()
+            self.resulting_embeddings[self.count : self.count + len(embeddings)] = embeddings
+            self.count += len(embeddings)
+
+        elif self.config["emb_mode"] == "cell":
+            embeddings = embeddings[:, 1:, :] # get all embeddings except the <cls> position
+            embeddings = torch.mean(embeddings, dim=1) # mean embeddings to get cell embedding
+            embeddings = embeddings.cpu().numpy()
+            self.resulting_embeddings[self.count : self.count + len(embeddings)] = embeddings
+            self.count += len(embeddings)
+        
+        elif self.config["emb_mode"] == "gene":
+            embeddings = embeddings[:, 1:, :].cpu().numpy() # get all embeddings except the <cls> position
+            gene_ids = data_dict["gene"].cpu().numpy()
+
+            # create a dictionary with gene name to gene embedding mappings and create pd series for each cell in batch
+            for i, embedding in enumerate(embeddings):
+                dict = {}
+                for j, gene in enumerate(embedding, 1):
+                    if data_dict["gene"][i][j] != self.vocab[self.config["pad_token"]]:
+                        dict[self.id_gene_dict[gene_ids[i][j]]] = gene
+                
+                self.resulting_embeddings.append(pd.Series(dict))  
     
     def process_data(self,
                      adata: AnnData, 
