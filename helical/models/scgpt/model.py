@@ -68,6 +68,8 @@ class scGPT(HelicalRNAModel):
             downloader.download_via_name(file)
 
         self.model, self.vocab = load_model(self.config)
+
+        self.model.eval()
         
         if self.config["accelerator"]:
             self.accelerator = Accelerator(project_dir=self.config["model_path"].parent)
@@ -92,6 +94,9 @@ class scGPT(HelicalRNAModel):
             If `emb_mode` is set to "gene", the embeddings are returned as a list of pd.Series which contain a mapping of gene_name:embedding for each cell.
         """
         LOGGER.info(f"Inference started:")
+        np.random.seed(self.config["binning_seed"])
+
+        self.model.eval()
 
         try:
             use_batch_labels = dataset.batch_ids is not None

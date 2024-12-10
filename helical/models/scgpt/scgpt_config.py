@@ -68,6 +68,7 @@ class scGPTConfig():
             accelerator: Optional[bool] = False,
             device: Literal["cpu", "cuda"] = "cpu",
             use_fast_transformer: bool = False,
+            binning_seed: int = 123
             ):
         
         model_name = 'best_model' # TODO: Include more models
@@ -96,5 +97,6 @@ class scGPTConfig():
             "accelerator": accelerator,
             "device": device,
             "use_fast_transformer": use_fast_transformer,
-            "MAX_LENGTH": 1200
+            "MAX_LENGTH": 1200,
+            "binning_seed": binning_seed
             }
