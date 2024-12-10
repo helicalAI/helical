@@ -8,10 +8,9 @@ from typing_extensions import Self
 import numpy as np
 import pandas as pd
 import torch
-import torchtext 
-# torchtext.disable_torchtext_deprecation_warning()
+# import torchtext 
 import torchtext.vocab as torch_vocab
-from torchtext.vocab import Vocab
+from .vocab import Vocab
 
 # from transformers.tokenization_utils import PreTrainedTokenizer
 # from transformers import AutoTokenizer, BertTokenizer
