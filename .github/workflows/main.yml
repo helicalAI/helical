@@ -7,7 +7,7 @@ on:
 
 jobs:
   tests:
-    runs-on: self-hosted
+    runs-on: [self-hosted, ubuntu-24.04]
     env:
       CUDA_VISIBLE_DEVICES: 0
     steps:
@@ -50,6 +50,7 @@ jobs:
 
   integration-tests:
     needs: tests
+    # Integration tests require GPU(s), hence only run on self-hosted runners
     runs-on: self-hosted
     steps:
       - name: Checkout repository
@@ -132,6 +133,7 @@ jobs:
 
   notebooks:
     needs: tests
+    # Notebooks require GPU(s), hence only run on self-hosted runners
     runs-on: self-hosted
     steps:
       - name: Checkout repository
