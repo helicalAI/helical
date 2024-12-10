@@ -68,6 +68,8 @@ class scGPT(HelicalRNAModel):
             downloader.download_via_name(file)
 
         self.model, self.vocab = load_model(self.config)
+
+        self.vocab_id_to_str = {value: key for key, value in self.vocab.items()}
         
         if self.config["accelerator"]:
             self.accelerator = Accelerator(project_dir=self.config["model_path"].parent)
@@ -118,9 +120,6 @@ class scGPT(HelicalRNAModel):
         )
 
         device = next(self.model.parameters()).device
-
-        if self.config["emb_mode"] == "gene":
-            self.id_gene_dict = {i: gene for i, gene in enumerate(self.vocab.get_itos())}
         
         resulting_embeddings = []
 
@@ -195,7 +194,7 @@ class scGPT(HelicalRNAModel):
                 dict = {}
                 for j, gene in enumerate(embedding, 1):
                     if data_dict["gene"][i][j] != self.vocab[self.config["pad_token"]]:
-                        dict[self.id_gene_dict[gene_ids[i][j]]] = gene
+                        dict[self.vocab_id_to_str[gene_ids[i][j]]] = gene
                 
                 batch_embeddings.append(pd.Series(dict))
             

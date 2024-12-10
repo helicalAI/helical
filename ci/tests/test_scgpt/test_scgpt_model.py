@@ -24,6 +24,7 @@ class TestSCGPTModel:
         "<cls>": 4
     }
     scgpt.vocab = vocab
+    scgpt.vocab_id_to_str = {value: key for key, value in scgpt.vocab.items()}
     
     data.X = [[1, 2, 5, 6]]
     
