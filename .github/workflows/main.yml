@@ -22,6 +22,8 @@ jobs:
       - name: Install dependencies
         run: |
             pip install -r requirements-dev.txt
+            # Currently, the self-hosted runner uses a pre-installed version of mamba-ssm (v2.2.2). Using the latest version (v2.2.4) breaks the pip installation.
+            # TODO fix the installation of helical[mamba-ssm], and add it in the GitHub actions (CI/CD pipeline).
             pip install .
             
       # First download before tests as they make use of the downloaded files 
@@ -46,6 +48,26 @@ jobs:
       #     pytest-coverage-path: ./pytest-coverage.txt
       #     junitxml-path: ./pytest.xml
 
+  integration-tests:
+    needs: tests
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11.8
+
+      - name: Install dependencies
+        run: |
+            pip install -r requirements-dev.txt
+      
+      # First download before tests as they make use of the downloaded files 
+      - name: Download all files
+        run: |
+          python ci/download_all.py
 
       - name: Execute Geneformer v1
         run: |
