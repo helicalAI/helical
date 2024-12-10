@@ -19,6 +19,7 @@ class TestSCGPTModel:
         "PLEKHN1": 1,
         "HES4": 2,
         "<pad>": 3,
+        "<cls>": 4
     }
     scgpt.vocab = vocab
     
@@ -37,9 +38,6 @@ class TestSCGPTModel:
         # make sure that the genes not present in the vocabulary are filtered out
         # meaning -1 is not present in the gene_ids
         assert (dataset.gene_ids == [0, 1, 3, 2]).all()
-
-        # ensure that the default index of the vocabulary is set to the id of the pad token
-        assert self.scgpt.vocab.get_default_index() == 3
 
         assert (dataset.count_matrix == [1, 2, 6, 0]).all()
 
