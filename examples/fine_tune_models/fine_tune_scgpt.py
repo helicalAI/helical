@@ -8,6 +8,8 @@ import hydra
 
 @hydra.main(version_base=None, config_path="../run_models/configs", config_name="scgpt_config")
 def run_fine_tuning(cfg: DictConfig):
+
+    # either load via huggingface
     # hf_dataset = load_dataset("helical-ai/yolksac_human",split="train[:5%]", trust_remote_code=True, download_mode="reuse_cache_if_exists")
     # ann_data = get_anndata_from_hf_dataset(hf_dataset)
 
