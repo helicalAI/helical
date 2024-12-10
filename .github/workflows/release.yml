@@ -61,7 +61,6 @@ jobs:
 
   integration-tests:
     needs: tests
-    # Integration tests require GPU(s), hence only run on self-hosted runners
     runs-on: self-hosted
     steps:
       - name: Checkout repository
