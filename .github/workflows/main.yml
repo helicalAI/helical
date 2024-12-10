@@ -22,12 +22,9 @@ jobs:
       - name: Install dependencies
         run: |
             pip install -r requirements-dev.txt
+            # Currently, the self-hosted runner uses a pre-installed version of mamba-ssm (v2.2.2). Using the latest version (v2.2.4) breaks the pip installation.
+            # TODO fix the installation helical[mamba-ssm], and add it in the GitHub actions (CI/CD pipeline).
             pip install .
-            
-      # First download before tests as they make use of the downloaded files 
-      - name: Download all files
-        run: |
-          python ci/download_all.py
 
       - name: Execute unittests
         run: |
@@ -123,6 +120,11 @@ jobs:
       - name: Install dependencies
         run: |
             pip install -r requirements-dev.txt
+
+      # First download before tests as they make use of the downloaded files 
+      - name: Download all files
+        run: |
+          python ci/download_all.py
             
       - name: Reduce datasets to speedup checks
         run: |
