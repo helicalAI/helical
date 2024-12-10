@@ -119,10 +119,12 @@ class scGPT(HelicalRNAModel):
 
         device = next(self.model.parameters()).device
 
-        self._initialize_embeddings()
+        if self.config["emb_mode"] == "gene":
+            self.id_gene_dict = {i: gene for i, gene in enumerate(self.vocab.get_itos())}
+        
+        resulting_embeddings = []
 
         with torch.no_grad(), torch.cuda.amp.autocast(enabled=True): #torch.autocast(device_type=str(device),enabled=True): # torch.cuda.amp.autocast(enabled=True):
-            self.count = 0
             for data_dict in tqdm(data_loader, desc="Embedding cells"):
                 input_gene_ids = data_dict["gene"].to(device)
 
@@ -138,71 +140,66 @@ class scGPT(HelicalRNAModel):
                     else None,
                 )
 
-                self._compute_embeddings_depending_on_mode(embeddings, data_dict)
+                resulting_embeddings.extend(self._compute_embeddings_depending_on_mode(embeddings, data_dict))
 
-        self._normalize_embeddings()
-        return self.resulting_embeddings
+        resulting_embeddings = self._normalize_embeddings(resulting_embeddings)
+        return resulting_embeddings
         
-    def _normalize_embeddings(self) -> None:
+    def _normalize_embeddings(self, resulting_embeddings: torch.tensor) -> np.ndarray:
         """
-        Normalize the embeddings of the member variable self.resulting_embeddings.
+        Divides each element of each embedding by the norm of that embedding
         """
         if self.config["emb_mode"] != "gene":
-            self.resulting_embeddings = self.resulting_embeddings / np.linalg.norm(self.resulting_embeddings, axis=1, keepdims=True)
+            resulting_embeddings = resulting_embeddings / np.linalg.norm(resulting_embeddings, axis=1, keepdims=True)
         else:
-            for _, series in enumerate(self.resulting_embeddings):
+            for series in resulting_embeddings:
                 for gene in series.keys():
-                    series[gene] = series[gene] / np.linalg.norm(series[gene])    
-        
-    def _initialize_embeddings(self):
-        """
-        Initialize the embeddings of the member variable self.resulting_embeddings.
-        Including a dictionary mapping gene id to gene name.
-        """
-        if self.config["emb_mode"] == "gene":
-            self.id_gene_dict = {i: gene for i, gene in enumerate(self.vocab.get_itos())}
-        self.resulting_embeddings = []
+                    series[gene] = series[gene] / np.linalg.norm(series[gene])   
 
-    def _compute_embeddings_depending_on_mode(self, embeddings: torch.Tensor, data_dict: dict) -> None:
+        return resulting_embeddings
+
+    def _compute_embeddings_depending_on_mode(self, embeddings: torch.tensor, data_dict: dict) -> np.ndarray:
         """
         Compute the embeddings depending on the mode set in the configuration.
 
         Parameters
         ----------
-        embeddings : torch.Tensor
+        embeddings : torch.tensor
             The embeddings to be processed.
         data_dict : dict
             The data dictionary containing the data to be processed.
         
         Returns
         -------
-        None
+        np.ndarray
+            The embeddings corresponding to the mode selected
         """
         if self.config["emb_mode"] == "cls":
             embeddings = embeddings[:, 0, :]  # get the <cls> position embedding
             embeddings = embeddings.cpu().numpy()
-            self.resulting_embeddings[self.count : self.count + len(embeddings)] = embeddings
-            self.count += len(embeddings)
+            return embeddings
 
         elif self.config["emb_mode"] == "cell":
             embeddings = embeddings[:, 1:, :] # get all embeddings except the <cls> position
             embeddings = torch.mean(embeddings, dim=1) # mean embeddings to get cell embedding
             embeddings = embeddings.cpu().numpy()
-            self.resulting_embeddings[self.count : self.count + len(embeddings)] = embeddings
-            self.count += len(embeddings)
+            return embeddings
         
         elif self.config["emb_mode"] == "gene":
             embeddings = embeddings[:, 1:, :].cpu().numpy() # get all embeddings except the <cls> position
             gene_ids = data_dict["gene"].cpu().numpy()
 
             # create a dictionary with gene name to gene embedding mappings and create pd series for each cell in batch
+            batch_embeddings = []
             for i, embedding in enumerate(embeddings):
                 dict = {}
                 for j, gene in enumerate(embedding, 1):
                     if data_dict["gene"][i][j] != self.vocab[self.config["pad_token"]]:
                         dict[self.id_gene_dict[gene_ids[i][j]]] = gene
                 
-                self.resulting_embeddings.append(pd.Series(dict))  
+                batch_embeddings.append(pd.Series(dict))
+            
+            return batch_embeddings
     
     def process_data(self,
                      adata: AnnData, 

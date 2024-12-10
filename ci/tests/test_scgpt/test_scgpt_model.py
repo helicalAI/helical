@@ -129,7 +129,7 @@ class TestSCGPTModel:
         mocker.patch.object(self.scgpt.model, "_encode", return_value=mocked_embeddings)
 
         # mocking the normalization of embeddings makes it easier to test the output
-        mocker.patch.object(self.scgpt, "_normalize_embeddings", return_value=None)
+        mocker.patch.object(self.scgpt, "_normalize_embeddings", side_effect=lambda x: x)
 
         dataset = self.scgpt.process_data(self.data, gene_names = "gene_names")
         embeddings = self.scgpt.get_embeddings(dataset)
@@ -145,10 +145,47 @@ class TestSCGPTModel:
             assert (embeddings == np.array([1.0, 1.0, 1.0, 1.0, 1.0])).all()
         if emb_mode == "cell":  
             # average column wise excluding first row
-            expected = np.array([[4.       , 4.3333335, 4.6666665, 4.3333335, 4.       ]])
+            expected = np.array([[4., 4.3333335, 4.6666665, 4.3333335, 4.]])
             np.testing.assert_allclose(
                 embeddings, 
                 expected, 
                 rtol=1e-4,  # relative tolerance
                 atol=1e-4   # absolute tolerance
             )
+
+    @pytest.mark.parametrize("emb_mode", ["cls", "cell"])
+    def test_normalization_cell_and_cls(self, emb_mode):
+        mocked_embeddings = np.array([[1.0, 1.0, 1.0, 1.0, 1.0], 
+                                      [5.0, 5.0, 5.0, 5.0, 5.0], 
+                                      [1.0, 2.0, 3.0, 2.0, 1.0], 
+                                      [6.0, 6.0, 6.0, 6.0, 6.0]])
+        
+        expected_normalized_embeddings = np.array([[0.4472, 0.4472, 0.4472, 0.4472, 0.4472],
+                                                   [0.4472, 0.4472, 0.4472, 0.4472, 0.4472],
+                                                   [0.2294, 0.4588, 0.6882, 0.4588, 0.2294],
+                                                   [0.4472, 0.4472, 0.4472, 0.4472, 0.4472]])
+        
+        self.scgpt.config["emb_mode"] = emb_mode
+        normalized_embeddings = np.around(self.scgpt._normalize_embeddings(mocked_embeddings), decimals=4)
+        assert np.all(np.equal(normalized_embeddings, expected_normalized_embeddings))
+
+    def test_normalization_of_gene(self):
+        mocked_embeddings = [pd.Series({
+                            "SAMD11": np.array([5.0, 5.0, 5.0, 5.0, 5.0]),
+                            "PLEKHN1": np.array([1.0, 2.0, 3.0, 2.0, 1.0]),
+                            "HES4": np.array([6.0, 6.0, 6.0, 6.0, 6.0])
+                        })]
+        expected_normalized_embeddings = [pd.Series({
+                            "SAMD11": np.array([0.4472, 0.4472, 0.4472, 0.4472, 0.4472]),
+                            "PLEKHN1": np.array([0.2294, 0.4588, 0.6882, 0.4588, 0.2294]),
+                            "HES4": np.array([0.4472, 0.4472, 0.4472, 0.4472, 0.4472])
+                        })]
+
+        self.scgpt.config["emb_mode"] = "gene"
+        normalized_embeddings = self.scgpt._normalize_embeddings(mocked_embeddings)
+
+        for expected_emb, emb in zip(expected_normalized_embeddings, normalized_embeddings):
+            for true_index, index in zip(expected_emb.keys(), emb.keys()):
+                assert np.all(np.equal(expected_emb[true_index], np.around(emb[index], decimals=4)))
+
+        
