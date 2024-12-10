@@ -42,7 +42,7 @@ class TestSCGPTModel:
         # meaning -1 is not present in the gene_ids
         assert (dataset.gene_ids == [0, 1, 2]).all()
 
-        assert (dataset.count_matrix == [1, 2, 6, 0]).all()
+        assert (dataset.count_matrix == [1, 2, 6]).all()
 
     def test_correct_handling_of_batch_ids(self):
         batch_id_array = [1]
