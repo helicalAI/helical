@@ -125,6 +125,11 @@ jobs:
       - name: Install dependencies
         run: |
             pip install -r requirements-dev.txt
+      
+      # First download before tests as they make use of the downloaded files 
+      - name: Download all files
+        run: |
+          python ci/download_all.py
 
       - name: Execute Geneformer v1
         run: |
