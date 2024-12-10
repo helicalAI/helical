@@ -48,11 +48,31 @@ jobs:
       #     pytest-coverage-path: ./pytest-coverage.txt
       #     junitxml-path: ./pytest.xml
 
+  integration-tests:
+    needs: tests
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11.8
+
+      - name: Install dependencies
+        run: |
+            pip install -r requirements-dev.txt
+      
+      # First download before tests as they make use of the downloaded files 
+      - name: Download all files
+        run: |
+          python ci/download_all.py
 
       - name: Execute Geneformer v1
         run: |
           python examples/run_models/run_geneformer.py ++model_name="gf-12L-30M-i2048"
-
+  
       - name: Fine-tune Geneformer v1
         run: |
           python examples/fine_tune_models/fine_tune_geneformer.py ++model_name="gf-12L-30M-i2048"
@@ -109,31 +129,6 @@ jobs:
         run: |
           pip install scanorama
           python examples/run_benchmark.py
-
-  integration-tests:
-    needs: tests
-    runs-on: self-hosted
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: setup python
-        uses: actions/setup-python@v5
-        with:
-          python-version: 3.11.8
-
-      - name: Install dependencies
-        run: |
-            pip install -r requirements-dev.txt
-      
-      # First download before tests as they make use of the downloaded files 
-      - name: Download all files
-        run: |
-          python ci/download_all.py
-
-      - name: Execute Geneformer v1
-        run: |
-          python examples/run_models/run_geneformer.py ++model_name="gf-12L-30M-i2048"
 
   notebooks:
     needs: tests
