@@ -72,7 +72,7 @@ jobs:
       - name: Execute Geneformer v1
         run: |
           python examples/run_models/run_geneformer.py ++model_name="gf-12L-30M-i2048"
-  
+
       - name: Fine-tune Geneformer v1
         run: |
           python examples/fine_tune_models/fine_tune_geneformer.py ++model_name="gf-12L-30M-i2048"
