@@ -4,8 +4,6 @@ import torch
 from helical.models.hyena_dna.model import HyenaDNA
 from helical.models.hyena_dna.hyena_dna_utils import HyenaDNADataset
 
-
-@pytest.mark.skip(reason="Work in progress.")
 @pytest.mark.parametrize("model_name, d_model, d_inner", [
     ("hyenadna-tiny-1k-seqlen", 128, 512),
     ("hyenadna-tiny-1k-seqlen-d256", 256, 1024)
@@ -24,8 +22,6 @@ def test_hyena_dna__valid_model_names(model_name, d_model, d_inner):
     assert configurer.config["d_model"] == d_model
     assert configurer.config["d_inner"] == d_inner
 
-
-@pytest.mark.skip(reason="Work in progress.")
 @pytest.mark.parametrize("model_name", [
     ("wrong_name")
 ])
@@ -43,8 +39,6 @@ def test_hyena_dna__invalid_model_names(model_name):
     with pytest.raises(ValueError):
         HyenaDNAConfig(model_name=model_name)
 
-
-@pytest.mark.skip(reason="Work in progress.")
 @pytest.mark.parametrize("input_sequence, expected_output", [
     # Valid DNA sequences
     ("", [0, 1]),

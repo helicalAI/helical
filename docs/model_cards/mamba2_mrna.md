@@ -3,7 +3,9 @@
 ## Model Details
 
 **Model Name:** Mamba2-mRNA  
+
 **Model Versions:** 1.0  
+
 **Model Description:** Mamba2-mRNA is a single nucleotide resolution model built using the Mamba2 architecture. The model employs 16 Mamba layers (16L) to enable precise nucleotide-level analysis and prediction of mRNA sequences. By leveraging the efficient sequence processing capabilities of Mamba2's state space architecture, Mamba2-mRNA can process mRNA sequences at individual nucleotide resolution, making it suitable for detailed mRNA sequence analysis tasks.
 
 ## Model Developers
