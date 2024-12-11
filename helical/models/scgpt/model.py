@@ -95,8 +95,11 @@ class scGPT(HelicalRNAModel):
             If `emb_mode` is set to "gene", the embeddings are returned as a list of pd.Series which contain a mapping of gene_name:embedding for each cell.
         """
         LOGGER.info(f"Inference started:")
+                
+        # fix seeds
         np.random.seed(self.config["binning_seed"])
-
+        torch.manual_seed(self.config["binning_seed"])
+        
         self.model.eval()
 
         try:
