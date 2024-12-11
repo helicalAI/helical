@@ -14,5 +14,5 @@ output_dim: 1280
 d_hid: 5120
 token_dim: 5120
 multi_gpu: False
-device: "cuda"
+device: "cpu"
 accelerator: False
