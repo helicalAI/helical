@@ -11,6 +11,8 @@ import torch
 from transformers import (
     BertForMaskedLM
 )
+import pandas as pd
+import numpy as np
 
 
 logger = logging.getLogger(__name__)
@@ -35,6 +37,40 @@ def load_mappings(gene_symbols):
     pkl.dump(gene_id_to_ensemble, open('./human_gene_to_ensemble_id.pkl', 'wb'))
     return gene_id_to_ensemble
 
+def _compute_embeddings_depending_on_mode(embeddings: torch.tensor, data_dict: dict, emb_mode: str, cls_present: bool, eos_present: bool, token_to_ensembl_dict: dict):
+    if emb_mode == "cell":
+        length = data_dict['length']
+        if cls_present:
+            batch_embeddings = embeddings[:, 1:, :]  # Get all layers except the cls embs
+            if eos_present:
+                length -= 2 # length is used for the mean calculation, 2 is subtracted because we have taken both the cls and eos embeddings out
+            else:
+                length -= 1 # length is subtracted because just the cls is removed
+        
+        batch_embeddings = mean_nonpadding_embs(embeddings, length).cpu().numpy()
+
+    elif emb_mode == "gene":
+        if cls_present:
+            embeddings = embeddings[:, 1:, :]
+            if eos_present:
+                embeddings = embeddings[:, :-1, :]
+
+        batch_embeddings = []
+        for embedding, ids in zip(embeddings, data_dict["input_ids"]):
+            cell_dict = {}
+            if cls_present:
+                ids = ids[1:]
+                if eos_present:
+                    ids = ids[:-1]
+            for id, gene_emb in zip(ids, embedding):
+                cell_dict[token_to_ensembl_dict[id.item()]] = gene_emb.cpu().numpy()
+
+            batch_embeddings.append(pd.Series(cell_dict))
+
+    elif emb_mode == "cls":
+        batch_embeddings = embeddings[:, 0, :].cpu().numpy()  # CLS token layer
+    
+    return batch_embeddings
 
 # extract embeddings
 def get_embs(
@@ -45,6 +81,7 @@ def get_embs(
     pad_token_id,
     forward_batch_size,
     gene_token_dict,
+    token_to_ensembl_dict,
     device,
     silent=False,
     
@@ -54,8 +91,9 @@ def get_embs(
     embs_list = []
 
     #  Check if CLS and EOS token is present in the token dictionary
-    cls_present = any("<cls>" in key for key in gene_token_dict.keys())
-    eos_present = any("<eos>" in key for key in gene_token_dict.keys())
+    cls_present = True if "<cls>" in gene_token_dict else False
+    eos_present = True if "<eos>"  in gene_token_dict else False
+    
     if emb_mode == "cls":
         assert cls_present, "<cls> token missing in token dictionary"
         # Check to make sure that the first token of the filtered input data is cls token
@@ -80,7 +118,6 @@ def get_embs(
         minibatch = filtered_input_data.select([i for i in range(i, max_range)])
 
         max_len = int(max(minibatch["length"]))
-        original_lens = torch.tensor(minibatch["length"],device=device)
         minibatch.set_format(type="torch",device=device)
 
         input_data_minibatch = minibatch["input_ids"]
@@ -97,26 +134,7 @@ def get_embs(
 
         embs_i = outputs.hidden_states[layer_to_quant]
 
-        if emb_mode == "cell":
-            if cls_present:
-                non_cls_embs = embs_i[:, 1:, :]  # Get all layers except the cls embs
-                if eos_present:
-                    mean_embs = mean_nonpadding_embs(non_cls_embs, original_lens - 2)
-                else:
-                    mean_embs = mean_nonpadding_embs(non_cls_embs, original_lens - 1)
-            else:
-                mean_embs = mean_nonpadding_embs(embs_i, original_lens)
-            
-            embs_list.append(mean_embs)
-            del mean_embs
-
-        elif emb_mode == "gene":
-                embs_list.append(embs_i)
-        
-        elif emb_mode == "cls":
-            cls_embs = embs_i[:, 0, :].clone().detach()  # CLS token layer
-            embs_list.append(cls_embs)
-            del cls_embs
+        embs_list.extend(_compute_embeddings_depending_on_mode(embs_i, minibatch, emb_mode, cls_present, eos_present, token_to_ensembl_dict))
 
         overall_max_len = max(overall_max_len, max_len)
         del outputs
@@ -126,19 +144,7 @@ def get_embs(
 
         torch.cuda.empty_cache()
 
-    if emb_mode == "cell" or emb_mode == "cls":
-        embs_stack = torch.cat(embs_list, dim=0)
-    elif emb_mode == "gene":
-        embs_stack = pad_tensor_list(
-            embs_list,
-            overall_max_len,
-            pad_token_id,
-            model_input_size,
-            1,
-            pad_3d_tensor,
-        )
-    return embs_stack
-
+    return embs_list
 
 def downsample_and_sort(data, max_ncells):
     num_cells = len(data)
@@ -151,8 +157,6 @@ def downsample_and_sort(data, max_ncells):
     # sort dataset with largest cell first to encounter any memory errors earlier
     data_sorted = data_subset.sort("length", reverse=True)
     return data_sorted
-
-
 
 def quant_layers(model):
     layer_nums = []

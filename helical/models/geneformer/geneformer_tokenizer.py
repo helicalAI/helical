@@ -293,6 +293,9 @@ class TranscriptomeTokenizer:
             k: v for k, v in self.gene_mapping_dict.items() if v in gene_keys_set
         }
 
+        # Maps a token back to the Ensembl ID
+        self.token_to_ensembl_dict = {value: key for key, value in self.gene_token_dict.items()}
+
         # protein-coding and miRNA gene list dictionary for selecting .h5ad columns for tokenization
         self.genelist_dict = dict(zip(self.gene_keys, [True] * len(self.gene_keys)))
 

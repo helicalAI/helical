@@ -20,7 +20,7 @@ def run(cfg: DictConfig):
     dataset = geneformer.process_data(ann_data[:10])
     embeddings = geneformer.get_embeddings(dataset)
 
-    print(embeddings.shape)
+    print(embeddings)
 
 if __name__ == "__main__":
     run()

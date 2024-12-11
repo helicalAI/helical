@@ -12,7 +12,6 @@ from helical.models.geneformer.geneformer_config import GeneformerConfig
 from helical.utils.mapping import map_gene_symbols_to_ensembl_ids
 from datasets import Dataset
 from typing import Optional
-from accelerate import Accelerator
 
 LOGGER = logging.getLogger(__name__)
 class Geneformer(HelicalRNAModel):
@@ -91,17 +90,11 @@ class Geneformer(HelicalRNAModel):
         self.layer_to_quant = quant_layers(self.model) + self.config['emb_layer']
         self.emb_mode = self.config['emb_mode']
         self.forward_batch_size = self.config['batch_size']
-        
-        if self.config['accelerator']:
-            self.accelerator = Accelerator(project_dir=self.configurer.model_dir)
-            self.model = self.accelerator.prepare(self.model)
-        else:
-            self.accelerator = None
 
         # load token dictionary (Ensembl IDs:token)
-        with open(self.files_config["token_path"], "rb") as f:
-            self.gene_token_dict = pickle.load(f)
-            self.pad_token_id = self.gene_token_dict.get("<pad>")
+        # with open(self.files_config["token_path"], "rb") as f:
+        #     self.gene_token_dict = pickle.load(f)
+        #     self.pad_token_id = self.gene_token_dict.get("<pad>")
 
         self.tk = TranscriptomeTokenizer(custom_attr_name_dict=self.config["custom_attr_name_dict"],
                                          nproc=self.config['nproc'], 
@@ -111,6 +104,8 @@ class Geneformer(HelicalRNAModel):
                                          token_dictionary_file = self.files_config["token_path"],
                                          gene_mapping_file = self.files_config["ensembl_dict_path"],
                                         )
+        
+        self.pad_token_id = self.tk.gene_token_dict["<pad>"]
         
         LOGGER.info(f"Model finished initializing.")
         
@@ -193,8 +188,9 @@ class Geneformer(HelicalRNAModel):
             self.layer_to_quant,
             self.pad_token_id,
             self.forward_batch_size,
-            self.gene_token_dict,
+            self.tk.gene_token_dict, # TODO: this looks like it loads the token dictionary additionally to the tokenizer
+            self.tk.token_to_ensembl_dict,
             self.device
-        ).cpu().detach().numpy()
+        )
 
         return embeddings
