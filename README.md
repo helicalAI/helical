@@ -21,13 +21,23 @@ We will update this repo on a regular basis with new models, benchmarks, modalit
 Let’s build the most exciting AI-for-Bio community together!
 <div align="center">
 
-![Workflow](https://github.com/helicalAI/helical/actions/workflows/main.yml/badge.svg) &nbsp;
+![Workflow](https://github.com/helicalAI/helical/actions/workflows/release.yml/badge.svg) &nbsp;
 ![Workflow](https://github.com/helicalAI/helical/actions/workflows/github-code-scanning/codeql/badge.svg) &nbsp;
 [![Docs](https://img.shields.io/badge/docs-available-brightgreen)](https://helical.readthedocs.io/) &nbsp;
 [![PyPI version](https://badge.fury.io/py/helical.svg)](https://badge.fury.io/py/helical) &nbsp;
 ![GitHub contributors](https://img.shields.io/github/contributors/helicalAI/helical) &nbsp;
 
 </div>
+
+## What's new?
+### 🧬 Introducing Helix-mRNA-v0: Unlocking new frontiers & use cases in mRNA therapy 🧬
+We’re thrilled to announce the release of our first-ever mRNA Bio Foundation Model, designed to:
+
+1) Be Efficient, handling long sequence lengths effortlessly
+2) Balance Diversity & Specificity, leveraging a 2-step pre-training approach
+3) Deliver High-Resolution, using single nucleotides as a resolution
+
+Check out our <a href="https://www.helical-ai.com/blog/helix-mrna-v0" target="_blank">blog post</a> to learn more about our approach and read the <a href="https://helical.readthedocs.io/en/latest/model_cards/helix_mrna/" target="_blank">model card</a> to get started.
 
 ## Installation
 
@@ -47,6 +57,23 @@ To install the latest Helical package, you can run the command below:
 pip install --upgrade git+https://github.com/helicalAI/helical.git
 ```
 
+Alternatively, clone the repo and install it:
+```
+git clone https://github.com/helicalAI/helical.git
+pip install .
+```
+
+[Optional] To install mamba-ssm and causal-conv1d use the command below:
+```
+pip install helical[mamba-ssm]
+```
+or in case you're installing from the Helical repo cloned locally:
+```
+pip install .[mamba-ssm]
+```
+
+Note: make sure your machine has GPU(s) and Cuda installed. Currently this is a requirement for the packages mamba-ssm and causal-conv1d.
+
 ### Singularity (Optional)
 If you desire to run your code in a singularity file, you can use the [singularity.def](./singularity.def) file and build an apptainer with it:
 ```
@@ -58,10 +85,9 @@ and then shell into the sandbox container (use the --nv flag if you have a GPU a
 apptainer shell --nv --fakeroot singularity/helical/
 ```
 
-## Installation
 ### RNA models:
-- [Helix-mRNA]((https://helical.readthedocs.io/en/latest/model_cards/helix_mrna/))
-- [Mamba2-mRNA]((https://helical.readthedocs.io/en/latest/model_cards/mamba2_mrna/))
+- [Helix-mRNA](https://helical.readthedocs.io/en/latest/model_cards/helix_mrna/)
+- [Mamba2-mRNA](https://helical.readthedocs.io/en/latest/model_cards/mamba2_mrna/)
 - [Geneformer](https://helical.readthedocs.io/en/latest/model_cards/geneformer/)
 - [scGPT](https://helical.readthedocs.io/en/latest/model_cards/scgpt/)
 - [Universal Cell Embedding (UCE)](https://helical.readthedocs.io/en/latest/model_cards/uce/)

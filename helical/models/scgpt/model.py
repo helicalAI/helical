@@ -4,6 +4,7 @@ import scanpy as sc
 from helical.models.base_models import HelicalRNAModel
 from helical.models.scgpt.scgpt_config import scGPTConfig
 import numpy as np
+import pandas as pd
 from anndata import AnnData
 import logging
 from accelerate import Accelerator
@@ -67,6 +68,8 @@ class scGPT(HelicalRNAModel):
             downloader.download_via_name(file)
 
         self.model, self.vocab = load_model(self.config)
+
+        self.model.eval()
         
         if self.config["accelerator"]:
             self.accelerator = Accelerator(project_dir=self.config["model_path"].parent)
@@ -80,15 +83,23 @@ class scGPT(HelicalRNAModel):
 
         Parameters 
         ----------
-        dataset: Dataset
+        dataset : Dataset
             The processed dataset to get the embeddings from.
 
         Returns
         -------
-        np.ndarray
-            The gene embeddings in the form of a numpy array
+        np.ndarray | List[pd.Series]
+            The embeddings produced by the model. 
+            The return type depends on the `emb_mode` parameter in the configuration.
+            If `emb_mode` is set to "gene", the embeddings are returned as a list of pd.Series which contain a mapping of gene_name:embedding for each cell.
         """
         LOGGER.info(f"Inference started:")
+                
+        # fix seeds
+        np.random.seed(self.config["binning_seed"])
+        torch.manual_seed(self.config["binning_seed"])
+        
+        self.model.eval()
 
         try:
             use_batch_labels = dataset.batch_ids is not None
@@ -101,7 +112,7 @@ class scGPT(HelicalRNAModel):
             pad_value=self.config["pad_value"],
             do_mlm=False,
             do_binning=True,
-            max_length=1200,
+            max_length=self.config["MAX_LENGTH"],
             sampling=True,
             keep_first_n_tokens=1,
         )
@@ -116,13 +127,15 @@ class scGPT(HelicalRNAModel):
 
         device = next(self.model.parameters()).device
 
-        cell_embeddings = np.zeros(
-            (len(dataset), self.config["embsize"]), dtype=np.float32
-        )
+        if self.config["emb_mode"] == "gene":
+            self.id_gene_dict = {i: gene for i, gene in enumerate(self.vocab.get_itos())}
+        
+        resulting_embeddings = []
+
         with torch.no_grad(), torch.cuda.amp.autocast(enabled=True): #torch.autocast(device_type=str(device),enabled=True): # torch.cuda.amp.autocast(enabled=True):
-            count = 0
             for data_dict in tqdm(data_loader, desc="Embedding cells"):
                 input_gene_ids = data_dict["gene"].to(device)
+
                 src_key_padding_mask = input_gene_ids.eq(
                     self.vocab[self.config["pad_token"]]
                 )
@@ -135,15 +148,66 @@ class scGPT(HelicalRNAModel):
                     else None,
                 )
 
-                embeddings = embeddings[:, 0, :]  # get the <cls> position embedding
-                embeddings = embeddings.cpu().numpy()
-                cell_embeddings[count : count + len(embeddings)] = embeddings
-                count += len(embeddings)
-        cell_embeddings = cell_embeddings / np.linalg.norm(
-            cell_embeddings, axis=1, keepdims=True
-        )
+                resulting_embeddings.extend(self._compute_embeddings_depending_on_mode(embeddings, data_dict))
 
-        return cell_embeddings
+        resulting_embeddings = self._normalize_embeddings(resulting_embeddings)
+        return resulting_embeddings
+        
+    def _normalize_embeddings(self, resulting_embeddings: torch.tensor) -> np.ndarray:
+        """
+        Divides each element of each embedding by the norm of that embedding
+        """
+        if self.config["emb_mode"] != "gene":
+            resulting_embeddings = resulting_embeddings / np.linalg.norm(resulting_embeddings, axis=1, keepdims=True)
+        else:
+            for series in resulting_embeddings:
+                for gene in series.keys():
+                    series[gene] = series[gene] / np.linalg.norm(series[gene])   
+
+        return resulting_embeddings
+
+    def _compute_embeddings_depending_on_mode(self, embeddings: torch.tensor, data_dict: dict) -> np.ndarray:
+        """
+        Compute the embeddings depending on the mode set in the configuration.
+
+        Parameters
+        ----------
+        embeddings : torch.tensor
+            The embeddings to be processed.
+        data_dict : dict
+            The data dictionary containing the data to be processed.
+        
+        Returns
+        -------
+        np.ndarray
+            The embeddings corresponding to the mode selected
+        """
+        if self.config["emb_mode"] == "cls":
+            embeddings = embeddings[:, 0, :]  # get the <cls> position embedding
+            embeddings = embeddings.cpu().numpy()
+            return embeddings
+
+        elif self.config["emb_mode"] == "cell":
+            embeddings = embeddings[:, 1:, :] # get all embeddings except the <cls> position
+            embeddings = torch.mean(embeddings, dim=1) # mean embeddings to get cell embedding
+            embeddings = embeddings.cpu().numpy()
+            return embeddings
+        
+        elif self.config["emb_mode"] == "gene":
+            embeddings = embeddings[:, 1:, :].cpu().numpy() # get all embeddings except the <cls> position
+            gene_ids = data_dict["gene"].cpu().numpy()
+
+            # create a dictionary with gene name to gene embedding mappings and create pd series for each cell in batch
+            batch_embeddings = []
+            for i, embedding in enumerate(embeddings):
+                dict = {}
+                for j, gene in enumerate(embedding, 1):
+                    if data_dict["gene"][i][j] != self.vocab[self.config["pad_token"]]:
+                        dict[self.id_gene_dict[gene_ids[i][j]]] = gene
+                
+                batch_embeddings.append(pd.Series(dict))
+            
+            return batch_embeddings
     
     def process_data(self,
                      adata: AnnData, 
