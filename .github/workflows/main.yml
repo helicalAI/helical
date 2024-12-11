@@ -20,6 +20,8 @@ jobs:
       - name: Install dependencies
         run: |
             pip install -r requirements-dev.txt
+            # Currently, the self-hosted runner uses a pre-installed version of mamba-ssm (v2.2.2). Using the latest version (v2.2.4) breaks the pip installation.
+            # TODO fix the installation of helical[mamba-ssm], and add it in the GitHub actions (CI/CD pipeline).
             pip install .
             
       # First download before tests as they make use of the downloaded files 
@@ -29,50 +31,19 @@ jobs:
 
       - name: Execute unittests
         run: |
-          pytest --cov-report=html:html_cov --cov-branch --cov-report term --cov=helical ci/
+          CUDA_VISIBLE_DEVICES=-1 pytest --cov-report=html:html_cov --cov-branch --cov-report term --cov=helical ci/
       
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: html_cov/
-
-      # Does not seem to work but would be nice to have
-      # - name: Pytest coverage comment
-      #   uses: MishaKav/pytest-coverage-comment@main
-      #   with:
-      #     pytest-coverage-path: ./pytest-coverage.txt
-      #     junitxml-path: ./pytest.xml
-
-
-      - name: Execute Geneformer v1
-        run: |
-          python examples/run_models/run_geneformer.py ++model_name="gf-12L-30M-i2048"
-
-      - name: Execute Geneformer v2
-        run: |
-          python examples/run_models/run_geneformer.py ++model_name="gf-12L-95M-i4096"
-
-      - name: Execute scGPT
-        run: |
-          python examples/run_models/run_scgpt.py
-
-      - name: Execute UCE
-        run: |
-          python examples/run_models/run_uce.py
-
-      # - name: Execute Hyena
-      #   run: |
-      #     python examples/run_models/run_hyena_dna.py
-
-      - name: Execute benchmarking
-        run: |
-          pip install scanorama
-          python examples/run_benchmark.py
-
-  notebooks:
+          
+  integration-tests:
     needs: tests
     runs-on: self-hosted
+    env:
+      CUDA_VISIBLE_DEVICES: 0
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -82,10 +53,96 @@ jobs:
         with:
           python-version: 3.11.8
 
-      - name: Install dependencies
+      # because jobs may not be run in the same order, we need to install the dependencies again
+      - name: Install helical
         run: |
-            pip install -r requirements-dev.txt
-            
+            pip install .
+        
+      # Required to get the data
+      - name: Download all files
+        run: |
+          python ci/download_all.py
+
+      - name: Execute Geneformer v1
+        run: |
+          python examples/run_models/run_geneformer.py ++model_name="gf-12L-30M-i2048" ++device="cuda"
+
+      - name: Fine-tune Geneformer v1
+        run: |
+          python examples/fine_tune_models/fine_tune_geneformer.py ++model_name="gf-12L-30M-i2048" ++device="cuda"
+
+      - name: Execute Geneformer v2
+        run: |
+          python examples/run_models/run_geneformer.py ++model_name="gf-12L-95M-i4096" ++device="cuda"
+
+      - name: Fine-tune Geneformer v2
+        run: |
+          python examples/fine_tune_models/fine_tune_geneformer.py ++model_name="gf-12L-30M-i2048" ++device="cuda"
+
+      - name: Execute scGPT
+        run: |
+          python examples/run_models/run_scgpt.py ++device="cuda"
+
+      - name: Fine-tune scGPT
+        run: |
+          python examples/fine_tune_models/fine_tune_scgpt.py ++device="cuda"
+
+      - name: Execute UCE
+        run: |
+          python examples/run_models/run_uce.py ++device="cuda"
+
+      - name: Fine-tune UCE
+        run: |
+          python examples/fine_tune_models/fine_tune_UCE.py ++device="cuda"
+
+      - name: Execute Hyena
+        run: |
+          python examples/run_models/run_hyena_dna.py ++device="cuda"
+
+      - name: Execute Hyena
+        run: |
+          python examples/fine_tune_models/fine_tune_hyena_dna.py ++device="cuda"
+
+      - name: Execute Helix-mRNA
+        run: |
+          python examples/run_models/run_helix_mrna.py ++device="cuda"
+
+      - name: Fine-tune Helix-mRNA
+        run: |
+          python examples/fine_tune_models/fine_tune_helix_mrna.py ++device="cuda"
+
+      - name: Execute Mamba2-mRNA
+        run: |
+          python examples/run_models/run_mamba2_mrna.py ++device="cuda"
+
+      - name: Fine-tune Mamba2-mRNA
+        run: |
+          python examples/fine_tune_models/fine_tune_mamba2_mrna.py ++device="cuda"
+
+      - name: Execute benchmarking
+        run: |
+          pip install scanorama
+          python examples/run_benchmark.py
+
+  notebooks:
+    needs: tests
+    runs-on: self-hosted
+    env:
+      CUDA_VISIBLE_DEVICES: 0
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11.8
+
+      # because jobs may not be run in the same order, we need to install the dependencies again
+      - name: Install helical
+        run: |
+            pip install .
+        
       - name: Reduce datasets to speedup checks
         run: |
           sed -i 's/train\[:65%\]/train\[:5%\]/g' ./examples/notebooks/Cell-Type-Annotation.ipynb
@@ -97,4 +154,4 @@ jobs:
 
       - name: Run Notebooks
         run: |
-          pytest --durations=0 --nbmake $(find ./examples/notebooks -name "*.ipynb" ! -name "Hyena*")
+          pytest --durations=0 --nbmake ./examples/notebooks/*.ipynb

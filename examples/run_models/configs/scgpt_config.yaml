@@ -1,5 +1,6 @@
 pad_token: "<pad>"
 batch_size: 24
+emb_mode: "gene"
 fast_transformer: True
 nlayers: 12
 nheads: 8
@@ -13,3 +14,4 @@ world_size: 8
 accelerator: False
 device: "cpu"
 use_fast_transformer: False
+binning_seed: 123
