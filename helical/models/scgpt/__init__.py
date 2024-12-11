@@ -19,5 +19,4 @@ from . import model_dir, utils
 from .data_collator import DataCollator
 from .dataset import Dataset
 from .gene_embedding import GeneEmbedding
-from .data_sampler import SubsetsBatchSampler
 from .fine_tuning_model import scGPTFineTuningModel
