@@ -82,59 +82,59 @@ jobs:
 
       - name: Execute Geneformer v1
         run: |
-          python examples/run_models/run_geneformer.py ++model_name="gf-12L-30M-i2048"
+          python examples/run_models/run_geneformer.py ++model_name="gf-12L-30M-i2048" ++device="cuda"
 
       - name: Fine-tune Geneformer v1
         run: |
-          python examples/fine_tune_models/fine_tune_geneformer.py ++model_name="gf-12L-30M-i2048"
+          python examples/fine_tune_models/fine_tune_geneformer.py ++model_name="gf-12L-30M-i2048" ++device="cuda"
 
       - name: Execute Geneformer v2
         run: |
-          python examples/run_models/run_geneformer.py ++model_name="gf-12L-95M-i4096"
+          python examples/run_models/run_geneformer.py ++model_name="gf-12L-95M-i4096" ++device="cuda"
 
       - name: Fine-tune Geneformer v2
         run: |
-          python examples/fine_tune_models/fine_tune_geneformer.py ++model_name="gf-12L-30M-i2048"
+          python examples/fine_tune_models/fine_tune_geneformer.py ++model_name="gf-12L-30M-i2048" ++device="cuda"
 
       - name: Execute scGPT
         run: |
-          python examples/run_models/run_scgpt.py
+          python examples/run_models/run_scgpt.py ++device="cuda"
 
       - name: Fine-tune scGPT
         run: |
-          python examples/fine_tune_models/fine_tune_scgpt.py
+          python examples/fine_tune_models/fine_tune_scgpt.py ++device="cuda"
 
       - name: Execute UCE
         run: |
-          python examples/run_models/run_uce.py
+          python examples/run_models/run_uce.py ++device="cuda"
 
       - name: Fine-tune UCE
         run: |
-          python examples/fine_tune_models/fine_tune_UCE.py
+          python examples/fine_tune_models/fine_tune_UCE.py ++device="cuda"
 
       - name: Execute Hyena
         run: |
-          python examples/run_models/run_hyena_dna.py
+          python examples/run_models/run_hyena_dna.py ++device="cuda"
 
       - name: Execute Hyena
         run: |
-          python examples/fine_tune_models/fine_tune_hyena_dna.py
+          python examples/fine_tune_models/fine_tune_hyena_dna.py ++device="cuda"
 
       - name: Execute Helix-mRNA
         run: |
-          python examples/run_models/run_helix_mrna.py
+          python examples/run_models/run_helix_mrna.py ++device="cuda"
 
       - name: Fine-tune Helix-mRNA
         run: |
-          python examples/fine_tune_models/fine_tune_helix_mrna.py
+          python examples/fine_tune_models/fine_tune_helix_mrna.py ++device="cuda"
 
       - name: Execute Mamba2-mRNA
         run: |
-          python examples/run_models/run_mamba2_mrna.py
+          python examples/run_models/run_mamba2_mrna.py ++device="cuda"
 
       - name: Fine-tune Mamba2-mRNA
         run: |
-          python examples/fine_tune_models/fine_tune_mamba2_mrna.py
+          python examples/fine_tune_models/fine_tune_mamba2_mrna.py ++device="cuda"
 
       - name: Execute benchmarking
         run: |

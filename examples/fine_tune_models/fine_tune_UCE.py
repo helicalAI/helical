@@ -1,13 +1,18 @@
 from helical import UCEConfig, UCEFineTuningModel
 from helical.utils import get_anndata_from_hf_dataset
 from datasets import load_dataset
+import anndata as ad
 from omegaconf import DictConfig
 import hydra
 
 @hydra.main(version_base=None, config_path="../run_models/configs", config_name="uce_config")
 def run_fine_tuning(cfg: DictConfig):
-    hf_dataset = load_dataset("helical-ai/yolksac_human",split="train[:5%]", trust_remote_code=True, download_mode="reuse_cache_if_exists")
-    ann_data = get_anndata_from_hf_dataset(hf_dataset)
+    
+    # either load via huggingface
+    # hf_dataset = load_dataset("helical-ai/yolksac_human",split="train[:5%]", trust_remote_code=True, download_mode="reuse_cache_if_exists")
+    # ann_data = get_anndata_from_hf_dataset(hf_dataset)
+
+    ann_data = ad.read_h5ad("./yolksac_human.h5ad")
 
     cell_types = ann_data.obs["LVL1"][:10].tolist()
 
