@@ -3,7 +3,9 @@
 ## Model Details
 
 **Model Name:** Mamba2-mRNA  
+
 **Model Versions:** 1.0  
+
 **Model Description:** Mamba2-mRNA is a single nucleotide resolution model built using the Mamba2 architecture. The model employs 16 Mamba layers (16L) to enable precise nucleotide-level analysis and prediction of mRNA sequences. By leveraging the efficient sequence processing capabilities of Mamba2's state space architecture, Mamba2-mRNA can process mRNA sequences at individual nucleotide resolution, making it suitable for detailed mRNA sequence analysis tasks.
 
 ## Model Developers
@@ -121,11 +123,11 @@ support@helical-ai.com
 ```bibtex
 @software{allard_2024_13135902,
   author       = {Helical Team},
-  title        = {helicalAI/helical: v0.0.1-alpha8},
+  title        = {helicalAI/helical: v0.0.1a14},
   month        = nov,
   year         = 2024,
   publisher    = {Zenodo},
-  version      = {0.0.1a6},
+  version      = {0.0.1a14},
   doi          = {10.5281/zenodo.13135902},
   url          = {https://doi.org/10.5281/zenodo.13135902}
 }
