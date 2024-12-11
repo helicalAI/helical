@@ -1,6 +1,7 @@
 model_name: "hyenadna-tiny-1k-seqlen-d256"
 n_layer: 2
 vocab_size: 12
+batch_size: 2
 resid_dropout: 0.0
 embed_dropout: 0.1
 fused_mlp: False,   

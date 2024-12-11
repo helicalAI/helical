@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "helical"
-version = "0.0.1a9"
+version = "0.0.1a12"
 authors = [
   { name="Helical Team", email="support@helical-ai.com" },
 ]
@@ -45,10 +45,16 @@ dependencies = [
     'louvain==0.8.2',
     'pyensembl',
     'datasets==2.20.0',
-    'mamba-ssm==2.2.2',
+]
+
+[project.optional-dependencies]
+mamba-ssm = [
+    'mamba-ssm==2.2.4',
     'causal-conv1d==1.4.0',
 ]
 
+[tool.hatch.metadata]
+allow-direct-references = true # Allows installing package from git
 
 [project.urls]
 Homepage = "https://github.com/helicalAI/helical"
