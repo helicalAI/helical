@@ -45,6 +45,7 @@ class Caduceus(HelicalDNAModel):
 
     Notes
     ----------
+    This model has dependencies which only allow it to be run on CUDA devices.
     The link to the paper can be found [here](https://arxiv.org/abs/2403.03234).
     We make use of the implementation from the [Caduceus](https://github.com/kuleshov-group/caduceus) repository.
     """

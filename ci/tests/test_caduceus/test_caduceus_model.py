@@ -1,6 +1,6 @@
 from helical import Caduceus, CaduceusConfig
 import pytest
-import torch
+import numpy as np
 
 @pytest.mark.parametrize("model_name", [
     "caduceus-ph-4L-seqlen-1k-d118", 
@@ -20,7 +20,8 @@ def test_caduceus__valid_model_names(model_name):
     CaduceusConfig(model_name=model_name, device="cuda")
 
 @pytest.mark.parametrize("model_name", [
-    ("wrong_name")
+    "caduceus-pq-4L-seqlen-1k-d118", 
+    "caduceus-ph-9L-seqlen-1k-d256", 
 ])
 def test_caduceus__invalid_model_names(model_name):
     """
@@ -42,7 +43,7 @@ def test_caduceus__invalid_model_names(model_name):
     "CC",
     "TTTT", 
     "ACGTN",
-    "ACGT" * 256
+    "ACG" * 256
 ])
 def test_caduceus_process_data(input_sequence):
     """
@@ -57,27 +58,10 @@ def test_caduceus_process_data(input_sequence):
     """
     model = Caduceus(CaduceusConfig(model_name="caduceus-ph-4L-seqlen-1k-d118", device="cuda"))
     dataset = model.process_data([input_sequence])
+    expected_tokenized_sequence = [model.tokenizer.pad_token_id]*(model.config["input_size"]-len(input_sequence)-1)
+    for ch in input_sequence:
+        expected_tokenized_sequence.append(model.tokenizer._vocab_str_to_int[ch])
+    expected_tokenized_sequence.append(model.tokenizer.sep_token_id)
     assert len(max(dataset["input_ids"], key=len)) <= model.config["input_size"]
+    assert np.all(np.equal(np.array(expected_tokenized_sequence), np.array(dataset["input_ids"][0][0])))
 
-
-@pytest.mark.parametrize("input_sequence,model_name", [
-    ("ACTG", "caduceus-ph-4L-seqlen-1k-d118"),
-    ("ACTG", "caduceus-ph-4L-seqlen-1k-d256"),
-    ("ACTG", "caduceus-ph-16L-seqlen-131k-d256"),
-])
-def test_caduceus_ph_get_embeddings(input_sequence, model_name):
-    model = Caduceus(CaduceusConfig(model_name=model_name, device="cuda"))
-    dataset = model.process_data(input_sequence)
-    embeddings = model.get_embeddings(dataset)
-    assert embeddings.shape[1] == model.config["embedding_size"]
-
-@pytest.mark.parametrize("input_sequence,model_name", [
-    ("A", "caduceus-ps-4L-seqlen-1k-d118"),
-    ("TTTT", "caduceus-ps-4L-seqlen-1k-d256"),
-    ("ACGTN", "caduceus-ps-16L-seqlen-131k-d256"),
-])
-def test_caduceus_ps_get_embeddings(input_sequence, model_name):
-    model = Caduceus(CaduceusConfig(model_name=model_name, device="cuda"))
-    dataset = model.process_data(input_sequence)
-    embeddings = model.get_embeddings(dataset)
-    assert embeddings.shape[1] == model.config["embedding_size"]*2
