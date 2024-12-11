@@ -1,6 +1,7 @@
 from helical import Caduceus, CaduceusConfig
 import pytest
 import numpy as np
+import torch
 
 @pytest.mark.parametrize("model_name", [
     "caduceus-ph-4L-seqlen-1k-d118", 
@@ -10,12 +11,9 @@ import numpy as np
     "caduceus-ps-4L-seqlen-1k-d256", 
     "caduceus-ps-16L-seqlen-131k-d256"
 ])
-def test_caduceus__valid_model_names(model_name):
+def test_caduceus_valid_model_names(model_name):
     """
     Test case for the Caduceus class initialization.
-
-    Args:
-        model_name (str): The name of the model.
     """
     CaduceusConfig(model_name=model_name, device="cuda")
 
@@ -23,19 +21,21 @@ def test_caduceus__valid_model_names(model_name):
     "caduceus-pq-4L-seqlen-1k-d118", 
     "caduceus-ph-9L-seqlen-1k-d256", 
 ])
-def test_caduceus__invalid_model_names(model_name):
+def test_caduceus_invalid_model_names(model_name):
     """
     Test case when an invalid model name is provided.
     Verifies that a ValueError is raised when an invalid model name is passed to the CaduceusConfig constructor.
-
-    Parameters:
-    - model_name (str): The invalid model name.
-
-    Raises:
-    - ValueError: If the model name is invalid.
     """
     with pytest.raises(ValueError):
         CaduceusConfig(model_name=model_name)
+
+def test_runtime_error_when_cuda_unavailable(mocker):
+    """
+    Test that an error is raised when CUDA is not available since the model can't run without it.
+    """
+    mocker.patch.object(torch.cuda, "is_available", return_value=False)
+    with pytest.raises(RuntimeError):
+        Caduceus(CaduceusConfig())
 
 @pytest.mark.parametrize("input_sequence", [
     # Valid DNA sequences
@@ -45,17 +45,12 @@ def test_caduceus__invalid_model_names(model_name):
     "ACGTN",
     "ACG" * 256
 ])
-def test_caduceus_process_data(input_sequence):
+def test_caduceus_process_data(input_sequence, mocker):
     """
     Test the process_data method of the Caduceus model.
     The input DNA sequence is tokenized and the output shape is verified.
-
-    Args:
-        input_sequence (str): The input DNA sequence to be processed.
-
-    Raises:
-        AssertionError: If the output shape doesn't match expected dimensions.
     """
+    mocker.patch.object(torch.cuda, "is_available", return_value=True)
     model = Caduceus(CaduceusConfig(model_name="caduceus-ph-4L-seqlen-1k-d118", device="cuda"))
     dataset = model.process_data([input_sequence])
     expected_tokenized_sequence = [model.tokenizer.pad_token_id]*(model.config["input_size"]-len(input_sequence)-1)

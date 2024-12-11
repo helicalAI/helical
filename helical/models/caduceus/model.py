@@ -52,6 +52,11 @@ class Caduceus(HelicalDNAModel):
     def __init__(self, configurer: CaduceusConfig = configurer):
         super().__init__()
 
+        if torch.cuda.is_available() == False:
+            message = "Caduceus requires a CUDA device to run and CUDA is not available"
+            LOGGER.error(message)
+            raise RuntimeError(message)
+            
         self.configurer = configurer
         self.config = configurer.config
         self.files_config = configurer.files_config
@@ -63,7 +68,6 @@ class Caduceus(HelicalDNAModel):
 
         self.model =  CaduceusModel.from_pretrained(self.files_config['model_files_dir'])
         self.model.eval()
-        self.model = self.model.to(self.device)
 
         self.tokenizer = CaduceusTokenizer(model_max_length=self.config['input_size'])
         
@@ -132,7 +136,7 @@ class Caduceus(HelicalDNAModel):
         """
         LOGGER.info("Inference started")
         dataloader = DataLoader(dataset, collate_fn=self._collate_fn, batch_size=self.config['batch_size'], shuffle=False, num_workers=self.config['nproc'])
-
+    
         embeddings = []
         self.model.to(self.device)
         self.model.eval()

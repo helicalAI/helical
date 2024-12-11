@@ -8,6 +8,9 @@
 
 **Model Description:** The Caduceus model is built upon the long-range Mamba block, extending this approach to a BiMamba component that supports bi-directionality and to a Mamba block that additionally supports reverse complementarity (RC) of DNA. This approach allows Caduceus to outperform larger models that do not utilise bi-directionality or equivariance.
 
+#### Note
+This model has dependencies which only allow it to be run on CUDA devices.
+
 ## Model Developers
 
 **Developed By:** Kuleshov Group @ Cornell
