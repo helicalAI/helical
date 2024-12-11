@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "helical"
-version = "0.0.1a10"
+version = "0.0.1a11"
 authors = [
   { name="Helical Team", email="support@helical-ai.com" },
 ]
@@ -49,7 +49,7 @@ dependencies = [
 
 [project.optional-dependencies]
 mamba-ssm = [
-    'mamba-ssm @ git+https://github.com/state-spaces/mamba.git@v2.2.3',
+    'mamba-ssm==2.2.4',
     'causal-conv1d==1.4.0',
 ]
 
