@@ -91,11 +91,6 @@ class Geneformer(HelicalRNAModel):
         self.emb_mode = self.config['emb_mode']
         self.forward_batch_size = self.config['batch_size']
 
-        # load token dictionary (Ensembl IDs:token)
-        # with open(self.files_config["token_path"], "rb") as f:
-        #     self.gene_token_dict = pickle.load(f)
-        #     self.pad_token_id = self.gene_token_dict.get("<pad>")
-
         self.tk = TranscriptomeTokenizer(custom_attr_name_dict=self.config["custom_attr_name_dict"],
                                          nproc=self.config['nproc'], 
                                          model_input_size=self.config["input_size"],
@@ -106,6 +101,8 @@ class Geneformer(HelicalRNAModel):
                                         )
         
         self.pad_token_id = self.tk.gene_token_dict["<pad>"]
+        self.cls_present = True if "<cls>" in self.tk.gene_token_dict else False
+        self.eos_present = True if "<eos>" in self.tk.gene_token_dict else False
         
         LOGGER.info(f"Model finished initializing.")
         
@@ -190,6 +187,8 @@ class Geneformer(HelicalRNAModel):
             self.forward_batch_size,
             self.tk.gene_token_dict, # TODO: this looks like it loads the token dictionary additionally to the tokenizer
             self.tk.token_to_ensembl_dict,
+            self.cls_present,
+            self.eos_present,
             self.device
         )
 

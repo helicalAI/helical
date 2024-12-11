@@ -41,7 +41,7 @@ def _compute_embeddings_depending_on_mode(embeddings: torch.tensor, data_dict: d
     if emb_mode == "cell":
         length = data_dict['length']
         if cls_present:
-            batch_embeddings = embeddings[:, 1:, :]  # Get all layers except the cls embs
+            embeddings = embeddings[:, 1:, :]  # Get all layers except the cls embs
             if eos_present:
                 length -= 2 # length is used for the mean calculation, 2 is subtracted because we have taken both the cls and eos embeddings out
             else:
@@ -72,34 +72,11 @@ def _compute_embeddings_depending_on_mode(embeddings: torch.tensor, data_dict: d
     
     return batch_embeddings
 
-# extract embeddings
-def get_embs(
-    model,
-    filtered_input_data,
-    emb_mode,
-    layer_to_quant,
-    pad_token_id,
-    forward_batch_size,
-    gene_token_dict,
-    token_to_ensembl_dict,
-    device,
-    silent=False,
-    
-):
-    model_input_size = get_model_input_size(model)
-    total_batch_length = len(filtered_input_data)
-    embs_list = []
-
-    #  Check if CLS and EOS token is present in the token dictionary
-    cls_present = True if "<cls>" in gene_token_dict else False
-    eos_present = True if "<eos>"  in gene_token_dict else False
-    
+def _check_for_expected_special_tokens(dataset, emb_mode, cls_present, eos_present, gene_token_dict):
     if emb_mode == "cls":
         assert cls_present, "<cls> token missing in token dictionary"
-        # Check to make sure that the first token of the filtered input data is cls token
-        cls_token_id = gene_token_dict["<cls>"]
         assert (
-            filtered_input_data["input_ids"][0][0] == cls_token_id
+            dataset["input_ids"][0][0] == gene_token_dict["<cls>"]
         ), "First token is not <cls> token value"
     elif emb_mode == "cell":
         if cls_present:
@@ -110,6 +87,29 @@ def get_embs(
             logger.warning(
                 "EOS token present in token dictionary, excluding from average."
             )
+
+
+# extract embeddings
+def get_embs(
+    model,
+    filtered_input_data,
+    emb_mode,
+    layer_to_quant,
+    pad_token_id,
+    forward_batch_size,
+    gene_token_dict,
+    token_to_ensembl_dict,
+    cls_present,
+    eos_present,
+    device,
+    silent=False,
+    
+):
+    model_input_size = get_model_input_size(model)
+    total_batch_length = len(filtered_input_data)
+    embs_list = []
+
+    _check_for_expected_special_tokens(filtered_input_data, emb_mode, cls_present, eos_present, gene_token_dict)
 
     overall_max_len = 0
     for i in trange(0, total_batch_length, forward_batch_size, leave=(not silent)):

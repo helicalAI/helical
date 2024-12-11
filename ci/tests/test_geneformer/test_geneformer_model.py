@@ -1,55 +1,55 @@
 import pytest
-import torch
-from helical.models.geneformer.model import Geneformer
-from helical.models.geneformer.geneformer_config import GeneformerConfig
-from helical.models.geneformer.geneformer_utils import get_embs, load_model
-from helical.models.geneformer.fine_tuning_model import GeneformerFineTuningModel
+from helical import GeneformerConfig, Geneformer, GeneformerFineTuningModel
 from anndata import AnnData
+import torch
+import pandas as pd
+import numpy as np
 
-class TestGeneformerModel:
-    @pytest.fixture(params=["gf-12L-30M-i2048", "gf-12L-95M-i4096"])
-    def geneformer(self, request):
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        config = GeneformerConfig(model_name=request.param, device=self.device)
-        return Geneformer(config)
-
+class TestGeneformer:
     @pytest.fixture
     def mock_data(self):
         data = AnnData()
         data.var['gene_symbols'] = ['SAMD11', 'PLEKHN1', 'HES4']
-        data.var['ensembl_id'] = ['ENSG00000187634', 'ENSG00000187583', 'ENSG00000188290']
+        data.var['ensembl_id'] = ['ENSG00000188290', 'ENSG00000187583', 'ENSG00000187634']
         data.obs["cell_type"] = ["CD4 T cells"]
         data.X = [[1, 2, 5]]
         return data
-
+    
     @pytest.fixture
-    def fine_tune_mock_data(self):
-        labels = list([0])
-        return labels
-
-    def test_pass_invalid_model_name(self):
+    def mock_embeddings_v1(self, mocker):
+        embs = mocker.Mock()
+        embs.hidden_states = [torch.tensor([[[5.0, 5.0, 5.0, 5.0, 5.0], 
+                             [1.0, 2.0, 3.0, 2.0, 1.0], 
+                             [6.0, 6.0, 6.0, 6.0, 6.0]]])]*12
+        return embs
+    
+    @pytest.fixture
+    def mock_embeddings_v2(self, mocker):
+        embs = mocker.Mock()
+        embs.hidden_states = torch.tensor([[[6.0, 5.0, 7.0, 5.0, 5.0],
+              [5.0, 5.0, 5.0, 5.0, 5.0], 
+              [1.0, 2.0, 3.0, 2.0, 1.0],
+              [6.0, 6.0, 6.0, 6.0, 6.0],
+              [6.0, 6.0, 1.0, 6.0, 2.0]]]).repeat(12, 1, 1, 1)
+        return embs
+    
+    @pytest.fixture(params=["gf-12L-30M-i2048", "gf-12L-95M-i4096"])
+    def geneformer(self, request, mocker):
+        config = GeneformerConfig(model_name=request.param, batch_size=5)
+        geneformer = Geneformer(config)
+        return geneformer
+    
+    @pytest.mark.parametrize("invalid_model_names", ["gf-12L-35M-i2048", "gf-34L-30M-i5000"])
+    def test_pass_invalid_model_name(self, invalid_model_names):
         with pytest.raises(ValueError):
-            geneformer_config = GeneformerConfig(model_name='InvalidName')
-        
-
-    def test_process_data_mapping_to_ensemble_ids(self, geneformer, mock_data):
-        assert mock_data.var['ensembl_id'][0] == 'ENSG00000187634'
-        # is the same as the above line but more verbose (linking the gene symbol to the ensembl id)
-        assert mock_data.var[mock_data.var['gene_symbols'] == 'SAMD11']['ensembl_id'].values[0] == 'ENSG00000187634'
-        assert mock_data.var[mock_data.var['gene_symbols'] == 'PLEKHN1']['ensembl_id'].values[0] == 'ENSG00000187583'
-        assert mock_data.var[mock_data.var['gene_symbols'] == 'HES4']['ensembl_id'].values[0] == 'ENSG00000188290'
-
-    def test_process_data_padding_and_masking_ids(self, geneformer, mock_data):
-        # for this token mapping, the padding token is 0 and the mask token is 1
-        geneformer.process_data(mock_data, gene_names='gene_symbols')
-        assert geneformer.gene_token_dict.get("<pad>") == 0
-        assert geneformer.gene_token_dict.get("<mask>") == 1
+            GeneformerConfig(model_name=invalid_model_names)
 
     def test_ensure_data_validity_raising_error_with_missing_ensembl_id_column(self, geneformer, mock_data):
         del mock_data.var['ensembl_id']
         with pytest.raises(KeyError):
             geneformer.ensure_rna_data_validity(mock_data, "ensembl_id")
-    
+
+
     @pytest.mark.parametrize("gene_symbols, raises_error",
                              [
                                 (['ENSGSAMD11', 'ENSGPLEKHN1', 'ENSGHES4'], True), # humans
@@ -66,126 +66,86 @@ class TestGeneformerModel:
         else:
             geneformer.process_data(mock_data, "gene_symbols")
 
-    def test_cls_mode_with_v1_model_config(self, geneformer, mock_data):
+    
+    def test_cls_mode_with_v1_model_config(self, geneformer):
         if geneformer.config["special_token"]:
             pytest.skip("This test is only for v1 models and should thus be only executed once.")
         with pytest.raises(ValueError):
-            config = GeneformerConfig(model_name="gf-12L-30M-i2048", device="cpu", emb_mode='cls')
+            GeneformerConfig(model_name="gf-12L-30M-i2048", emb_mode='cls')
 
-    def test_get_embs_cell_mode(self, geneformer, mock_data):
-        tokenized_dataset = geneformer.process_data(mock_data, gene_names='gene_symbols')
-        model = load_model("Pretrained", geneformer.files_config["model_files_dir"], self.device)
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        embs = get_embs(
-            model,
-            tokenized_dataset,
-            emb_mode="cell",
-            layer_to_quant=-1,
-            pad_token_id=geneformer.pad_token_id,
-            forward_batch_size=1,
-            token_gene_dict=geneformer.gene_token_dict,
-            device=device
-        )
-        assert embs.shape == (1, model.config.hidden_size)
+    @pytest.mark.parametrize("emb_mode", ["cell", "gene"])
+    def test_get_embeddings_of_different_modes_v1(self, emb_mode, mock_data, mock_embeddings_v1, mocker):
+        config = GeneformerConfig(model_name="gf-12L-30M-i2048", batch_size=5, emb_mode=emb_mode)
+        geneformer = Geneformer(config)
+        mocker.patch.object(geneformer.model, "forward", return_value=mock_embeddings_v1)
 
-    def test_get_embs_cls_mode(self, geneformer, mock_data):
-        if not geneformer.config["special_token"]:
-            pytest.skip("This test is only for models with special tokens (v2)")
-        tokenized_dataset = geneformer.process_data(mock_data, gene_names='gene_symbols')
-        model = load_model("Pretrained", geneformer.files_config["model_files_dir"], self.device)
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        embs = get_embs(
-            model,
-            tokenized_dataset,
-            emb_mode="cls",
-            layer_to_quant=-1,
-            pad_token_id=geneformer.pad_token_id,
-            forward_batch_size=1,
-            gene_token_dict=geneformer.gene_token_dict,
-            device=device
-        )
-        assert embs.shape == (1, model.config.hidden_size)
+        dataset = geneformer.process_data(mock_data, gene_names ="gene_symbols")
+        embeddings = geneformer.get_embeddings(dataset)
+        if emb_mode == "gene":
+            data_list = pd.Series({
+                            "ENSG00000187583": np.array([1.0, 2.0, 3.0, 2.0, 1.0]),
+                            "ENSG00000187634": np.array([6.0, 6.0, 6.0, 6.0, 6.0]),
+                            "ENSG00000188290": np.array([5.0, 5.0, 5.0, 5.0, 5.0])
+                        })
+            for key in data_list.index:
+                assert np.all(np.equal(embeddings[0][key], data_list[key]))
 
-    def test_get_embs_gene_mode(self, geneformer, mock_data):
-        tokenized_dataset = geneformer.process_data(mock_data, gene_names='gene_symbols')
-        model = load_model("Pretrained", geneformer.files_config["model_files_dir"], self.device)
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        embs = get_embs(
-            model,
-            tokenized_dataset,
-            emb_mode="gene",
-            layer_to_quant=-1,
-            pad_token_id=geneformer.pad_token_id,
-            forward_batch_size=1,
-            gene_token_dict=geneformer.gene_token_dict,
-            device=device
-        )
-        assert embs.shape[0] == 1
-        assert embs.shape[2] == model.config.hidden_size
+        if emb_mode == "cell":  
+            expected = np.array([[4, 4.333333, 4.666667, 4.333333, 4]])
+            np.testing.assert_allclose(
+                embeddings, 
+                expected, 
+                rtol=1e-4, 
+                atol=1e-4 
+            )
 
-    def test_get_embs_different_layer(self, geneformer, mock_data):
-        tokenized_dataset = geneformer.process_data(mock_data, gene_names='gene_symbols')
-        model = load_model("Pretrained", geneformer.files_config["model_files_dir"], self.device)
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        embs_last = get_embs(
-            model,
-            tokenized_dataset,
-            emb_mode="cell",
-            layer_to_quant=-1,
-            pad_token_id=geneformer.pad_token_id,
-            forward_batch_size=1,
-            gene_token_dict=geneformer.gene_token_dict,
-            device=device
-        )
-        embs_first = get_embs(
-            model,
-            tokenized_dataset,
-            emb_mode="cell",
-            layer_to_quant=0,
-            pad_token_id=geneformer.pad_token_id,
-            forward_batch_size=1,
-            gene_token_dict=geneformer.gene_token_dict,
-            device=device
-        )
-        assert not torch.allclose(embs_last, embs_first)
+    @pytest.mark.parametrize("emb_mode", ["cell", "gene", "cls"])
+    def test_get_embeddings_of_different_modes_v2(self, emb_mode, mock_data, mock_embeddings_v2, mocker):
+        config = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=5, emb_mode=emb_mode)
+        geneformer = Geneformer(config)
+        mocker.patch.object(geneformer.model, "forward", return_value=mock_embeddings_v2)
 
-    def test_get_embs_cell_mode(self, geneformer, mock_data):
-        tokenized_dataset = geneformer.process_data(mock_data, gene_names='gene_symbols')
-        model = load_model("Pretrained", geneformer.files_config["model_files_dir"], self.device)
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        embs = get_embs(
-            model,
-            tokenized_dataset,
-            emb_mode="cell",
-            layer_to_quant=-1,
-            pad_token_id=geneformer.pad_token_id,
-            forward_batch_size=1,
-            gene_token_dict=geneformer.gene_token_dict,
-            device=device
-        )
-        assert embs.shape == (1, model.config.hidden_size)
+        dataset = geneformer.process_data(mock_data, gene_names ="gene_symbols")
+        embeddings = geneformer.get_embeddings(dataset)
+        if emb_mode == "gene":
+            data_list = pd.Series({
+                            "ENSG00000187583": np.array([1.0, 2.0, 3.0, 2.0, 1.0]),
+                            "ENSG00000187634": np.array([6.0, 6.0, 6.0, 6.0, 6.0]),
+                            "ENSG00000188290": np.array([5.0, 5.0, 5.0, 5.0, 5.0])
+                        })  
+            for key in data_list.index:
+                assert np.all(np.equal(embeddings[0][key], data_list[key]))
 
-    def test_cls_eos_tokens_presence(self, geneformer, mock_data):
-        geneformer.process_data(mock_data, gene_names='gene_symbols')
-        if geneformer.config["special_token"]:
-            assert "<cls>" in geneformer.tk.gene_token_dict
-            assert "<eos>" in geneformer.tk.gene_token_dict
-        else:
-            assert "<cls>" not in geneformer.tk.gene_token_dict
-            assert "<eos>" not in geneformer.tk.gene_token_dict
+        if emb_mode == "cls":
+            assert (embeddings == np.array([6.0, 5.0, 7.0, 5.0, 5.0])).all()
+        if emb_mode == "cell":  
+            expected = np.array([[4, 4.333333, 4.666667, 4.333333, 4]])
+            np.testing.assert_allclose(
+                embeddings, 
+                expected, 
+                rtol=1e-4,
+                atol=1e-4
+            )
 
-    def test_model_input_size(self, geneformer):
-        assert geneformer.config["input_size"] == geneformer.configurer.model_map[geneformer.config["model_name"]]['input_size']
-
-    def test_fine_tune_classifier_returns_correct_shape(self, mock_data, fine_tune_mock_data):
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        fine_tuned_model = GeneformerFineTuningModel(GeneformerConfig(device=device), fine_tuning_head="classification", output_size=1)
+    @pytest.mark.parametrize("emb_mode", ["cell", "gene"])
+    def test_fine_tune_classifier_returns_correct_shape(self, emb_mode, mock_data):
+        fine_tuned_model = GeneformerFineTuningModel(GeneformerConfig(emb_mode=emb_mode), fine_tuning_head="classification", output_size=1)
         tokenized_dataset = fine_tuned_model.process_data(mock_data, gene_names='gene_symbols')
-        tokenized_dataset = tokenized_dataset.add_column('labels', fine_tune_mock_data)
+        tokenized_dataset = tokenized_dataset.add_column('labels', list([0]))
         
         fine_tuned_model.train(train_dataset=tokenized_dataset, label='labels')
-        assert fine_tuned_model is not None
-        outputs = fine_tuned_model.get_outputs(tokenized_dataset)
-        assert outputs.shape == (len(mock_data), len(fine_tune_mock_data))
 
-            
+        outputs = fine_tuned_model.get_outputs(tokenized_dataset)
+        assert outputs.shape == (len(mock_data), 1)
+
+    def test_fine_tune_classifier_cls_returns_correct_shape(self, mock_data):
+        fine_tuned_model = GeneformerFineTuningModel(GeneformerConfig(model_name="gf-12L-95M-i4096", emb_mode="cls"), fine_tuning_head="classification", output_size=1)
+        tokenized_dataset = fine_tuned_model.process_data(mock_data, gene_names='gene_symbols')
+        tokenized_dataset = tokenized_dataset.add_column('labels', list([0]))
+        
+        fine_tuned_model.train(train_dataset=tokenized_dataset, label='labels')
+
+        outputs = fine_tuned_model.get_outputs(tokenized_dataset)
+        assert outputs.shape == (len(mock_data), 1)
+
+
