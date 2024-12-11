@@ -52,6 +52,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.11.8
+
+      # because jobs may not be run in the same order, we need to install the dependencies again
+      - name: Install helical
+        run: |
+            pip install .
         
       # Required to get the data
       - name: Download all files
@@ -132,7 +137,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.11.8
-            
+
+      # because jobs may not be run in the same order, we need to install the dependencies again
+      - name: Install helical
+        run: |
+            pip install .
+        
       - name: Reduce datasets to speedup checks
         run: |
           sed -i 's/train\[:65%\]/train\[:5%\]/g' ./examples/notebooks/Cell-Type-Annotation.ipynb
