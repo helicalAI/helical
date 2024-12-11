@@ -8,8 +8,6 @@ on:
 jobs:
   tests:
     runs-on: self-hosted
-    env:
-      CUDA_VISIBLE_DEVICES: 0
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -40,17 +38,12 @@ jobs:
         with:
           name: coverage-report
           path: html_cov/
-
-      # Does not seem to work but would be nice to have
-      # - name: Pytest coverage comment
-      #   uses: MishaKav/pytest-coverage-comment@main
-      #   with:
-      #     pytest-coverage-path: ./pytest-coverage.txt
-      #     junitxml-path: ./pytest.xml
-
+          
   integration-tests:
     needs: tests
     runs-on: self-hosted
+    env:
+      CUDA_VISIBLE_DEVICES: 0
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -60,11 +53,12 @@ jobs:
         with:
           python-version: 3.11.8
 
-      - name: Install dependencies
+      # because jobs may not be run in the same order, we need to install the dependencies again
+      - name: Install helical
         run: |
-            pip install -r requirements-dev.txt
-      
-      # First download before tests as they make use of the downloaded files 
+            pip install .
+        
+      # Required to get the data
       - name: Download all files
         run: |
           python ci/download_all.py
@@ -133,6 +127,8 @@ jobs:
   notebooks:
     needs: tests
     runs-on: self-hosted
+    env:
+      CUDA_VISIBLE_DEVICES: 0
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -142,10 +138,11 @@ jobs:
         with:
           python-version: 3.11.8
 
-      - name: Install dependencies
+      # because jobs may not be run in the same order, we need to install the dependencies again
+      - name: Install helical
         run: |
-            pip install -r requirements-dev.txt
-            
+            pip install .
+        
       - name: Reduce datasets to speedup checks
         run: |
           sed -i 's/train\[:65%\]/train\[:5%\]/g' ./examples/notebooks/Cell-Type-Annotation.ipynb
