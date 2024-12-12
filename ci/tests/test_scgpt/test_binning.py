@@ -3,9 +3,8 @@ from helical.models.scgpt.binning import _digitize, binning
 import torch
 import pytest
 
-np.random.seed(42)
-
 def test_digitize_basic():
+    np.random.seed(42)
     x = np.array([-99, 1, 2, 3, 4, 5, 6, 9])
     bins = np.array([2, 4, 9])
     result = _digitize(x, bins)
@@ -15,6 +14,7 @@ def test_digitize_basic():
     assert np.array_equal(result, expected)
 
 def test_digitize_side_one():
+    np.random.seed(42)
     x = np.array([1, 2, 3, 4, 5])
     bins = np.array([2, 4])
     result = _digitize(x, bins, side="one")
@@ -22,6 +22,7 @@ def test_digitize_side_one():
     assert np.array_equal(result, expected)
 
 def test_digitize_empty_array():
+    np.random.seed(42)
     x = np.array([])
     bins = np.array([2, 4])
     result = _digitize(x, bins)
@@ -29,6 +30,7 @@ def test_digitize_empty_array():
     assert np.array_equal(result, expected)
 
 def test_digitize_identical_bins():
+    np.random.seed(42)
     x = np.array([1, 2, 3, 4, 5])
     bins = np.array([2, 2, 4, 4])
     result = _digitize(x, bins)
@@ -45,12 +47,12 @@ def test_digitize_identical_bins():
                         )
 def test_binning_basic(row, expected):
     np.random.seed(42)
-
     n_bins = 5
     result = binning(row, n_bins)
     assert np.array_equal(result, expected)
 
 def test_binning_with_zeros():
+    np.random.seed(42)
     row = np.array([0, 0, 0, 0, 0])
     n_bins = 5
     result = binning(row, n_bins)
@@ -58,6 +60,7 @@ def test_binning_with_zeros():
     assert np.array_equal(result, expected)
 
 def test_binning_with_negative_values():
+    np.random.seed(42)
     row = np.array([-1, -2, -3, -4, -5, -6, -7, -8, -9])
     n_bins = 5
     result = binning(row, n_bins)
