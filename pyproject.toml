@@ -40,7 +40,6 @@ dependencies = [
     'einops==0.8.0',
     'omegaconf==2.3.0',
     'hydra-core==1.3.2',
-    'tensorflow>=2.15.0,<=2.17.0',
     'louvain==0.8.2',
     'pyensembl',
     'datasets==2.20.0',
