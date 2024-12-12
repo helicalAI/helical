@@ -65,7 +65,7 @@ def test_evaluate_classification(mocker):
 def test_evaluate_integration(mocker):
     """
     Test that the integration evaluation function returns the expected results.
-    We follow the approach from scGPT to evaluate the integration based on the bioloical conservation
+    We follow the approach from scGPT to evaluate the integration based on the biological conservation
     and the batch correction. The metrics we are interested in are:
     - ARI (Adjusted Rand Index)
     - NMI (Normalized Mutual Information)
