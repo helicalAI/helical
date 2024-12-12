@@ -17,8 +17,8 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 import pytorch_lightning as pl
 
-class NeuralNetworkModel(nn.Module):
-    def __init__(self, input_size, num_classes):
+class NeuralNetworkModel(pl.LightningModule):
+    def __init__(self, input_size, num_classes, learning_rate=0.001):
         super(NeuralNetworkModel, self).__init__()
         self.save_hyperparameters()
         self.fc1 = nn.Linear(input_size, 256)
@@ -76,7 +76,7 @@ class NeuralNetwork(BaseTaskModel):
 
         self.num_classes = num_classes
         self.input_shape = input_shape
-        self.model = NeuralNetwork(input_shape, num_classes, self.learning_rate)
+        self.model = NeuralNetworkModel(input_shape, num_classes, self.learning_rate)
 
         # self.model = NeuralNetwork(input_shape, num_classes)
         # self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
