@@ -34,7 +34,6 @@ dependencies = [
     'loompy==3.0.7',
     'scib==1.1.5',
     'scikit-misc==0.3.1',
-    'torchtext>=0.15.0,<=0.18.0',
     'azure-identity==1.16.0',
     'azure-storage-blob==12.19.1',
     'azure-core==1.30.1',
