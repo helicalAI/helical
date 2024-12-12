@@ -15,18 +15,7 @@ if not logger.hasHandlers() or len(logger.handlers) == 0:
     logger.addHandler(handler)
     
 from .model import scGPT,scGPTConfig
-from . import model_dir, tokenizer, scbank, utils
+from . import model_dir
 from .data_collator import DataCollator
 from .dataset import Dataset
-from .gene_embedding import GeneEmbedding
-from .data_sampler import SubsetsBatchSampler
-from .trainer import (
-    prepare_data,
-    prepare_dataloader,
-    train,
-    define_wandb_metrcis,
-    evaluate,
-    eval_testdata,
-    test,
-)
 from .fine_tuning_model import scGPTFineTuningModel

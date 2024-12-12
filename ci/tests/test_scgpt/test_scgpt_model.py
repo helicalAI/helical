@@ -1,7 +1,6 @@
 from helical.models.scgpt.model import scGPT, scGPTConfig
 from helical.models.scgpt.fine_tuning_model import scGPTFineTuningModel
 from anndata import AnnData
-from helical.models.scgpt.tokenizer import GeneVocab
 import pytest
 import anndata as ad
 import numpy as np
@@ -22,8 +21,10 @@ class TestSCGPTModel:
         "PLEKHN1": 1,
         "HES4": 2,
         "<pad>": 3,
+        "<cls>": 4
     }
-    scgpt.vocab = GeneVocab.from_dict(vocab)
+    scgpt.vocab = vocab
+    scgpt.vocab_id_to_str = {value: key for key, value in scgpt.vocab.items()}
     
     data.X = [[1, 2, 5, 6]]
     
@@ -40,9 +41,6 @@ class TestSCGPTModel:
         # make sure that the genes not present in the vocabulary are filtered out
         # meaning -1 is not present in the gene_ids
         assert (dataset.gene_ids == [0, 1, 2]).all()
-
-        # ensure that the default index of the vocabulary is set to the id of the pad token
-        assert self.scgpt.vocab.get_default_index() == 3
 
         assert (dataset.count_matrix == [1, 2, 6]).all()
 
