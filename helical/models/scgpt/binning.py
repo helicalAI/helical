@@ -29,11 +29,11 @@ def _digitize(x: np.ndarray, bins: np.ndarray, side="both") -> np.ndarray:
     if side == "one":
         return left_digits
 
-    right_difits = np.digitize(x, bins, right=True)
+    right_digits = np.digitize(x, bins, right=True)
 
     rands = np.random.rand(len(x))  # uniform random numbers
 
-    digits = rands * (right_difits - left_digits) + left_digits
+    digits = rands * (right_digits - left_digits) + left_digits
     digits = np.ceil(digits).astype(np.int64)
     return digits
 
