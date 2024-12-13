@@ -37,3 +37,4 @@ integration:
       clisi_: False
 
 device: ???
+head_model: "svm"
