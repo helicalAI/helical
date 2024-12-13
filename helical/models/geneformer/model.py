@@ -29,7 +29,7 @@ class Geneformer(HelicalRNAModel):
     - gf-12L-95M-i4096-CLcancer
     - gf-20L-95M-i4096
 
-    For a detailed explanation of the differences between these models and versions, please refer to the Geneformer model card: https://helical.readthedocs.io/en/latest/docs/Geneformer.html
+    For a detailed explanation of the differences between these models and versions, please refer to the Geneformer model card: https://helical.readthedocs.io/en/latest/model_cards/geneformer/
 
     Example
     -------
