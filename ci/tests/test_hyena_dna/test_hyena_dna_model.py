@@ -39,21 +39,20 @@ def test_hyena_dna__invalid_model_names(model_name):
     with pytest.raises(ValueError):
         HyenaDNAConfig(model_name=model_name)
 
-@pytest.mark.parametrize("input_sequence, expected_output", [
+@pytest.mark.parametrize("input_sequence, expected_output, raise_error", [
     # Valid DNA sequences
-    ("", [0, 1]),
-    ("A", [0, 7, 1]),
-    ("CC", [0, 8, 8, 1]),
-    # ("GGG", [0, 9, 9, 9, 1]),
-    ("TTTT", [0, 10, 10, 10, 10, 1]),
-    ("ACGTN", [0, 7, 8, 9, 10, 11, 1]),
-    ("ACGT" * 256, [0] + [7, 8, 9, 10] * 256 + [1]),
+    ("", [0, 1], False),
+    ("A", [0, 7, 1], False),
+    ("CC", [0, 8, 8, 1], False),
+    ("TTTT", [0, 10, 10, 10, 10, 1], False),
+    ("ACGTN", [0, 7, 8, 9, 10, 11, 1], False),
+    ("ACGT" * 256, [0] + [7, 8, 9, 10] * 256 + [1], False),
     # Invalid sequences / sequences with uncertain 'N' nucleodites 
-    ("BHIK", [0, 6, 6, 6, 6, 1]),
-    ("ANNTBH", [0, 7, 11, 11, 10, 6, 6, 1]),
+    ("BHIK", [0, 6, 6, 6, 6, 1], True),
+    ("ANNTBH", [0, 7, 11, 11, 10, 6, 6, 1], True),
 
 ])
-def test_hyena_dna_process_data(input_sequence, expected_output):
+def test_hyena_dna_process_data(input_sequence, expected_output, raise_error):
     """
     Test the process_data method of the HyenaDNA model.
     The input DNA sequence is tokenized and the output is compared to the expected output.
@@ -69,6 +68,10 @@ def test_hyena_dna_process_data(input_sequence, expected_output):
         AssertionError: If the output of the process_data method does not match the expected output.
     """
     model = HyenaDNA()
-    output = model.process_data([input_sequence])
-    expected = torch.tensor([expected_output])
-    assert torch.equal(output.sequences, expected)
+    if raise_error:
+        with pytest.raises(ValueError):
+            model.process_data([input_sequence])
+    else:
+        output = model.process_data([input_sequence])
+        expected = torch.tensor([expected_output])
+        assert torch.equal(output.sequences, expected)

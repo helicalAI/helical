@@ -39,4 +39,5 @@ from .models.mamba2_mrna import Mamba2mRNA, Mamba2mRNAConfig, Mamba2mRNAFineTuni
 try:
     from .models.caduceus import Caduceus, CaduceusConfig, CaduceusFineTuningModel
 except:
-    logger.info("Caduceus not available: If you want to use this model, ensure you have a CUDA GPU and have installed the optional helical[mamba-ssm] dependencies.")
+    LOGGER = logging.getLogger(__name__)
+    LOGGER.info("Caduceus not available: If you want to use this model, ensure you have a CUDA GPU and have installed the optional helical[mamba-ssm] dependencies.")

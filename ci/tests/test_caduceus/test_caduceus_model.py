@@ -1,8 +1,15 @@
-from helical import Caduceus, CaduceusConfig
 import pytest
 import numpy as np
 import torch
 
+try:
+    from helical import Caduceus, CaduceusConfig
+    skip = False # only run tests if able to import the package
+except:
+    skip = True
+
+
+@pytest.mark.skipif(skip, reason="No Caduceus module present")
 @pytest.mark.parametrize("model_name", [
     "caduceus-ph-4L-seqlen-1k-d118", 
     "caduceus-ph-4L-seqlen-1k-d256", 
@@ -17,6 +24,7 @@ def test_caduceus_valid_model_names(model_name):
     """
     CaduceusConfig(model_name=model_name, device="cuda")
 
+@pytest.mark.skipif(skip, reason="No Caduceus module present")
 @pytest.mark.parametrize("model_name", [
     "caduceus-pq-4L-seqlen-1k-d118", 
     "caduceus-ph-9L-seqlen-1k-d256", 
@@ -29,6 +37,7 @@ def test_caduceus_invalid_model_names(model_name):
     with pytest.raises(ValueError):
         CaduceusConfig(model_name=model_name)
 
+@pytest.mark.skipif(skip, reason="No Caduceus module present")
 def test_runtime_error_when_cuda_unavailable(mocker):
     """
     Test that an error is raised when CUDA is not available since the model can't run without it.
@@ -37,6 +46,7 @@ def test_runtime_error_when_cuda_unavailable(mocker):
     with pytest.raises(RuntimeError):
         Caduceus(CaduceusConfig())
 
+@pytest.mark.skipif(skip, reason="No Caduceus module present")
 @pytest.mark.parametrize("input_sequence", [
     # Valid DNA sequences
     "A",
