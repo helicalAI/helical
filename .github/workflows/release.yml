@@ -19,7 +19,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.11.8
-
+      # Do not install mamba-ssm as it is not supported for machines without GPUs
       - name: Install dependencies
         run: |
             pip install .
@@ -38,9 +38,7 @@ jobs:
       - name: Install dependencies
         run: |
             pip install -r requirements-dev.txt
-            # Currently, the self-hosted runner uses a pre-installed version of mamba-ssm (v2.2.2). Using the latest version (v2.2.4) breaks the pip installation.
-            # TODO fix the installation of helical[mamba-ssm], and add it in the GitHub actions (CI/CD pipeline).
-            pip install .
+            pip install .[mamba-ssm]
             
       # First download before tests as they make use of the downloaded files 
       - name: Download all files
@@ -74,7 +72,7 @@ jobs:
       # because jobs may not be run in the same order, we need to install the dependencies again
       - name: Install helical
         run: |
-            pip install .
+            pip install .[mamba-ssm]
         
       # Required to get the data
       - name: Download all files
@@ -159,7 +157,7 @@ jobs:
       # because jobs may not be run in the same order, we need to install the dependencies again
       - name: Install helical
         run: |
-            pip install .
+            pip install .[mamba-ssm]
                     
       - name: Reduce datasets to speedup checks
         run: |

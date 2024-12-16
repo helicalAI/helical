@@ -185,7 +185,7 @@ class Geneformer(HelicalRNAModel):
             self.layer_to_quant,
             self.pad_token_id,
             self.forward_batch_size,
-            self.tk.gene_token_dict, # TODO: this looks like it loads the token dictionary additionally to the tokenizer
+            self.tk.gene_token_dict,
             self.tk.token_to_ensembl_dict,
             self.cls_present,
             self.eos_present,
