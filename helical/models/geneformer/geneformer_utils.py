@@ -143,6 +143,8 @@ def get_embs(
         del embs_i
 
         torch.cuda.empty_cache()
+    if emb_mode != "gene":
+        embs_list = np.array(embs_list)
 
     return embs_list
 

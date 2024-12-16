@@ -99,7 +99,7 @@ class Classifier():
         LOGGER.info(f"Getting training embeddings with {base_model.__class__.__name__}.")
         dataset = base_model.process_data(train_anndata, gene_names)
         self.gene_names = gene_names
-        x = base_model.get_embeddings(dataset)
+        x = np.array(base_model.get_embeddings(dataset))
           
         # then, train the classification model
         LOGGER.info(f"Training classification model '{self.name}'.")
