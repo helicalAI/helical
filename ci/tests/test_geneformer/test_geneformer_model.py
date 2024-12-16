@@ -9,8 +9,7 @@ class TestGeneformer:
     @pytest.fixture
     def mock_data(self):
         data = AnnData()
-        data.var['gene_symbols'] = ['SAMD11', 'PLEKHN1', 'HES4']
-        data.var['ensembl_id'] = ['ENSG00000188290', 'ENSG00000187583', 'ENSG00000187634']
+        data.var['gene_symbols'] = ['HES4', 'PLEKHN1', 'SAMD11'] 
         data.obs["cell_type"] = ["CD4 T cells"]
         data.X = [[1, 2, 5]]
         return data
@@ -34,10 +33,19 @@ class TestGeneformer:
         return embs
     
     @pytest.fixture(params=["gf-12L-30M-i2048", "gf-12L-95M-i4096"])
-    def geneformer(self, request, mocker):
+    def geneformer(self, request):
         config = GeneformerConfig(model_name=request.param, batch_size=5)
         geneformer = Geneformer(config)
         return geneformer
+    
+    def test_process_data_mapping_to_ensemble_ids(self, geneformer, mock_data):
+        # geneformer modifies the anndata in place and maps the gene names to ensembl id
+        geneformer.process_data(mock_data, gene_names="gene_symbols")
+        assert mock_data.var['ensembl_id'][0] == 'ENSG00000188290'
+        # is the same as the above line but more verbose (linking the gene symbol to the ensembl id)
+        assert mock_data.var[mock_data.var['gene_symbols'] == 'SAMD11']['ensembl_id'].values[0] == 'ENSG00000187634'
+        assert mock_data.var[mock_data.var['gene_symbols'] == 'PLEKHN1']['ensembl_id'].values[0] == 'ENSG00000187583'
+        assert mock_data.var[mock_data.var['gene_symbols'] == 'HES4']['ensembl_id'].values[0] == 'ENSG00000188290'
     
     @pytest.mark.parametrize("invalid_model_names", ["gf-12L-35M-i2048", "gf-34L-30M-i5000"])
     def test_pass_invalid_model_name(self, invalid_model_names):
@@ -45,6 +53,7 @@ class TestGeneformer:
             GeneformerConfig(model_name=invalid_model_names)
 
     def test_ensure_data_validity_raising_error_with_missing_ensembl_id_column(self, geneformer, mock_data):
+        geneformer.process_data(mock_data, gene_names="gene_symbols")
         del mock_data.var['ensembl_id']
         with pytest.raises(KeyError):
             geneformer.ensure_rna_data_validity(mock_data, "ensembl_id")
@@ -84,8 +93,8 @@ class TestGeneformer:
         if emb_mode == "gene":
             data_list = pd.Series({
                             "ENSG00000187583": np.array([1.0, 2.0, 3.0, 2.0, 1.0]),
-                            "ENSG00000187634": np.array([6.0, 6.0, 6.0, 6.0, 6.0]),
-                            "ENSG00000188290": np.array([5.0, 5.0, 5.0, 5.0, 5.0])
+                            "ENSG00000187634": np.array([5.0, 5.0, 5.0, 5.0, 5.0]),
+                            "ENSG00000188290": np.array([6.0, 6.0, 6.0, 6.0, 6.0])
                         })
             for key in data_list.index:
                 assert np.all(np.equal(embeddings[0][key], data_list[key]))
@@ -110,8 +119,8 @@ class TestGeneformer:
         if emb_mode == "gene":
             data_list = pd.Series({
                             "ENSG00000187583": np.array([1.0, 2.0, 3.0, 2.0, 1.0]),
-                            "ENSG00000187634": np.array([6.0, 6.0, 6.0, 6.0, 6.0]),
-                            "ENSG00000188290": np.array([5.0, 5.0, 5.0, 5.0, 5.0])
+                            "ENSG00000187634": np.array([5.0, 5.0, 5.0, 5.0, 5.0]),
+                            "ENSG00000188290": np.array([6.0, 6.0, 6.0, 6.0, 6.0])
                         })  
             for key in data_list.index:
                 assert np.all(np.equal(embeddings[0][key], data_list[key]))

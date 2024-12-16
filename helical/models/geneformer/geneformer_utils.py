@@ -38,6 +38,24 @@ def load_mappings(gene_symbols):
     return gene_id_to_ensemble
 
 def _compute_embeddings_depending_on_mode(embeddings: torch.tensor, data_dict: dict, emb_mode: str, cls_present: bool, eos_present: bool, token_to_ensembl_dict: dict):
+    """
+    Compute the different embeddings for each emb_mode
+
+    Parameters
+    -----------
+    embeddings: torch.tensor
+        The embedding batch output by the model.
+    data_dict: dict
+        The minibatch data dictionary used an input to the model.
+    emb_mode: str
+        The mode in which the embeddings are to be computed.
+    cls_present: bool
+        Whether the <cls> token is present in the token dictionary.
+    eos_present: bool
+        Whether the <eos> token is present in the token dictionary.
+    token_to_ensembl_dict: dict
+        The token to ensemble dictionary from the .
+    """
     if emb_mode == "cell":
         length = data_dict['length']
         if cls_present:
@@ -73,21 +91,38 @@ def _compute_embeddings_depending_on_mode(embeddings: torch.tensor, data_dict: d
     return batch_embeddings
 
 def _check_for_expected_special_tokens(dataset, emb_mode, cls_present, eos_present, gene_token_dict):
+    """
+    Check for the expected special tokens in the dataset.
+
+    Parameters
+    -----------
+    dataset: dict
+        The batch dictionary with input ids.
+    emb_mode: str
+        The mode in which the embeddings are to be computed.
+    cls_present: bool
+        Whether the <cls> token is present in the token dictionary.
+    eos_present: bool
+        Whether the <eos> token is present in the token dictionary.
+    gene_token_dict: dict
+        The gene token dictionary from the tokenizer.
+    """
     if emb_mode == "cls":
-        assert cls_present, "<cls> token missing in token dictionary"
-        assert (
-            dataset["input_ids"][0][0] == gene_token_dict["<cls>"]
-        ), "First token is not <cls> token value"
+        message = "<cls> token missing in token dictionary"
+        if not cls_present:
+            logger.error(message)
+            raise ValueError(message)
+        
+        if dataset["input_ids"][0][0] == gene_token_dict["<cls>"]:
+            message = "First token is not <cls> token value"
+            logger.error(message)
+            raise ValueError(message)
+        
     elif emb_mode == "cell":
         if cls_present:
-            logger.warning(
-                "CLS token present in token dictionary, excluding from average."
-            )
+            logger.warning("CLS token present in token dictionary, excluding from average.")
         if eos_present:
-            logger.warning(
-                "EOS token present in token dictionary, excluding from average."
-            )
-
+            logger.warning("EOS token present in token dictionary, excluding from average.")
 
 # extract embeddings
 def get_embs(
