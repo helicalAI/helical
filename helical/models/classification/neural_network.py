@@ -9,21 +9,29 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 import logging
+from typing import Any
 
 LOGGER = logging.getLogger(__name__)
 class NeuralNetwork(BaseTaskModel):
-    def __init__(self, loss: str = "categorical_crossentropy",learning_rate: float = 0.001, epochs=10, batch_size=32) -> None:
-        
-        if loss == "categorical_crossentropy":
-            self.loss_fn = nn.CrossEntropyLoss()
-        else:
-            message = f"Loss function {loss} not implemented."
-            LOGGER.error(message)
-            raise NotImplementedError(message)
-        
+    def __init__(self, loss: Any = nn.CrossEntropyLoss(), learning_rate: float = 0.001, epochs=10, batch_size=32) -> None:
+        """Initialize the neural network model.
+
+        Parameters
+        ----------
+        loss : Any, optional, default=nn.CrossEntropyLoss()
+            The loss function to use for training the neural network.
+        learning_rate : float
+            The learning rate of the neural network.
+        epochs : int
+            The number of epochs to train the neural network.
+        batch_size : int
+            The batch size to use for training the neural network.
+        """
+
         self.learning_rate = learning_rate
         self.epochs = epochs
         self.batch_size = batch_size
+        self.loss_fn = loss
         self.encoder = LabelEncoder()
 
     def compile(self, num_classes: int, input_shape: int) -> None:
@@ -134,11 +142,9 @@ class NeuralNetwork(BaseTaskModel):
         The prediction of the neural network.
         """
         self.model.eval()
-        X_tensor = torch.tensor(x, dtype=torch.float32)
-        with torch.no_grad():
-            outputs = self.model(X_tensor)
-            _, predicted = torch.max(outputs, 1)
-        return self.encoder.inverse_transform(predicted.numpy())
+        predictions_nn = self.model(torch.Tensor(x))
+        y_pred = np.array(torch.argmax(predictions_nn, dim=1))
+        return self.encoder.inverse_transform(y_pred)
     
     def save(self, path: str) -> None:
         """Save the neural network model and its encoder to a directory.
