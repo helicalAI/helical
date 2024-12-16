@@ -153,15 +153,15 @@ class NeuralNetwork(BaseTaskModel):
         np.save(f"{path}/encoder", self.encoder.classes_)
         torch.save(self.model, f"{path}/neural_network.pth")
 
-    def load(self, path: str, classes: ndarray) -> Self:
+    def load(self, path: str, classes: str) -> Self:
         """Load the neural network model from a file.
 
         Parameters
         ----------
         path : str
             The path to load the model from.
-        classes : ndarray
-            The classes used for encoding the labels.
+        classes : str
+            The path to classes used for encoding the labels.
 
         Returns
         -------
