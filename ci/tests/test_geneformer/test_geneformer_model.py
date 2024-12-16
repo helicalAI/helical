@@ -150,7 +150,7 @@ class TestGeneformer:
     def test_fine_tune_classifier_cls_returns_correct_shape(self, mock_data):
         fine_tuned_model = GeneformerFineTuningModel(GeneformerConfig(model_name="gf-12L-95M-i4096", emb_mode="cls"), fine_tuning_head="classification", output_size=1)
         tokenized_dataset = fine_tuned_model.process_data(mock_data, gene_names='gene_symbols')
-        tokenized_dataset = tokenized_dataset.add_column('labels', list([0]))
+        tokenized_dataset = tokenized_dataset.add_column('labels', [0])
         
         fine_tuned_model.train(train_dataset=tokenized_dataset, label='labels')
 

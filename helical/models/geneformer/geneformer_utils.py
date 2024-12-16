@@ -113,7 +113,7 @@ def _check_for_expected_special_tokens(dataset, emb_mode, cls_present, eos_prese
             logger.error(message)
             raise ValueError(message)
         
-        if dataset["input_ids"][0][0] == gene_token_dict["<cls>"]:
+        if dataset["input_ids"][0][0] != gene_token_dict["<cls>"]:
             message = "First token is not <cls> token value"
             logger.error(message)
             raise ValueError(message)
