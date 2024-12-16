@@ -54,6 +54,7 @@ class scGPTConfig():
             self, 
             pad_token: str = "<pad>",
             batch_size: int = 24,
+            emb_mode: Literal["cls", "cell", "gene"] = "cls",
             fast_transformer: bool = True,
             nlayers: int = 12,
             nheads: int = 8,
@@ -67,6 +68,7 @@ class scGPTConfig():
             accelerator: Optional[bool] = False,
             device: Literal["cpu", "cuda"] = "cpu",
             use_fast_transformer: bool = False,
+            binning_seed: int = 123
             ):
         
         model_name = 'best_model' # TODO: Include more models
@@ -81,6 +83,7 @@ class scGPTConfig():
             "list_of_files_to_download": list_of_files_to_download,
             "pad_token": pad_token,
             "batch_size": batch_size,
+            "emb_mode": emb_mode,
             "fast_transformer": fast_transformer,
             "nlayers": nlayers,
             "nheads": nheads,
@@ -94,4 +97,6 @@ class scGPTConfig():
             "accelerator": accelerator,
             "device": device,
             "use_fast_transformer": use_fast_transformer,
+            "MAX_LENGTH": 1200,
+            "binning_seed": binning_seed
             }

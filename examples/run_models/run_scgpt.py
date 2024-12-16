@@ -20,7 +20,7 @@ def run(cfg: DictConfig):
     data = scgpt.process_data(ann_data[:10])
     embeddings = scgpt.get_embeddings(data)
 
-    print(embeddings.shape)
+    print(embeddings)
 
 if __name__ == "__main__":
     run()

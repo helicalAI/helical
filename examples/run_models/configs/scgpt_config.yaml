@@ -1,5 +1,6 @@
 pad_token: "<pad>"
 batch_size: 24
+emb_mode: "gene"
 fast_transformer: True
 nlayers: 12
 nheads: 8
@@ -11,5 +12,6 @@ mask_value: -1
 pad_value: -2
 world_size: 8
 accelerator: False
-device: "cuda"
+device: "cpu"
 use_fast_transformer: False
+binning_seed: 123
