@@ -52,7 +52,7 @@ def test_load_model__ok_custom_head():
 
 def test_load_model__nok_custom_head():
     """
-    Unappy path for Classifier.load_model.
+    Unhappy path for Classifier.load_model.
     If a user decides to use his own model head, he just needs to make sure it is following the ClassificationModelProtocol.
     If this is not the case, raise an error.
     """
