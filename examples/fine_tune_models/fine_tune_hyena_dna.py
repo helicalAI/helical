@@ -4,7 +4,7 @@ from omegaconf import DictConfig
 
 @hydra.main(version_base=None, config_path="../run_models/configs", config_name="hyena_dna_config")
 def run_fine_tuning(cfg: DictConfig):
-    input_sequences = ["ACT"*20, "ATG"*20, "ATG"*20, "ACT"*20, "ATT"*20]
+    input_sequences = ["ACT"*20, "ATG"*10, "ATG"*20, "ACT"*10, "ATT"*20]
     labels = [0, 2, 2, 0, 1]
 
     hyena_dna_config = HyenaDNAConfig(**cfg)

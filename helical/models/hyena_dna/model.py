@@ -2,7 +2,7 @@ import logging
 from helical.models.hyena_dna.hyena_dna_config import HyenaDNAConfig
 from helical.models.base_models import HelicalDNAModel
 from tqdm import tqdm
-from .hyena_dna_utils import HyenaDNADataset
+from datasets import Dataset
 from helical.models.hyena_dna.pretrained_model import HyenaDNAPreTrainedModel
 import torch
 from .standalone_hyenadna import CharacterTokenizer
@@ -69,41 +69,42 @@ class HyenaDNA(HelicalDNAModel):
         self.model.eval()
         LOGGER.info(f"Model finished initializing.")
 
-    def process_data(self, sequence: list[str]) -> HyenaDNADataset:
+    def process_data(self, sequences: list[str], return_tensors: str="pt", padding: str="max_length", truncation: bool=True) -> Dataset:
         """Process the input DNA sequence.
 
         Parameters 
         ----------
         sequences : list[str]
             The input DNA sequences to be processed.
+        return_tensors : str, optional, default="pt"
+            The return type of the processed data.
+        padding : str, optional, default="max_length"
+            The padding strategy to be used.
+        truncation : bool, optional, default=True
+            Whether to truncate the sequences or not.
 
         Returns
         -------
-        HyenaDNADataset
+        Dataset
             Containing processed DNA sequences.
 
         """
-        LOGGER.info(f"Processing data")
-        processed_sequences = []
-        for seq in tqdm(sequence, desc="Processing sequences"):
-            tok_seq = self.tokenizer(seq)
-            tok_seq_input_ids = tok_seq["input_ids"]
+        LOGGER.info("Processing data")
 
-            tensor = torch.LongTensor(tok_seq_input_ids)
-            tensor = tensor.to(self.device)
-            processed_sequences.append(tensor)
+        # self.ensure_dna_sequence_validity(sequences)
+        max_length = len(max(sequences, key=len))+2 # +2 for special tokens at the beginning and end of sequences
 
-        dataset = HyenaDNADataset(torch.stack(processed_sequences))
-        LOGGER.info(f"Data processing finished.")
+        tokenized_sequences = self.tokenizer(sequences, return_tensors=return_tensors, padding=padding, truncation=truncation, max_length=max_length)
+        # tokenized_sequences.append(tokenized_seq)
 
-        return dataset
+        return Dataset.from_dict(tokenized_sequences)
 
-    def get_embeddings(self, dataset: HyenaDNADataset) -> torch.Tensor:
+    def get_embeddings(self, dataset: Dataset) -> torch.Tensor:
         """Get the embeddings for the tokenized sequence.
 
         Parameters
         ----------
-        dataset : HyenaDNADataset
+        dataset : Dataset
             The output dataset from `process_data`.
 
         Returns
@@ -114,7 +115,7 @@ class HyenaDNA(HelicalDNAModel):
         """
         LOGGER.info(f"Inference started")
 
-        train_data_loader = DataLoader(dataset, batch_size=self.config["batch_size"])
+        train_data_loader = DataLoader(dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"])
         with torch.inference_mode():
             embeddings = []
             for batch in tqdm(train_data_loader, desc="Getting embeddings"):
@@ -122,3 +123,15 @@ class HyenaDNA(HelicalDNAModel):
                 embeddings.append(self.model(input_data).detach().cpu().numpy())
         
         return np.vstack(embeddings)
+
+
+    def _collate_fn(self, batch):
+        input_ids = torch.tensor([item["input_ids"] for item in batch])
+        batch_dict = {
+            "input_ids": input_ids,
+        }
+
+        if "labels" in batch[0]:
+            batch_dict["labels"] = torch.tensor([item["labels"] for item in batch])
+            
+        return batch_dict
