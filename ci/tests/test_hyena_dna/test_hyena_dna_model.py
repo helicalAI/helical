@@ -1,6 +1,5 @@
 from helical.models.hyena_dna.model import HyenaDNAConfig
 import pytest
-import torch
 from helical.models.hyena_dna.model import HyenaDNA
 import numpy as np
 

@@ -91,11 +91,11 @@ class HyenaDNA(HelicalDNAModel):
         """
         LOGGER.info("Processing data")
 
-        # self.ensure_dna_sequence_validity(sequences)
+        self.ensure_dna_sequence_validity(sequences)
+        
         max_length = len(max(sequences, key=len))+2 # +2 for special tokens at the beginning and end of sequences
 
         tokenized_sequences = self.tokenizer(sequences, return_tensors=return_tensors, padding=padding, truncation=truncation, max_length=max_length)
-        # tokenized_sequences.append(tokenized_seq)
 
         return Dataset.from_dict(tokenized_sequences)
 
