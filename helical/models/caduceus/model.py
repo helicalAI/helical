@@ -105,10 +105,16 @@ class Caduceus(HelicalDNAModel):
         ----------
         sequences : list[str]
             The input DNA sequences to be processed.
+        return_tensors : str, optional, default="pt"
+            The return type of the processed data.
+        padding : str, optional, default="max_length"
+            The padding strategy to be used.
+        truncation : bool, optional, default=True
+            Whether to truncate the sequences or not.
 
         Returns
         ----------
-        HyenaDNADataset
+        Dataset
             Containing processed DNA sequences.
 
         """

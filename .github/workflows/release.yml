@@ -137,11 +137,11 @@ jobs:
 
       - name: Execute Caduceus
         run: |
-          python examples/run_models/run_caduceus.py ++device="cuda"
+          python examples/run_models/run_caduceus.py
       
       - name: Fine-tune Caduceus
         run: |
-          python examples/fine_tune_models/fine_tune_caduceus.py ++device="cuda"
+          python examples/fine_tune_models/fine_tune_caduceus.py
 
       - name: Execute benchmarking
         run: |
