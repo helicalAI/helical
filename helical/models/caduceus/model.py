@@ -25,9 +25,6 @@ class Caduceus(HelicalDNAModel):
     ----------
     ```python
     from helical import Caduceus, CaduceusConfig
-    import torch
-
-    device = "cuda" if torch.cuda.is_available() else "cpu"
 
     caduceus_config = CaduceusConfig(model_name="caduceus-ph-4L-seqlen-1k-d118", batch_size=5)
     caduceus = Caduceus(configurer = caduceus_config)
@@ -77,7 +74,7 @@ class Caduceus(HelicalDNAModel):
         LOGGER.info("Caduceus model initialized")
 
     def _collate_fn(self, batch):
-        input_ids = torch.tensor([item["input_ids"] for item in batch]).squeeze(1)
+        input_ids = torch.tensor([item["input_ids"] for item in batch])
         batch_dict = {
             "input_ids": input_ids,
         }
@@ -123,12 +120,12 @@ class Caduceus(HelicalDNAModel):
         self.ensure_dna_sequence_validity(sequences)
         max_length = min(len(max(sequences, key=len)), self.config['input_size'])+1
         
-        tokenized_sequences = []
-        for seq in sequences:
-            tokenized_seq = self.tokenizer(seq, return_tensors=return_tensors, padding=padding, truncation=truncation, max_length=max_length)
-            tokenized_sequences.append(tokenized_seq)
+        # tokenized_sequences = []
+        # for seq in sequences:
+        tokenized_sequences = self.tokenizer(sequences, return_tensors=return_tensors, padding=padding, truncation=truncation, max_length=max_length)
+            # tokenized_sequences.append(tokenized_seq)
 
-        return Dataset.from_list(tokenized_sequences)
+        return Dataset.from_dict(tokenized_sequences)
 
     def get_embeddings(self, dataset: Dataset) -> np.ndarray:
         """Get the embeddings for the tokenized sequence.

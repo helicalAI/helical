@@ -65,12 +65,12 @@ def test_caduceus_process_data(input_sequence, expected_sequence, mocker):
     dataset = model.process_data([input_sequence])
 
     assert len(max(dataset["input_ids"], key=len)) <= model.config["input_size"]
-    assert np.all(np.equal(np.array(expected_sequence), np.array(dataset["input_ids"][0][0])))
+    assert np.all(np.equal(np.array(expected_sequence), np.array(dataset["input_ids"][0])))
 
 @pytest.mark.skipif(caduceus_unavailable, reason="No Caduceus module present")
 @pytest.mark.parametrize("input_sequences, expected_sequences", [
     (["A", "CC", "TTTT", "ACGTN", "ACG"],
-    [[[4, 4, 4, 4, 7, 1]], [[4, 4, 4, 8, 8, 1]], [[4, 10, 10, 10, 10, 1]], [[7, 8, 9, 10, 11, 1]], [[4, 4, 7, 8, 9, 1]]])
+    [[4, 4, 4, 4, 7, 1], [4, 4, 4, 8, 8, 1], [4, 10, 10, 10, 10, 1], [7, 8, 9, 10, 11, 1], [4, 4, 7, 8, 9, 1]])
 ])
 def test_caduceus_process_data_variable_length_sequences(input_sequences, expected_sequences, mocker):
     """
