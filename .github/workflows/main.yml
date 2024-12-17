@@ -120,7 +120,8 @@ jobs:
       - name: Execute benchmarking
         run: |
           pip install scanorama
-          python examples/run_benchmark.py
+          python examples/run_benchmark.py ++head_model="svm"
+          python examples/run_benchmark.py ++head_model="neural_network"
 
   notebooks:
     needs: tests

@@ -16,7 +16,7 @@ def test_load_model__ok_nn_head():
         implementation of the 'predict' method.
     """
     scgpt = scGPT()
-    saved_nn_head = NeuralNetwork().load('ci/tests/data/valid_nn_head/my_model.h5', 'ci/tests/data/valid_nn_head/classes.npy')
+    saved_nn_head = NeuralNetwork().load('ci/tests/data/valid_nn_head/neural_network.pth', 'ci/tests/data/valid_nn_head/classes.npy')
     name = "scGPT with saved NN"
     scgpt_loaded_nn = Classifier().load_model(scgpt, saved_nn_head, name)    
     assert isinstance(scgpt_loaded_nn, Classifier)
@@ -86,7 +86,7 @@ def test_load_model__ok_custom_base():
 
     custom_base = CustomBaseModel()
 
-    saved_nn_head = NeuralNetwork().load('ci/tests/data/valid_nn_head/my_model.h5', 'ci/tests/data/valid_nn_head/classes.npy')
+    saved_nn_head = NeuralNetwork().load('ci/tests/data/valid_nn_head/neural_network.pth', 'ci/tests/data/valid_nn_head/classes.npy')
     name = "custom base model with NN"
     custom_base_classifier = Classifier().load_model(custom_base, saved_nn_head, name) 
     assert isinstance(custom_base_classifier, Classifier)
@@ -108,7 +108,7 @@ def test_load_model__nok_custom_base():
 
     custom_base = CustomBaseModel()
 
-    saved_nn_head = NeuralNetwork().load('ci/tests/data/valid_nn_head/my_model.h5', 'ci/tests/data/valid_nn_head/classes.npy')
+    saved_nn_head = NeuralNetwork().load('ci/tests/data/valid_nn_head/neural_network.pth', 'ci/tests/data/valid_nn_head/classes.npy')
     name = "custom base model with NN"
     with pytest.raises(TypeError):
         Classifier().load_model(custom_base, saved_nn_head, name)    
@@ -170,7 +170,7 @@ def test_get_predictions_w_no_base_model(mocker):
 
     base_model = None
     data = ad.read_h5ad("ci/tests/data/cell_type_sample.h5ad")
-    standalone = NeuralNetwork().load('ci/tests/data/valid_nn_head/my_model.h5', 'ci/tests/data/valid_nn_head/classes.npy')
+    standalone = NeuralNetwork().load('ci/tests/data/valid_nn_head/neural_network.pth', 'ci/tests/data/valid_nn_head/classes.npy')
 
     # Mocking the prediction process by returning the untrained head
     mocker.patch.object(standalone, 'predict')
