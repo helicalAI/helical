@@ -15,7 +15,9 @@ class GeneformerConfig():
     emb_layer : int, optional, default = -1
         The embedding layer
     emb_mode : Literal["cls", "cell", "gene"], optional, default="cell"
-        The embedding mode
+        The embedding mode to use. "cls" is only available for Geneformer v2 models, returning the embeddings of the cls token. 
+        For cell level embeddings, a mean across all embeddings excluding the cls token is returned.
+        For gene level embeddings, each gene token embedding is returned along with the corresponding ensembl ID.
     device : Literal["cpu", "cuda"], optional, default="cpu"
         The device to use. Either use "cuda" or "cpu".
     accelerator : bool, optional, default=False
