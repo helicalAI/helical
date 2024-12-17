@@ -135,6 +135,14 @@ jobs:
         run: |
           python examples/fine_tune_models/fine_tune_mamba2_mrna.py ++device="cuda"
 
+      - name: Execute Caduceus
+        run: |
+          python examples/run_models/run_caduceus.py
+      
+      - name: Fine-tune Caduceus
+        run: |
+          python examples/fine_tune_models/fine_tune_caduceus.py
+
       - name: Execute benchmarking
         run: |
           pip install scanorama

@@ -70,7 +70,7 @@ class HyenaDNA(HelicalDNAModel):
         LOGGER.info(f"Model finished initializing.")
 
     def process_data(self, sequence: list[str]) -> HyenaDNADataset:
-        """Process the input DNA sequence.
+        """Process the input DNA sequences.
 
         Parameters 
         ----------
@@ -84,6 +84,9 @@ class HyenaDNA(HelicalDNAModel):
 
         """
         LOGGER.info(f"Processing data")
+
+        self.ensure_dna_sequence_validity(sequence)
+        
         processed_sequences = []
         for seq in tqdm(sequence, desc="Processing sequences"):
             tok_seq = self.tokenizer(seq)
