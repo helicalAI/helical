@@ -2,6 +2,7 @@ from typing import List
 from helical.models.base_models import HelicalDNAModel
 from helical.utils.downloader import Downloader
 from .caduceus_config import CaduceusConfig
+from .pretrained_config import CaduceusPretrainedConfig
 from .modeling_caduceus import CaduceusModel
 from .caduceus_tokenizer import CaduceusTokenizer
 from datasets import Dataset
@@ -66,7 +67,9 @@ class Caduceus(HelicalDNAModel):
         for file in self.configurer.list_of_files_to_download:
             downloader.download_via_name(file)
 
-        self.model =  CaduceusModel.from_pretrained(self.files_config['model_files_dir'])
+        self.pretrained_config = CaduceusPretrainedConfig.from_pretrained(self.files_config['model_files_dir'])
+        self.model =  CaduceusModel.from_pretrained(self.files_config['model_files_dir'], config=self.pretrained_config)
+        
         self.model.eval()
 
         self.tokenizer = CaduceusTokenizer(model_max_length=self.config['input_size'])
@@ -95,7 +98,7 @@ class Caduceus(HelicalDNAModel):
         if self.config["pooling_strategy"] == "first":  # Use embedding of first token in the sequence
             return hidden_states.moveaxis(hidden_states, sequence_length_dim, 0)[0, ...]
 
-    def process_data(self, sequences: List[str]):
+    def process_data(self, sequences: List[str], return_tensors: str="pt", padding: str="max_length", truncation: bool=True) -> Dataset:
         """Process the input DNA sequences.
 
         Parameters 
@@ -112,10 +115,11 @@ class Caduceus(HelicalDNAModel):
         LOGGER.info("Processing data")
 
         self.ensure_dna_sequence_validity(sequences)
+        max_length = min(len(max(sequences, key=len)), self.config['input_size'])+1
         
         tokenized_sequences = []
         for seq in sequences:
-            tokenized_seq = self.tokenizer(seq, return_tensors="pt", padding="max_length", truncation=True, max_length=self.config['input_size'])
+            tokenized_seq = self.tokenizer(seq, return_tensors=return_tensors, padding=padding, truncation=truncation, max_length=max_length)
             tokenized_sequences.append(tokenized_seq)
 
         return Dataset.from_list(tokenized_sequences)

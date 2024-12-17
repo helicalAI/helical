@@ -9,7 +9,43 @@ from transformers import PretrainedConfig
 
 
 class CaduceusPretrainedConfig(PretrainedConfig):
-    """Config that extends the original MambaConfig with params relevant to bi-directionality and RC equivariance."""
+    """Config that extends the original MambaConfig with params relevant to bi-directionality and RC equivariance.
+    
+    This config is used to initialise the Caduceus pretrained model.
+    
+    Parameters
+    ----------
+    d_model : int, optional, default=2560
+        The model dimension.
+    n_layer : int, optional, default=64
+        The number of layers.
+    vocab_size : int, optional, default=50277
+        The vocabulary size.
+    ssm_cfg : Optional[dict], optional, default=None
+        The configuration for the SSM.
+    rms_norm : bool, optional, default=True
+        Whether to use RMS normalization.
+    residual_in_fp32 : bool, optional, default=True
+        Whether to use residual connections in FP32.
+    fused_add_norm : bool, optional, default=True
+        Whether to use fused add norm.
+    pad_vocab_size_multiple : int, optional, default=8
+        The padding vocabulary size multiple.
+    norm_epsilon : float, optional, default=1e-5
+        The epsilon value for layer normalization.
+    initializer_cfg : Optional[dict], optional, default=None
+        The configuration for the initializer.
+    bidirectional : bool, optional, default=True
+        Whether to use bidirectional attention.
+    bidirectional_strategy : Union[str, None], optional, default="add"
+        The bidirectional strategy to use.
+    bidirectional_weight_tie : bool, optional, default=True
+        Whether to tie the weights for bidirectional attention.
+    rcps : bool, optional, default=False
+        Whether to use RCPS.
+    complement_map : Optional[dict], optional, default=None
+        The complement map.
+    """
     def __init__(
             self,
             # From original MambaConfig

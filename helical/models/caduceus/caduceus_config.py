@@ -11,7 +11,6 @@ class CaduceusConfig():
         model_name: Literal["caduceus-ph-4L-seqlen-1k-d118", "caduceus-ph-4L-seqlen-1k-d256", "caduceus-ph-16L-seqlen-131k-d256", "caduceus-ps-4L-seqlen-1k-d118", "caduceus-ps-4L-seqlen-1k-d256", "caduceus-ps-16L-seqlen-131k-d256"] = "caduceus-ph-4L-seqlen-1k-d118",
         batch_size: int = 5,
         pooling_strategy: Literal["mean", "max", "last", "first"] = "mean",
-        device: str="cuda", # Caduceus using Triton for mamba-SSM which requires cuda
         nproc: int = 1,
         ):
         """
@@ -83,6 +82,6 @@ class CaduceusConfig():
             "model_name": model_name,
             "pooling_strategy": pooling_strategy,
             "batch_size": batch_size,   
-            "device": device,
+            "device": "cuda",
             "nproc": nproc,
         }
