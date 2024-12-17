@@ -21,7 +21,18 @@ class CaduceusFineTuningModel(HelicalBaseFineTuningModel, Caduceus):
     Example
     ----------
     ```python
+    input_sequences = ["ACT"*20, "ATG"*20, "ATG"*20, "CTG"*20, "TTG"*20]
+    labels = [0, 2, 2, 0, 1]
 
+    caduceus_config = CaduceusConfig(model_name="caduceus-ph-4L-seqlen-1k-d118", batch_size=5)
+    caduceus_fine_tune = CaduceusFineTuningModel(caduceus_config=caduceus_config, fine_tuning_head="classification", output_size=3)
+
+    train_dataset = caduceus_fine_tune.process_data(input_sequences)
+
+    caduceus_fine_tune.train(train_dataset=train_dataset, train_labels=labels)
+
+    outputs = caduceus_fine_tune.get_outputs(train_dataset)
+    print(outputs.shape)
     ```
 
     Parameters

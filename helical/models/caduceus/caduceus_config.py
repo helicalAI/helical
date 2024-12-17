@@ -24,10 +24,12 @@ class CaduceusConfig():
             The batch size. This will be used in all the model operations.
         pooling_strategy : Literal["mean", "max", "last", "first"], optional, default="mean"
             The pooling strategy to use. This will be used in all the model operations.
-        device : str, optional, default="cuda"
-            The device to use. Caduceus uses Triton for mamba-SSM which requires cuda.
         nproc : int, optional, default=1
             The number of processes to use for data processing.
+
+        Notes
+        ----------
+        Caduceus uses the mamba_ssm package which requires CUDA.
         """
 
         if pooling_strategy not in ["mean", "max", "last", "first"]:

@@ -29,7 +29,7 @@ class Caduceus(HelicalDNAModel):
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    caduceus_config = CaduceusConfig(model_name="caduceus-ph-4L-seqlen-1k-d118", batch_size=5, device=device)
+    caduceus_config = CaduceusConfig(model_name="caduceus-ph-4L-seqlen-1k-d118", batch_size=5)
     caduceus = Caduceus(configurer = caduceus_config)
     
     sequence = ['ACTG' * int(1024/4)]
