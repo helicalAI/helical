@@ -97,7 +97,9 @@ class HyenaDNA(HelicalDNAModel):
 
         tokenized_sequences = self.tokenizer(sequences, return_tensors=return_tensors, padding=padding, truncation=truncation, max_length=max_length)
 
-        return Dataset.from_dict(tokenized_sequences)
+        dataset = Dataset.from_dict(tokenized_sequences)
+        LOGGER.info(f"Data processing finished.")
+        return dataset
 
     def get_embeddings(self, dataset: Dataset) -> torch.Tensor:
         """Get the embeddings for the tokenized sequence.
