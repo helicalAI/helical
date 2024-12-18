@@ -87,7 +87,6 @@ class HyenaDNA(HelicalDNAModel):
         -------
         Dataset
             Containing processed DNA sequences.
-
         """
         LOGGER.info("Processing data")
 
