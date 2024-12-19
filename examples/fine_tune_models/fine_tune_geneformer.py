@@ -11,6 +11,8 @@ def run_fine_tuning(cfg: DictConfig):
     # either load via huggingface
     # hf_dataset = load_dataset("helical-ai/yolksac_human",split="train[:5%]", trust_remote_code=True, download_mode="reuse_cache_if_exists")
     # ann_data = get_anndata_from_hf_dataset(hf_dataset)
+
+    # or load directly from anndata file
     ann_data = ad.read_h5ad("./yolksac_human.h5ad")
 
     cell_types = list(ann_data.obs["LVL1"][:10])
@@ -31,6 +33,9 @@ def run_fine_tuning(cfg: DictConfig):
     dataset = dataset.map(classes_to_ids, num_proc=1)
 
     geneformer_fine_tune.train(train_dataset=dataset)
+
+    outputs = geneformer_fine_tune.get_outputs(dataset)
+    print(outputs)
 
 if __name__ == "__main__":
     run_fine_tuning()

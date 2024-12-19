@@ -4,7 +4,7 @@ from helical.models.hyena_dna import HyenaDNA, HyenaDNAConfig
 from torch import optim
 import torch
 from torch.nn.modules import loss
-from .hyena_dna_utils import HyenaDNADataset
+from datasets import Dataset
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from transformers import get_scheduler
@@ -75,15 +75,16 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
 
     def train(        
         self,
-        train_dataset: HyenaDNADataset,
+        train_dataset: Dataset,
         train_labels: list[int],     
-        validation_dataset: HyenaDNADataset = None,
+        validation_dataset: Dataset = None,
         validation_labels: list[int] = None,
         optimizer: optim = optim.AdamW,
         optimizer_params: dict = {'lr': 0.0001}, 
         loss_function: loss = loss.CrossEntropyLoss(), 
         epochs: int = 1,
-        lr_scheduler_params: Optional[dict] = None):
+        lr_scheduler_params: Optional[dict] = None,
+        shuffle: bool = True):
         """Fine-tunes the Hyena-DNA model with different head modules. 
 
         Parameters
@@ -108,13 +109,15 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
         lr_scheduler_params : dict, default=None
             The learning rate scheduler parameters for the transformers get_scheduler method. The optimizer will be taken from the optimizer input and should not be included in the learning scheduler parameters. If not specified, a constant learning rate will be used.
             e.g. lr_scheduler_params = { 'name': 'linear', 'num_warmup_steps': 0 }. num_steps will be calculated based on the number of epochs and the length of the training dataset.
+        shuffle : bool, default=True
+            Whether to shuffle the training data or not.
         """
-        train_dataset.set_labels(train_labels)
-        train_dataloader = DataLoader(train_dataset, batch_size=self.config["batch_size"])
+        train_dataset = self._add_data_column(train_dataset, np.array(train_labels))
+        train_dataloader = DataLoader(train_dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"], shuffle=shuffle)
      
         if validation_dataset is not None and validation_labels is not None:
-            validation_dataset.set_labels(validation_labels)
-            validation_dataloader = DataLoader(validation_dataset, batch_size=self.config["batch_size"])
+            validation_dataset = self._add_data_column(validation_dataset, np.array(validation_labels))
+            validation_dataloader = DataLoader(validation_dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"])
 
         self.to(self.config["device"])
         self.model.train()
@@ -163,7 +166,7 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
             
     def get_outputs(
             self, 
-            dataset: HyenaDNADataset) -> np.ndarray:
+            dataset: Dataset) -> np.ndarray:
         """Get the outputs of the fine-tuned model.
         
         Parameters
@@ -176,7 +179,7 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
         np.ndarray
             The outputs of the model
         """
-        data_loader = DataLoader(dataset, batch_size=self.config["batch_size"])
+        data_loader = DataLoader(dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"])
 
         self.to(self.config["device"])
         self.model.eval()
@@ -190,3 +193,23 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
             outputs.append(output.detach().cpu().numpy())
         
         return np.vstack(outputs)
+    
+    def _add_data_column(self, dataset: Dataset, data: list, column_name: str="labels") -> Dataset:
+        """
+        Add a column to the dataset.
+        
+        Parameters
+        ----------
+        dataset : Dataset
+            The dataset to add the column to.
+        data : list
+            The data to add to the column.
+        column_name : str, optional, default="labels"
+            The name of the column to add.
+        """
+        if len(data.shape) > 1:
+            for i in range(len(data[0])):  # Assume all inner lists are the same length
+                dataset = dataset.add_column(f"{column_name}", [row[i] for row in data])
+        else:  # If 1D
+            dataset = dataset.add_column(column_name, data)
+        return dataset

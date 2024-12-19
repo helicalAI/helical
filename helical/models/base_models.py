@@ -59,7 +59,7 @@ class HelicalRNAModel(HelicalBaseFoundationModel):
             The data to be checked.
         gene_names : str
             The name of the column containing gene names in adata.var.
-        use_raw_counts : bool, default = True
+        use_raw_counts : bool, default=True
             Whether to use raw counts or not.
 
         Raises
@@ -115,8 +115,27 @@ class HelicalRNAModel(HelicalBaseFoundationModel):
                 raise ValueError(message)
         
 class HelicalDNAModel(HelicalBaseFoundationModel):
-    def check_dna_data_validity(self) -> None:
-        pass # TODO
+    def ensure_dna_sequence_validity(self, sequences: List[str]) -> None:
+        """Ensures that the DNA sequences only contain the characters A, C, T, G, N.  
+
+        Parameters
+        ----------
+        sequences : List[str]
+            The DNA sequences to be checked.
+
+        Raises
+        ------
+        ValueError
+            If the sequences contain characters other than A, C, T, G, N and E.
+        """
+        valid_chars = set('ACTGN')
+    
+        for sequence in sequences:
+            if not set(sequence.upper()).issubset(valid_chars):
+                invalid_chars = set(sequence.upper()) - valid_chars
+                message = f"Invalid DNA sequence: found invalid characters {invalid_chars}"
+                LOGGER.error(message)
+                raise ValueError(message)
 
 class BaseTaskModel(ABC):
     """

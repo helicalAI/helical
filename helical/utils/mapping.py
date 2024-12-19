@@ -12,7 +12,7 @@ LOGGER = logging.getLogger(__name__)
 def map_gene_symbols_to_ensembl_ids(adata: AnnData, gene_names: str, species: Species = human) -> AnnData:
     """
     Map gene names to Ensembl IDs using the pyensembl library.
-    Due to copy events, there might be multiple genes per name. We take always take the fist one.
+    Due to copy events, there might be multiple genes per name. We always take the fist one.
 
     Parameters
     ----------

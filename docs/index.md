@@ -74,6 +74,7 @@ apptainer shell --nv --fakeroot singularity/helical/
 
 ### DNA models:
 - [HyenaDNA](./model_cards/hyenadna.md)
+- [Caduceus](./model_cards/caduceus.md)
 
 
 ## Demo & Use Cases

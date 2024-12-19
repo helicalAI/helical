@@ -20,9 +20,7 @@ jobs:
       - name: Install dependencies
         run: |
             pip install -r requirements-dev.txt
-            # Currently, the self-hosted runner uses a pre-installed version of mamba-ssm (v2.2.2). Using the latest version (v2.2.4) breaks the pip installation.
-            # TODO fix the installation of helical[mamba-ssm], and add it in the GitHub actions (CI/CD pipeline).
-            pip install .
+            pip install .[mamba-ssm]
             
       # First download before tests as they make use of the downloaded files 
       - name: Download all files
@@ -56,7 +54,7 @@ jobs:
       # because jobs may not be run in the same order, we need to install the dependencies again
       - name: Install helical
         run: |
-            pip install .
+            pip install .[mamba-ssm]
         
       # Required to get the data
       - name: Download all files
@@ -119,10 +117,13 @@ jobs:
         run: |
           python examples/fine_tune_models/fine_tune_mamba2_mrna.py ++device="cuda"
 
-      - name: Execute benchmarking
+      - name: Execute Caduceus
         run: |
-          pip install scanorama
-          python examples/run_benchmark.py
+          python examples/run_models/run_caduceus.py
+    
+      - name: Fine-tune Caduceus
+        run: |
+          python examples/fine_tune_models/fine_tune_caduceus.py
 
   notebooks:
     needs: tests
@@ -141,7 +142,7 @@ jobs:
       # because jobs may not be run in the same order, we need to install the dependencies again
       - name: Install helical
         run: |
-            pip install .
+            pip install .[mamba-ssm]
         
       - name: Reduce datasets to speedup checks
         run: |
