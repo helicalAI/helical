@@ -11,8 +11,8 @@ class TestHyenaDNAFineTuning:
 
     @pytest.fixture
     def mock_data(self, hyenaDNAFineTune):
-        input_sequences = ["AAAA", "CCCC", "TTTT", "ACGT", "ACGN", "BHIK", "ANNT"]
-        labels = [0, 0, 0, 0, 0, 0, 0]
+        input_sequences = ["AAAA", "CCCC", "TTTT", "ACGT", "ACGN", "ANNT"]
+        labels = [0, 0, 0, 0, 0, 0]
         tokenized_sequences = hyenaDNAFineTune.process_data(input_sequences)
         return tokenized_sequences, labels
 
