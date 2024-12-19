@@ -47,7 +47,6 @@ site
 docs/notebooks/
 
 # Keep unit tests data
-!ci/tests/data/valid_nn_head/*
 !ci/tests/data/*
 
 # Hydra
