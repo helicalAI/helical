@@ -1,7 +1,6 @@
 Bootstrap: docker
 From : library/python:3.11
 #From : nvidia/cuda:12.5.1-cudnn-devel-ubuntu22.04
-#From : tensorflow/tensorflow:nightly-gpu
 
 %labels
     Author maxime@helical-ai.com

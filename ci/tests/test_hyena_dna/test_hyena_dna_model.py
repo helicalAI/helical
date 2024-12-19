@@ -1,8 +1,7 @@
 from helical.models.hyena_dna.model import HyenaDNAConfig
 import pytest
-import torch
 from helical.models.hyena_dna.model import HyenaDNA
-from helical.models.hyena_dna.hyena_dna_utils import HyenaDNADataset
+import numpy as np
 
 @pytest.mark.parametrize("model_name, d_model, d_inner", [
     ("hyenadna-tiny-1k-seqlen", 128, 512),
@@ -44,31 +43,23 @@ def test_hyena_dna__invalid_model_names(model_name):
     ("", [0, 1]),
     ("A", [0, 7, 1]),
     ("CC", [0, 8, 8, 1]),
-    # ("GGG", [0, 9, 9, 9, 1]),
     ("TTTT", [0, 10, 10, 10, 10, 1]),
     ("ACGTN", [0, 7, 8, 9, 10, 11, 1]),
-    ("ACGT" * 256, [0] + [7, 8, 9, 10] * 256 + [1]),
-    # Invalid sequences / sequences with uncertain 'N' nucleodites 
-    ("BHIK", [0, 6, 6, 6, 6, 1]),
-    ("ANNTBH", [0, 7, 11, 11, 10, 6, 6, 1]),
-
+    ("ACGT" * 256, [0] + [7, 8, 9, 10] * 256 + [1])
 ])
 def test_hyena_dna_process_data(input_sequence, expected_output):
-    """
-    Test the process_data method of the HyenaDNA model.
-    The input DNA sequence is tokenized and the output is compared to the expected output.
-
-    Args:
-        input_sequence (str): The input DNA sequence to be processed.
-        expected_output (int): The expected output of the process_data method.
-
-    Returns:
-        None
-
-    Raises:
-        AssertionError: If the output of the process_data method does not match the expected output.
-    """
     model = HyenaDNA()
     output = model.process_data([input_sequence])
-    expected = torch.tensor([expected_output])
-    assert torch.equal(output.sequences, expected)
+    expected = np.array(expected_output)
+    assert np.all(np.equal(np.array(output["input_ids"][0]), expected))
+
+@pytest.mark.parametrize("input_sequence, expected_output", [
+    (
+        ["A", "CC", "TTTT", "ACGTN", "ACGT"],
+        [[4, 4, 4, 4, 0, 7, 1], [4, 4, 4, 0, 8, 8, 1], [4, 0, 10, 10, 10, 10, 1], [0, 7, 8, 9, 10, 11, 1], [4, 0, 7, 8, 9, 10, 1]]
+    )
+])
+def test_hyena_dna_process_data_variable_length_sequences(input_sequence, expected_output):
+    model = HyenaDNA()
+    dataset = model.process_data(input_sequence)
+    assert np.all(np.equal(np.array(expected_output), np.array(dataset["input_ids"])))

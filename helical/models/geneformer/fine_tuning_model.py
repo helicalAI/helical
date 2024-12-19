@@ -4,7 +4,7 @@ from helical.models.geneformer import Geneformer, GeneformerConfig
 import torch
 from torch import optim
 from torch.nn.modules import loss
-from helical.models.geneformer.geneformer_utils import gen_attention_mask, get_model_input_size, pad_tensor_list
+from helical.models.geneformer.geneformer_utils import gen_attention_mask, get_model_input_size, pad_tensor_list, _check_for_expected_special_tokens, mean_nonpadding_embs
 from datasets import Dataset
 import logging
 from tqdm import trange
@@ -87,26 +87,41 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
 
         self.fine_tuning_head.set_dim_size(self.config["embsize"])
 
-    def _forward(self, input_ids: torch.Tensor, attention_mask_minibatch: torch.Tensor) -> torch.Tensor:
+    def _forward(self, input_ids: torch.tensor, attention_mask_minibatch: torch.tensor, original_lengths: torch.tensor) -> torch.tensor:
         """
         Forward method of the fine-tuning model.
 
         Parameters
         ----------
-        input_ids : torch.Tensor
+        input_ids : torch.tensor
             The input ids to the fine-tuning model.
-        attention_mask_minibatch : torch.Tensor
+        attention_mask_minibatch : torch.tensor
             The attention mask for the input tensor.
+        original_lengths: torch.tensor
+            The original lengths of the inputs without padding
         
         Returns
         -------
-        torch.Tensor
+        torch.tensor
             The output tensor of the fine-tuning model.
         """
         outputs = self.model(input_ids=input_ids, attention_mask=attention_mask_minibatch)
-        final_layer = outputs.hidden_states[-1]
-        cls_seq = final_layer[:, 0, :]
-        final = self.fine_tuning_head(cls_seq)
+        batch_embeddings = outputs.hidden_states[-1]
+
+        if self.emb_mode == "cls" and self.cls_present:
+            batch_embeddings = batch_embeddings[:, 0, :]
+        else:
+            length = original_lengths
+            if self.cls_present:
+                batch_embeddings = batch_embeddings[:, 1:, :]  # Get all layers except the cls embs
+                if self.eos_present:
+                    length -= 2 # length is used for the mean calculation, 2 is subtracted because we have taken both the cls and eos embeddings out
+                else:
+                    length -= 1 # length is subtracted because just the cls is removed
+
+            batch_embeddings = mean_nonpadding_embs(batch_embeddings, length)
+            
+        final = self.fine_tuning_head(batch_embeddings)
         return final
     
     def train(
@@ -160,33 +175,9 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
                 lr_scheduler_params = {'name': 'linear', 'num_warmup_steps': 0, 'num_training_steps': 5}
         """
 
-                
         model_input_size = get_model_input_size(self.model)
 
-        cls_present = any("<cls>" in key for key in self.gene_token_dict.keys())
-        eos_present = any("<eos>" in key for key in self.gene_token_dict.keys())
-        if self.emb_mode == "cls":
-            if cls_present is False:
-                message = "<cls> token missing in token dictionary"
-                logger.error(message)
-                raise ValueError(message)
-            # Check to make sure that the first token of the filtered input data is cls token
-            cls_token_id = self.gene_token_dict["<cls>"]
-            if cls_token_id != train_dataset["input_ids"][0][0]:
-                message = "First token is not <cls> token value"
-                logger.error(message)
-            assert (
-                train_dataset["input_ids"][0][0] == cls_token_id
-            ), "First token is not <cls> token value"
-        elif self.emb_mode == "cell":
-            if cls_present:
-                logger.warning(
-                    "CLS token present in token dictionary, excluding from average."
-                )
-            if eos_present:
-                logger.warning(
-                    "EOS token present in token dictionary, excluding from average."
-                )
+        _check_for_expected_special_tokens(train_dataset, self.emb_mode, self.cls_present, self.eos_present, self.tk.gene_token_dict)
         
         total_batch_length = len(train_dataset)
         #initialise optimizer
@@ -229,7 +220,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
                     input_data_minibatch, max_len, self.pad_token_id, model_input_size
                 ).to(self.device)
 
-                outputs = self._forward(input_ids=input_data_minibatch, attention_mask_minibatch=gen_attention_mask(minibatch))
+                outputs = self._forward(input_ids=input_data_minibatch, attention_mask_minibatch=gen_attention_mask(minibatch), original_lengths=minibatch["length"])
                 loss = loss_function(outputs, minibatch[label])
                 loss.backward()
                 batch_loss += loss.item()
@@ -262,7 +253,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
                     ).to(self.device)
 
                     with torch.no_grad():
-                        outputs = self._forward(input_ids=input_data_minibatch, attention_mask_minibatch=gen_attention_mask(minibatch))
+                        outputs = self._forward(input_ids=input_data_minibatch, attention_mask_minibatch=gen_attention_mask(minibatch), original_lengths=minibatch["length"])
                     val_loss += loss_function(outputs, minibatch[label]).item()
                     count += 1.0
                     testing_loop.set_postfix({"val_loss": val_loss/count})
@@ -294,31 +285,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
 
         dataset_length = len(dataset)
 
-        cls_present = any("<cls>" in key for key in self.gene_token_dict.keys())
-        eos_present = any("<eos>" in key for key in self.gene_token_dict.keys())
-        if self.emb_mode == "cls":
-            if cls_present is False:
-                message = "<cls> token missing in token dictionary"
-                logger.error(message)
-                raise ValueError(message)
-            assert cls_present, "<cls> token missing in token dictionary"
-            # Check to make sure that the first token of the filtered input data is cls token
-            cls_token_id = self.gene_token_dict["<cls>"]
-            if cls_token_id != dataset["input_ids"][0][0]:
-                message = "First token is not <cls> token value"
-                logger.error(message)
-            assert (
-                dataset["input_ids"][0][0] == cls_token_id
-            ), "First token is not <cls> token value"
-        elif self.emb_mode == "cell":
-            if cls_present:
-                logger.warning(
-                    "CLS token present in token dictionary, excluding from average."
-                )
-            if eos_present:
-                logger.warning(
-                    "EOS token present in token dictionary, excluding from average."
-                )
+        _check_for_expected_special_tokens(dataset, self.emb_mode, self.cls_present, self.eos_present, self.tk.gene_token_dict)
         
         output = []
         testing_loop = trange(0, dataset_length, self.config["batch_size"], desc="Generating Outputs", leave=(not silent))
@@ -335,7 +302,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
             ).to(self.device)
 
             with torch.no_grad():
-                outputs = self._forward(input_ids=input_data_minibatch, attention_mask_minibatch=gen_attention_mask(minibatch))
+                outputs = self._forward(input_ids=input_data_minibatch, attention_mask_minibatch=gen_attention_mask(minibatch), original_lengths=minibatch["length"])
                 output.append(outputs.clone().detach())
             del outputs
             del minibatch

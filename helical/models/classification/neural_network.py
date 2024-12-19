@@ -2,21 +2,36 @@ from numpy import ndarray
 from typing_extensions import Self
 from sklearn.preprocessing import LabelEncoder
 import numpy as np
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.metrics import F1Score
-from tensorflow.keras.utils import to_categorical
 from helical.models.base_models import BaseTaskModel
 from pathlib import Path
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader, TensorDataset
+import logging
+from typing import Any
 
+LOGGER = logging.getLogger(__name__)
 class NeuralNetwork(BaseTaskModel):
-    def __init__(self, loss: str = "categorical_crossentropy", learning_rate: float = 0.001, epochs=10, batch_size=32) -> None:
-        self.loss = loss
+    def __init__(self, loss: Any = nn.CrossEntropyLoss(), learning_rate: float = 0.001, epochs=10, batch_size=32) -> None:
+        """Initialize the neural network model.
+
+        Parameters
+        ----------
+        loss : Any, optional, default=nn.CrossEntropyLoss()
+            The loss function to use for training the neural network.
+        learning_rate : float
+            The learning rate of the neural network.
+        epochs : int
+            The number of epochs to train the neural network.
+        batch_size : int
+            The batch size to use for training the neural network.
+        """
+
         self.learning_rate = learning_rate
         self.epochs = epochs
         self.batch_size = batch_size
+        self.loss_fn = loss
         self.encoder = LabelEncoder()
 
     def compile(self, num_classes: int, input_shape: int) -> None:
@@ -32,18 +47,20 @@ class NeuralNetwork(BaseTaskModel):
         """
 
         self.num_classes = num_classes
-        self.input_shape = (input_shape,)
+        self.input_shape = input_shape
+        self.model = nn.Sequential(
+            nn.Linear(input_shape, 256),
+            nn.ReLU(),
+            nn.Dropout(0.4),
+            nn.Linear(256, 64),
+            nn.ReLU(),
+            nn.Dropout(0.4),
+            nn.Linear(64, num_classes)
+        )
 
-        self.model = Sequential()
-        self.model.add(Dense(256, activation='relu', input_shape=self.input_shape))
-        self.model.add(Dropout(0.4))
-        self.model.add(Dense(64, activation='relu'))
-        self.model.add(Dropout(0.4))
-        self.model.add(Dense(self.num_classes, activation='softmax'))
-
-        self.optimizer = Adam(learning_rate=self.learning_rate)
-        self.f1_metric = F1Score(average='macro')
-        self.model.compile(loss=self.loss, optimizer=self.optimizer, metrics=[self.f1_metric])
+        # Set optimizer and loss function
+        self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        self.loss_fn = nn.CrossEntropyLoss()
 
     def train(self, X_train: ndarray, y_train: ndarray, validation_data: tuple[ndarray, ndarray]) -> Self:
         """Train the neural network on the training and validation data.
@@ -61,16 +78,55 @@ class NeuralNetwork(BaseTaskModel):
         -------
         The neural network instance.
         """
+        # Ensure model is in training mode
+        self.model.train()
+        
         x_val, y_val = validation_data
         self.encoder.fit_transform(np.concatenate((y_train, y_val), axis = 0))
 
         y_train_encoded = self.encoder.transform(y_train)
-        y_train_encoded = to_categorical(y_train_encoded, num_classes = self.num_classes)
-
         y_val_encoded = self.encoder.transform(y_val)
-        y_val_encoded = to_categorical(y_val_encoded, num_classes = self.num_classes)
 
-        self.model.fit(X_train, y_train_encoded, epochs = self.epochs, batch_size = self.batch_size, validation_data = (x_val, y_val_encoded))
+        X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
+        y_train_tensor = torch.tensor(y_train_encoded, dtype=torch.long)
+        X_val_tensor = torch.tensor(x_val, dtype=torch.float32)
+        y_val_tensor = torch.tensor(y_val_encoded, dtype=torch.long)
+
+        train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
+        val_dataset = TensorDataset(X_val_tensor, y_val_tensor)
+
+        train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
+        val_loader = DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False)
+
+        # Training loop
+        for epoch in range(self.epochs):
+            for batch_X, batch_y in train_loader:
+                # Zero the parameter gradients
+                self.optimizer.zero_grad()
+
+                # Forward pass
+                outputs = self.model(batch_X)
+
+                # Compute loss
+                loss = self.loss_fn(outputs, batch_y)
+
+                # Backward pass and optimize
+                loss.backward()
+                self.optimizer.step()
+
+            # Validation phase (optional)
+            self.model.eval()
+            with torch.no_grad():
+                val_losses = []
+                for val_X, val_y in val_loader:
+                    val_outputs = self.model(val_X)
+                    val_loss = self.loss_fn(val_outputs, val_y)
+                    val_losses.append(val_loss.item())
+                
+                print(f"Epoch {epoch+1}, Validation Loss: {sum(val_losses)/len(val_losses)}")
+            
+            # Set back to training mode for next epoch
+            self.model.train()
         return self
     
     def predict(self, x: ndarray) -> ndarray:
@@ -85,8 +141,9 @@ class NeuralNetwork(BaseTaskModel):
         -------
         The prediction of the neural network.
         """
-        predictions = self.model.predict(x)
-        y_pred = np.argmax(predictions, axis=1)
+        self.model.eval()
+        predictions_nn = self.model(torch.Tensor(x))
+        y_pred = np.array(torch.argmax(predictions_nn, dim=1))
         return self.encoder.inverse_transform(y_pred)
     
     def save(self, path: str) -> None:
@@ -100,17 +157,17 @@ class NeuralNetwork(BaseTaskModel):
         """
         Path(path).mkdir(parents=True, exist_ok=True)
         np.save(f"{path}/encoder", self.encoder.classes_)
-        self.model.save(f"{path}/neural_network.h5")
+        torch.save(self.model, f"{path}/neural_network.pth")
 
-    def load(self, path: str, classes: ndarray) -> Self:
+    def load(self, path: str, classes: str) -> Self:
         """Load the neural network model from a file.
 
         Parameters
         ----------
         path : str
             The path to load the model from.
-        classes : ndarray
-            The classes used for encoding the labels.
+        classes : str
+            The path to classes used for encoding the labels.
 
         Returns
         -------
@@ -122,6 +179,9 @@ class NeuralNetwork(BaseTaskModel):
         self.epochs = None
         self.batch_size = None
 
-        self.encoder.classes_ = np.load(classes)
-        self.model = tf.keras.models.load_model(path)
+        self.encoder.classes_ = classes
+        # self.model = nn.Sequential()
+        self.model = torch.load(path)
+        self.model.eval()
+
         return self
