@@ -125,12 +125,6 @@ jobs:
         run: |
           python examples/fine_tune_models/fine_tune_caduceus.py
 
-      - name: Execute benchmarking
-        run: |
-          pip install scanorama
-          python examples/run_benchmark.py ++head_model="svm"
-          python examples/run_benchmark.py ++head_model="neural_network"
-
   notebooks:
     needs: tests
     runs-on: self-hosted
