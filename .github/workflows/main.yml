@@ -4,12 +4,14 @@ on:
   pull_request:
     branches:
       - main
-    paths-ignore:
-      - assets/coverage.svg
+    # paths-ignore:
+    #   - assets/coverage.svg
 
 jobs:
   tests:
     runs-on: self-hosted
+    if: |
+     !(github.event.pull_request.changed_files == 1 && contains(github.event.pull_request.changed_files, 'assets/coverage.svg'))
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -65,6 +67,8 @@ jobs:
   integration-tests:
     needs: tests
     runs-on: self-hosted
+    if: |
+      !(github.event.pull_request.changed_files == 1 && contains(github.event.pull_request.changed_files, 'assets/coverage.svg'))
     env:
       CUDA_VISIBLE_DEVICES: 0
     steps:
@@ -153,6 +157,8 @@ jobs:
   notebooks:
     needs: tests
     runs-on: self-hosted
+    if: |
+      !(github.event.pull_request.changed_files == 1 && contains(github.event.pull_request.changed_files, 'assets/coverage.svg'))
     env:
       CUDA_VISIBLE_DEVICES: 0
     steps:
