@@ -49,11 +49,12 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
+          rm -f assets/coverage.svg
           mv coverage.svg assets/
           git add assets/coverage.svg
-          git commit -m "Updated coverage badge"
+          git commit -m "Updated coverage badge" || echo "No changes to commit"
           git push
-
+        
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
