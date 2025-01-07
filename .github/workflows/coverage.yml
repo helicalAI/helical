@@ -6,7 +6,7 @@ on:
       - helix-notebook-updates
 
 jobs:
-  tests:
+  coverage:
     runs-on: self-hosted
     steps:
       - name: Checkout repository
@@ -27,14 +27,14 @@ jobs:
         run: |
           python ci/download_all.py
 
-      - name: Execute unittests
+      - name: Execute unit tests to get coverage
         run: |
-          CUDA_VISIBLE_DEVICES=-1 pytest --cov-report=html:html_cov --cov-branch --cov-report term --cov=helical ci/
+          CUDA_VISIBLE_DEVICES=-1 pytest --cov=helical ci/
 
       - name: Generate coverage badge
         uses: tj-actions/coverage-badge-py@v2
       
-      - name: Verify Changed files
+      - name: Verify coverage badge changed
         uses: tj-actions/verify-changed-files@v16
         id: verify-changed-files
         with:
