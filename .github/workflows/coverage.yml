@@ -28,15 +28,15 @@ jobs:
       - name: Execute unittests
         run: |
           CUDA_VISIBLE_DEVICES=-1 pytest --cov-report=html:html_cov --cov-branch --cov-report term --cov=helical ci/
-
-      - name: Generate coverage badge
-        uses: tj-actions/coverage-badge-py@v2
-    
+        
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: html_cov/
+
+      - name: Generate coverage badge
+        uses: tj-actions/coverage-badge-py@v2
       
       - name: Verify Changed files
         uses: tj-actions/verify-changed-files@v16
@@ -49,7 +49,8 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add coverage.svg
+          mv coverage.svg assets/
+          git add assets/coverage.svg
           git commit -m "Updated coverage badge"
           git push
 
