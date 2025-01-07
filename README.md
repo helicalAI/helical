@@ -26,6 +26,7 @@ Let’s build the most exciting AI-for-Bio community together!
 [![Docs](https://img.shields.io/badge/docs-available-brightgreen)](https://helical.readthedocs.io/) &nbsp;
 [![PyPI version](https://badge.fury.io/py/helical.svg)](https://badge.fury.io/py/helical) &nbsp;
 ![GitHub contributors](https://img.shields.io/github/contributors/helicalAI/helical) &nbsp;
+![Code Coverage](./assets/coverage.svg) &nbsp;
 
 </div>
 
