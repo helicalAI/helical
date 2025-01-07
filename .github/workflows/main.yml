@@ -4,6 +4,8 @@ on:
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - assets/coverage.svg
 
 jobs:
   tests:
@@ -36,6 +38,28 @@ jobs:
         with:
           name: coverage-report
           path: html_cov/
+
+      - name: Generate coverage badge
+        uses: tj-actions/coverage-badge-py@v2
+      
+      - name: Verify Changed files
+        uses: tj-actions/verify-changed-files@v16
+        id: verify-changed-files
+        with:
+          files: coverage.svg
+
+      - name: Commit files
+        if: steps.verify-changed-files.outputs.files_changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          rm -f assets/coverage.svg
+          git add -u assets/
+          git commit -m "Remove old coverage badge"
+          mv coverage.svg assets/
+          git add assets/coverage.svg
+          git commit -m "Add new coverage badge"
+          git push origin HEAD:${{ github.head_ref }}
 
           
   integration-tests:
