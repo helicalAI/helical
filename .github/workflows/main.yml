@@ -59,7 +59,7 @@ jobs:
           mv coverage.svg assets/
           git add assets/coverage.svg
           git commit -m "Add new coverage badge"
-          git push origin HEAD:${{ github.head_ref }}
+          git push origin HEAD:${{ github.head_ref }} --force
 
           
   integration-tests:
