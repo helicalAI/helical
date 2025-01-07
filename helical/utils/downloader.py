@@ -38,7 +38,7 @@ class Downloader(Logger):
         '''
        
         if output.is_file():
-            LOGGER.info(f"File: '{output}' exists already. File is not overwritten and nothing is downloaded.")
+            LOGGER.debug(f"File: '{output}' exists already. File is not overwritten and nothing is downloaded.")
 
         else:
             LOGGER.info(f"Starting to download: '{link}'")
@@ -66,7 +66,7 @@ class Downloader(Logger):
                             f.write(data)
                     except:
                         LOGGER.error(f"Failed downloading file from '{link}'")
-        LOGGER.info(f"File saved to: '{output}'")
+            LOGGER.info(f"File saved to: '{output}'")
 
     def _display_download_progress(self, data_chunk_size: int) -> None:
         '''
@@ -105,7 +105,7 @@ class Downloader(Logger):
             LOGGER.info(f"Creating Folder {os.path.dirname(output)}")
 
         if Path(output).is_file():
-            LOGGER.info(f"File: '{output}' exists already. File is not overwritten and nothing is downloaded.")
+            LOGGER.debug(f"File: '{output}' exists already. File is not overwritten and nothing is downloaded.")
 
         else:
             LOGGER.info(f"Starting to download: '{blob_url}'")
@@ -113,8 +113,7 @@ class Downloader(Logger):
             logging.disable(logging.INFO)
             self.display_azure_download_progress(blob_client, blob_url, output)
             logging.disable(logging.NOTSET)
-            
-        LOGGER.info(f"File saved to: '{output}'")
+            LOGGER.info(f"File saved to: '{output}'")
 
     def display_azure_download_progress(self, blob_client: BlobClient, blob_url: str, output: Path) -> None:
         """

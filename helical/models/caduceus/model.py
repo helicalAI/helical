@@ -115,9 +115,9 @@ class Caduceus(HelicalDNAModel):
             Containing processed DNA sequences.
 
         """
-        LOGGER.info("Processing data")
-
+        LOGGER.info("Processing data for Caduceus.")
         self.ensure_dna_sequence_validity(sequences)
+
         max_length = min(len(max(sequences, key=len)), self.config['input_size'])+1
         
         # tokenized_sequences = []
@@ -125,7 +125,9 @@ class Caduceus(HelicalDNAModel):
         tokenized_sequences = self.tokenizer(sequences, return_tensors=return_tensors, padding=padding, truncation=truncation, max_length=max_length)
             # tokenized_sequences.append(tokenized_seq)
 
-        return Dataset.from_dict(tokenized_sequences)
+        dataset = Dataset.from_dict(tokenized_sequences)
+        LOGGER.info("Successfully processed the data for Caduceus.")
+        return dataset
 
     def get_embeddings(self, dataset: Dataset) -> np.ndarray:
         """Get the embeddings for the tokenized sequence.
@@ -141,7 +143,7 @@ class Caduceus(HelicalDNAModel):
             The embeddings for the tokenized sequence in the form of a numpy array. 
             NOTE: This method returns the embeddings using the pooling strategy specified in the config.
         """
-        LOGGER.info("Inference started")
+        LOGGER.info("Started getting embeddings:")
         dataloader = DataLoader(dataset, collate_fn=self._collate_fn, batch_size=self.config['batch_size'], shuffle=False, num_workers=self.config['nproc'])
     
         embeddings = []
@@ -154,5 +156,6 @@ class Caduceus(HelicalDNAModel):
 
                 del batch
                 del outputs
-        
+
+        LOGGER.info(f"Finished getting embeddings.")
         return np.vstack(embeddings)

@@ -77,7 +77,10 @@ class scGPT(HelicalRNAModel):
             self.model = self.accelerator.prepare(self.model)
         else:
             self.accelerator = None
+        
         LOGGER.info(f"Model finished initializing.")
+        mode = "training" if self.model.training else "eval"
+        LOGGER.info(f"'scGPT' model is in '{mode}' mode, on device '{next(self.model.parameters()).device.type}' with embedding mode '{self.config['emb_mode']}'.")
         
     def get_embeddings(self, dataset: Dataset) -> np.array:
         """Gets the gene embeddings
@@ -94,7 +97,7 @@ class scGPT(HelicalRNAModel):
             The return type depends on the `emb_mode` parameter in the configuration.
             If `emb_mode` is set to "gene", the embeddings are returned as a list of pd.Series which contain a mapping of gene_name:embedding for each cell.
         """
-        LOGGER.info(f"Inference started:")
+        LOGGER.info(f"Started getting embeddings:")
                 
         # fix seeds
         np.random.seed(self.config["binning_seed"])
@@ -149,6 +152,8 @@ class scGPT(HelicalRNAModel):
                 resulting_embeddings.extend(self._compute_embeddings_depending_on_mode(embeddings, data_dict))
 
         resulting_embeddings = self._normalize_embeddings(resulting_embeddings)
+
+        LOGGER.info(f"Finished getting embeddings.")
         return resulting_embeddings
         
     def _normalize_embeddings(self, resulting_embeddings: torch.tensor) -> np.ndarray:
@@ -248,8 +253,9 @@ class scGPT(HelicalRNAModel):
             The processed dataset.
         """
 
- 
+        LOGGER.info(f"Processing data for scGPT.")
         self.ensure_data_validity(adata, gene_names, use_batch_labels, use_raw_counts)
+        
         self.gene_names = gene_names
         if fine_tuning:
             # Preprocess the dataset and select `N_HVG` highly variable genes for downstream analysis.
@@ -288,6 +294,8 @@ class scGPT(HelicalRNAModel):
         dataset = Dataset(
             count_matrix, gene_ids, self.vocab, self.config, batch_ids if use_batch_labels else None
         )
+
+        LOGGER.info(f"Successfully processed the data for scGPT.")
         return dataset
 
 

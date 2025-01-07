@@ -71,7 +71,10 @@ class UCE(HelicalRNAModel):
             self.model = self.accelerator.prepare(self.model)
         else:
             self.accelerator = None
+        
         LOGGER.info(f"Model finished initializing.")
+        mode = "training" if self.model.training else "eval"
+        LOGGER.info(f"'{self.config['model_name']}' model is in '{mode}' mode, on device '{next(self.model.parameters()).device.type}'.")
 
     def process_data(self, 
                      adata: AnnData, 
@@ -106,7 +109,7 @@ class UCE(HelicalRNAModel):
             An object that inherits from the `Dataset` class.
         """
 
-        
+        LOGGER.info(f"Processing data for UCE.")
         self.ensure_rna_data_validity(adata, gene_names, use_raw_counts)
 
         if gene_names != "index":
@@ -164,7 +167,7 @@ class UCE(HelicalRNAModel):
                              datasets_to_chroms = dataset_chroms,
                              datasets_to_starts = dataset_start
                              ) 
-        LOGGER.info(f'Successfully prepared the UCE Dataset.')
+        LOGGER.info(f'Successfully processed the data for UCE.')
         return dataset
 
     def get_embeddings(self, dataset: UCEDataset) -> np.array:
@@ -180,7 +183,8 @@ class UCE(HelicalRNAModel):
         np.ndarray
             The gene embeddings in the form of a numpy array
         """
-     
+        LOGGER.info(f"Started getting embeddings:")
+
         batch_size = self.config["batch_size"]
         dataloader = DataLoader(dataset, 
                                 batch_size=batch_size, 
@@ -199,7 +203,6 @@ class UCE(HelicalRNAModel):
         else:
             pbar = tqdm(dataloader)
         
-        LOGGER.info(f"Inference started")
         dataset_embeds = []
         
         # disabling gradient calculation for inference
@@ -223,6 +226,8 @@ class UCE(HelicalRNAModel):
                 else:
                     dataset_embeds.append(embedding.detach().cpu().numpy())
         embeddings = np.vstack(dataset_embeds)
+
+        LOGGER.info(f"Finished getting embeddings.")
         return embeddings
 
     
