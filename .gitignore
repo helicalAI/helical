@@ -18,6 +18,7 @@ singularity/*
 *.arrow
 *zip
 *.npy
+*.csv
 
 *.pickle
 *.pkl
