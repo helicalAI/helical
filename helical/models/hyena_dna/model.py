@@ -67,8 +67,11 @@ class HyenaDNA(HelicalDNAModel):
         self.device = self.config['device']
         self.model.to(self.device)
         self.model.eval()
+        
         LOGGER.info(f"Model finished initializing.")
-
+        mode = "training" if self.model.training else "eval"
+        LOGGER.info(f"'{self.config['model_name']}' model is in '{mode}' mode, on device '{next(self.model.parameters()).device.type}'.")
+        
     def process_data(self, sequences: list[str], return_tensors: str="pt", padding: str="max_length", truncation: bool=True) -> Dataset:
         """Process the input DNA sequence.
 
@@ -88,8 +91,7 @@ class HyenaDNA(HelicalDNAModel):
         Dataset
             Containing processed DNA sequences.
         """
-        LOGGER.info("Processing data")
-
+        LOGGER.info("Processing data for HyenaDNA.")
         self.ensure_dna_sequence_validity(sequences)
         
         max_length = len(max(sequences, key=len))+2 # +2 for special tokens at the beginning and end of sequences
@@ -97,7 +99,7 @@ class HyenaDNA(HelicalDNAModel):
         tokenized_sequences = self.tokenizer(sequences, return_tensors=return_tensors, padding=padding, truncation=truncation, max_length=max_length)
 
         dataset = Dataset.from_dict(tokenized_sequences)
-        LOGGER.info(f"Data processing finished.")
+        LOGGER.info(f"Succesfully prepared the HyenaDNA Dataset.")
         return dataset
 
     def get_embeddings(self, dataset: Dataset) -> torch.Tensor:
@@ -114,7 +116,7 @@ class HyenaDNA(HelicalDNAModel):
             The embeddings for the tokenized sequence in the form of a numpy array.
 
         """
-        LOGGER.info(f"Inference started")
+        LOGGER.info(f"Started getting embeddings:")
 
         train_data_loader = DataLoader(dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"])
         with torch.inference_mode():
@@ -123,6 +125,7 @@ class HyenaDNA(HelicalDNAModel):
                 input_data = batch["input_ids"].to(self.device)
                 embeddings.append(self.model(input_data).detach().cpu().numpy())
         
+        LOGGER.info(f"Finished getting embeddings.")
         return np.vstack(embeddings)
 
 

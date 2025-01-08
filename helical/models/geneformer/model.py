@@ -4,7 +4,6 @@ from pathlib import Path
 import numpy as np
 from anndata import AnnData
 from helical.utils.downloader import Downloader
-import pickle
 from transformers import BertForMaskedLM
 from helical.models.geneformer.geneformer_utils import get_embs,quant_layers
 from helical.models.geneformer.geneformer_tokenizer import TranscriptomeTokenizer
@@ -86,7 +85,6 @@ class Geneformer(HelicalRNAModel):
         self.model.eval()
         self.model = self.model.to(self.device)
 
-
         self.layer_to_quant = quant_layers(self.model) + self.config['emb_layer']
         self.emb_mode = self.config['emb_mode']
         self.forward_batch_size = self.config['batch_size']
@@ -105,7 +103,9 @@ class Geneformer(HelicalRNAModel):
         self.eos_present = True if "<eos>" in self.tk.gene_token_dict else False
         
         LOGGER.info(f"Model finished initializing.")
-        
+        mode = "training" if self.model.training else "eval"
+        LOGGER.info(f"'{self.config['model_name']}' model is in '{mode}' mode, on device '{self.device}' with embedding mode '{self.emb_mode}'.")
+
     def process_data(self, 
                      adata: AnnData,  
                      gene_names: str = "index", 
@@ -141,7 +141,7 @@ class Geneformer(HelicalRNAModel):
         Dataset
             The tokenized dataset in the form of a Huggingface Dataset object.
         """
-
+        LOGGER.info(f"Processing data for Geneformer.")
         self.ensure_rna_data_validity(adata, gene_names, use_raw_counts)
 
         # map gene symbols to ensemble ids if provided
@@ -162,6 +162,8 @@ class Geneformer(HelicalRNAModel):
         if output_path:
             output_path = Path(output_path).with_suffix(".dataset")
             tokenized_dataset.save_to_disk(output_path)
+        
+        LOGGER.info(f"Successfully processed the data for Geneformer.")
         return tokenized_dataset
 
     def get_embeddings(self, dataset: Dataset) -> np.array:
@@ -177,7 +179,7 @@ class Geneformer(HelicalRNAModel):
         np.array
             The gene embeddings in the form of a numpy array
         """
-        LOGGER.info(f"Inference started:")
+        LOGGER.info(f"Started getting embeddings:")
         embeddings = get_embs(
             self.model,
             dataset,
@@ -192,4 +194,5 @@ class Geneformer(HelicalRNAModel):
             self.device
         )
 
+        LOGGER.info(f"Finished getting embeddings.")
         return embeddings
