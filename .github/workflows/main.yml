@@ -10,8 +10,6 @@ on:
 jobs:
   tests:
     runs-on: self-hosted
-    if: |
-     !(github.event.pull_request.changed_files == 1 && contains(github.event.pull_request.changed_files, 'assets/coverage.svg'))
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -42,6 +40,8 @@ jobs:
           path: html_cov/
 
       - name: Generate coverage badge
+        if: |
+          !(github.event.pull_request.changed_files == 1 && contains(github.event.pull_request.changed_files, 'assets/coverage.svg'))
         uses: tj-actions/coverage-badge-py@v2
       
       - name: Verify Changed files
@@ -68,7 +68,7 @@ jobs:
     needs: tests
     runs-on: self-hosted
     if: |
-      !(github.event.pull_request.changed_files == 1 && contains(github.event.pull_request.changed_files, 'assets/coverage.svg'))
+      (github.event.pull_request.changed_files == 1 && contains(github.event.pull_request.changed_files, 'assets/coverage.svg'))
     env:
       CUDA_VISIBLE_DEVICES: 0
     steps:
@@ -158,7 +158,7 @@ jobs:
     needs: tests
     runs-on: self-hosted
     if: |
-      !(github.event.pull_request.changed_files == 1 && contains(github.event.pull_request.changed_files, 'assets/coverage.svg'))
+      (github.event.pull_request.changed_files == 1 && contains(github.event.pull_request.changed_files, 'assets/coverage.svg'))
     env:
       CUDA_VISIBLE_DEVICES: 0
     steps:
