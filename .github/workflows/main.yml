@@ -4,8 +4,6 @@ on:
   pull_request:
     branches:
       - main
-    # paths-ignore:
-    #   - assets/coverage.svg
 
 jobs:
   tests:
@@ -32,13 +30,17 @@ jobs:
       - name: Execute unittests
         run: |
           CUDA_VISIBLE_DEVICES=-1 pytest --cov-report=html:html_cov --cov-branch --cov-report term --cov=helical ci/
-        
+
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: html_cov/
 
+  coverage-badge:
+    needs: tests
+    runs-on: self-hosted
+    steps:
       - name: Generate coverage badge
         if: |
           !(github.event.pull_request.changed_files == 1 && contains(github.event.pull_request.changed_files, 'assets/coverage.svg'))
@@ -61,8 +63,7 @@ jobs:
           mv coverage.svg assets/
           git add assets/coverage.svg
           git commit -m "Add new coverage badge"
-          git push origin HEAD:${{ github.head_ref }} --force
-
+          git push origin HEAD:${{ github.head_ref }}
           
   integration-tests:
     needs: tests
