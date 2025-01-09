@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "helical"
-version = "0.0.1a16"
+version = "0.0.1a17"
 authors = [
   { name="Helical Team", email="support@helical-ai.com" },
 ]
@@ -22,7 +22,7 @@ license = {file = "LICENSE"}
 dependencies = [
     'requests==2.32.2',
     'pandas==2.2.2',
-    'anndata==0.10.7',
+    'anndata==0.11',
     'numpy==1.26.4',
     'scikit-learn>=1.2.2',
     'scipy==1.13.1',
