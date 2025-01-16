@@ -39,8 +39,7 @@ class GenePT(HelicalRNAModel):
 
         with open(self.config['embeddings_path'],"r") as f:
             self.embeddings = json.load(f)
-    
-        # self.model.post_init()
+
         logger.info("GenePT initialized successfully.")
 
     def process_data(self,
