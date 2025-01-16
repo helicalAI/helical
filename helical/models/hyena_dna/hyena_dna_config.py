@@ -102,6 +102,7 @@ class HyenaDNAConfig():
         list_of_files_to_download = [f"hyena_dna/{model_name}.ckpt"]
 
         self.config = {
+            "model_name": model_name,
             "model_path": Path(CACHE_DIR_HELICAL, f"hyena_dna/{model_name}.ckpt"),
             "list_of_files_to_download": list_of_files_to_download,
             "batch_size": batch_size,

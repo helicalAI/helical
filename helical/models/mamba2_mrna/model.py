@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 import logging
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 class Mamba2mRNA(HelicalRNAModel):
     """Mamba2-mRNA Model.
@@ -52,9 +52,13 @@ class Mamba2mRNA(HelicalRNAModel):
         self.model = Mamba2Model.from_pretrained(self.config["model_name"])
         self.pretrained_config = Mamba2Config.from_pretrained(self.config["model_name"], trust_remote=True)
         self.tokenizer = CharTokenizer.from_pretrained(self.config["model_name"], trust_remote=True)
-
+        self.model.to(self.config["device"])
         self.model.post_init()
-        logger.info("Mamba2-mRNA initialized successfully.")
+        
+        LOGGER.info("Mamba2-mRNA initialized successfully.")
+        mode = "training" if self.model.training else "eval"
+        LOGGER.info(f"'{self.config['model_name']}' model is in '{mode}' mode, on device '{next(self.model.parameters()).device.type}'.")
+
 
     def process_data(self, sequences: str) -> Dataset:
         """Process the mRNA sequences and return a Dataset object.
@@ -69,6 +73,7 @@ class Mamba2mRNA(HelicalRNAModel):
         Dataset
             The dataset object.
         """
+        LOGGER.info(f"Processing data for Mamba2-mRNA.")
         self.ensure_rna_sequence_validity(sequences)
     
         tokenized_sequences = self.tokenizer(sequences, 
@@ -79,7 +84,8 @@ class Mamba2mRNA(HelicalRNAModel):
                                              return_special_tokens_mask=True)
         
         dataset = Dataset.from_dict(tokenized_sequences)
-        
+
+        LOGGER.info(f"Successfully preprocessed the data for Mamba2-mRNA.")
         return dataset
 
     def get_embeddings(self, dataset: Dataset) -> np.ndarray:
@@ -95,10 +101,9 @@ class Mamba2mRNA(HelicalRNAModel):
         np.ndarray
             The embeddings array.
         """
+        LOGGER.info(f"Started getting embeddings:")
         dataloader = DataLoader(dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"], shuffle=False)
         embeddings = []
-
-        self.model.to(self.config["device"])
 
         progress_bar = tqdm(dataloader, desc="Getting embeddings")
         with torch.no_grad():
@@ -116,7 +121,7 @@ class Mamba2mRNA(HelicalRNAModel):
 
                 if self.pretrained_config.pad_token_id is None and batch_size > 1:
                     message = "Cannot handle batch sizes > 1 if no padding token is defined."
-                    logger.error(message)
+                    LOGGER.error(message)
                     raise ValueError(message)
 
                 if self.pretrained_config.pad_token_id is None:
@@ -139,6 +144,7 @@ class Mamba2mRNA(HelicalRNAModel):
                 del batch
                 del output
 
+        LOGGER.info(f"Finished getting embeddings.")
         return np.concatenate(embeddings)
     
     def _collate_fn(self, batch):

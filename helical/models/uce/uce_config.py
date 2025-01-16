@@ -108,6 +108,7 @@ class UCEConfig():
         model_path = Path(CACHE_DIR_HELICAL, 'uce', f"{model_name}.torch")
                     
         self.config = {
+            "model_name": model_name,
             "model_path": model_path,
             "list_of_files_to_download": list_of_files_to_download,
             "batch_size": batch_size,

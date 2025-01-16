@@ -4,6 +4,9 @@ from helical.models.scgpt.scgpt_config import scGPTConfig
 import json
 from typing import List, Mapping, Optional
 import torch
+import logging
+
+LOGGER = logging.getLogger(__name__)
 
 def load_pretrained(
     model: torch.nn.Module,
@@ -46,14 +49,14 @@ def load_pretrained(
     if strict:
         if verbose:
             for k, v in pretrained_params.items():
-                logger.info(f"Loading parameter {k} with shape {v.shape}")
+                LOGGER.info(f"Loading parameter {k} with shape {v.shape}")
         model_dict.update(pretrained_params)
         model.load_state_dict(model_dict)
     else:
         if verbose:
             for k, v in pretrained_params.items():
                 if k in model_dict and v.shape == model_dict[k].shape:
-                    logger.info(f"Loading parameter {k} with shape {v.shape}")
+                    LOGGER.info(f"Loading parameter {k} with shape {v.shape}")
         pretrained_params = {
             k: v
             for k, v in pretrained_params.items()
