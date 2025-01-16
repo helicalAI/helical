@@ -35,7 +35,7 @@ class GenePTConfig():
     """
     def __init__(
             self, 
-            model_name: Literal["gpt3.5"] = "gpt.35",
+            model_name: Literal["gpt3.5"] = "gpt3.5",
             batch_size: int = 24,
             emb_layer: int = -1,
             emb_mode: Literal["cls", "cell", "gene"] = "cell",
@@ -56,10 +56,14 @@ class GenePTConfig():
         }
         if model_name not in self.model_map:
             raise ValueError(f"Model name {model_name} not found in available models: {self.model_map.keys()}")
-        
-        self.model_dir = Path(CACHE_DIR_HELICAL, 'genept')
+        list_of_files_to_download = [
+                                "genept/genept_embeddings/genept_embeddings.json",
+                                ]
+
+        embeddings_path = Path(CACHE_DIR_HELICAL, 'genept/genept_embeddings/genept_embeddings.json')
 
         self.config = {
+            "embeddings_path": embeddings_path,
             "model_name": model_name,
             "batch_size": batch_size,
             "emb_layer": emb_layer,
@@ -70,7 +74,8 @@ class GenePTConfig():
             "special_token": self.model_map[model_name]["special_token"],
             "embsize": self.model_map[model_name]["embsize"],
             "nproc": nproc,
-            "custom_attr_name_dict": custom_attr_name_dict
+            "custom_attr_name_dict": custom_attr_name_dict,
+            "list_of_files_to_download": list_of_files_to_download
         }
     
 

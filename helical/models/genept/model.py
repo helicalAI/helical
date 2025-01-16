@@ -41,9 +41,11 @@ class GenePT(HelicalRNAModel):
         self.configurer = configurer
         self.config = configurer.config
 
-        self.tokenizer = AutoTokenizer.from_pretrained(self.config["model_name"])
+        downloader = Downloader()
+        for file in self.config["list_of_files_to_download"]:
+            downloader.download_via_name(file)
 
-        with open("/home/maxime/git/helical/helical/models/genept/genept_embeddings.json","r") as f:
+        with open(self.config['embeddings_path'],"r") as f:
             self.embeddings = json.load(f)
     
         # self.model.post_init()
