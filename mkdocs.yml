@@ -51,7 +51,6 @@ nav:
     - Geneformer-vs-UCE: ./notebooks/Geneformer-vs-UCE.ipynb
     - Hyena-DNA-Inference: ./notebooks/Hyena-DNA-Inference.ipynb
     - HyenaDNA-Fine-Tuning: ./notebooks/HyenaDNA-Fine-Tuning.ipynb
-  - Benchmarking: ./benchmarking/description.md
    
 theme:
   name: material
