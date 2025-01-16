@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 import logging
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 class HelixmRNA(HelicalRNAModel):
     """Helix-mRNA Model.
@@ -58,7 +58,11 @@ class HelixmRNA(HelicalRNAModel):
         self.model = HelixmRNAPretrainedModel.from_pretrained(self.config["model_name"])
         self.pretrained_config = HelixmRNAPretrainedConfig.from_pretrained(self.config["model_name"], trust_remote=True)
         self.tokenizer = CharTokenizer.from_pretrained(self.config["model_name"], trust_remote=True)
-        logger.info("Helix-mRNA initialized successfully.")
+        self.model.to(self.config["device"])
+
+        LOGGER.info("Helix-mRNA initialized successfully.")
+        mode = "training" if self.model.training else "eval"
+        LOGGER.info(f"'{self.config['model_name']}' model is in '{mode}' mode, on device '{next(self.model.parameters()).device.type}'.")
 
     def process_data(self, sequences: str) -> Dataset:
         """Process the mRNA sequences and return a Dataset object.
@@ -73,6 +77,7 @@ class HelixmRNA(HelicalRNAModel):
         Dataset
             The dataset object.
         """
+        LOGGER.info(f"Processing data for Helix-mRNA.")
         self.ensure_rna_sequence_validity(sequences)
     
         tokenized_sequences = self.tokenizer(sequences, 
@@ -83,7 +88,8 @@ class HelixmRNA(HelicalRNAModel):
                                              return_special_tokens_mask=True)
             
         dataset = Dataset.from_dict(tokenized_sequences)
-        
+
+        LOGGER.info("Successfully processed the data for Helix-mRNA.")
         return dataset
 
     def get_embeddings(self, dataset: Dataset) -> np.ndarray:
@@ -99,10 +105,9 @@ class HelixmRNA(HelicalRNAModel):
         np.ndarray
             The embeddings array.
         """
+        LOGGER.info("Started getting embeddings:")
         dataloader = DataLoader(dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"], shuffle=False)
         embeddings = []
-
-        self.model.to(self.config["device"])
 
         progress_bar = tqdm(dataloader, desc="Getting embeddings")
         with torch.no_grad():
@@ -120,9 +125,9 @@ class HelixmRNA(HelicalRNAModel):
                 del batch
                 del output
 
+        LOGGER.info(f"Finished getting embeddings.")
         return np.concatenate(embeddings)
     
-
     def _collate_fn(self, batch):
         input_ids = torch.tensor([item["input_ids"] for item in batch])
         special_tokens_mask = torch.tensor([item["special_tokens_mask"] for item in batch])

@@ -137,8 +137,8 @@ class CaduceusFineTuningModel(HelicalBaseFineTuningModel, Caduceus):
             e.g. optimizer_params = {'lr': 0.0001}
         loss_function : torch.nn.modules.loss, default=torch.nn.modules.loss.CrossEntropyLoss()
             The loss function to be used.
-        label : str, optional, default="cell_types"
-            The column in the dataset containing the training labels. These should be stored as unique per class integers.
+        train_labels : np.ndarray
+            training labels for the dataset.
         epochs : int, optional, default=10
             The number of epochs to train the model
         trainable_layers : int, optional, default=2

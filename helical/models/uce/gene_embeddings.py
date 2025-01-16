@@ -9,7 +9,7 @@ from scanpy import AnnData
 import logging
 from helical.models.uce.uce_config import SPECIES_GENE_EMBEDDINGS
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 def get_gene_embedding_paths(embedding_path: Path) -> Dict[str, Dict[str, Path]]:
@@ -54,7 +54,7 @@ def load_gene_embeddings_adata(adata: AnnData, species: list, embedding_model: s
 
     # Ensure embeddings are available for all species
     if not (species_names_set <= available_species):
-        logger.error(f'Missing gene embeddings here: {embeddings_path}')
+        LOGGER.error(f'Missing gene embeddings here: {embeddings_path}')
         raise ValueError(f'The following species do not have gene embeddings: {species_names_set - available_species}')
     # Load gene embeddings for desired species (and convert gene symbols to lower case)
     species_to_gene_symbol_to_embedding = {
@@ -65,7 +65,7 @@ def load_gene_embeddings_adata(adata: AnnData, species: list, embedding_model: s
         for species in species_names
     }
 
-    logger.info(f'Finished loading gene embeddings for {species_names_set} from {embeddings_path}')
+    LOGGER.info(f"Finished loading gene embeddings for '{', '.join(map(str, species_names_set))}' from {embeddings_path} for model '{embedding_model}'.")
 
     # Determine which genes to include based on gene expression and embedding availability
     genes_with_embeddings = set.intersection(*[
@@ -77,7 +77,7 @@ def load_gene_embeddings_adata(adata: AnnData, species: list, embedding_model: s
     # Subset data to only use genes with embeddings
     filtered_adata = adata[:, adata.var_names.isin(genes_to_use)]
     filtered = adata.var_names.shape[0] - filtered_adata.var_names.shape[0]
-    logger.info(f'Filtered out {filtered} genes to a total of {filtered_adata.var_names.shape[0]} genes with embeddings.')
+    LOGGER.info(f'Filtered out {filtered} genes to a total of {filtered_adata.var_names.shape[0]} genes with embeddings.')
 
     # Load gene symbols for desired species for later use with indexes
     species_to_all_gene_symbols = {
