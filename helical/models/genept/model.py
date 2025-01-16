@@ -1,23 +1,15 @@
 from helical.models.base_models import HelicalRNAModel
 import logging
-from pathlib import Path
 import numpy as np
 from anndata import AnnData
 from helical.utils.downloader import Downloader
-from transformers import AutoTokenizer, AutoModelForCausalLM,AutoModel
-from helical.models.geneformer.geneformer_utils import get_embs,quant_layers
-from helical.models.geneformer.geneformer_tokenizer import TranscriptomeTokenizer
 from helical.models.genept.genept_config import GenePTConfig
 from helical.utils.mapping import map_ensembl_ids_to_gene_symbols
 from datasets import Dataset
-from typing import Optional
-from accelerate import Accelerator
 import logging
 import scanpy as sc
 import torch
 import json
-import pandas as pd
-from tqdm import tqdm 
 logger = logging.getLogger(__name__)
 
 class GenePT(HelicalRNAModel):
@@ -51,10 +43,9 @@ class GenePT(HelicalRNAModel):
         # self.model.post_init()
         logger.info("GenePT initialized successfully.")
 
-    def process_data(self, 
-                     adata: AnnData,  
-                     gene_names: str = "index", 
-                     output_path: Optional[str] = None,
+    def process_data(self,
+                     adata: AnnData,
+                     gene_names: str = "index",
                      use_raw_counts: bool = True,
                      ) -> Dataset:   
         """
@@ -76,8 +67,6 @@ class GenePT(HelicalRNAModel):
                 If the index of `adata` already contains Ensembl IDs, setting this to "index" will result in 
                 invalid mappings. In such cases, create a new column containing Ensembl IDs and pass "ensembl_id" 
                 as the value of `gene_names`.
-        output_path : str, optional, default=None
-            If specified, saves the tokenized dataset to the given output path.
         use_raw_counts : bool, optional, default=True
             Determines whether raw counts should be used.
 
@@ -87,7 +76,7 @@ class GenePT(HelicalRNAModel):
             The tokenized dataset in the form of a Huggingface Dataset object.
         """
 
-        # self.ensure_rna_data_validity(adata, gene_names, use_raw_counts)
+        self.ensure_rna_data_validity(adata, gene_names, use_raw_counts)
 
         # map gene symbols to ensemble ids if provided
         if gene_names == "ensembl_id":
@@ -104,9 +93,7 @@ class GenePT(HelicalRNAModel):
         sc.pp.log1p(adata)
 
         genes_names = adata.var_names[adata.var['highly_variable']].tolist()
-
         adata = adata[:,genes_names]
-        # input_ids = self.tokenizer.apply_chat_template(prompts, tokenize=True, add_generation_prompt=True, return_tensors="pt",truncation=True)
         
         return adata
         
@@ -139,10 +126,7 @@ class GenePT(HelicalRNAModel):
         logger.info("Couln't find {} genes in embeddings".format(count_missed))
 
         weights = torch.Tensor(weights)
-        # weights = torch.rand(weights.shape)
         embeddings = torch.matmul(torch.Tensor(dataset[:,gene_list].X.toarray()),weights)
-        # embeddings = (embeddings/(np.linalg.norm(embeddings,axis=1)).reshape(-1,1))
-        # embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1) --> Same as above
         return embeddings
     
     def get_embeddings(self, dataset: AnnData) -> np.array:
@@ -162,5 +146,4 @@ class GenePT(HelicalRNAModel):
         # Generate a response 
         embeddings = self.get_text_embeddings(dataset)
         embeddings = (embeddings/(np.linalg.norm(embeddings,axis=1)).reshape(-1,1))
-        # embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1) --> Same as above
         return embeddings
