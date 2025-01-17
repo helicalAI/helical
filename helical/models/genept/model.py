@@ -10,6 +10,7 @@ import logging
 import scanpy as sc
 import torch
 import json
+import torch
 
 LOGGER = logging.getLogger(__name__)
 class GenePT(HelicalRNAModel):
@@ -46,7 +47,7 @@ class GenePT(HelicalRNAModel):
                      adata: AnnData,
                      gene_names: str = "index",
                      use_raw_counts: bool = True,
-                     ) -> Dataset:   
+                     ) -> AnnData:   
         """
         Processes the data for the GenePT model.
 
@@ -129,7 +130,7 @@ class GenePT(HelicalRNAModel):
         embeddings = torch.matmul(torch.Tensor(dataset[:,gene_list].X.toarray()),weights)
         return embeddings
     
-    def get_embeddings(self, dataset: AnnData) -> np.array:
+    def get_embeddings(self, dataset: AnnData) -> torch.Tensor:
         """Gets the gene embeddings from the GenePT model   
 
         Parameters
