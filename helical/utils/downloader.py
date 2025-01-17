@@ -35,6 +35,9 @@ HASH_DICT = {
     'geneformer/v1/gene_median_dictionary.pkl': 'b509e0d0227acf223c72ca4f604ce47a1f7af84eb1d53d1466c1c340103e9a2b',
     'geneformer/v1/token_dictionary.pkl': 'e2c77b0f292c3e3a98ae0a0b562d5feb6d31373c655cd3b4a61a0c748794de24',
     'geneformer/v1/ensembl_mapping_dict.pkl': '28391ff889e406ee580ace21eb40fb73072dd69a2059b5204f17c4efa2d3bbf0',
+    'geneformer/v1/gf-6L-30M-i2048/config.json': '9cf69ca3bdb0215c4188b54c451b6f02adfe68b8f66011a57d0f32845133fd4b',
+    'geneformer/v1/gf-6L-30M-i2048/training_args.bin': 'f0ec3459454205174c9d2e4d6c6930f6b0fbf3364fc03a6f4d99c4d3add2012b',
+    'geneformer/v1/gf-6L-30M-i2048/pytorch_model.bin': '9dc411f9667850bd6bb76e9e8cf2f0b923d7501780fb4c277adae55965c476d5',
     'geneformer/v1/gf-12L-30M-i2048/config.json': 'a82b9cf2cb830be227bfbbe5a4c5d62723f49fac892ca37c541d0ef40a0e1de9',
     'geneformer/v1/gf-12L-30M-i2048/training_args.bin': '259cf6067211e24e198690d00f0a222ee5550ad57e23d04ced0d0ca2e1b3738e',
     'geneformer/v1/gf-12L-30M-i2048/pytorch_model.bin': 'cea6f8480b6267c3622d57b9c1d53d0f2fa4df38379cf64ec49a35e075afa09d',
@@ -42,6 +45,17 @@ HASH_DICT = {
     'geneformer/v2/gene_median_dictionary.pkl': '2be7704fd679a43720011fa0337a5a34d2cf3cb48768c656680dca3dd0653b75',
     'geneformer/v2/token_dictionary.pkl': '12b094814a5764310a2be428b81748fe0af1b246832384a2b187923481b93c8c',
     'geneformer/v2/ensembl_mapping_dict.pkl': '28391ff889e406ee580ace21eb40fb73072dd69a2059b5204f17c4efa2d3bbf0',
+
+    'geneformer/v2/gf-20L-95M-i4096/training_args.bin': '5afed602918d6f0c4916c1b9335bcdb619bca2c6fd6c7e0dd2a86d195264b8cc',
+    'geneformer/v2/gf-20L-95M-i4096/config.json': '915948b8161a15747647c9dd04d4bd3a950ca5fb145a14d9bc1157948a4cb9e7',
+    'geneformer/v2/gf-20L-95M-i4096/generation_config.json': '07f46e7e174ffc98dd5072d6a7e0df8935f44046258d30dbf7b78edadcd44af4',
+    'geneformer/v2/gf-20L-95M-i4096/model.safetensors': '5109b987c2e390b7bc46f77675bf020f94125ed36e2ba968b52cee7674106669',
+
+    'geneformer/v2/gf-12L-95M-i4096-CLcancer/training_args.bin': '37074f3ea62a6ba0a312c38526c20c2dccbb068a2c7ee8c7c73b435dd90ab7b1',
+    'geneformer/v2/gf-12L-95M-i4096-CLcancer/config.json': '7d3720eb553238849f7b3b3fd874e2bafb59c97b0e70afd7ca90132c43b8d5b1',
+    'geneformer/v2/gf-12L-95M-i4096-CLcancer/generation_config.json': '07f46e7e174ffc98dd5072d6a7e0df8935f44046258d30dbf7b78edadcd44af4',
+    'geneformer/v2/gf-12L-95M-i4096-CLcancer/model.safetensors': 'b5add9f834ee85a3ed10416b34acab3815f3f8f1b045d83274618f54b6667bb3',
+
     'geneformer/v2/gf-12L-95M-i4096/config.json': 'f56780389d8c89c1b6c4084e2e6ee1f736558e4b3bb8ce7473159e83465de401',
     'geneformer/v2/gf-12L-95M-i4096/training_args.bin': '21a45980734b138029422e95a5601def858821a9ec02cd473938b9f525ac108d',
     'geneformer/v2/gf-12L-95M-i4096/generation_config.json': '07f46e7e174ffc98dd5072d6a7e0df8935f44046258d30dbf7b78edadcd44af4',
@@ -188,7 +202,7 @@ class Downloader(Logger):
             os.makedirs(os.path.dirname(output),exist_ok=True)
             LOGGER.info(f"Creating Folder {os.path.dirname(output)}")
 
-        if Path(output).is_file() and self.calculate_partial_file_hash(output) == HASH_DICT.get(name):
+        if Path(output).is_file() and self.calculate_partial_file_hash(output) == HASH_DICT[name]:
             LOGGER.debug(f"File: '{output}' exists already. File is not overwritten and nothing is downloaded.")
 
         else:
@@ -197,7 +211,7 @@ class Downloader(Logger):
             logging.disable(logging.INFO)
             self.display_azure_download_progress(blob_client, blob_url, output)
             logging.disable(logging.NOTSET)
-            assert self.calculate_partial_file_hash(output) == HASH_DICT.get(name), f"Hash of downloaded file '{output}' does not match the expected hash."
+            assert self.calculate_partial_file_hash(output) == HASH_DICT[name], f"Hash of downloaded file '{output}' does not match the expected hash."
             LOGGER.info(f"File saved to: '{output}'")
 
     def display_azure_download_progress(self, blob_client: BlobClient, blob_url: str, output: Path) -> None:
