@@ -147,6 +147,8 @@ A lot of our models have been published by talend authors developing these excit
 - [scanpy](https://github.com/scverse/scanpy)
 - [transformers](https://github.com/huggingface/transformers)
 - [scikit-learn](https://github.com/scikit-learn/scikit-learn)
+- [GenePT](https://github.com/yiqunchen/GenePT)
+- [Caduceus](https://github.com/kuleshov-group/caduceus)
 
 ### Licenses
 
