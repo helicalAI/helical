@@ -197,6 +197,7 @@ class Downloader(Logger):
             logging.disable(logging.INFO)
             self.display_azure_download_progress(blob_client, blob_url, output)
             logging.disable(logging.NOTSET)
+            assert self.calculate_partial_file_hash(output) == HASH_DICT.get(name), f"Hash of downloaded file '{output}' does not match the expected hash."
             LOGGER.info(f"File saved to: '{output}'")
 
     def display_azure_download_progress(self, blob_client: BlobClient, blob_url: str, output: Path) -> None:
