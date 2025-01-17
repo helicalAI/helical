@@ -5,7 +5,6 @@ from anndata import AnnData
 from helical.utils.downloader import Downloader
 from helical.models.genept.genept_config import GenePTConfig
 from helical.utils.mapping import map_ensembl_ids_to_gene_symbols
-from datasets import Dataset
 import logging
 import scanpy as sc
 import torch
@@ -47,7 +46,7 @@ class GenePT(HelicalRNAModel):
                      adata: AnnData,
                      gene_names: str = "index",
                      use_raw_counts: bool = True,
-                     ) -> AnnData:   
+                     ) -> AnnData:
         """
         Processes the data for the GenePT model.
 
