@@ -8,11 +8,18 @@ from pathlib import Path
 from tqdm import tqdm
 from azure.storage.blob import  BlobClient
 from helical.constants.paths import CACHE_DIR_HELICAL
+import hashlib
 
 LOGGER = logging.getLogger(__name__)
 INTERVAL = 1000 # interval to get gene mappings
 CHUNK_SIZE = 1024 * 1024 * 10 #8192 # size of individual chunks to download
 LOADING_BAR_LENGTH = 50 # size of the download progression bar in console
+
+HASH_DICT = {
+    "scgpt/scGPT_CP/vocab.json": 'ee2b2c90158eedb97c2318e49abaaed0a02c6fdf7e3f7ca6a821906413c4d2a4',
+    "scgpt/scGPT_CP/best_model.pt": 'ad0252a1971e0cd619b7116dbab3177432236c4537225d54280a2aa7e5fe402a',
+}
+
 class Downloader(Logger):
     def __init__(self, loging_type = LoggingType.CONSOLE, level = LoggingLevel.INFO) -> None:
         super().__init__(loging_type, level)
@@ -80,6 +87,17 @@ class Downloader(Logger):
         sys.stdout.write("\r[%s%s]" % ('=' * done, ' ' * (LOADING_BAR_LENGTH-done)) )    
         sys.stdout.flush()
 
+    def calculate_file_hash(self, file_path, algorithm = 'sha256'):
+        '''
+        Calculate the hash of a file
+        '''
+        
+        hash_func = hashlib.new(algorithm)
+        with open(file_path, 'rb') as f:
+            while chunk := f.read(8192):
+                hash_func.update(chunk)
+        return hash_func.hexdigest()
+
     def download_via_name(self, name: str) -> None:
         '''
         Download a file via a link. 
@@ -104,11 +122,11 @@ class Downloader(Logger):
             os.makedirs(os.path.dirname(output),exist_ok=True)
             LOGGER.info(f"Creating Folder {os.path.dirname(output)}")
 
-        if Path(output).is_file():
+        if Path(output).is_file() and self.calculate_file_hash(output) == HASH_DICT.get(name):
             LOGGER.debug(f"File: '{output}' exists already. File is not overwritten and nothing is downloaded.")
 
         else:
-            LOGGER.info(f"Starting to download: '{blob_url}'")
+            LOGGER.info(f"File does not exist or has incorrect hash. Starting to download: '{blob_url}'")
             # disabling logging info messages from Azure package as there are too many
             logging.disable(logging.INFO)
             self.display_azure_download_progress(blob_client, blob_url, output)
