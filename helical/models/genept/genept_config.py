@@ -4,7 +4,7 @@ from helical.constants.paths import CACHE_DIR_HELICAL
 from typing import Literal
 
 class GenePTConfig():
-    """Configuration class to use the Geneformer Model.
+    """Configuration class to use the GenePT Model.
     
     Parameters
     ----------
@@ -29,8 +29,8 @@ class GenePTConfig():
         If you do not want to add any custom attributes, you can leave this parameter as None.
     Returns
     -------
-    GeneformerConfig
-        The Geneformer configuration object
+    GenePTConfig
+        The GenePT configuration object
 
     """
     def __init__(

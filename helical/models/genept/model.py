@@ -10,8 +10,8 @@ import logging
 import scanpy as sc
 import torch
 import json
-logger = logging.getLogger(__name__)
 
+LOGGER = logging.getLogger(__name__)
 class GenePT(HelicalRNAModel):
     """GenePT Model. 
     
@@ -40,7 +40,7 @@ class GenePT(HelicalRNAModel):
         with open(self.config['embeddings_path'],"r") as f:
             self.embeddings = json.load(f)
 
-        logger.info("GenePT initialized successfully.")
+        LOGGER.info("GenePT initialized successfully.")
 
     def process_data(self,
                      adata: AnnData,
@@ -48,12 +48,12 @@ class GenePT(HelicalRNAModel):
                      use_raw_counts: bool = True,
                      ) -> Dataset:   
         """
-        Processes the data for the Geneformer model.
+        Processes the data for the GenePT model.
 
         Parameters
         ----------
         adata : AnnData
-            The AnnData object containing the data to be processed. Geneformer uses Ensembl IDs to identify genes 
+            The AnnData object containing the data to be processed. GenePT uses Ensembl IDs to identify genes 
             and currently supports only human genes. If the AnnData object already has an 'ensembl_id' column, 
             the mapping step can be skipped.
         gene_names : str, optional, default="index"
@@ -74,7 +74,7 @@ class GenePT(HelicalRNAModel):
         Dataset
             The tokenized dataset in the form of a Huggingface Dataset object.
         """
-
+        LOGGER.info(f"Processing data for GenePT.")
         self.ensure_rna_data_validity(adata, gene_names, use_raw_counts)
 
         # map gene symbols to ensemble ids if provided
@@ -82,26 +82,28 @@ class GenePT(HelicalRNAModel):
             if (adata.var[gene_names].str.startswith("ENS").all()) or (adata.var[gene_names].str.startswith("None").any()):
                 message = "It seems an anndata with 'ensemble ids' and/or 'None' was passed. " \
                 "Please set gene_names='ensembl_id' and remove 'None's to skip mapping."
-                logger.info(message)
+                LOGGER.info(message)
                 raise ValueError(message)
             adata = map_ensembl_ids_to_gene_symbols(adata, gene_names)
 
-
-        sc.pp.highly_variable_genes(adata,n_top_genes=1000,flavor='seurat_v3')
-        sc.pp.normalize_total(adata,target_sum=1e4)
+        n_top_genes = 1000
+        LOGGER.info(f"Filtering the top {n_top_genes} highly variable genes.")
+        sc.pp.highly_variable_genes(adata, n_top_genes=n_top_genes, flavor='seurat_v3')
+        sc.pp.normalize_total(adata, target_sum=1e4)
         sc.pp.log1p(adata)
 
         genes_names = adata.var_names[adata.var['highly_variable']].tolist()
         adata = adata[:,genes_names]
         
+        LOGGER.info(f"Successfully processed the data for GenePT.")
         return adata
         
     def get_text_embeddings(self, dataset: AnnData) -> np.array:
-        """Gets the gene embeddings from the Geneformer model   
+        """Gets the gene embeddings from the GenePT model   
 
         Parameters
         ----------
-        dataset : Dataset
+        dataset : AnnData
             The tokenized dataset containing the processed data
 
         Returns
@@ -109,7 +111,6 @@ class GenePT(HelicalRNAModel):
         np.array
             The gene embeddings in the form of a numpy array
         """
-        logger.info(f"Inference started:")
         # Generate a response 
         raw_embeddings = dataset.var_names
         weights = []
@@ -122,14 +123,14 @@ class GenePT(HelicalRNAModel):
                 gene_list.append(emb)
             else:
                 count_missed += 1
-        logger.info("Couln't find {} genes in embeddings".format(count_missed))
+        LOGGER.info("Couln't find {} genes in embeddings".format(count_missed))
 
         weights = torch.Tensor(weights)
         embeddings = torch.matmul(torch.Tensor(dataset[:,gene_list].X.toarray()),weights)
         return embeddings
     
     def get_embeddings(self, dataset: AnnData) -> np.array:
-        """Gets the gene embeddings from the Geneformer model   
+        """Gets the gene embeddings from the GenePT model   
 
         Parameters
         ----------
@@ -141,7 +142,7 @@ class GenePT(HelicalRNAModel):
         np.array
             The gene embeddings in the form of a numpy array
         """
-        logger.info(f"Inference started:")
+        LOGGER.info(f"Inference started:")
         # Generate a response 
         embeddings = self.get_text_embeddings(dataset)
         embeddings = (embeddings/(np.linalg.norm(embeddings,axis=1)).reshape(-1,1))
