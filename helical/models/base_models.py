@@ -93,8 +93,9 @@ class HelicalRNAModel(HelicalBaseFoundationModel):
             LOGGER.error(message)
             raise ValueError(message)
         
-    def ensure_rna_sequence_validity(self, sequences: Union[list[str], DataFrame]) -> list[str]:
-        """Ensures that the RNA sequences only contain the characters A, C, U, G, N and E.  
+    def get_valid_rna_sequence(self, sequences: Union[list[str], DataFrame]) -> list[str]:
+        """
+        Returns valid RNA sequences that only contain the characters A, C, U, G, N and E.  
 
         Parameters
         ----------
@@ -131,8 +132,9 @@ class HelicalRNAModel(HelicalBaseFoundationModel):
         return sequences
         
 class HelicalDNAModel(HelicalBaseFoundationModel):
-    def ensure_dna_sequence_validity(self, sequences: Union[list[str], DataFrame]) -> list[str]:
-        """Ensures that the DNA sequences only contain the characters A, C, T, G, N.  
+    def get_valid_dna_sequence(self, sequences: Union[list[str], DataFrame]) -> list[str]:
+        """
+        Returns valid DNA sequences that only contain the characters A, C, T, G, N.  
 
         Parameters
         ----------

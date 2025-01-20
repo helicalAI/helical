@@ -76,7 +76,7 @@ class Mamba2mRNA(HelicalRNAModel):
             The dataset object.
         """
         LOGGER.info(f"Processing data for Mamba2-mRNA.")
-        sequences = self.ensure_rna_sequence_validity(sequences)
+        sequences = self.get_valid_rna_sequence(sequences)
     
         tokenized_sequences = self.tokenizer(sequences, 
                                              return_tensors="pt", 

@@ -94,7 +94,7 @@ class HyenaDNA(HelicalDNAModel):
             Containing processed DNA sequences.
         """
         LOGGER.info("Processing data for HyenaDNA.")
-        sequences = self.ensure_dna_sequence_validity(sequences)
+        sequences = self.get_valid_dna_sequence(sequences)
         
         max_length = len(max(sequences, key=len))+2 # +2 for special tokens at the beginning and end of sequences
 

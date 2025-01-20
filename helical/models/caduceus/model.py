@@ -117,7 +117,7 @@ class Caduceus(HelicalDNAModel):
 
         """
         LOGGER.info("Processing data for Caduceus.")
-        sequences = self.ensure_dna_sequence_validity(sequences)
+        sequences = self.get_valid_dna_sequence(sequences)
 
         max_length = min(len(max(sequences, key=len)), self.config['input_size'])+1
         
