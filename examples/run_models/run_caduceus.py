@@ -8,8 +8,8 @@ def run(cfg: DictConfig):
     caduceus_config = CaduceusConfig(**cfg)
     caduceus = Caduceus(configurer = caduceus_config)
     
-    sequence = DataFrame({"Sequence": ['ACTG' * int(1024/4), 'TGCA' * int(1024/4)]})
-    processed_data = caduceus.process_data(sequence)
+    data = DataFrame({"Sequence": ['ACTG' * int(1024/4), 'TGCA' * int(1024/4)]})
+    processed_data = caduceus.process_data(data)
 
     embeddings = caduceus.get_embeddings(processed_data)
     print(embeddings.shape)
