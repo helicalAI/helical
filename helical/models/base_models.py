@@ -9,6 +9,8 @@ from numpy import ndarray
 import torch
 from helical.models.fine_tune.fine_tuning_heads import ClassificationHead, RegressionHead, HelicalBaseFineTuningHead
 from typing import Literal
+from typing import Union
+from pandas import DataFrame
 
 LOGGER = logging.getLogger(__name__)
 
@@ -91,19 +93,31 @@ class HelicalRNAModel(HelicalBaseFoundationModel):
             LOGGER.error(message)
             raise ValueError(message)
         
-    def ensure_rna_sequence_validity(self, sequences: List[str]) -> None:
+    def ensure_rna_sequence_validity(self, sequences: Union[list[str], DataFrame]) -> list[str]:
         """Ensures that the RNA sequences only contain the characters A, C, U, G, N and E.  
 
         Parameters
         ----------
-        sequences : List[str]
-            The RNA sequences to be checked.
+        sequences : List[str] or DataFrame
+            The RNA sequences to be checked. If a DataFrame is provided, it should have a column named 'Sequence'.
 
         Raises
         ------
         ValueError
             If the sequences contain characters other than A, C, U, G, N and E.
+
+        Returns
+        -------
+        List[str]
+            Valid RNA sequences.
         """
+        
+        if isinstance(sequences, DataFrame):
+            if "Sequence" not in sequences.columns:
+                message = "The DataFrame must have a column named 'Sequence'."
+                LOGGER.error(message)
+                raise KeyError(message)
+            sequences = sequences["Sequence"].tolist()
 
         valid_chars = set('ACUGNE')
     
@@ -114,8 +128,10 @@ class HelicalRNAModel(HelicalBaseFoundationModel):
                 LOGGER.error(message)
                 raise ValueError(message)
         
+        return sequences
+        
 class HelicalDNAModel(HelicalBaseFoundationModel):
-    def ensure_dna_sequence_validity(self, sequences: List[str]) -> None:
+    def ensure_dna_sequence_validity(self, sequences: Union[list[str], DataFrame]) -> list[str]:
         """Ensures that the DNA sequences only contain the characters A, C, T, G, N.  
 
         Parameters
@@ -127,7 +143,21 @@ class HelicalDNAModel(HelicalBaseFoundationModel):
         ------
         ValueError
             If the sequences contain characters other than A, C, T, G, N and E.
+        
+        Returns
+        -------
+        List[str]
+            Valid DNA sequences.
         """
+                
+        if isinstance(sequences, DataFrame):
+            if "Sequence" not in sequences.columns:
+                message = "The DataFrame must have a column named 'Sequence'."
+                LOGGER.error(message)
+                raise KeyError(message)
+            
+            sequences = sequences["Sequence"].tolist()
+
         valid_chars = set('ACTGN')
     
         for sequence in sequences:
@@ -136,6 +166,8 @@ class HelicalDNAModel(HelicalBaseFoundationModel):
                 message = f"Invalid DNA sequence: found invalid characters {invalid_chars}"
                 LOGGER.error(message)
                 raise ValueError(message)
+            
+        return sequences
 
 class BaseTaskModel(ABC):
     """

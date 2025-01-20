@@ -9,6 +9,8 @@ import torch
 from torch.utils.data import DataLoader
 import numpy as np
 from tqdm import tqdm
+from typing import Union
+from pandas import DataFrame
 
 import logging
 
@@ -64,13 +66,13 @@ class HelixmRNA(HelicalRNAModel):
         mode = "training" if self.model.training else "eval"
         LOGGER.info(f"'{self.config['model_name']}' model is in '{mode}' mode, on device '{next(self.model.parameters()).device.type}'.")
 
-    def process_data(self, sequences: str) -> Dataset:
+    def process_data(self, sequences: Union[list[str], DataFrame]) -> Dataset:
         """Process the mRNA sequences and return a Dataset object.
 
         Parameters
         ----------
-        sequences : str
-            The mRNA sequences.
+        sequences : list[str] or DataFrame
+            The mRNA sequences. If a DataFrame is provided, it should have a column named 'Sequence'.
 
         Returns
         -------
@@ -78,7 +80,7 @@ class HelixmRNA(HelicalRNAModel):
             The dataset object.
         """
         LOGGER.info(f"Processing data for Helix-mRNA.")
-        self.ensure_rna_sequence_validity(sequences)
+        sequences = self.ensure_rna_sequence_validity(sequences)
     
         tokenized_sequences = self.tokenizer(sequences, 
                                              return_tensors="pt", 
