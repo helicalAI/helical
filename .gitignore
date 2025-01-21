@@ -25,6 +25,7 @@ singularity/*
 *.dataset
 *.ipynb_checkpoints
 results*
+*.csv
 
 # Log
 debug.log

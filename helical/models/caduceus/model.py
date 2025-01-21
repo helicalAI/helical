@@ -116,14 +116,11 @@ class Caduceus(HelicalDNAModel):
 
         """
         LOGGER.info("Processing data for Caduceus.")
-        self.ensure_dna_sequence_validity(sequences)
+        valid_sequences = self.get_valid_dna_sequence(sequences)
 
-        max_length = min(len(max(sequences, key=len)), self.config['input_size'])+1
+        max_length = min(len(max(valid_sequences, key=len)), self.config['input_size'])+1
         
-        # tokenized_sequences = []
-        # for seq in sequences:
-        tokenized_sequences = self.tokenizer(sequences, return_tensors=return_tensors, padding=padding, truncation=truncation, max_length=max_length)
-            # tokenized_sequences.append(tokenized_seq)
+        tokenized_sequences = self.tokenizer(valid_sequences, return_tensors=return_tensors, padding=padding, truncation=truncation, max_length=max_length)
 
         dataset = Dataset.from_dict(tokenized_sequences)
         LOGGER.info("Successfully processed the data for Caduceus.")

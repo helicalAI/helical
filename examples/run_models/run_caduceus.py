@@ -12,6 +12,7 @@ def run(cfg: DictConfig):
     processed_data = caduceus.process_data(sequence)
 
     embeddings = caduceus.get_embeddings(processed_data)
+    print(embeddings)
     print(embeddings.shape)
 
 if __name__ == "__main__":

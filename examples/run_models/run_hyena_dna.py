@@ -11,6 +11,7 @@ def run(cfg: DictConfig):
     
     dataset = model.process_data(sequence)
     embeddings = model.get_embeddings(dataset)
+    print(embeddings)
     print(embeddings.shape)
 
 if __name__ == "__main__":
