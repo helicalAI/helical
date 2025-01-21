@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 from helical.models.base_models import HelicalDNAModel
 from helical.utils.downloader import Downloader
 from .caduceus_config import CaduceusConfig
@@ -10,6 +10,7 @@ import torch
 from torch.utils.data import DataLoader
 import numpy as np
 import logging
+from pandas import DataFrame
 
 LOGGER = logging.getLogger(__name__)
 
@@ -95,13 +96,13 @@ class Caduceus(HelicalDNAModel):
         if self.config["pooling_strategy"] == "first":  # Use embedding of first token in the sequence
             return hidden_states.moveaxis(hidden_states, sequence_length_dim, 0)[0, ...]
 
-    def process_data(self, sequences: List[str], return_tensors: str="pt", padding: str="max_length", truncation: bool=True) -> Dataset:
+    def process_data(self, sequences: Union[List[str], DataFrame], return_tensors: str="pt", padding: str="max_length", truncation: bool=True) -> Dataset:
         """Process the input DNA sequences.
 
         Parameters 
         ----------
-        sequences : list[str]
-            The input DNA sequences to be processed.
+        sequences : list[str] or DataFrame
+            The input DNA sequences to be processed. If a DataFrame is provided, it should have a column named 'Sequence'.
         return_tensors : str, optional, default="pt"
             The return type of the processed data.
         padding : str, optional, default="max_length"
