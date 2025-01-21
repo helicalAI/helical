@@ -7,6 +7,8 @@ import torch
 from torch.utils.data import DataLoader
 import numpy as np
 from tqdm import tqdm
+from typing import Union
+from pandas import DataFrame
 
 import logging
 
@@ -60,13 +62,13 @@ class Mamba2mRNA(HelicalRNAModel):
         LOGGER.info(f"'{self.config['model_name']}' model is in '{mode}' mode, on device '{next(self.model.parameters()).device.type}'.")
 
 
-    def process_data(self, sequences: str) -> Dataset:
+    def process_data(self, sequences: Union[list[str], DataFrame]) -> Dataset:
         """Process the mRNA sequences and return a Dataset object.
 
         Parameters
         ----------
-        sequences : str
-            The mRNA sequences.
+        sequences : str or DataFrame
+            The mRNA sequences. If a DataFrame is provided, it should have a column named "Sequence".
 
         Returns
         -------
@@ -74,7 +76,7 @@ class Mamba2mRNA(HelicalRNAModel):
             The dataset object.
         """
         LOGGER.info(f"Processing data for Mamba2-mRNA.")
-        self.ensure_rna_sequence_validity(sequences)
+        sequences = self.get_valid_rna_sequence(sequences)
     
         tokenized_sequences = self.tokenizer(sequences, 
                                              return_tensors="pt", 

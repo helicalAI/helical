@@ -9,6 +9,8 @@ from .standalone_hyenadna import CharacterTokenizer
 from helical.utils.downloader import Downloader
 from torch.utils.data import DataLoader
 import numpy as np
+from typing import Union
+from pandas import DataFrame
 
 LOGGER = logging.getLogger(__name__)
 
@@ -72,13 +74,13 @@ class HyenaDNA(HelicalDNAModel):
         mode = "training" if self.model.training else "eval"
         LOGGER.info(f"'{self.config['model_name']}' model is in '{mode}' mode, on device '{next(self.model.parameters()).device.type}'.")
         
-    def process_data(self, sequences: list[str], return_tensors: str="pt", padding: str="max_length", truncation: bool=True) -> Dataset:
+    def process_data(self, sequences: Union[list[str], DataFrame], return_tensors: str="pt", padding: str="max_length", truncation: bool=True) -> Dataset:
         """Process the input DNA sequence.
 
         Parameters 
         ----------
-        sequences : list[str]
-            The input DNA sequences to be processed.
+        sequences : list[str] or DataFrame
+            The input DNA sequences to be processed. If a DataFrame is provided, it should have a column named 'Sequence'.
         return_tensors : str, optional, default="pt"
             The return type of the processed data.
         padding : str, optional, default="max_length"
@@ -92,7 +94,7 @@ class HyenaDNA(HelicalDNAModel):
             Containing processed DNA sequences.
         """
         LOGGER.info("Processing data for HyenaDNA.")
-        self.ensure_dna_sequence_validity(sequences)
+        sequences = self.get_valid_dna_sequence(sequences)
         
         max_length = len(max(sequences, key=len))+2 # +2 for special tokens at the beginning and end of sequences
 
