@@ -2,6 +2,7 @@ import pytest
 import numpy as np
 from unittest import mock
 from anndata import AnnData
+from anndata._core.views import ArrayView
 from pathlib import Path
 import scipy.sparse as sp
 from helical.models.geneformer.geneformer_tokenizer import TranscriptomeTokenizer, sum_ensembl_ids
@@ -72,11 +73,43 @@ class TestGeneformerTokenizer:
             assert isinstance(result, AnnData)
             assert result.shape == expected_shape
 
-    def test_tokenize_anndata(self, tokenizer_v1):
+    def test_tokenize_anndata_sparse_matrix(self, tokenizer_v1):
         # Create a test AnnData object
         adata = AnnData(X=sp.csr_matrix([[1, 2, 3], [4, 5, 6]]))
         adata.var['ensembl_id'] = ['ENSG1', 'ENSG2', 'ENSG3']
         adata.obs['n_counts'] = [6, 15]
+        adata.obs['cell_type'] = ['A', 'B']
+
+        tokenizer_v1.custom_attr_name_dict = {'cell_type': 'cell_type'}
+        tokenized_cells, cell_metadata = tokenizer_v1.tokenize_anndata(adata)
+
+        assert len(tokenized_cells) == 2
+        assert isinstance(tokenized_cells[0], np.ndarray)
+        assert cell_metadata == {'cell_type': ['A', 'B']}
+
+    def test_tokenize_anndata_sparse_matrix_without_n_counts(self, tokenizer_v1):
+        # Test the case where n_counts is not present in the AnnData object and
+        # it's estimated from the sum of the counts in the sparse matrix
+
+        # Create a test AnnData object
+        adata = AnnData(X=sp.csr_matrix([[1, 2, 3], [4, 5, 6]]))
+        adata.var['ensembl_id'] = ['ENSG1', 'ENSG2', 'ENSG3']
+        adata.obs['n_counts'] = [6, 15]
+        adata.obs['cell_type'] = ['A', 'B']
+
+        tokenizer_v1.custom_attr_name_dict = {'cell_type': 'cell_type'}
+        tokenized_cells, cell_metadata = tokenizer_v1.tokenize_anndata(adata)
+
+        assert len(tokenized_cells) == 2
+        assert isinstance(tokenized_cells[0], np.ndarray)
+        assert cell_metadata == {'cell_type': ['A', 'B']}
+
+    def test_tokenize_anndata_array_view(self, tokenizer_v1):
+        # Test the case where the AnnData X is a dense matrix of type 
+        # ArrayView object
+        adata = AnnData(X=ArrayView(np.array([[1, 2, 3], [4, 5, 6]],
+                                             dtype=np.float32)))
+        adata.var['ensembl_id'] = ['ENSG1', 'ENSG2', 'ENSG3']
         adata.obs['cell_type'] = ['A', 'B']
 
         tokenizer_v1.custom_attr_name_dict = {'cell_type': 'cell_type'}

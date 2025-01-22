@@ -1,5 +1,6 @@
 from helical import HelixmRNA, HelixmRNAConfig
 import pytest
+from pandas import DataFrame
 import torch
 
 class TestHelixmRNAModel:
@@ -24,3 +25,14 @@ class TestHelixmRNAModel:
         embeddings = helixmRNA.get_embeddings(mock_data)
 
         assert embeddings is not None, f"Embeddings should not be None for sequence: {mock_data}"
+
+    @pytest.mark.parametrize("data, raise_exception", [
+        (DataFrame({"Sequence":["EACU"*20, "EAUG"*20, "EAUG"*20, "EACU"*20, "EAUU"*20]}), False),
+        (DataFrame({"invalid":["EACU"*20, "EAUG"*20, "EAUG"*20, "EACU"*20, "EAUU"*20]}), True)
+    ])
+    def test_process_data_w_dataframe_raises_appropriate_errors(self, helixmRNA, data, raise_exception):
+        if raise_exception:
+            with pytest.raises(KeyError, match=r"The DataFrame must have a column named 'Sequence'."):
+                helixmRNA.process_data(data)
+        else:
+            helixmRNA.process_data(data)

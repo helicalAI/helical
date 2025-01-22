@@ -53,8 +53,7 @@ from collections import Counter
 import numpy as np
 import scipy.sparse as sp
 from datasets import Dataset
-from anndata import AnnData
-from numpy import ndarray
+from anndata._core.views import ArrayView
 import pandas as pd
 from tqdm import tqdm
 import scanpy as sc
@@ -451,7 +450,12 @@ class TranscriptomeTokenizer:
                 n_counts = adata[idx].obs["n_counts"].values[:, None]
             else:
                 # If 'n_counts' doesn't exist, calculate it as the sum of counts for each cell
-                n_counts = adata[idx, :].X.sum(axis=1)
+                if isinstance(adata.X, ArrayView):
+                    # If adata.X is an ArrayView the sum returns only
+                    # one dimension, while 2 are required for broadcasting below
+                    n_counts = adata[idx, :].X.sum(axis=1)[:, None]
+                else:
+                    n_counts = adata[idx, :].X.sum(axis=1)
 
             X_view0 = adata[idx, :].X
             X_view = X_view0[:, coding_miRNA_loc]

@@ -2,6 +2,7 @@ from helical.models.hyena_dna.model import HyenaDNAConfig
 import pytest
 from helical.models.hyena_dna.model import HyenaDNA
 import numpy as np
+from pandas import DataFrame
 
 @pytest.mark.parametrize("model_name, d_model, d_inner", [
     ("hyenadna-tiny-1k-seqlen", 128, 512),
@@ -63,3 +64,15 @@ def test_hyena_dna_process_data_variable_length_sequences(input_sequence, expect
     model = HyenaDNA()
     dataset = model.process_data(input_sequence)
     assert np.all(np.equal(np.array(expected_output), np.array(dataset["input_ids"])))
+
+@pytest.mark.parametrize("data, raise_exception", [
+    (DataFrame({"Sequence":["ACGTN", "ACGTN"]}), False),
+    (DataFrame({"invalid":["ACGTN", "ACGTN"]}), True)
+])
+def test_process_data_w_dataframe_raises_appropriate_errors(data, raise_exception):
+    model = HyenaDNA()
+    if raise_exception:
+        with pytest.raises(KeyError, match=r"The DataFrame must have a column named 'Sequence'."):
+            model.process_data(data)
+    else:
+        model.process_data(data)
