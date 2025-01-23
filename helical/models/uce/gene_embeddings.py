@@ -79,6 +79,11 @@ def load_gene_embeddings_adata(adata: AnnData, species: list, embedding_model: s
     filtered = adata.var_names.shape[0] - filtered_adata.var_names.shape[0]
     LOGGER.info(f'Filtered out {filtered} genes to a total of {filtered_adata.var_names.shape[0]} genes with embeddings.')
 
+    if filtered_adata.var_names.shape[0] == 0:
+        message = "No matching genes found between input data and UCE gene embedding vocabulary. Please check the gene names in .var of the anndata input object."
+        LOGGER.error(message)
+        raise ValueError(message)
+
     # Load gene symbols for desired species for later use with indexes
     species_to_all_gene_symbols = {
         species: [
