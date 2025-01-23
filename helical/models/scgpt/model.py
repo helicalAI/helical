@@ -271,7 +271,7 @@ class scGPT(HelicalRNAModel):
         LOGGER.info(f"Filtering out {np.sum(adata.var['id_in_vocab'] < 0)} genes to a total of {np.sum(adata.var['id_in_vocab'] >= 0)} genes with an ID in the scGPT vocabulary.")
         
         if np.sum(adata.var["id_in_vocab"] >= 0) == 0:
-            message = "No matching genes found between input data and scGPT gene vocabulary. Please check the 'gene_names' in .var of the anndata input object."
+            message = "No matching genes found between input data and scGPT gene vocabulary. Please check the gene names in .var of the anndata input object."
             LOGGER.error(message)
             raise ValueError(message)
         
