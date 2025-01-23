@@ -268,7 +268,13 @@ class scGPT(HelicalRNAModel):
 
         # filtering
         adata.var["id_in_vocab"] = [ self.vocab[gene] if gene in self.vocab else -1 for gene in adata.var[self.gene_names] ]
-        LOGGER.info(f"Filtering out {np.sum(adata.var['id_in_vocab'] < 0)} genes to a total of {np.sum(adata.var['id_in_vocab'] >= 0)} genes with an id in the scGPT vocabulary.")
+        LOGGER.info(f"Filtering out {np.sum(adata.var['id_in_vocab'] < 0)} genes to a total of {np.sum(adata.var['id_in_vocab'] >= 0)} genes with an ID in the scGPT vocabulary.")
+        
+        if np.sum(adata.var["id_in_vocab"] >= 0) == 0:
+            message = "No matching genes found between input data and scGPT gene vocabulary. Please check the 'gene_names' in .var of the anndata input object."
+            LOGGER.error(message)
+            raise ValueError(message)
+        
         adata = adata[:, adata.var["id_in_vocab"] >= 0]
 
         # Binning will be applied after tokenization. A possible way to do is to use the unified way of binning in the data collator.
