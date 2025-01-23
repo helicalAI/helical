@@ -47,6 +47,12 @@ class TestGeneformer:
         assert mock_data.var[mock_data.var['gene_symbols'] == 'PLEKHN1']['ensembl_id'].values[0] == 'ENSG00000187583'
         assert mock_data.var[mock_data.var['gene_symbols'] == 'HES4']['ensembl_id'].values[0] == 'ENSG00000188290'
     
+    def test_process_data_mapping_to_ensemble_ids_resulting_in_0_genes(self, geneformer, mock_data):
+        # provide a gene that does not exist in the ensembl database
+        mock_data.var['gene_symbols'] = ['1', '2', '3']
+        with pytest.raises(ValueError):
+            geneformer.process_data(mock_data, gene_names="gene_symbols")        
+
     @pytest.mark.parametrize("invalid_model_names", ["gf-12L-35M-i2048", "gf-34L-30M-i5000"])
     def test_pass_invalid_model_name(self, invalid_model_names):
         with pytest.raises(ValueError):
