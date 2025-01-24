@@ -153,7 +153,11 @@ class Geneformer(HelicalRNAModel):
                 raise ValueError(message)
             adata = map_gene_symbols_to_ensembl_ids(adata, gene_names)
 
-        
+            if adata.var["ensembl_id"].isnull().all():
+                message = "All gene symbols could not be mapped to Ensembl IDs. Please check the input data."
+                LOGGER.info(message)
+                raise ValueError(message)
+
         tokenized_cells, cell_metadata = self.tk.tokenize_anndata(adata)
 
         # tokenized_cells, cell_metadata =  self.tk.tokenize_anndata(adata)
