@@ -17,6 +17,7 @@ LOADING_BAR_LENGTH = 50 # size of the download progression bar in console
 
 HASH_DICT = {
     'uce/4layer_model.torch': '16430370e0d672c8db6e275440e7974d2fd0a21f29aa9299e141085f82a5a886',
+    'uce/33l_8ep_1024t_1280.torch': 'aa6457a0eb2e91d8382d96fb455456e40a9423a00509ea296079a75b1a9390c0',
     'uce/all_tokens.torch': 'e3e3ad03a9f8fdca8babec5b0c72f7f4043a4bec2e3eb009b8fe1b28d984c93a',
     'uce/species_chrom.csv': '7f5d32e6adcc3786c613043a4de8e2a47187935cfb9a1d3fcf7373eb50caebf7',
     'uce/species_offsets.pkl': 'abda5b2bc4018187e408623b292686a061912f449daceb4c9c9603caf0d62538',
