@@ -3,10 +3,6 @@ import logging
 
 logging.captureWarnings(True)
 
-class InfoAndErrorFilter(logging.Filter):
-    def filter(self, record):
-        return record.levelno in (logging.INFO, logging.ERROR)
-
 for handler in logging.root.handlers[:]:
     logging.root.removeHandler(handler)
 
@@ -15,8 +11,6 @@ logger.setLevel(logging.INFO)
 
 handler = logging.StreamHandler()
 handler.setLevel(logging.INFO) 
-
-handler.addFilter(InfoAndErrorFilter())
 
 formatter = logging.Formatter('%(levelname)s:%(name)s:%(message)s')
 handler.setFormatter(formatter)

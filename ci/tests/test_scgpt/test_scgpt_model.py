@@ -89,6 +89,13 @@ class TestSCGPTModel:
             self.scgpt.ensure_data_validity(data, "index", False)
         assert "total_counts" in data.obs
 
+    def test_process_data_no_matching_genes(self):
+        self.dummy_data.var['gene_ids'] = [1]*self.dummy_data.n_vars        
+        model = scGPT()
+        
+        with pytest.raises(ValueError):
+            model.process_data(self.dummy_data, gene_names='gene_ids')
+
     np_arr_data = ad.read_h5ad("ci/tests/data/cell_type_sample.h5ad")
     csr_data = ad.read_h5ad("ci/tests/data/cell_type_sample.h5ad")
     csr_data.X = csr_matrix(np.random.poisson(1, size=(100, 5)), dtype=np.float32)

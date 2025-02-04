@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "helical"
-version = "0.0.1a20"
+version = "0.0.1a21"
 authors = [
   { name="Helical Team", email="support@helical-ai.com" },
 ]
@@ -48,7 +48,7 @@ dependencies = [
 [project.optional-dependencies]
 mamba-ssm = [
     'mamba-ssm==2.2.4',
-    'causal-conv1d==1.4.0',
+    'causal-conv1d==1.5.0.post8',
 ]
 
 [tool.hatch.metadata]
