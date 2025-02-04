@@ -72,7 +72,8 @@ or in case you're installing from the Helical repo cloned locally:
 pip install .[mamba-ssm]
 ```
 
-Note: make sure your machine has GPU(s) and Cuda installed. Currently this is a requirement for the packages mamba-ssm and causal-conv1d.
+Note: make sure your machine has GPU(s) and Cuda installed. Currently this is a requirement for the packages mamba-ssm and causal-conv1d. 
+Also make sure `torch` is already installed.
 
 ### Singularity (Optional)
 If you desire to run your code in a singularity file, you can use the [singularity.def](./singularity.def) file and build an apptainer with it:
