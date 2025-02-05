@@ -101,7 +101,7 @@ import torch
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-helix_mrna_config = HelimRNAConfig(batch_size=5, max_length=100, device=device)
+helix_mrna_config = HelixmRNAConfig(batch_size=5, max_length=100, device=device)
 helix_mrna = HelixmRNA(configurer=helix_mrna_config)
 
 rna_sequences = ["EACUEGGG", "EACUEGGG", "EACUEGGG", "EACUEGGG", "EACUEGGG"]
