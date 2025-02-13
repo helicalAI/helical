@@ -192,16 +192,19 @@ import anndata as ad
 
 # Example configuration
 model_config = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
-geneformer = Geneformer(model_config=model_config)
+geneformer_v2 = Geneformer(model_config)
 
 # Example usage for base pretrained model
-ann_data = ad.read_h5ad("general_dataset.h5ad")
+ann_data = ad.read_h5ad("anndata_file.h5ad")
 dataset = geneformer_v2.process_data(ann_data)
 embeddings = geneformer_v2.get_embeddings(dataset)
 print("Base model embeddings shape:", embeddings.shape)
 
 # Example usage for cancer-tuned model
-cancer_ann_data = ad.read_h5ad("cancer_dataset.h5ad")
+model_config_cancer = GeneformerConfig(model_name="gf-12L-95M-i4096-CLcancer", batch_size=10)
+geneformer_v2_cancer = Geneformer(model_config)
+
+cancer_ann_data = ad.read_h5ad("anndata_file.h5ad")
 cancer_dataset = geneformer_v2_cancer.process_data(cancer_ann_data)
 cancer_embeddings = geneformer_v2_cancer.get_embeddings(cancer_dataset)
 print("Cancer-tuned model embeddings shape:", cancer_embeddings.shape)
@@ -211,43 +214,47 @@ print("Cancer-tuned model embeddings shape:", cancer_embeddings.shape)
 
 ```python
 from helical import GeneformerConfig, GeneformerFineTuningModel
+import anndata as ad
 
-# Prepare the data
-ann_data = ad.read_h5ad("dataset.h5ad")
+# Load the data
+ann_data = ad.read_h5ad("/home/matthew/helical-dev/helical/yolksac_human.h5ad")
 
-# Get the desired label class
-cell_types = list(ann_data.obs.cell_type)
-
-# Create a dictionary mapping the classes to unique integers for training
+# Get the column for fine-tuning
+cell_types = list(ann_data.obs["cell_types"])
 label_set = set(cell_types)
-class_id_dict = dict(zip(label_set, [i for i in range(len(label_set))]))
 
-for i in range(len(cell_types)):
-    cell_types[i] = class_id_dict[cell_types[i]]
+# Create a GeneformerConfig object
+geneformer_config = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
 
-# Add this column to the Dataset
+# Create a GeneformerFineTuningModel object
+geneformer_fine_tune = GeneformerFineTuningModel(geneformer_config=geneformer_config, fine_tuning_head="classification", output_size=len(label_set))
+
+# Process the data
+dataset = geneformer_fine_tune.process_data(ann_data[:10])
+
+# Add column to the dataset
 dataset = dataset.add_column('cell_types', cell_types)
 
-# Create the fine-tuning model
-model_config = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
-geneformer_fine_tune = GeneformerFineTuningModel(
-    geneformer_config=model_config, 
-    fine_tuning_head="classification", 
-    label="cell_types", 
-    output_size=len(label_set)
-)
+# Create a dictionary to map cell types to ids
+class_id_dict = dict(zip(label_set, [i for i in range(len(label_set))]))
 
-# Process the data for training
-dataset = geneformer_fine_tune.process_data(ann_data)
+def classes_to_ids(example):
+    example["cell_types"] = class_id_dict[example["cell_types"]]
+    return example
 
-# Fine-tune
-geneformer_fine_tune.train(train_dataset=dataset)
+# Convert cell types to ids
+dataset = dataset.map(classes_to_ids, num_proc=1)
 
-# Get outputs of the fine-tuned model
+# Fine-tune the model
+geneformer_fine_tune.train(train_dataset=dataset, label="cell_types")
+
+# Get logits from the fine-tuned model
 outputs = geneformer_fine_tune.get_outputs(dataset)
+print(outputs[:10])
 
-# Get the embeddings of the fine-tuned model
+# Get embeddings from the fine-tuned model
 embeddings = geneformer_fine_tune.get_embeddings(dataset)
+print(embeddings[:10])
 ```
 
 ## Contact

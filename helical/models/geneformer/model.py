@@ -32,29 +32,27 @@ class Geneformer(HelicalRNAModel):
     Example
     -------
     ```python
-     from helical.models import Geneformer, GeneformerConfig
-     import anndata as ad
-     
-     # For Version 2.0
-     geneformer_config_v2 = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
-     geneformer_v2 = Geneformer(configurer=geneformer_config_v2)
-    
-     # You can use other model names in the config, such as:
-     # "gf-12L-30M-i2048" (Version 1.0)
-     # "gf-12L-95M-i4096-CLcancer" (Version 2.0, Cancer-tuned)
-     # "gf-20L-95M-i4096" (Version 2.0, 20-layer model)
-     
-     # Example usage for base pretrained model (for general transcriptomic analysis, v1 and v2)
-     ann_data = ad.read_h5ad("general_dataset.h5ad")
-     dataset = geneformer_v2.process_data(ann_data)
-     embeddings = geneformer_v2.get_embeddings(dataset)
-     print("Base model embeddings shape:", embeddings.shape)
-    
-     # Example usage for cancer-tuned model (for cancer-specific analysis)
-     cancer_ann_data = ad.read_h5ad("cancer_dataset.h5ad")
-     cancer_dataset = geneformer_v2_cancer.process_data(cancer_ann_data)
-     cancer_embeddings = geneformer_v2_cancer.get_embeddings(cancer_dataset)
-     print("Cancer-tuned model embeddings shape:", cancer_embeddings.shape)
+    from helical import Geneformer, GeneformerConfig
+    import anndata as ad
+
+    # Example configuration
+    model_config = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
+    geneformer_v2 = Geneformer(model_config)
+
+    # Example usage for base pretrained model
+    ann_data = ad.read_h5ad("anndata_file.h5ad")
+    dataset = geneformer_v2.process_data(ann_data)
+    embeddings = geneformer_v2.get_embeddings(dataset)
+    print("Base model embeddings shape:", embeddings.shape)
+
+    # Example usage for cancer-tuned model
+    model_config_cancer = GeneformerConfig(model_name="gf-12L-95M-i4096-CLcancer", batch_size=10)
+    geneformer_v2_cancer = Geneformer(model_config)
+
+    cancer_ann_data = ad.read_h5ad("anndata_file.h5ad")
+    cancer_dataset = geneformer_v2_cancer.process_data(cancer_ann_data)
+    cancer_embeddings = geneformer_v2_cancer.get_embeddings(cancer_dataset)
+    print("Cancer-tuned model embeddings shape:", cancer_embeddings.shape)
     ```
 
     Parameters
