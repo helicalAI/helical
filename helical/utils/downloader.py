@@ -82,6 +82,8 @@ HASH_DICT = {
     'caduceus/caduceus-ps-4L-seqlen-1k-d256/config.json': '655d2c3a692ab35718cfe87ce98b14c4e57807f85089c2af81809873f356349f',
 
     'genept/genept_embeddings/genept_embeddings.json': '54a58177e6f4cb9c2d98f39cb8c586bd347a526375eba861df15a3714f737ccc',
+
+    '17_04_24_YolkSacRaw_F158_WE_annots.h5ad': '0585c186ef23951a538522dd6882492c2d5c165c615543fe01bf0d0daedc2f5a',
 }
 
 class Downloader(Logger):
