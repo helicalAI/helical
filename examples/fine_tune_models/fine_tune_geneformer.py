@@ -32,7 +32,7 @@ def run_fine_tuning(cfg: DictConfig):
 
     dataset = dataset.map(classes_to_ids, num_proc=1)
 
-    geneformer_fine_tune.train(train_dataset=dataset)
+    geneformer_fine_tune.train(train_dataset=dataset, label="cell_types")
 
     outputs = geneformer_fine_tune.get_outputs(dataset)
     print(outputs)
