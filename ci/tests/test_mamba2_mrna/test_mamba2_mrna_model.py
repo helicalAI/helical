@@ -2,6 +2,7 @@ from helical import Mamba2mRNA, Mamba2mRNAConfig
 import pytest
 import torch
 
+
 class TestHelixmRNAModel:
     @pytest.fixture
     def mamba2mRNA(self):
@@ -11,16 +12,32 @@ class TestHelixmRNAModel:
 
     @pytest.fixture
     def mock_data(self, mamba2mRNA):
-        input_sequences = ["AAAA", "CCCC", "UUUU" * 30, "ACGU" * 100, "ACGN", "ANNU" * 20]
+        input_sequences = [
+            "AAAA",
+            "CCCC",
+            "UUUU" * 30,
+            "ACGU" * 100,
+            "ACGN",
+            "ANNU" * 20,
+        ]
         tokenized_sequences = mamba2mRNA.process_data(input_sequences)
         return tokenized_sequences
 
     def test_invalid_sequences(self, mamba2mRNA):
-        input_sequences = ["AAQA", "CCCZ", "FJAK" * 30, "QWER" * 100, "JFHS", "OFNW" * 20]
+        input_sequences = [
+            "AAQA",
+            "CCCZ",
+            "FJAK" * 30,
+            "QWER" * 100,
+            "JFHS",
+            "OFNW" * 20,
+        ]
         with pytest.raises(ValueError, match=r"Invalid RNA sequence:*"):
             mamba2mRNA.process_data(input_sequences)
 
     def test_helix_mrna_get_embeddings(self, mock_data, mamba2mRNA):
         embeddings = mamba2mRNA.get_embeddings(mock_data)
 
-        assert embeddings is not None, f"Embeddings should not be None for sequence: {mock_data}"
+        assert (
+            embeddings is not None
+        ), f"Embeddings should not be None for sequence: {mock_data}"

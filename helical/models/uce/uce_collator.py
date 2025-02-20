@@ -1,9 +1,9 @@
 import torch
 
+
 class UCECollator(object):
     def __init__(self, config):
-        self.pad_length = config['pad_length']
-
+        self.pad_length = config["pad_length"]
 
     def __call__(self, batch):
         batch_size = len(batch)
@@ -24,5 +24,4 @@ class UCECollator(object):
 
             i += 1
 
-        return batch_sentences[:, :max_len] , mask[:, :max_len], idxs, cell_sentences
-    
+        return batch_sentences[:, :max_len], mask[:, :max_len], idxs, cell_sentences

@@ -1,5 +1,8 @@
 from typing import Literal, Optional
-from helical.models.base_models import HelicalBaseFineTuningHead, HelicalBaseFineTuningModel
+from helical.models.base_models import (
+    HelicalBaseFineTuningHead,
+    HelicalBaseFineTuningModel,
+)
 from helical.models.caduceus import Caduceus, CaduceusConfig
 from datasets import Dataset
 from transformers import get_scheduler
@@ -13,6 +16,7 @@ import numpy as np
 import logging
 
 LOGGER = logging.getLogger(__name__)
+
 
 class CaduceusFineTuningModel(HelicalBaseFineTuningModel, Caduceus):
     """CaduceusFineTuningModel
@@ -51,58 +55,74 @@ class CaduceusFineTuningModel(HelicalBaseFineTuningModel, Caduceus):
     get_outputs(dataset)
         Returns the outputs of the model for the given dataset.
     """
-    def __init__(self,
-                 caduceus_config: CaduceusConfig, 
-                 fine_tuning_head: Literal["classification", "regression"] | HelicalBaseFineTuningHead, 
-                 output_size: Optional[int]=None):
+
+    def __init__(
+        self,
+        caduceus_config: CaduceusConfig,
+        fine_tuning_head: (
+            Literal["classification", "regression"] | HelicalBaseFineTuningHead
+        ),
+        output_size: Optional[int] = None,
+    ):
         HelicalBaseFineTuningModel.__init__(self, fine_tuning_head, output_size)
         Caduceus.__init__(self, caduceus_config)
 
         self.fine_tuning_head.set_dim_size(self.config["embedding_size"])
 
-    def _forward(self, 
-                 input_ids: torch.LongTensor = None,
-                 output_hidden_states: Optional[bool] = None,
-                 conjoin_train: bool = False,
-                 conjoin_eval: bool = False,
-                 training: bool = False):
+    def _forward(
+        self,
+        input_ids: torch.LongTensor = None,
+        output_hidden_states: Optional[bool] = None,
+        conjoin_train: bool = False,
+        conjoin_eval: bool = False,
+        training: bool = False,
+    ):
         # Get hidden representations from the backbone
         if self.model.config.rcps:  # Hidden states have 2 * d_model channels for RCPS
             transformer_outputs = self.model(
-                input_ids=input_ids,
-                output_hidden_states=output_hidden_states
+                input_ids=input_ids, output_hidden_states=output_hidden_states
             )
             hidden_states = torch.stack(
                 [
-                    transformer_outputs[0][..., :self.model.config.d_model],
-                    torch.flip(transformer_outputs[0][..., self.model.config.d_model:], dims=[1, 2])
-                 ],
-                dim=-1
+                    transformer_outputs[0][..., : self.model.config.d_model],
+                    torch.flip(
+                        transformer_outputs[0][..., self.model.config.d_model :],
+                        dims=[1, 2],
+                    ),
+                ],
+                dim=-1,
             )
-        elif conjoin_train or (conjoin_eval and not training):  # For conjoining / post-hoc conjoining
+        elif conjoin_train or (
+            conjoin_eval and not training
+        ):  # For conjoining / post-hoc conjoining
             assert input_ids is not None, "`input_ids` must be provided for conjoining."
-            assert input_ids.ndim == 3, "`input_ids` must be 3D tensor: channels corresponds to forward and rc strands."
+            assert (
+                input_ids.ndim == 3
+            ), "`input_ids` must be 3D tensor: channels corresponds to forward and rc strands."
             transformer_outputs = self.model(
-                input_ids[..., 0],
-                output_hidden_states=output_hidden_states
+                input_ids[..., 0], output_hidden_states=output_hidden_states
             )
             transformer_outputs_rc = self.model(
-                input_ids[..., 1],
-                output_hidden_states=output_hidden_states
+                input_ids[..., 1], output_hidden_states=output_hidden_states
             )
             # Stack along channel dimension (dim=-1)
-            hidden_states = torch.stack([transformer_outputs[0], transformer_outputs_rc[0]], dim=-1)
+            hidden_states = torch.stack(
+                [transformer_outputs[0], transformer_outputs_rc[0]], dim=-1
+            )
         else:
             transformer_outputs = self.model(
-                input_ids,
-                output_hidden_states=output_hidden_states
+                input_ids, output_hidden_states=output_hidden_states
             )
             hidden_states = transformer_outputs[0]
 
         # Pool and get logits
-        pooled_hidden_states = self._pool_hidden_states(hidden_states=hidden_states, sequence_length_dim=1)
+        pooled_hidden_states = self._pool_hidden_states(
+            hidden_states=hidden_states, sequence_length_dim=1
+        )
         # Potentially run `fine_tuning_head` twice (with parameters shared) for conjoining
-        if hidden_states.ndim == 4:  # bsz, seq_len, hidden_dim, 2 where last channel has the stacked fwd and rc reps
+        if (
+            hidden_states.ndim == 4
+        ):  # bsz, seq_len, hidden_dim, 2 where last channel has the stacked fwd and rc reps
             logits_fwd = self.fine_tuning_head(pooled_hidden_states[..., 0])
             logits_rc = self.fine_tuning_head(pooled_hidden_states[..., 1])
             logits = (logits_fwd + logits_rc) / 2
@@ -110,22 +130,24 @@ class CaduceusFineTuningModel(HelicalBaseFineTuningModel, Caduceus):
             logits = self.fine_tuning_head(pooled_hidden_states)
 
         return logits
-    
-    def train(self,
-              train_dataset: Dataset, 
-              train_labels: np.ndarray,
-              optimizer: optim = optim.AdamW,
-              optimizer_params: dict = {'lr': 0.0001}, 
-              loss_function: loss = loss.CrossEntropyLoss(), 
-              epochs: int = 1,
-              trainable_layers: int = 2,
-              validation_dataset: Optional[Dataset] = None,
-              validation_labels: Optional[np.ndarray] = None,
-              lr_scheduler_params: Optional[dict] = None, 
-              conjoin_train: bool = False,
-              conjoin_eval: bool = False):
+
+    def train(
+        self,
+        train_dataset: Dataset,
+        train_labels: np.ndarray,
+        optimizer: optim = optim.AdamW,
+        optimizer_params: dict = {"lr": 0.0001},
+        loss_function: loss = loss.CrossEntropyLoss(),
+        epochs: int = 1,
+        trainable_layers: int = 2,
+        validation_dataset: Optional[Dataset] = None,
+        validation_labels: Optional[np.ndarray] = None,
+        lr_scheduler_params: Optional[dict] = None,
+        conjoin_train: bool = False,
+        conjoin_eval: bool = False,
+    ):
         """Fine-tunes the Caduceus model on the given dataset.
-        
+
         Parameters
         ----------
         train_dataset : Dataset
@@ -157,12 +179,18 @@ class CaduceusFineTuningModel(HelicalBaseFineTuningModel, Caduceus):
         optimizer = optimizer(self.parameters(), **optimizer_params)
 
         # set labels for the dataset
-        train_dataset = self._add_data_column(train_dataset, "labels", np.array(train_labels))
+        train_dataset = self._add_data_column(
+            train_dataset, "labels", np.array(train_labels)
+        )
         if validation_labels is not None and validation_dataset is not None:
-            validation_dataset = self._add_data_column(validation_dataset, "labels", np.array(validation_labels))
+            validation_dataset = self._add_data_column(
+                validation_dataset, "labels", np.array(validation_labels)
+            )
 
         if trainable_layers > 0:
-            LOGGER.info(f"Unfreezing the last {trainable_layers} layers of the Caduceus model.")
+            LOGGER.info(
+                f"Unfreezing the last {trainable_layers} layers of the Caduceus model."
+            )
 
             for param in self.model.backbone.parameters():
                 param.requires_grad = False
@@ -171,14 +199,28 @@ class CaduceusFineTuningModel(HelicalBaseFineTuningModel, Caduceus):
 
         self.to(self.config["device"])
 
-        train_dataloader = DataLoader(train_dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"], num_workers=self.config["nproc"])
+        train_dataloader = DataLoader(
+            train_dataset,
+            collate_fn=self._collate_fn,
+            batch_size=self.config["batch_size"],
+            num_workers=self.config["nproc"],
+        )
 
         lr_scheduler = None
-        if lr_scheduler_params is not None: 
-            lr_scheduler = get_scheduler(optimizer=optimizer, num_training_steps=epochs*len(train_dataloader),  **lr_scheduler_params)
+        if lr_scheduler_params is not None:
+            lr_scheduler = get_scheduler(
+                optimizer=optimizer,
+                num_training_steps=epochs * len(train_dataloader),
+                **lr_scheduler_params,
+            )
 
         if validation_dataset is not None:
-            validation_dataloader = DataLoader(validation_dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"], num_workers=self.config["nproc"])
+            validation_dataloader = DataLoader(
+                validation_dataset,
+                collate_fn=self._collate_fn,
+                batch_size=self.config["batch_size"],
+                num_workers=self.config["nproc"],
+            )
 
         LOGGER.info("Starting Fine-Tuning")
         for j in range(epochs):
@@ -189,9 +231,14 @@ class CaduceusFineTuningModel(HelicalBaseFineTuningModel, Caduceus):
             batches_processed = 0
             for batch in training_loop:
                 input_ids = batch["input_ids"].to(self.config["device"])
-                labels = batch['labels'].to(self.config["device"])
+                labels = batch["labels"].to(self.config["device"])
 
-                outputs = self._forward(input_ids=input_ids, conjoin_train=conjoin_train, conjoin_eval=conjoin_eval, training=True)
+                outputs = self._forward(
+                    input_ids=input_ids,
+                    conjoin_train=conjoin_train,
+                    conjoin_eval=conjoin_eval,
+                    training=True,
+                )
 
                 loss = loss_function(outputs, labels)
                 loss.backward()
@@ -199,7 +246,7 @@ class CaduceusFineTuningModel(HelicalBaseFineTuningModel, Caduceus):
                 optimizer.zero_grad()
                 batch_loss += loss.item()
                 batches_processed += 1
-                training_loop.set_postfix({"loss": batch_loss/batches_processed})
+                training_loop.set_postfix({"loss": batch_loss / batches_processed})
                 training_loop.set_description(f"Fine-Tuning: epoch {j+1}/{epochs}")
 
                 del batch
@@ -211,35 +258,41 @@ class CaduceusFineTuningModel(HelicalBaseFineTuningModel, Caduceus):
             del training_loop
 
             if validation_dataset is not None:
-                testing_loop = tqdm(validation_dataloader, desc="Fine-Tuning Validation")
+                testing_loop = tqdm(
+                    validation_dataloader, desc="Fine-Tuning Validation"
+                )
                 self.model.eval()
                 self.fine_tuning_head.eval()
                 val_loss = 0.0
                 count = 0.0
                 for test_batch in testing_loop:
                     input_ids = test_batch["input_ids"].to(self.config["device"])
-                    labels = test_batch['labels'].to(self.config["device"])
-                
+                    labels = test_batch["labels"].to(self.config["device"])
+
                     with torch.no_grad():
-                        outputs = self._forward(input_ids=input_ids, conjoin_train=conjoin_train, conjoin_eval=conjoin_eval, training=False)
+                        outputs = self._forward(
+                            input_ids=input_ids,
+                            conjoin_train=conjoin_train,
+                            conjoin_eval=conjoin_eval,
+                            training=False,
+                        )
 
                     val_loss += loss_function(outputs, labels).item()
                     count += 1.0
-                    testing_loop.set_postfix({"val_loss": val_loss/count})
+                    testing_loop.set_postfix({"val_loss": val_loss / count})
 
                     del test_batch
                     del outputs
-                
+
                 del testing_loop
                 self.model.train()
                 self.fine_tuning_head.train()
 
         LOGGER.info(f"Fine-Tuning Complete. Epochs: {epochs}")
 
-    def get_outputs(self, dataset: Dataset,
-                    conjoin: bool = False) -> np.ndarray:
+    def get_outputs(self, dataset: Dataset, conjoin: bool = False) -> np.ndarray:
         """Get the embeddings for the tokenized sequence.
-        
+
         Parameters
         ----------
         dataset : Dataset
@@ -247,7 +300,13 @@ class CaduceusFineTuningModel(HelicalBaseFineTuningModel, Caduceus):
         conjoin : bool, default=False
             Whether to conjoin the forward and reverse complement sequences.
         """
-        dataloader = DataLoader(dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"], shuffle=False, num_workers=self.config["nproc"])
+        dataloader = DataLoader(
+            dataset,
+            collate_fn=self._collate_fn,
+            batch_size=self.config["batch_size"],
+            shuffle=False,
+            num_workers=self.config["nproc"],
+        )
         outputs = []
 
         self.model.to(self.config["device"])
@@ -259,7 +318,9 @@ class CaduceusFineTuningModel(HelicalBaseFineTuningModel, Caduceus):
             input_ids = batch["input_ids"].to(self.config["device"])
 
             with torch.no_grad():
-                output = self._forward(input_ids=input_ids, conjoin_eval=conjoin, training=False)
+                output = self._forward(
+                    input_ids=input_ids, conjoin_eval=conjoin, training=False
+                )
 
             outputs.append(output.cpu().numpy())
 
@@ -275,6 +336,3 @@ class CaduceusFineTuningModel(HelicalBaseFineTuningModel, Caduceus):
         else:  # If 1D
             dataset = dataset.add_column(column_name, data)
         return dataset
-
-        
-

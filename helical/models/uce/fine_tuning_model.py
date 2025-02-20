@@ -14,6 +14,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class UCEFineTuningModel(HelicalBaseFineTuningModel, UCE):
     """
     Fine-tuning model for the UCE model.
@@ -67,17 +68,22 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel, UCE):
         Get the outputs of the fine-tuned model on a UCE processed dataset.
 
     """
-    def __init__(self, 
-                 uce_config: UCEConfig, 
-                 fine_tuning_head: Literal["classification"] | HelicalBaseFineTuningHead, 
-                 output_size: Optional[int]=None):
-        
+
+    def __init__(
+        self,
+        uce_config: UCEConfig,
+        fine_tuning_head: Literal["classification"] | HelicalBaseFineTuningHead,
+        output_size: Optional[int] = None,
+    ):
+
         HelicalBaseFineTuningModel.__init__(self, fine_tuning_head, output_size)
         UCE.__init__(self, uce_config)
-        
+
         self.fine_tuning_head.set_dim_size(self.config["embsize"])
 
-    def _forward(self, batch_sentences: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+    def _forward(
+        self, batch_sentences: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
         """
         Forward method of the fine-tuning model.
 
@@ -87,7 +93,7 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel, UCE):
             The input tensor of the fine-tuning model.
         mask : torch.Tensor
             The mask tensor for the input tensor.
-        
+
         Returns
         -------
         torch.Tensor
@@ -103,21 +109,22 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel, UCE):
             embeddings = embeddings
         output = self.fine_tuning_head(embeddings)
         return output
-    
+
     def train(
-            self,
-            train_input_data: UCEDataset, 
-            train_labels: np.ndarray,     
-            validation_input_data = None,
-            validation_labels = None,
-            optimizer: optim = optim.AdamW,
-            optimizer_params: dict = {'lr': 0.0001}, 
-            loss_function: loss = loss.CrossEntropyLoss(), 
-            epochs: int = 1,
-            # freeze_layers: int = 0,
-            lr_scheduler_params: Optional[dict] = None):
+        self,
+        train_input_data: UCEDataset,
+        train_labels: np.ndarray,
+        validation_input_data=None,
+        validation_labels=None,
+        optimizer: optim = optim.AdamW,
+        optimizer_params: dict = {"lr": 0.0001},
+        loss_function: loss = loss.CrossEntropyLoss(),
+        epochs: int = 1,
+        # freeze_layers: int = 0,
+        lr_scheduler_params: Optional[dict] = None,
+    ):
         """
-        Fine-tunes the UCE model with different head modules. 
+        Fine-tunes the UCE model with different head modules.
 
         Parameters
         ----------
@@ -143,18 +150,22 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel, UCE):
             e.g. lr_scheduler_params={'name': 'linear', 'num_warmup_steps': 0, 'num_training_steps': 5}
         """
         batch_size = self.config["batch_size"]
-        dataloader = DataLoader(train_input_data, 
-                                batch_size=batch_size, 
-                                shuffle=False,
-                                collate_fn=train_input_data.collator_fn,
-                                num_workers=0)
-        
+        dataloader = DataLoader(
+            train_input_data,
+            batch_size=batch_size,
+            shuffle=False,
+            collate_fn=train_input_data.collator_fn,
+            num_workers=0,
+        )
+
         if validation_input_data is not None:
-            validation_dataloader = DataLoader(validation_input_data, 
-                        batch_size=batch_size, 
-                        shuffle=False,
-                        collate_fn=validation_input_data.collator_fn,
-                        num_workers=0)
+            validation_dataloader = DataLoader(
+                validation_input_data,
+                batch_size=batch_size,
+                shuffle=False,
+                collate_fn=validation_input_data.collator_fn,
+                num_workers=0,
+            )
 
         if self.accelerator is not None:
             dataloader = self.accelerator.prepare(dataloader)
@@ -175,7 +186,7 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel, UCE):
         optimizer = optimizer(self.parameters(), **optimizer_params)
 
         lr_scheduler = None
-        if lr_scheduler_params is not None: 
+        if lr_scheduler_params is not None:
             lr_scheduler = get_scheduler(optimizer=optimizer, **lr_scheduler_params)
 
         logger.info("Starting Fine-Tuning")
@@ -188,12 +199,19 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel, UCE):
                 batch_sentences, mask, idxs = batch[0], batch[1], batch[2]
                 batch_sentences = batch_sentences.permute(1, 0)
                 if self.config["multi_gpu"]:
-                    batch_sentences = self.model.module.pe_embedding(batch_sentences.long())
+                    batch_sentences = self.model.module.pe_embedding(
+                        batch_sentences.long()
+                    )
                 else:
                     batch_sentences = self.model.pe_embedding(batch_sentences.long())
-                batch_sentences = torch.nn.functional.normalize(batch_sentences, dim=2)  # normalize token outputs
+                batch_sentences = torch.nn.functional.normalize(
+                    batch_sentences, dim=2
+                )  # normalize token outputs
                 output = self._forward(batch_sentences, mask=mask)
-                labels = torch.tensor(train_labels[batch_count: batch_count + self.config["batch_size"]], device=self.device)
+                labels = torch.tensor(
+                    train_labels[batch_count : batch_count + self.config["batch_size"]],
+                    device=self.device,
+                )
                 batch_count += self.config["batch_size"]
                 loss = loss_function(output, labels)
                 loss.backward()
@@ -203,39 +221,54 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel, UCE):
                 optimizer.step()
                 optimizer.zero_grad()
 
-                training_loop.set_postfix({"loss": batch_loss/batches_processed})
+                training_loop.set_postfix({"loss": batch_loss / batches_processed})
                 training_loop.set_description(f"Fine-Tuning: epoch {j+1}/{epochs}")
 
             if lr_scheduler is not None:
                 lr_scheduler.step()
 
             if validation_input_data is not None:
-                testing_loop = tqdm(validation_dataloader, desc="Fine-Tuning Validation")
+                testing_loop = tqdm(
+                    validation_dataloader, desc="Fine-Tuning Validation"
+                )
                 val_loss = 0.0
                 count = 0.0
                 validation_batch_count = 0
                 for validation_data in testing_loop:
-                    batch_sentences, mask, idxs = validation_data[0], validation_data[1], validation_data[2]
+                    batch_sentences, mask, idxs = (
+                        validation_data[0],
+                        validation_data[1],
+                        validation_data[2],
+                    )
                     batch_sentences = batch_sentences.permute(1, 0)
                     if self.config["multi_gpu"]:
-                        batch_sentences = self.model.module.pe_embedding(batch_sentences.long())
+                        batch_sentences = self.model.module.pe_embedding(
+                            batch_sentences.long()
+                        )
                     else:
-                        batch_sentences = self.model.pe_embedding(batch_sentences.long())
-                    batch_sentences = torch.nn.functional.normalize(batch_sentences, dim=2)  # normalize token outputs
+                        batch_sentences = self.model.pe_embedding(
+                            batch_sentences.long()
+                        )
+                    batch_sentences = torch.nn.functional.normalize(
+                        batch_sentences, dim=2
+                    )  # normalize token outputs
                     output = self._forward(batch_sentences, mask=mask)
-                    val_labels = torch.tensor(validation_labels[validation_batch_count: validation_batch_count + self.config["batch_size"]], device=self.device)
+                    val_labels = torch.tensor(
+                        validation_labels[
+                            validation_batch_count : validation_batch_count
+                            + self.config["batch_size"]
+                        ],
+                        device=self.device,
+                    )
                     validation_batch_count += self.config["batch_size"]
                     val_loss += loss_function(output, val_labels).item()
                     count += 1.0
-                    testing_loop.set_postfix({"val_loss": val_loss/count})
+                    testing_loop.set_postfix({"val_loss": val_loss / count})
         logger.info(f"Fine-Tuning Complete. Epochs: {epochs}")
         self.model.eval()
         self.fine_tuning_head.eval()
 
-    def get_outputs(
-        self,
-        dataset: UCEDataset
-    ) -> np.ndarray:
+    def get_outputs(self, dataset: UCEDataset) -> np.ndarray:
         """
         Get the outputs of the fine-tuned model on a dataset.
 
@@ -243,7 +276,7 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel, UCE):
         ----------
         dataset : UCEDataset
             The dataset to get the outputs for. This is the dataset returned from the `process_data` method.
-        
+
         Returns
         -------
         np.ndarray
@@ -252,30 +285,37 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel, UCE):
         self.to(self.device)
 
         batch_size = self.config["batch_size"]
-        dataloader = DataLoader(dataset, 
-                                batch_size=batch_size, 
-                                shuffle=False,
-                                collate_fn=dataset.collator_fn,
-                                num_workers=0)
-        
+        dataloader = DataLoader(
+            dataset,
+            batch_size=batch_size,
+            shuffle=False,
+            collate_fn=dataset.collator_fn,
+            num_workers=0,
+        )
 
         if self.accelerator is not None:
             dataloader = self.accelerator.prepare(dataloader)
-        
+
         self.model.eval()
         self.fine_tuning_head.eval()
 
         testing_loop = tqdm(dataloader, desc="Fine-Tuning Validation")
         outputs = []
         for validation_data in testing_loop:
-            batch_sentences, mask, idxs = validation_data[0], validation_data[1], validation_data[2]
+            batch_sentences, mask, idxs = (
+                validation_data[0],
+                validation_data[1],
+                validation_data[2],
+            )
             batch_sentences = batch_sentences.permute(1, 0)
             if self.config["multi_gpu"]:
                 batch_sentences = self.model.module.pe_embedding(batch_sentences.long())
             else:
                 batch_sentences = self.model.pe_embedding(batch_sentences.long())
-            batch_sentences = torch.nn.functional.normalize(batch_sentences, dim=2)  # normalize token outputs
+            batch_sentences = torch.nn.functional.normalize(
+                batch_sentences, dim=2
+            )  # normalize token outputs
             output = self._forward(batch_sentences, mask=mask)
             outputs.append(output.detach().cpu().numpy())
-        
+
         return np.vstack(outputs)

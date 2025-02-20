@@ -1,5 +1,8 @@
 from typing import Literal, Optional
-from helical.models.base_models import HelicalBaseFineTuningHead, HelicalBaseFineTuningModel
+from helical.models.base_models import (
+    HelicalBaseFineTuningHead,
+    HelicalBaseFineTuningModel,
+)
 from helical.models.mamba2_mrna import Mamba2mRNA, Mamba2mRNAConfig
 from datasets import Dataset
 from transformers import get_scheduler
@@ -13,6 +16,7 @@ import numpy as np
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
     """Mamba2mRNAFineTuningModel
@@ -56,10 +60,15 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
     get_outputs(dataset)
         Returns the outputs of the model for the given dataset.
     """
-    def __init__(self,
-                 mamba2_mrna_config: Mamba2mRNAConfig, 
-                 fine_tuning_head: Literal["classification", "regression"] | HelicalBaseFineTuningHead, 
-                 output_size: Optional[int]=None):
+
+    def __init__(
+        self,
+        mamba2_mrna_config: Mamba2mRNAConfig,
+        fine_tuning_head: (
+            Literal["classification", "regression"] | HelicalBaseFineTuningHead
+        ),
+        output_size: Optional[int] = None,
+    ):
         HelicalBaseFineTuningModel.__init__(self, fine_tuning_head, output_size)
         Mamba2mRNA.__init__(self, mamba2_mrna_config)
 
@@ -67,7 +76,7 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
 
     def _forward(self, input_ids, special_tokens_mask, attention_mask):
         """Forward pass for the Mamba2-mRNA fine-tuning model.
-        
+
         Parameters
         ----------
         input_ids : torch.Tensor
@@ -76,53 +85,71 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
             The special_tokens_mask tensor for the model.
         attention_mask : torch.Tensor
             The attention_mask tensor for the model.
-        
+
         Returns
         -------
         torch.Tensor
             The output tensor from the model."""
-        outputs = self.model(input_ids, special_tokens_mask=special_tokens_mask, attention_mask=attention_mask)
+        outputs = self.model(
+            input_ids,
+            special_tokens_mask=special_tokens_mask,
+            attention_mask=attention_mask,
+        )
         last_hidden_states = outputs[0]
 
         if input_ids is not None:
             batch_size, _ = input_ids.shape[:2]
 
         if self.pretrained_config.pad_token_id is None and batch_size > 1:
-            raise ValueError("Cannot handle batch sizes > 1 if no padding token is defined.")
+            raise ValueError(
+                "Cannot handle batch sizes > 1 if no padding token is defined."
+            )
 
         if self.pretrained_config.pad_token_id is None:
             sequence_lengths = -1
         else:
             if input_ids is not None:
                 # if no pad token found, use modulo instead of reverse indexing for ONNX compatibility
-                sequence_lengths = torch.eq(input_ids, self.pretrained_config.pad_token_id).int().argmax(-1) - 1
+                sequence_lengths = (
+                    torch.eq(input_ids, self.pretrained_config.pad_token_id)
+                    .int()
+                    .argmax(-1)
+                    - 1
+                )
                 sequence_lengths = sequence_lengths % input_ids.shape[-1]
                 sequence_lengths = sequence_lengths.to(last_hidden_states.device)
             else:
                 sequence_lengths = -1
 
-        mask = torch.arange(last_hidden_states.size(1), device=last_hidden_states.device)[None, :] < sequence_lengths[:, None]
+        mask = (
+            torch.arange(last_hidden_states.size(1), device=last_hidden_states.device)[
+                None, :
+            ]
+            < sequence_lengths[:, None]
+        )
         masked_tensor = last_hidden_states * mask.unsqueeze(-1)
         sum_tensor = masked_tensor.sum(dim=1)
         mean_last_hidden_states = sum_tensor / sequence_lengths.unsqueeze(-1).float()
 
         head_outputs = self.fine_tuning_head(mean_last_hidden_states)
         return head_outputs
-    
-    def train(self,
-              train_dataset: Dataset, 
-              train_labels: np.ndarray,
-              optimizer: optim = optim.AdamW,
-              optimizer_params: dict = {'lr': 0.0001}, 
-              loss_function: loss = loss.CrossEntropyLoss(), 
-              epochs: int = 1,
-              trainable_layers: int = 2,
-              shuffle: bool = True,
-              validation_dataset: Optional[Dataset] = None,
-              validation_labels: Optional[np.ndarray] = None,
-              lr_scheduler_params: Optional[dict] = None):
+
+    def train(
+        self,
+        train_dataset: Dataset,
+        train_labels: np.ndarray,
+        optimizer: optim = optim.AdamW,
+        optimizer_params: dict = {"lr": 0.0001},
+        loss_function: loss = loss.CrossEntropyLoss(),
+        epochs: int = 1,
+        trainable_layers: int = 2,
+        shuffle: bool = True,
+        validation_dataset: Optional[Dataset] = None,
+        validation_labels: Optional[np.ndarray] = None,
+        lr_scheduler_params: Optional[dict] = None,
+    ):
         """Fine-tunes the Mamba2-mRNA model on the given dataset.
-        
+
         Parameters
         ----------
         train_dataset : Dataset
@@ -152,12 +179,18 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
         optimizer = optimizer(self.parameters(), **optimizer_params)
 
         # set labels for the dataset
-        train_dataset = self._add_data_column(train_dataset, "labels", np.array(train_labels))
+        train_dataset = self._add_data_column(
+            train_dataset, "labels", np.array(train_labels)
+        )
         if validation_labels is not None and validation_dataset is not None:
-            validation_dataset = self._add_data_column(validation_dataset, "labels", np.array(validation_labels))
-        
+            validation_dataset = self._add_data_column(
+                validation_dataset, "labels", np.array(validation_labels)
+            )
+
         if trainable_layers > 0:
-            logger.info(f"Unfreezing the last {trainable_layers} layers of the Mamba2_mRNA model.")
+            logger.info(
+                f"Unfreezing the last {trainable_layers} layers of the Mamba2_mRNA model."
+            )
 
             for param in self.model.parameters():
                 param.requires_grad = False
@@ -169,15 +202,28 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
         self.model.train()
         self.fine_tuning_head.train()
 
-        train_dataloader = DataLoader(train_dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"], shuffle=shuffle)
+        train_dataloader = DataLoader(
+            train_dataset,
+            collate_fn=self._collate_fn,
+            batch_size=self.config["batch_size"],
+            shuffle=shuffle,
+        )
 
         # initialise lr_scheduler
         lr_scheduler = None
-        if lr_scheduler_params is not None: 
-            lr_scheduler = get_scheduler(optimizer=optimizer, num_training_steps=epochs*len(train_dataloader),  **lr_scheduler_params)
+        if lr_scheduler_params is not None:
+            lr_scheduler = get_scheduler(
+                optimizer=optimizer,
+                num_training_steps=epochs * len(train_dataloader),
+                **lr_scheduler_params,
+            )
 
         if validation_dataset is not None:
-            validation_dataloader = DataLoader(validation_dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"])
+            validation_dataloader = DataLoader(
+                validation_dataset,
+                collate_fn=self._collate_fn,
+                batch_size=self.config["batch_size"],
+            )
 
         logger.info("Starting Fine-Tuning")
         for j in range(epochs):
@@ -186,11 +232,17 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
             batches_processed = 0
             for batch in training_loop:
                 input_ids = batch["input_ids"].to(self.config["device"])
-                special_tokens_mask = batch["special_tokens_mask"].to(self.config["device"])
+                special_tokens_mask = batch["special_tokens_mask"].to(
+                    self.config["device"]
+                )
                 attention_mask = batch["attention_mask"].to(self.config["device"])
-                labels = batch['labels'].to(self.config["device"])
-                
-                outputs = self._forward(input_ids, special_tokens_mask=special_tokens_mask, attention_mask=attention_mask)
+                labels = batch["labels"].to(self.config["device"])
+
+                outputs = self._forward(
+                    input_ids,
+                    special_tokens_mask=special_tokens_mask,
+                    attention_mask=attention_mask,
+                )
 
                 loss = loss_function(outputs, labels)
                 loss.backward()
@@ -198,7 +250,7 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
                 optimizer.zero_grad()
                 batch_loss += loss.item()
                 batches_processed += 1
-                training_loop.set_postfix({"loss": batch_loss/batches_processed})
+                training_loop.set_postfix({"loss": batch_loss / batches_processed})
                 training_loop.set_description(f"Fine-Tuning: epoch {j+1}/{epochs}")
 
                 del batch
@@ -210,25 +262,35 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
             del training_loop
 
             if validation_dataset is not None:
-                testing_loop = tqdm(validation_dataloader, desc="Fine-Tuning Validation")
+                testing_loop = tqdm(
+                    validation_dataloader, desc="Fine-Tuning Validation"
+                )
                 val_loss = 0.0
                 count = 0.0
                 for test_batch in testing_loop:
                     input_ids = test_batch["input_ids"].to(self.config["device"])
-                    special_tokens_mask = test_batch["special_tokens_mask"].to(self.config["device"])
-                    attention_mask = test_batch["attention_mask"].to(self.config["device"])
-                    labels = test_batch['labels'].to(self.config["device"])
-                
+                    special_tokens_mask = test_batch["special_tokens_mask"].to(
+                        self.config["device"]
+                    )
+                    attention_mask = test_batch["attention_mask"].to(
+                        self.config["device"]
+                    )
+                    labels = test_batch["labels"].to(self.config["device"])
+
                     with torch.no_grad():
-                        outputs = self._forward(input_ids, special_tokens_mask=special_tokens_mask, attention_mask=attention_mask)
+                        outputs = self._forward(
+                            input_ids,
+                            special_tokens_mask=special_tokens_mask,
+                            attention_mask=attention_mask,
+                        )
 
                     val_loss += loss_function(outputs, labels).item()
                     count += 1.0
-                    testing_loop.set_postfix({"val_loss": val_loss/count})
+                    testing_loop.set_postfix({"val_loss": val_loss / count})
 
                     del test_batch
                     del outputs
-                
+
                 del testing_loop
 
         logger.info(f"Fine-Tuning Complete. Epochs: {epochs}")
@@ -236,18 +298,23 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
     def get_outputs(self, dataset: Dataset) -> np.ndarray:
         """
         Returns the outputs of the model for the given dataset.
-        
+
         Parameters
         ----------
         dataset : Dataset
             The dataset object returned by the `process_data` function.
-            
+
         Returns
         ----------
         np.ndarray
             The outputs of the model for the given dataset.
         """
-        dataloader = DataLoader(dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"], shuffle=False)
+        dataloader = DataLoader(
+            dataset,
+            collate_fn=self._collate_fn,
+            batch_size=self.config["batch_size"],
+            shuffle=False,
+        )
         outputs = []
 
         self.model.to(self.config["device"])
@@ -259,7 +326,11 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
             attention_mask = batch["attention_mask"].to(self.config["device"])
 
             with torch.no_grad():
-                output = self._forward(input_ids, special_tokens_mask=special_tokens_mask, attention_mask=attention_mask)
+                output = self._forward(
+                    input_ids,
+                    special_tokens_mask=special_tokens_mask,
+                    attention_mask=attention_mask,
+                )
 
             outputs.append(output.cpu().numpy())
 
@@ -267,7 +338,6 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
             del output
 
         return np.concatenate(outputs)
-
 
     def _add_data_column(self, dataset, column_name, data):
         if len(data.shape) > 1:

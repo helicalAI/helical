@@ -3,6 +3,7 @@ import numpy as np
 import torch
 from helical.models.scgpt import logger
 
+
 def _digitize(x: np.ndarray, bins: np.ndarray, side="both") -> np.ndarray:
     """
     Digitize the data into bins. This method spreads data uniformly when bins

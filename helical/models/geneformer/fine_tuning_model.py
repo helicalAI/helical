@@ -1,10 +1,19 @@
 from typing import Literal, Optional
-from helical.models.base_models import HelicalBaseFineTuningHead, HelicalBaseFineTuningModel
+from helical.models.base_models import (
+    HelicalBaseFineTuningHead,
+    HelicalBaseFineTuningModel,
+)
 from helical.models.geneformer import Geneformer, GeneformerConfig
 import torch
 from torch import optim
 from torch.nn.modules import loss
-from helical.models.geneformer.geneformer_utils import gen_attention_mask, get_model_input_size, pad_tensor_list, _check_for_expected_special_tokens, mean_nonpadding_embs
+from helical.models.geneformer.geneformer_utils import (
+    gen_attention_mask,
+    get_model_input_size,
+    pad_tensor_list,
+    _check_for_expected_special_tokens,
+    mean_nonpadding_embs,
+)
 from datasets import Dataset
 import logging
 from tqdm import trange
@@ -13,9 +22,10 @@ from transformers import get_scheduler
 
 logger = logging.getLogger(__name__)
 
+
 class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
     """GeneformerFineTuningModel.
-    
+
     Fine-tuning model for the Geneformer model.
 
     Example
@@ -64,7 +74,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
     embeddings = geneformer_fine_tune.get_embeddings(dataset)
     print(embeddings[:10])
     ```
-    
+
     Parameters
     ----------
     geneformer_config : GeneformerConfig
@@ -81,17 +91,27 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
     get_outputs(dataset: Dataset, silent = False)
         Get outputs from the fine-tuned model on the given processed dataset.
     """
-    def __init__(self,
-                 geneformer_config: GeneformerConfig, 
-                 fine_tuning_head: Literal["classification", "regression"] | HelicalBaseFineTuningHead, 
-                 output_size: Optional[int]=None):
-        
+
+    def __init__(
+        self,
+        geneformer_config: GeneformerConfig,
+        fine_tuning_head: (
+            Literal["classification", "regression"] | HelicalBaseFineTuningHead
+        ),
+        output_size: Optional[int] = None,
+    ):
+
         HelicalBaseFineTuningModel.__init__(self, fine_tuning_head, output_size)
         Geneformer.__init__(self, geneformer_config)
 
         self.fine_tuning_head.set_dim_size(self.config["embsize"])
 
-    def _forward(self, input_ids: torch.tensor, attention_mask_minibatch: torch.tensor, original_lengths: torch.tensor) -> torch.tensor:
+    def _forward(
+        self,
+        input_ids: torch.tensor,
+        attention_mask_minibatch: torch.tensor,
+        original_lengths: torch.tensor,
+    ) -> torch.tensor:
         """
         Forward method of the fine-tuning model.
 
@@ -103,13 +123,15 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
             The attention mask for the input tensor.
         original_lengths: torch.tensor
             The original lengths of the inputs without padding
-        
+
         Returns
         -------
         torch.tensor
             The output tensor of the fine-tuning model.
         """
-        outputs = self.model(input_ids=input_ids, attention_mask=attention_mask_minibatch)
+        outputs = self.model(
+            input_ids=input_ids, attention_mask=attention_mask_minibatch
+        )
         batch_embeddings = outputs.hidden_states[-1]
 
         if self.emb_mode == "cls" and self.cls_present:
@@ -117,29 +139,32 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
         else:
             length = original_lengths
             if self.cls_present:
-                batch_embeddings = batch_embeddings[:, 1:, :]  # Get all layers except the cls embs
+                batch_embeddings = batch_embeddings[
+                    :, 1:, :
+                ]  # Get all layers except the cls embs
                 if self.eos_present:
-                    length -= 2 # length is used for the mean calculation, 2 is subtracted because we have taken both the cls and eos embeddings out
+                    length -= 2  # length is used for the mean calculation, 2 is subtracted because we have taken both the cls and eos embeddings out
                 else:
-                    length -= 1 # length is subtracted because just the cls is removed
+                    length -= 1  # length is subtracted because just the cls is removed
 
             batch_embeddings = mean_nonpadding_embs(batch_embeddings, length)
-            
+
         final = self.fine_tuning_head(batch_embeddings)
         return final
-    
+
     def train(
-            self,
-            train_dataset: Dataset, 
-            optimizer: optim = optim.AdamW,
-            optimizer_params: dict = {'lr': 0.0001}, 
-            loss_function: loss = loss.CrossEntropyLoss(), 
-            label: str = "cell_types", 
-            epochs: int = 1,
-            freeze_layers: int = 2,
-            validation_dataset: Optional[Dataset] = None,
-            lr_scheduler_params: Optional[dict] = None,
-            silent = False):
+        self,
+        train_dataset: Dataset,
+        optimizer: optim = optim.AdamW,
+        optimizer_params: dict = {"lr": 0.0001},
+        loss_function: loss = loss.CrossEntropyLoss(),
+        label: str = "cell_types",
+        epochs: int = 1,
+        freeze_layers: int = 2,
+        validation_dataset: Optional[Dataset] = None,
+        lr_scheduler_params: Optional[dict] = None,
+        silent=False,
+    ):
         """
         Fine-tunes the Geneformer model for classification tasks.
 
@@ -172,8 +197,8 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
             A helical-processed dataset used for per-epoch validation. If not specified, no validation will be performed.
 
         lr_scheduler_params : dict, optional, default=None
-            Parameters for the learning rate scheduler from the Transformers [`get_scheduler`](https://huggingface.co/docs/transformers/en/main_classes/optimizer_schedules#transformers.get_scheduler) method. The optimizer should not be included 
-            in this dictionary, as it will be inferred from the [`optimizer`](https://pytorch.org/docs/main/optim.html) parameter. If not specified, no learning rate scheduler 
+            Parameters for the learning rate scheduler from the Transformers [`get_scheduler`](https://huggingface.co/docs/transformers/en/main_classes/optimizer_schedules#transformers.get_scheduler) method. The optimizer should not be included
+            in this dictionary, as it will be inferred from the [`optimizer`](https://pytorch.org/docs/main/optim.html) parameter. If not specified, no learning rate scheduler
             will be used.
             Example:
                 lr_scheduler_params = {'name': 'linear', 'num_warmup_steps': 0, 'num_training_steps': 5}
@@ -181,19 +206,27 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
 
         model_input_size = get_model_input_size(self.model)
 
-        _check_for_expected_special_tokens(train_dataset, self.emb_mode, self.cls_present, self.eos_present, self.tk.gene_token_dict)
-        
+        _check_for_expected_special_tokens(
+            train_dataset,
+            self.emb_mode,
+            self.cls_present,
+            self.eos_present,
+            self.tk.gene_token_dict,
+        )
+
         total_batch_length = len(train_dataset)
-        #initialise optimizer
+        # initialise optimizer
         optimizer = optimizer(self.parameters(), **optimizer_params)
 
-        #initialise lr_scheduler
+        # initialise lr_scheduler
         lr_scheduler = None
-        if lr_scheduler_params is not None: 
+        if lr_scheduler_params is not None:
             lr_scheduler = get_scheduler(optimizer=optimizer, **lr_scheduler_params)
-        
+
         if freeze_layers > 0:
-            logger.info(f"Freezing the first {freeze_layers} encoder layers of the Geneformer model during fine-tuning.")
+            logger.info(
+                f"Freezing the first {freeze_layers} encoder layers of the Geneformer model during fine-tuning."
+            )
 
             frozen_layers = self.model.bert.encoder.layer[:freeze_layers]
 
@@ -209,7 +242,13 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
 
         logger.info("Starting Fine-Tuning")
         for j in range(epochs):
-            training_loop = trange(0, total_batch_length, self.config["batch_size"], desc="Fine-Tuning", leave=(not silent))
+            training_loop = trange(
+                0,
+                total_batch_length,
+                self.config["batch_size"],
+                desc="Fine-Tuning",
+                leave=(not silent),
+            )
             batch_loss = 0.0
             batches_processed = 0
             for i in training_loop:
@@ -217,19 +256,23 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
 
                 minibatch = train_dataset.select([i for i in range(i, max_range)])
                 max_len = int(max(minibatch["length"]))
-                minibatch.set_format(type="torch",device=self.device)
+                minibatch.set_format(type="torch", device=self.device)
 
                 input_data_minibatch = minibatch["input_ids"]
                 input_data_minibatch = pad_tensor_list(
                     input_data_minibatch, max_len, self.pad_token_id, model_input_size
                 ).to(self.device)
 
-                outputs = self._forward(input_ids=input_data_minibatch, attention_mask_minibatch=gen_attention_mask(minibatch), original_lengths=minibatch["length"])
+                outputs = self._forward(
+                    input_ids=input_data_minibatch,
+                    attention_mask_minibatch=gen_attention_mask(minibatch),
+                    original_lengths=minibatch["length"],
+                )
                 loss = loss_function(outputs, minibatch[label])
                 loss.backward()
                 batch_loss += loss.item()
                 batches_processed += 1
-                training_loop.set_postfix({"loss": batch_loss/batches_processed})
+                training_loop.set_postfix({"loss": batch_loss / batches_processed})
                 training_loop.set_description(f"Fine-Tuning: epoch {j+1}/{epochs}")
                 optimizer.step()
                 optimizer.zero_grad()
@@ -241,37 +284,50 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
                 lr_scheduler.step()
 
             if validation_dataset is not None:
-                testing_loop = trange(0, validation_batch_length, self.config["batch_size"], desc="Fine-Tuning Validation", leave=(not silent))
+                testing_loop = trange(
+                    0,
+                    validation_batch_length,
+                    self.config["batch_size"],
+                    desc="Fine-Tuning Validation",
+                    leave=(not silent),
+                )
                 val_loss = 0.0
                 count = 0.0
                 for i in testing_loop:
-                    max_range = min(i + self.config["batch_size"], validation_batch_length)
+                    max_range = min(
+                        i + self.config["batch_size"], validation_batch_length
+                    )
 
-                    minibatch = validation_dataset.select([i for i in range(i, max_range)])
+                    minibatch = validation_dataset.select(
+                        [i for i in range(i, max_range)]
+                    )
                     max_len = int(max(minibatch["length"]))
-                    minibatch.set_format(type="torch",device=self.device)
+                    minibatch.set_format(type="torch", device=self.device)
 
                     input_data_minibatch = minibatch["input_ids"]
                     input_data_minibatch = pad_tensor_list(
-                        input_data_minibatch, max_len, self.pad_token_id, model_input_size
+                        input_data_minibatch,
+                        max_len,
+                        self.pad_token_id,
+                        model_input_size,
                     ).to(self.device)
 
                     with torch.no_grad():
-                        outputs = self._forward(input_ids=input_data_minibatch, attention_mask_minibatch=gen_attention_mask(minibatch), original_lengths=minibatch["length"])
+                        outputs = self._forward(
+                            input_ids=input_data_minibatch,
+                            attention_mask_minibatch=gen_attention_mask(minibatch),
+                            original_lengths=minibatch["length"],
+                        )
                     val_loss += loss_function(outputs, minibatch[label]).item()
                     count += 1.0
-                    testing_loop.set_postfix({"val_loss": val_loss/count})
+                    testing_loop.set_postfix({"val_loss": val_loss / count})
 
                     del outputs
                     del minibatch
                     del input_data_minibatch
         logger.info(f"Fine-Tuning Complete. Epochs: {epochs}")
 
-    def get_outputs(
-        self,
-        dataset: Dataset,
-        silent = False
-    ):
+    def get_outputs(self, dataset: Dataset, silent=False):
         """Predicts the labels for a dataset using the fine-tuned model.
 
         Parameters
@@ -289,16 +345,28 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
 
         dataset_length = len(dataset)
 
-        _check_for_expected_special_tokens(dataset, self.emb_mode, self.cls_present, self.eos_present, self.tk.gene_token_dict)
-        
+        _check_for_expected_special_tokens(
+            dataset,
+            self.emb_mode,
+            self.cls_present,
+            self.eos_present,
+            self.tk.gene_token_dict,
+        )
+
         output = []
-        testing_loop = trange(0, dataset_length, self.config["batch_size"], desc="Generating Outputs", leave=(not silent))
+        testing_loop = trange(
+            0,
+            dataset_length,
+            self.config["batch_size"],
+            desc="Generating Outputs",
+            leave=(not silent),
+        )
         for i in testing_loop:
             max_range = min(i + self.config["batch_size"], dataset_length)
 
             minibatch = dataset.select([i for i in range(i, max_range)])
             max_len = int(max(minibatch["length"]))
-            minibatch.set_format(type="torch",device=self.device)
+            minibatch.set_format(type="torch", device=self.device)
 
             input_data_minibatch = minibatch["input_ids"]
             input_data_minibatch = pad_tensor_list(
@@ -306,7 +374,11 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
             ).to(self.device)
 
             with torch.no_grad():
-                outputs = self._forward(input_ids=input_data_minibatch, attention_mask_minibatch=gen_attention_mask(minibatch), original_lengths=minibatch["length"])
+                outputs = self._forward(
+                    input_ids=input_data_minibatch,
+                    attention_mask_minibatch=gen_attention_mask(minibatch),
+                    original_lengths=minibatch["length"],
+                )
                 output.append(outputs.clone().detach())
             del outputs
             del minibatch
