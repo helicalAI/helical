@@ -2,25 +2,25 @@ import pickle as pkl
 import requests
 import json
 import pickle as pkl
+
 # imports
 import logging
 import torch
 from tqdm.auto import trange
 import re
 import torch
-from transformers import (
-    BertForMaskedLM
-)
+from transformers import BertForMaskedLM
 import pandas as pd
 import numpy as np
 
 
 logger = logging.getLogger(__name__)
 
+
 def load_mappings(gene_symbols):
     server = "https://rest.ensembl.org"
     ext = "/lookup/symbol/homo_sapiens"
-    headers={ "Content-Type" : "application/json", "Accept" : "application/json"}
+    headers = {"Content-Type": "application/json", "Accept": "application/json"}
 
     # r = requests.post(server+ext, headers=headers, data='{ "symbols" : ["BRCA2", "BRAF" ] }')
 
@@ -28,16 +28,24 @@ def load_mappings(gene_symbols):
 
     for i in range(0, len(gene_symbols), 1000):
         # print(i+1000,"/",len(test.var['gene_symbols']))
-        symbols = {'symbols':gene_symbols[i:i+1000].tolist()}
-        r = requests.post(server+ext, headers=headers, data=json.dumps(symbols))
+        symbols = {"symbols": gene_symbols[i : i + 1000].tolist()}
+        r = requests.post(server + ext, headers=headers, data=json.dumps(symbols))
         decoded = r.json()
         gene_id_to_ensemble.update(decoded)
         # print(repr(decoded))
 
-    pkl.dump(gene_id_to_ensemble, open('./human_gene_to_ensemble_id.pkl', 'wb'))
+    pkl.dump(gene_id_to_ensemble, open("./human_gene_to_ensemble_id.pkl", "wb"))
     return gene_id_to_ensemble
 
-def _compute_embeddings_depending_on_mode(embeddings: torch.tensor, data_dict: dict, emb_mode: str, cls_present: bool, eos_present: bool, token_to_ensembl_dict: dict):
+
+def _compute_embeddings_depending_on_mode(
+    embeddings: torch.tensor,
+    data_dict: dict,
+    emb_mode: str,
+    cls_present: bool,
+    eos_present: bool,
+    token_to_ensembl_dict: dict,
+):
     """
     Compute the different embeddings for each emb_mode
 
@@ -57,14 +65,14 @@ def _compute_embeddings_depending_on_mode(embeddings: torch.tensor, data_dict: d
         The token to ensemble dictionary from the .
     """
     if emb_mode == "cell":
-        length = data_dict['length']
+        length = data_dict["length"]
         if cls_present:
             embeddings = embeddings[:, 1:, :]  # Get all layers except the cls embs
             if eos_present:
-                length -= 2 # length is used for the mean calculation, 2 is subtracted because we have taken both the cls and eos embeddings out
+                length -= 2  # length is used for the mean calculation, 2 is subtracted because we have taken both the cls and eos embeddings out
             else:
-                length -= 1 # length is subtracted because just the cls is removed
-        
+                length -= 1  # length is subtracted because just the cls is removed
+
         batch_embeddings = mean_nonpadding_embs(embeddings, length).cpu().numpy()
 
     elif emb_mode == "gene":
@@ -87,10 +95,13 @@ def _compute_embeddings_depending_on_mode(embeddings: torch.tensor, data_dict: d
 
     elif emb_mode == "cls":
         batch_embeddings = embeddings[:, 0, :].cpu().numpy()  # CLS token layer
-    
+
     return batch_embeddings
 
-def _check_for_expected_special_tokens(dataset, emb_mode, cls_present, eos_present, gene_token_dict):
+
+def _check_for_expected_special_tokens(
+    dataset, emb_mode, cls_present, eos_present, gene_token_dict
+):
     """
     Check for the expected special tokens in the dataset.
 
@@ -112,17 +123,22 @@ def _check_for_expected_special_tokens(dataset, emb_mode, cls_present, eos_prese
         if not cls_present:
             logger.error(message)
             raise ValueError(message)
-        
+
         if dataset["input_ids"][0][0] != gene_token_dict["<cls>"]:
             message = "First token is not <cls> token value"
             logger.error(message)
             raise ValueError(message)
-        
+
     elif emb_mode == "cell":
         if cls_present:
-            logger.warning("CLS token present in token dictionary, excluding from average.")
+            logger.warning(
+                "CLS token present in token dictionary, excluding from average."
+            )
         if eos_present:
-            logger.warning("EOS token present in token dictionary, excluding from average.")
+            logger.warning(
+                "EOS token present in token dictionary, excluding from average."
+            )
+
 
 # extract embeddings
 def get_embs(
@@ -138,13 +154,14 @@ def get_embs(
     eos_present,
     device,
     silent=False,
-    
 ):
     model_input_size = get_model_input_size(model)
     total_batch_length = len(filtered_input_data)
     embs_list = []
 
-    _check_for_expected_special_tokens(filtered_input_data, emb_mode, cls_present, eos_present, gene_token_dict)
+    _check_for_expected_special_tokens(
+        filtered_input_data, emb_mode, cls_present, eos_present, gene_token_dict
+    )
 
     overall_max_len = 0
     for i in trange(0, total_batch_length, forward_batch_size, leave=(not silent)):
@@ -153,7 +170,7 @@ def get_embs(
         minibatch = filtered_input_data.select([i for i in range(i, max_range)])
 
         max_len = int(max(minibatch["length"]))
-        minibatch.set_format(type="torch",device=device)
+        minibatch.set_format(type="torch", device=device)
 
         input_data_minibatch = minibatch["input_ids"]
         input_data_minibatch = pad_tensor_list(
@@ -169,7 +186,16 @@ def get_embs(
 
         embs_i = outputs.hidden_states[layer_to_quant]
 
-        embs_list.extend(_compute_embeddings_depending_on_mode(embs_i, minibatch, emb_mode, cls_present, eos_present, token_to_ensembl_dict))
+        embs_list.extend(
+            _compute_embeddings_depending_on_mode(
+                embs_i,
+                minibatch,
+                emb_mode,
+                cls_present,
+                eos_present,
+                token_to_ensembl_dict,
+            )
+        )
 
         overall_max_len = max(overall_max_len, max_len)
         del outputs
@@ -183,6 +209,7 @@ def get_embs(
 
     return embs_list
 
+
 def downsample_and_sort(data, max_ncells):
     num_cells = len(data)
     # if max number of cells is defined, then shuffle and subsample to this max number
@@ -195,6 +222,7 @@ def downsample_and_sort(data, max_ncells):
     data_sorted = data_subset.sort("length", reverse=True)
     return data_sorted
 
+
 def quant_layers(model):
     layer_nums = []
     for name, parameter in model.named_parameters():
@@ -206,6 +234,7 @@ def quant_layers(model):
 def get_model_input_size(model):
     return int(re.split("\(|,", str(model.bert.embeddings.position_embeddings))[1])
 
+
 def load_model(model_type, model_directory, device):
     if model_type == "Pretrained":
         model = BertForMaskedLM.from_pretrained(
@@ -216,12 +245,14 @@ def load_model(model_type, model_directory, device):
     model = model.to(device)
     return model
 
+
 def pad_tensor(tensor, pad_token_id, max_len):
     tensor = torch.nn.functional.pad(
         tensor, pad=(0, max_len - tensor.numel()), mode="constant", value=pad_token_id
     )
 
     return tensor
+
 
 def pad_3d_tensor(tensor, pad_token_id, max_len, dim):
     if dim == 0:
@@ -234,6 +265,7 @@ def pad_3d_tensor(tensor, pad_token_id, max_len, dim):
         tensor, pad=pad, mode="constant", value=pad_token_id
     )
     return tensor
+
 
 # pad list of tensors and convert to tensor
 def pad_tensor_list(
@@ -277,9 +309,11 @@ def gen_attention_mask(minibatch_encoding, max_len=None):
         max_len = max(minibatch_encoding["length"])
     original_lens = minibatch_encoding["length"]
     attention_mask = [
-        [1] * original_len + [0] * (max_len - original_len)
-        if original_len <= max_len
-        else [1] * max_len
+        (
+            [1] * original_len + [0] * (max_len - original_len)
+            if original_len <= max_len
+            else [1] * max_len
+        )
         for original_len in original_lens
     ]
     return torch.tensor(attention_mask, device=minibatch_encoding["length"].device)

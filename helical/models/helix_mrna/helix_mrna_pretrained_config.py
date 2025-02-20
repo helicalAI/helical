@@ -42,7 +42,7 @@ class HelixmRNAPretrainedConfig(PretrainedConfig):
             `inputs_ids` passed when calling [`HelixmRNAModel`].
         hidden_size (`int`, *optional*, defaults to 4096):
             Dimensionality of the embeddings and hidden states.
-        state_size (`int`, *optional*, defaults to 128): 
+        state_size (`int`, *optional*, defaults to 128):
             Shape of the state space latents.
         num_hidden_layers (`int`, *optional*, defaults to 64):
             Number of hidden layers in the model.
@@ -58,9 +58,9 @@ class HelixmRNAPretrainedConfig(PretrainedConfig):
             The id of the beginning of sentence token in the vocabulary.
         eos_token_id (`int`, *optional*, defaults to 2):
             The id of the end of sentence token in the vocabulary.
-        expand (`int`, *optional*, defaults to 2): 
+        expand (`int`, *optional*, defaults to 2):
             Expanding factor used to determine the intermediate size.
-        conv_kernel (`int`, *optional*, defaults to 4): 
+        conv_kernel (`int`, *optional*, defaults to 4):
             Size of the convolution kernel.
         n_groups (`int`, *optional*, defaults to 8):
             Number of groups for the evolution matrices of the Mamba2 block.
@@ -157,7 +157,6 @@ class HelixmRNAPretrainedConfig(PretrainedConfig):
         self.num_key_value_heads = num_key_value_heads
         self.attention_dropout = attention_dropout
 
-
         self.bos_token_id = bos_token_id
         self.eos_token_id = eos_token_id
         self.pad_token_id = pad_token_id
@@ -165,7 +164,11 @@ class HelixmRNAPretrainedConfig(PretrainedConfig):
         self.use_conv_bias = use_conv_bias
         self.hidden_act = hidden_act
         self.initializer_range = initializer_range
-        self.time_step_rank = math.ceil(self.hidden_size / 16) if time_step_rank == "auto" else time_step_rank
+        self.time_step_rank = (
+            math.ceil(self.hidden_size / 16)
+            if time_step_rank == "auto"
+            else time_step_rank
+        )
         self.time_step_min = time_step_min
         self.time_step_max = time_step_max
         self.time_step_floor = time_step_floor

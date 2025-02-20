@@ -8,6 +8,7 @@ import logging
 
 LOGGER = logging.getLogger(__name__)
 
+
 def load_pretrained(
     model: torch.nn.Module,
     pretrained_params: Mapping[str, torch.Tensor],
@@ -100,7 +101,11 @@ def load_model(model_configs: scGPTConfig):
         pre_norm=False,
     )
 
-    load_pretrained(model, torch.load(model_configs["model_path"], map_location = model_configs["device"]), verbose = False)
+    load_pretrained(
+        model,
+        torch.load(model_configs["model_path"], map_location=model_configs["device"]),
+        verbose=False,
+    )
     model.to(model_configs["device"])
     model.eval()
     return model, vocab

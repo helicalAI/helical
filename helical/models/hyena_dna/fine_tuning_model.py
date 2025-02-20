@@ -1,5 +1,8 @@
 from typing import Literal, Optional
-from helical.models.base_models import HelicalBaseFineTuningHead, HelicalBaseFineTuningModel
+from helical.models.base_models import (
+    HelicalBaseFineTuningHead,
+    HelicalBaseFineTuningModel,
+)
 from helical.models.hyena_dna import HyenaDNA, HyenaDNAConfig
 from torch import optim
 import torch
@@ -12,6 +15,7 @@ import logging
 import numpy as np
 
 logger = logging.getLogger(__name__)
+
 
 class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
     """HyenaDNA fine-tuning model.
@@ -37,10 +41,10 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
     hyena_dna_fine_tune.train(train_dataset=train_dataset, train_labels=labels)
 
     outputs = hyena_dna_fine_tune.get_outputs(train_dataset)
-    
+
     print(outputs.shape)
     ```
-    
+
     Parameters
     ----------
     hyena_config : HyenaDNAConfig
@@ -49,7 +53,7 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
         The fine-tuning head that is appended to the model. This can either be a string (options available: "classification", "regression") specifying the task or a custom fine-tuning head inheriting from HelicalBaseFineTuningHead.
     output_size : Optional[int], default=None
         The output size of the fine-tuning head. This is required if a predefined head is selected.
-    
+
     Methods
     -------
     train(train_dataset: HyenaDNADataset, train_labels: list[int], validation_dataset: HyenaDNADataset = None, validation_labels: list[int] = None, optimizer: torch.optim, optimizer_params: dict, loss_function: torch.nn.modules.loss, epochs: int, lr_scheduler_params: dict = None)
@@ -57,11 +61,13 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
     get_outputs(input_data: HyenaDNADataset) -> np.ndarray
         Get the outputs of the fine-tuned model.
     """
+
     def __init__(
-            self, 
-            hyena_config: HyenaDNAConfig, 
-            fine_tuning_head: Literal["classification"]|HelicalBaseFineTuningHead, 
-            output_size: Optional[int]=None):
+        self,
+        hyena_config: HyenaDNAConfig,
+        fine_tuning_head: Literal["classification"] | HelicalBaseFineTuningHead,
+        output_size: Optional[int] = None,
+    ):
         HelicalBaseFineTuningModel.__init__(self, fine_tuning_head, output_size)
         HyenaDNA.__init__(self, hyena_config)
 
@@ -73,19 +79,20 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
         x = self.fine_tuning_head(x)
         return x
 
-    def train(        
+    def train(
         self,
         train_dataset: Dataset,
-        train_labels: list[int],     
+        train_labels: list[int],
         validation_dataset: Dataset = None,
         validation_labels: list[int] = None,
         optimizer: optim = optim.AdamW,
-        optimizer_params: dict = {'lr': 0.0001}, 
-        loss_function: loss = loss.CrossEntropyLoss(), 
+        optimizer_params: dict = {"lr": 0.0001},
+        loss_function: loss = loss.CrossEntropyLoss(),
         epochs: int = 1,
         lr_scheduler_params: Optional[dict] = None,
-        shuffle: bool = True):
-        """Fine-tunes the Hyena-DNA model with different head modules. 
+        shuffle: bool = True,
+    ):
+        """Fine-tunes the Hyena-DNA model with different head modules.
 
         Parameters
         ----------
@@ -113,11 +120,22 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
             Whether to shuffle the training data or not.
         """
         train_dataset = self._add_data_column(train_dataset, np.array(train_labels))
-        train_dataloader = DataLoader(train_dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"], shuffle=shuffle)
-     
+        train_dataloader = DataLoader(
+            train_dataset,
+            collate_fn=self._collate_fn,
+            batch_size=self.config["batch_size"],
+            shuffle=shuffle,
+        )
+
         if validation_dataset is not None and validation_labels is not None:
-            validation_dataset = self._add_data_column(validation_dataset, np.array(validation_labels))
-            validation_dataloader = DataLoader(validation_dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"])
+            validation_dataset = self._add_data_column(
+                validation_dataset, np.array(validation_labels)
+            )
+            validation_dataloader = DataLoader(
+                validation_dataset,
+                collate_fn=self._collate_fn,
+                batch_size=self.config["batch_size"],
+            )
 
         self.to(self.config["device"])
         self.model.train()
@@ -125,8 +143,12 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
         optimizer = optimizer(self.parameters(), **optimizer_params)
 
         lr_scheduler = None
-        if lr_scheduler_params is not None: 
-            lr_scheduler = get_scheduler(optimizer=optimizer, num_training_steps=epochs*len(train_dataloader),  **lr_scheduler_params)
+        if lr_scheduler_params is not None:
+            lr_scheduler = get_scheduler(
+                optimizer=optimizer,
+                num_training_steps=epochs * len(train_dataloader),
+                **lr_scheduler_params,
+            )
 
         logger.info("Starting Fine-Tuning")
         for i in range(epochs):
@@ -143,10 +165,10 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
                 loss.backward()
                 batches_processed += 1
                 optimizer.step()
-                
-                training_loop.set_postfix({"loss": batch_loss/batches_processed})
+
+                training_loop.set_postfix({"loss": batch_loss / batches_processed})
                 training_loop.set_description(f"Fine-Tuning: epoch {i+1}/{epochs}")
-            
+
                 if lr_scheduler is not None:
                     lr_scheduler.step()
 
@@ -154,21 +176,23 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
                 with torch.no_grad():
                     validation_batches_processed = 0
                     val_loss = 0.0
-                    validation_loop = tqdm(validation_dataloader, desc="Fine-Tuning Validation")
+                    validation_loop = tqdm(
+                        validation_dataloader, desc="Fine-Tuning Validation"
+                    )
                     for batch in validation_loop:
                         input_data = batch["input_ids"].to(self.config["device"])
                         val_labels = batch["labels"].to(self.config["device"])
                         output = self._forward(input_data)
                         validation_batches_processed += 1
                         val_loss += loss_function(output, val_labels).item()
-                        validation_loop.set_postfix({"val_loss": val_loss/validation_batches_processed})
+                        validation_loop.set_postfix(
+                            {"val_loss": val_loss / validation_batches_processed}
+                        )
         logger.info(f"Fine-Tuning Complete. Epochs: {epochs}")
-            
-    def get_outputs(
-            self, 
-            dataset: Dataset) -> np.ndarray:
+
+    def get_outputs(self, dataset: Dataset) -> np.ndarray:
         """Get the outputs of the fine-tuned model.
-        
+
         Parameters
         ----------
         dataset : HyenaDNADataset
@@ -179,7 +203,9 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
         np.ndarray
             The outputs of the model
         """
-        data_loader = DataLoader(dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"])
+        data_loader = DataLoader(
+            dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"]
+        )
 
         self.to(self.config["device"])
         self.model.eval()
@@ -191,13 +217,15 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
             input_data = batch["input_ids"].to(self.config["device"])
             output = self._forward(input_data)
             outputs.append(output.detach().cpu().numpy())
-        
+
         return np.vstack(outputs)
-    
-    def _add_data_column(self, dataset: Dataset, data: list, column_name: str="labels") -> Dataset:
+
+    def _add_data_column(
+        self, dataset: Dataset, data: list, column_name: str = "labels"
+    ) -> Dataset:
         """
         Add a column to the dataset.
-        
+
         Parameters
         ----------
         dataset : Dataset

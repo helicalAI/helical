@@ -3,6 +3,7 @@ from typing import Dict, List, Mapping, Optional, Tuple
 import torch
 from .binning import binning
 
+
 @dataclass
 class DataCollator:
     """

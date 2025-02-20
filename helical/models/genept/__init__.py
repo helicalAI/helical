@@ -1,1 +1,1 @@
-from .model import GenePT,GenePTConfig
+from .model import GenePT, GenePTConfig
