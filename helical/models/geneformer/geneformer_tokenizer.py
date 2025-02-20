@@ -20,22 +20,22 @@ Geneformer tokenizer.
 
 **Description:**
 
-| Input data is a directory with .h5ad files containing raw counts from single cell RNAseq data, including all genes detected in the transcriptome without feature selection. 
+| Input data is a directory with .h5ad files containing raw counts from single cell RNAseq data, including all genes detected in the transcriptome without feature selection.
   The input file type is specified by the argument file_format in the tokenize_data function.
 
-| Genes should be labeled with Ensembl IDs, which provide a unique identifer for conversion to tokens. Other forms of gene annotations (e.g. gene names) can be converted to Ensembl IDs via Ensembl Biomart. 
+| Genes should be labeled with Ensembl IDs, which provide a unique identifer for conversion to tokens. Other forms of gene annotations (e.g. gene names) can be converted to Ensembl IDs via Ensembl Biomart.
   Cells should be labeled with the total read count in the cell to be used for normalization.
 
-| No cell metadata is required, but custom cell attributes may be passed onto the tokenized dataset by providing a dictionary of custom attributes to be added. 
-  For example, if the original .h5ad dataset has column attributes "cell_type" and "organ_major" and one would like to retain these attributes as labels in the tokenized dataset with the new names "cell_type" and "organ", respectively, 
+| No cell metadata is required, but custom cell attributes may be passed onto the tokenized dataset by providing a dictionary of custom attributes to be added.
+  For example, if the original .h5ad dataset has column attributes "cell_type" and "organ_major" and one would like to retain these attributes as labels in the tokenized dataset with the new names "cell_type" and "organ", respectively,
   the following custom attribute dictionary should be provided: {"cell_type": "cell_type", "organ_major": "organ"}.
 
-| Additionally, if the original .h5ad file contains a cell column attribute called "filter_pass", this column will be used as a binary indicator of whether to include these cells in the tokenized data. 
+| Additionally, if the original .h5ad file contains a cell column attribute called "filter_pass", this column will be used as a binary indicator of whether to include these cells in the tokenized data.
   All cells with "1" in this attribute will be tokenized, whereas the others will be excluded. One may use this column to indicate QC filtering or other criteria for selection for inclusion in the final tokenized dataset.
 
 | If one's data is in other formats besides .h5ad, one can use the relevant tools (such as Anndata tools) to convert the file to a .h5ad format prior to running the transcriptome tokenizer.
 
-| OF NOTE: Take care that the correct token dictionary and gene median file is used for the correct model. 
+| OF NOTE: Take care that the correct token dictionary and gene median file is used for the correct model.
 
 | OF NOTE: For 95M model series, special_token should be True and model_input_size should be 4096. For 30M model series, special_token should be False and model_input_size should be 2048.
 
@@ -122,7 +122,8 @@ def sum_ensembl_ids(
                 raise ValueError("Error: data Ensembl IDs non-unique.")
 
         gene_ids_collapsed = [
-            gene_mapping_dict.get(str(gene_id).upper()) for gene_id in data.var.ensembl_id
+            gene_mapping_dict.get(str(gene_id).upper())
+            for gene_id in data.var.ensembl_id
         ]
         gene_ids_collapsed_in_dict = [
             gene for gene in gene_ids_collapsed if gene in gene_token_dict.keys()
@@ -187,7 +188,11 @@ def sum_ensembl_ids(
 
 DEFAULT_GENE_MEDIAN_FILE = Path(__file__).parent / "v1" / "gene_median_dictionary.pkl"
 DEFAULT_TOKEN_DICTIONARY_FILE = Path(__file__).parent / "v1" / "token_dictionary.pkl"
-DEFAULT_ENSEMBL_MAPPING_FILE = Path(__file__).parent / "v1" / "ensembl_mapping_dictionary.pkl"
+DEFAULT_ENSEMBL_MAPPING_FILE = (
+    Path(__file__).parent / "v1" / "ensembl_mapping_dictionary.pkl"
+)
+
+
 class TranscriptomeTokenizer:
     def __init__(
         self,
@@ -203,9 +208,9 @@ class TranscriptomeTokenizer:
     ):
         """
         Initialize tokenizer.
-        
+
         **Parameters:**
-        
+
         custom_attr_name_dict : None, dict
             | Dictionary of custom attributes to be added to the dataset.
             | Keys are the names of the attributes in the h5ad file.
@@ -293,11 +298,12 @@ class TranscriptomeTokenizer:
         }
 
         # Maps a token back to the Ensembl ID
-        self.token_to_ensembl_dict = {value: key for key, value in self.gene_token_dict.items()}
+        self.token_to_ensembl_dict = {
+            value: key for key, value in self.gene_token_dict.items()
+        }
 
         # protein-coding and miRNA gene list dictionary for selecting .h5ad columns for tokenization
         self.genelist_dict = dict(zip(self.gene_keys, [True] * len(self.gene_keys)))
-
 
     def tokenize_data(
         self,
@@ -309,9 +315,9 @@ class TranscriptomeTokenizer:
     ):
         """
         Tokenize anndata files in data_directory and save as tokenized .dataset in output_directory.
-        
+
         **Parameters:**
-        
+
         data_directory : Path
             | Path to directory containing anndata files
         output_directory : Path
@@ -335,10 +341,7 @@ class TranscriptomeTokenizer:
         output_path = (Path(output_directory) / output_prefix).with_suffix(".dataset")
         tokenized_dataset.save_to_disk(str(output_path))
 
-
-    def tokenize_files(
-        self, data_directory, file_format: Literal["h5ad"] = "h5ad"
-    ):
+    def tokenize_files(self, data_directory, file_format: Literal["h5ad"] = "h5ad"):
         """
         Tokenizes anndata files in a specified directory and returns the tokenized cells and their metadata.
 
@@ -352,7 +355,7 @@ class TranscriptomeTokenizer:
 
         if file_format not in ["h5ad"]:
             raise ValueError(
-            f"Unsupported file format {file_format}. Currently, only h5ad is supported."
+                f"Unsupported file format {file_format}. Currently, only h5ad is supported."
             )
 
         tokenized_cells = []
@@ -441,12 +444,12 @@ class TranscriptomeTokenizer:
             filter_pass_loc = np.array([i for i in range(adata.shape[0])])
 
         tokenized_cells = []
-        
+
         for i in range(0, len(filter_pass_loc), self.chunk_size):
             idx = filter_pass_loc[i : i + self.chunk_size]
 
             # Check if 'n_counts' exists in adata.obs
-            if 'n_counts' in adata.obs.columns:
+            if "n_counts" in adata.obs.columns:
                 n_counts = adata[idx].obs["n_counts"].values[:, None]
             else:
                 # If 'n_counts' doesn't exist, calculate it as the sum of counts for each cell
@@ -475,8 +478,6 @@ class TranscriptomeTokenizer:
                 file_cell_metadata = None
 
         return tokenized_cells, file_cell_metadata
-    
-
 
     def create_dataset(
         self,

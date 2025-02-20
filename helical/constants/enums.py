@@ -1,10 +1,12 @@
 from enum import Enum
 
+
 class LoggingType(str, Enum):
-    FILE='FILE'
-    CONSOLE='CONSOLE'
-    FILE_AND_CONSOLE='FILE_AND_CONSOLE'
-    NOTSET='NOTSET'
+    FILE = "FILE"
+    CONSOLE = "CONSOLE"
+    FILE_AND_CONSOLE = "FILE_AND_CONSOLE"
+    NOTSET = "NOTSET"
+
 
 class LoggingLevel(str, Enum):
     CRITICAL = "CRITICAL"

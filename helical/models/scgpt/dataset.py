@@ -5,6 +5,7 @@ import torch
 
 PathLike = Union[str, os.PathLike]
 
+
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, count_matrix, gene_ids, vocab, model_configs, batch_ids=None):
         self.count_matrix = count_matrix

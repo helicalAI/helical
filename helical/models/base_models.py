@@ -7,22 +7,26 @@ from typing import List, Protocol, runtime_checkable
 from datasets import Dataset
 from numpy import ndarray
 import torch
-from helical.models.fine_tune.fine_tuning_heads import ClassificationHead, RegressionHead, HelicalBaseFineTuningHead
+from helical.models.fine_tune.fine_tuning_heads import (
+    ClassificationHead,
+    RegressionHead,
+    HelicalBaseFineTuningHead,
+)
 from typing import Literal
 from typing import Union
 from pandas import DataFrame
 
 LOGGER = logging.getLogger(__name__)
 
+
 @runtime_checkable
 class BaseModelProtocol(Protocol):
-    def process_data(self, x: AnnData) -> Dataset:
-        ...
-    def get_embeddings(self, dataset: Dataset) -> ndarray:
-        ...
-        
+    def process_data(self, x: AnnData) -> Dataset: ...
+    def get_embeddings(self, dataset: Dataset) -> ndarray: ...
+
+
 class HelicalBaseFoundationModel(ABC, Logger):
-    """Helical Base Foundation Model Class which serves as the base class for all foundation models in the helical package. 
+    """Helical Base Foundation Model Class which serves as the base class for all foundation models in the helical package.
     Each new model should be a subclass of this class.
 
     Parameters
@@ -37,8 +41,8 @@ class HelicalBaseFoundationModel(ABC, Logger):
     None
 
     """
-    
-    def __init__(self, logging_type = LoggingType.CONSOLE, level = LoggingLevel.INFO):
+
+    def __init__(self, logging_type=LoggingType.CONSOLE, level=LoggingLevel.INFO):
 
         super().__init__(logging_type, level)
 
@@ -50,10 +54,13 @@ class HelicalBaseFoundationModel(ABC, Logger):
     def get_embeddings():
         pass
 
+
 class HelicalRNAModel(HelicalBaseFoundationModel):
-    def ensure_rna_data_validity(self, adata: AnnData, gene_names: str, use_raw_counts: bool = True) -> None:
-        """Ensures that the data contains the gene_names and has integer counts for adata.X which is saved 
-        in 'total_counts'.  
+    def ensure_rna_data_validity(
+        self, adata: AnnData, gene_names: str, use_raw_counts: bool = True
+    ) -> None:
+        """Ensures that the data contains the gene_names and has integer counts for adata.X which is saved
+        in 'total_counts'.
 
         Parameters
         ----------
@@ -69,33 +76,35 @@ class HelicalRNAModel(HelicalBaseFoundationModel):
         KeyError
             If the data is missing column names.
         """
-        
+
         if gene_names == "index":
-    
+
             # as the gene_names is "index" by default, check that the data is strings
             if not all(isinstance(item, str) for item in adata.var.index):
                 message = "The data in the index must only contain strings."
                 LOGGER.error(message)
                 raise ValueError(message)
-    
+
             adata.var["index"] = adata.var.index
-        
+
         # verify gene col name is present in adata.var
         if not gene_names in adata.var:
             message = f"Data must have the provided key '{gene_names}' in its 'var' section to be processed by the Helical RNA model."
             LOGGER.error(message)
             raise KeyError(message)
-    
+
         # verify that the data in X are integers
         adata.obs["total_counts"] = adata.X.sum(axis=1)
-        if use_raw_counts and not (adata.obs["total_counts"] % 1  == 0).all():
+        if use_raw_counts and not (adata.obs["total_counts"] % 1 == 0).all():
             message = "The data in X must be integers."
             LOGGER.error(message)
             raise ValueError(message)
-        
-    def get_valid_rna_sequence(self, sequences: Union[list[str], DataFrame]) -> list[str]:
+
+    def get_valid_rna_sequence(
+        self, sequences: Union[list[str], DataFrame]
+    ) -> list[str]:
         """
-        Returns valid RNA sequences that only contain the characters A, C, U, G, N and E.  
+        Returns valid RNA sequences that only contain the characters A, C, U, G, N and E.
 
         Parameters
         ----------
@@ -112,7 +121,7 @@ class HelicalRNAModel(HelicalBaseFoundationModel):
         List[str]
             Valid RNA sequences.
         """
-        
+
         if isinstance(sequences, DataFrame):
             if "Sequence" not in sequences.columns:
                 message = "The DataFrame must have a column named 'Sequence'."
@@ -120,21 +129,26 @@ class HelicalRNAModel(HelicalBaseFoundationModel):
                 raise KeyError(message)
             sequences = sequences["Sequence"].tolist()
 
-        valid_chars = set('ACUGNE')
-    
+        valid_chars = set("ACUGNE")
+
         for sequence in sequences:
             if not set(sequence.upper()).issubset(valid_chars):
                 invalid_chars = set(sequence.upper()) - valid_chars
-                message = f"Invalid RNA sequence: found invalid characters {invalid_chars}"
+                message = (
+                    f"Invalid RNA sequence: found invalid characters {invalid_chars}"
+                )
                 LOGGER.error(message)
                 raise ValueError(message)
-        
+
         return sequences
-        
+
+
 class HelicalDNAModel(HelicalBaseFoundationModel):
-    def get_valid_dna_sequence(self, sequences: Union[list[str], DataFrame]) -> list[str]:
+    def get_valid_dna_sequence(
+        self, sequences: Union[list[str], DataFrame]
+    ) -> list[str]:
         """
-        Returns valid DNA sequences that only contain the characters A, C, T, G, N.  
+        Returns valid DNA sequences that only contain the characters A, C, T, G, N.
 
         Parameters
         ----------
@@ -145,38 +159,41 @@ class HelicalDNAModel(HelicalBaseFoundationModel):
         ------
         ValueError
             If the sequences contain characters other than A, C, T, G, N and E.
-        
+
         Returns
         -------
         List[str]
             Valid DNA sequences.
         """
-                
+
         if isinstance(sequences, DataFrame):
             if "Sequence" not in sequences.columns:
                 message = "The DataFrame must have a column named 'Sequence'."
                 LOGGER.error(message)
                 raise KeyError(message)
-            
+
             sequences = sequences["Sequence"].tolist()
 
-        valid_chars = set('ACTGN')
-    
+        valid_chars = set("ACTGN")
+
         for sequence in sequences:
             if not set(sequence.upper()).issubset(valid_chars):
                 invalid_chars = set(sequence.upper()) - valid_chars
-                message = f"Invalid DNA sequence: found invalid characters {invalid_chars}"
+                message = (
+                    f"Invalid DNA sequence: found invalid characters {invalid_chars}"
+                )
                 LOGGER.error(message)
                 raise ValueError(message)
-            
+
         return sequences
+
 
 class BaseTaskModel(ABC):
     """
     Helical Base Task Model which serves as the base class for all models trained for a specific task (such as classification).
     Each new model for a specific task should be a subclass of this class.
     """
-    
+
     def __init__():
         pass
 
@@ -200,6 +217,7 @@ class BaseTaskModel(ABC):
     def load():
         pass
 
+
 class HelicalBaseFineTuningModel(torch.nn.Module):
     """Helical Base Fine-Tuning Model Class which serves as the base class for all fine-tuning models in the helical package.
     Each new fine-tuning model should be a subclass of this class.
@@ -213,12 +231,21 @@ class HelicalBaseFineTuningModel(torch.nn.Module):
         The output size of the fine-tuning model. This is required if the fine_tuning_head is a string specified task. For a classification task this is number of unique classes.
 
     """
-    def __init__(self, fine_tuning_head: Literal["classification", "regression"] | HelicalBaseFineTuningHead, output_size: int):
+
+    def __init__(
+        self,
+        fine_tuning_head: (
+            Literal["classification", "regression"] | HelicalBaseFineTuningHead
+        ),
+        output_size: int,
+    ):
         super().__init__()
         if isinstance(fine_tuning_head, str):
             if fine_tuning_head == "classification":
                 if output_size is None:
-                    message = "The output_size must be specified for a classification head."
+                    message = (
+                        "The output_size must be specified for a classification head."
+                    )
                     LOGGER.error(message)
                     raise ValueError(message)
                 fine_tuning_head = ClassificationHead(output_size)
@@ -232,12 +259,14 @@ class HelicalBaseFineTuningModel(torch.nn.Module):
                 message = "Not implemented fine-tuning head."
                 LOGGER.error(message)
                 raise NotImplementedError(message)
-            
+
         elif not isinstance(fine_tuning_head, HelicalBaseFineTuningHead):
-            message = "The fine_tuning_head must be a valid 'HelicalBaseFineTuningHead'."
+            message = (
+                "The fine_tuning_head must be a valid 'HelicalBaseFineTuningHead'."
+            )
             LOGGER.error(message)
             raise ValueError(message)
-        
+
         self.fine_tuning_head = fine_tuning_head
 
     @abstractmethod

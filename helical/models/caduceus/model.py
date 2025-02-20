@@ -17,6 +17,7 @@ LOGGER = logging.getLogger(__name__)
 # default configuration if not specified
 configurer = CaduceusConfig()
 
+
 class Caduceus(HelicalDNAModel):
     """Caduceus model.
 
@@ -29,7 +30,7 @@ class Caduceus(HelicalDNAModel):
 
     caduceus_config = CaduceusConfig(model_name="caduceus-ph-4L-seqlen-1k-d118", batch_size=5)
     caduceus = Caduceus(configurer = caduceus_config)
-    
+
     sequence = ['ACTG' * int(1024/4)]
     processed_data = caduceus.process_data(sequence)
 
@@ -48,6 +49,7 @@ class Caduceus(HelicalDNAModel):
     The link to the paper can be found [here](https://arxiv.org/abs/2403.03234).
     We make use of the implementation from the [Caduceus](https://github.com/kuleshov-group/caduceus) repository.
     """
+
     def __init__(self, configurer: CaduceusConfig = configurer):
         super().__init__()
 
@@ -55,23 +57,27 @@ class Caduceus(HelicalDNAModel):
             message = "Caduceus requires a CUDA device to run and CUDA is not available"
             LOGGER.error(message)
             raise RuntimeError(message)
-            
+
         self.configurer = configurer
         self.config = configurer.config
         self.files_config = configurer.files_config
-        self.device = self.config['device']
+        self.device = self.config["device"]
 
         downloader = Downloader()
         for file in self.configurer.list_of_files_to_download:
             downloader.download_via_name(file)
 
-        self.pretrained_config = CaduceusPretrainedConfig.from_pretrained(self.files_config['model_files_dir'])
-        self.model =  CaduceusModel.from_pretrained(self.files_config['model_files_dir'], config=self.pretrained_config)
-        
+        self.pretrained_config = CaduceusPretrainedConfig.from_pretrained(
+            self.files_config["model_files_dir"]
+        )
+        self.model = CaduceusModel.from_pretrained(
+            self.files_config["model_files_dir"], config=self.pretrained_config
+        )
+
         self.model.eval()
 
-        self.tokenizer = CaduceusTokenizer(model_max_length=self.config['input_size'])
-        
+        self.tokenizer = CaduceusTokenizer(model_max_length=self.config["input_size"])
+
         LOGGER.info("Caduceus model initialized")
 
     def _collate_fn(self, batch):
@@ -82,24 +88,40 @@ class Caduceus(HelicalDNAModel):
 
         if "labels" in batch[0]:
             batch_dict["labels"] = torch.tensor([item["labels"] for item in batch])
-            
+
         return batch_dict
-    
+
     def _pool_hidden_states(self, hidden_states, sequence_length_dim=1):
         """Pools hidden states along sequence length dimension."""
-        if self.config["pooling_strategy"] == "mean":  # Mean pooling along sequence length dimension
+        if (
+            self.config["pooling_strategy"] == "mean"
+        ):  # Mean pooling along sequence length dimension
             return hidden_states.mean(dim=sequence_length_dim)
-        if self.config["pooling_strategy"] == "max":  # Max pooling along sequence length dimension
+        if (
+            self.config["pooling_strategy"] == "max"
+        ):  # Max pooling along sequence length dimension
             return hidden_states.max(dim=sequence_length_dim).values
-        if self.config["pooling_strategy"] == "last":  # Use embedding of last token in the sequence
-            return hidden_states.moveaxis(hidden_states, sequence_length_dim, 0)[-1, ...]
-        if self.config["pooling_strategy"] == "first":  # Use embedding of first token in the sequence
+        if (
+            self.config["pooling_strategy"] == "last"
+        ):  # Use embedding of last token in the sequence
+            return hidden_states.moveaxis(hidden_states, sequence_length_dim, 0)[
+                -1, ...
+            ]
+        if (
+            self.config["pooling_strategy"] == "first"
+        ):  # Use embedding of first token in the sequence
             return hidden_states.moveaxis(hidden_states, sequence_length_dim, 0)[0, ...]
 
-    def process_data(self, sequences: Union[List[str], DataFrame], return_tensors: str="pt", padding: str="max_length", truncation: bool=True) -> Dataset:
+    def process_data(
+        self,
+        sequences: Union[List[str], DataFrame],
+        return_tensors: str = "pt",
+        padding: str = "max_length",
+        truncation: bool = True,
+    ) -> Dataset:
         """Process the input DNA sequences.
 
-        Parameters 
+        Parameters
         ----------
         sequences : list[str] or DataFrame
             The input DNA sequences to be processed. If a DataFrame is provided, it should have a column named 'Sequence'.
@@ -119,12 +141,18 @@ class Caduceus(HelicalDNAModel):
         LOGGER.info("Processing data for Caduceus.")
         sequences = self.get_valid_dna_sequence(sequences)
 
-        max_length = min(len(max(sequences, key=len)), self.config['input_size'])+1
-        
+        max_length = min(len(max(sequences, key=len)), self.config["input_size"]) + 1
+
         # tokenized_sequences = []
         # for seq in sequences:
-        tokenized_sequences = self.tokenizer(sequences, return_tensors=return_tensors, padding=padding, truncation=truncation, max_length=max_length)
-            # tokenized_sequences.append(tokenized_seq)
+        tokenized_sequences = self.tokenizer(
+            sequences,
+            return_tensors=return_tensors,
+            padding=padding,
+            truncation=truncation,
+            max_length=max_length,
+        )
+        # tokenized_sequences.append(tokenized_seq)
 
         dataset = Dataset.from_dict(tokenized_sequences)
         LOGGER.info("Successfully processed the data for Caduceus.")
@@ -141,19 +169,27 @@ class Caduceus(HelicalDNAModel):
         Returns
         ----------
         np.ndarray
-            The embeddings for the tokenized sequence in the form of a numpy array. 
+            The embeddings for the tokenized sequence in the form of a numpy array.
             NOTE: This method returns the embeddings using the pooling strategy specified in the config.
         """
         LOGGER.info("Started getting embeddings:")
-        dataloader = DataLoader(dataset, collate_fn=self._collate_fn, batch_size=self.config['batch_size'], shuffle=False, num_workers=self.config['nproc'])
-    
+        dataloader = DataLoader(
+            dataset,
+            collate_fn=self._collate_fn,
+            batch_size=self.config["batch_size"],
+            shuffle=False,
+            num_workers=self.config["nproc"],
+        )
+
         embeddings = []
         self.model.to(self.device)
         self.model.eval()
         for batch in dataloader:
             with torch.no_grad():
-                outputs = self.model(input_ids=batch['input_ids'].to(self.device))
-                embeddings.append(self._pool_hidden_states(outputs.last_hidden_state).cpu().numpy())
+                outputs = self.model(input_ids=batch["input_ids"].to(self.device))
+                embeddings.append(
+                    self._pool_hidden_states(outputs.last_hidden_state).cpu().numpy()
+                )
 
                 del batch
                 del outputs

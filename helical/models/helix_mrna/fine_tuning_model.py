@@ -1,5 +1,8 @@
 from typing import Literal, Optional
-from helical.models.base_models import HelicalBaseFineTuningHead, HelicalBaseFineTuningModel
+from helical.models.base_models import (
+    HelicalBaseFineTuningHead,
+    HelicalBaseFineTuningModel,
+)
 from helical.models.helix_mrna.model import HelixmRNA, HelixmRNAConfig
 from datasets import Dataset
 from transformers import get_scheduler
@@ -13,6 +16,7 @@ import numpy as np
 import logging
 
 LOGGER = logging.getLogger(__name__)
+
 
 class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
     """HelixmRNAFineTuningModel
@@ -56,22 +60,24 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
     get_outputs(dataset)
         Returns the outputs of the model for the given dataset.
     """
-    def __init__(self,
-                 helix_mrna_config: HelixmRNAConfig, 
-                 fine_tuning_head: Literal["classification", "regression"] | HelicalBaseFineTuningHead, 
-                 output_size: Optional[int]=None):
+
+    def __init__(
+        self,
+        helix_mrna_config: HelixmRNAConfig,
+        fine_tuning_head: (
+            Literal["classification", "regression"] | HelicalBaseFineTuningHead
+        ),
+        output_size: Optional[int] = None,
+    ):
         HelicalBaseFineTuningModel.__init__(self, fine_tuning_head, output_size)
         HelixmRNA.__init__(self, helix_mrna_config)
 
-        self.fine_tuning_head.set_dim_size(self.pretrained_config.hidden_size*2)
+        self.fine_tuning_head.set_dim_size(self.pretrained_config.hidden_size * 2)
 
-    def _forward(self, 
-                 input_ids, 
-                 special_tokens_mask=None):
+    def _forward(self, input_ids, special_tokens_mask=None):
 
         transformer_outputs = self.model(
-            input_ids=input_ids,
-            attention_mask=1-special_tokens_mask
+            input_ids=input_ids, attention_mask=1 - special_tokens_mask
         )
 
         hidden_states = transformer_outputs[0]
@@ -79,16 +85,30 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
         batch_size = input_ids.shape[0]
 
         ## We Average the hidden states to get the pooled output
-        sequence_lengths = torch.eq(input_ids, self.pretrained_config.pad_token_id).int().argmax(-1) - 1
-        sequence_beginnings = (~torch.eq(input_ids, self.pretrained_config.pad_token_id)).int().argmax(-1).to(hidden_states.device)
-        sequence_lengths = sequence_lengths % input_ids.shape[-1]-1
+        sequence_lengths = (
+            torch.eq(input_ids, self.pretrained_config.pad_token_id).int().argmax(-1)
+            - 1
+        )
+        sequence_beginnings = (
+            (~torch.eq(input_ids, self.pretrained_config.pad_token_id))
+            .int()
+            .argmax(-1)
+            .to(hidden_states.device)
+        )
+        sequence_lengths = sequence_lengths % input_ids.shape[-1] - 1
         sequence_lengths = sequence_lengths.to(hidden_states.device)
         # print(sequence_lengths)
         # print(input_ids)
-        mask = sequence_beginnings[:, None] < torch.arange(hidden_states.size(1), device=hidden_states.device)[None, :] #< sequence_lengths[:, None]
+        mask = (
+            sequence_beginnings[:, None]
+            < torch.arange(hidden_states.size(1), device=hidden_states.device)[None, :]
+        )  # < sequence_lengths[:, None]
         masked_tensor = hidden_states * mask.unsqueeze(-1)
         sum_tensor = masked_tensor.sum(dim=1)
-        mean_states = sum_tensor / (sequence_lengths.unsqueeze(-1).float()-sequence_beginnings.unsqueeze(-1).float())
+        mean_states = sum_tensor / (
+            sequence_lengths.unsqueeze(-1).float()
+            - sequence_beginnings.unsqueeze(-1).float()
+        )
 
         selected_last_hidden_states = hidden_states[
             torch.arange(batch_size, device=hidden_states.device), sequence_lengths
@@ -99,20 +119,22 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
         logits = self.fine_tuning_head(hidden_states)
 
         return logits
-    
-    def train(self,
-              train_dataset: Dataset, 
-              train_labels: np.ndarray,
-              optimizer: optim = optim.AdamW,
-              optimizer_params: dict = {'lr': 0.0001}, 
-              loss_function: loss = loss.CrossEntropyLoss(), 
-              epochs: int = 1,
-              trainable_layers: int = 2,
-              validation_dataset: Optional[Dataset] = None,
-              validation_labels: Optional[np.ndarray] = None,
-              lr_scheduler_params: Optional[dict] = None):
+
+    def train(
+        self,
+        train_dataset: Dataset,
+        train_labels: np.ndarray,
+        optimizer: optim = optim.AdamW,
+        optimizer_params: dict = {"lr": 0.0001},
+        loss_function: loss = loss.CrossEntropyLoss(),
+        epochs: int = 1,
+        trainable_layers: int = 2,
+        validation_dataset: Optional[Dataset] = None,
+        validation_labels: Optional[np.ndarray] = None,
+        lr_scheduler_params: Optional[dict] = None,
+    ):
         """Fine-tunes the Helix-mRNA model on the given dataset.
-        
+
         Parameters
         ----------
         train_dataset : Dataset
@@ -143,12 +165,18 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
         optimizer = optimizer(self.parameters(), **optimizer_params)
 
         # set labels for the dataset
-        train_dataset = self._add_data_column(train_dataset, "labels", np.array(train_labels))
+        train_dataset = self._add_data_column(
+            train_dataset, "labels", np.array(train_labels)
+        )
         if validation_labels is not None and validation_dataset is not None:
-            validation_dataset = self._add_data_column(validation_dataset, "labels", np.array(validation_labels))
+            validation_dataset = self._add_data_column(
+                validation_dataset, "labels", np.array(validation_labels)
+            )
 
         if trainable_layers > 0:
-            LOGGER.info(f"Unfreezing the last {trainable_layers} layers of the Helix_mRNA model.")
+            LOGGER.info(
+                f"Unfreezing the last {trainable_layers} layers of the Helix_mRNA model."
+            )
 
             for param in self.model.parameters():
                 param.requires_grad = False
@@ -160,14 +188,26 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
         self.model.train()
         self.fine_tuning_head.train()
 
-        train_dataloader = DataLoader(train_dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"])
+        train_dataloader = DataLoader(
+            train_dataset,
+            collate_fn=self._collate_fn,
+            batch_size=self.config["batch_size"],
+        )
 
         lr_scheduler = None
-        if lr_scheduler_params is not None: 
-            lr_scheduler = get_scheduler(optimizer=optimizer, num_training_steps=epochs*len(train_dataloader),  **lr_scheduler_params)
+        if lr_scheduler_params is not None:
+            lr_scheduler = get_scheduler(
+                optimizer=optimizer,
+                num_training_steps=epochs * len(train_dataloader),
+                **lr_scheduler_params,
+            )
 
         if validation_dataset is not None:
-            validation_dataloader = DataLoader(validation_dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"])
+            validation_dataloader = DataLoader(
+                validation_dataset,
+                collate_fn=self._collate_fn,
+                batch_size=self.config["batch_size"],
+            )
 
         LOGGER.info("Starting Fine-Tuning")
         for j in range(epochs):
@@ -176,9 +216,13 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
             batches_processed = 0
             for batch in training_loop:
                 input_ids = batch["input_ids"].to(self.config["device"])
-                special_tokens_mask = batch["special_tokens_mask"].to(self.config["device"])
-                labels = batch['labels'].to(self.config["device"])
-                outputs = self._forward(input_ids=input_ids, special_tokens_mask=special_tokens_mask)
+                special_tokens_mask = batch["special_tokens_mask"].to(
+                    self.config["device"]
+                )
+                labels = batch["labels"].to(self.config["device"])
+                outputs = self._forward(
+                    input_ids=input_ids, special_tokens_mask=special_tokens_mask
+                )
 
                 loss = loss_function(outputs, labels)
                 loss.backward()
@@ -186,7 +230,7 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
                 optimizer.zero_grad()
                 batch_loss += loss.item()
                 batches_processed += 1
-                training_loop.set_postfix({"loss": batch_loss/batches_processed})
+                training_loop.set_postfix({"loss": batch_loss / batches_processed})
                 training_loop.set_description(f"Fine-Tuning: epoch {j+1}/{epochs}")
 
                 del batch
@@ -198,24 +242,30 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
             del training_loop
 
             if validation_dataset is not None:
-                testing_loop = tqdm(validation_dataloader, desc="Fine-Tuning Validation")
+                testing_loop = tqdm(
+                    validation_dataloader, desc="Fine-Tuning Validation"
+                )
                 val_loss = 0.0
                 count = 0.0
                 for test_batch in testing_loop:
                     input_ids = test_batch["input_ids"].to(self.config["device"])
-                    special_tokens_mask = test_batch["special_tokens_mask"].to(self.config["device"])
-                    labels = test_batch['labels'].to(self.config["device"])
-                
+                    special_tokens_mask = test_batch["special_tokens_mask"].to(
+                        self.config["device"]
+                    )
+                    labels = test_batch["labels"].to(self.config["device"])
+
                     with torch.no_grad():
-                        outputs = self._forward(input_ids=input_ids, special_tokens_mask=special_tokens_mask)
+                        outputs = self._forward(
+                            input_ids=input_ids, special_tokens_mask=special_tokens_mask
+                        )
 
                     val_loss += loss_function(outputs, labels).item()
                     count += 1.0
-                    testing_loop.set_postfix({"val_loss": val_loss/count})
+                    testing_loop.set_postfix({"val_loss": val_loss / count})
 
                     del test_batch
                     del outputs
-                
+
                 del testing_loop
 
         LOGGER.info(f"Fine-Tuning Complete. Epochs: {epochs}")
@@ -223,18 +273,23 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
     def get_outputs(self, dataset: Dataset) -> np.ndarray:
         """
         Returns the outputs of the model for the given dataset.
-        
+
         Parameters
         ----------
         dataset : Dataset
             The dataset object returned by the `process_data` function.
-        
+
         Returns
         ----------
         np.ndarray
             The outputs of the model for the given dataset
         """
-        dataloader = DataLoader(dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"], shuffle=False)
+        dataloader = DataLoader(
+            dataset,
+            collate_fn=self._collate_fn,
+            batch_size=self.config["batch_size"],
+            shuffle=False,
+        )
         outputs = []
 
         self.model.to(self.config["device"])
@@ -245,7 +300,9 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
             special_tokens_mask = batch["special_tokens_mask"].to(self.config["device"])
 
             with torch.no_grad():
-                output = self._forward(input_ids, special_tokens_mask=special_tokens_mask)
+                output = self._forward(
+                    input_ids, special_tokens_mask=special_tokens_mask
+                )
 
             outputs.append(output.cpu().numpy())
 
@@ -261,4 +318,3 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
         else:  # If 1D
             dataset = dataset.add_column(column_name, data)
         return dataset
-
