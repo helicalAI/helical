@@ -18,7 +18,7 @@ class Evo2Config:
         # model specific parameters
         self.model_map = {
             "evo2-7b-8k": {
-                "model_name": "evo2-7b",
+                "model_name": "evo2-8k",
                 "model_hf_name": "arcinstitute/evo2_7b",
                 "default_embedding_layer": "blocks.31.mlp.l3",
                 "vocab_size": 512,
