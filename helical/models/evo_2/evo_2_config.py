@@ -13,12 +13,12 @@ class Evo2Config:
     """
 
     def __init__(
-        self, model_name: Literal["evo2-7b-8k",] = "evo2-7b-8k", batch_size: int = 1
+        self, model_name: Literal["evo2-7b",] = "evo2-7b", batch_size: int = 1
     ):
         # model specific parameters
         self.model_map = {
             "evo2-7b-8k": {
-                "model_name": "evo2-7b-8k-2T-v2",
+                "model_name": "evo2-7b",
                 "model_hf_name": "arcinstitute/evo2_7b",
                 "default_embedding_layer": "blocks.31.mlp.l3",
                 "vocab_size": 512,

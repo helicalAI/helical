@@ -100,7 +100,7 @@ def test_evo2(test_forward_pass, evo2_model):
     eps = 1e-3  # epsilon for float comparison
     expected_metrics = {
         # "evo2_40b": {"loss": 0.2159424, "acc": 91.673},
-        "evo2-7b-8k-2T-v2": {"loss": 0.3476563, "acc": 86.346},
+        "evo2-7b": {"loss": 0.3476563, "acc": 86.346},
         # "evo2_40b_base": {"loss": 0.2149658, "acc": 91.741},
         # "evo2_7b_base": {"loss": 0.3520508, "acc": 85.921},
         # "evo2_1b_base": {"loss": 0.501953125, "acc": 79.556},
