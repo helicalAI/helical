@@ -23,7 +23,7 @@ RUN git clone --recurse-submodules https://github.com/ArcInstitute/evo2.git
 RUN cd evo2 && pip install .
 
 ##Overwriting the torch version from Vortex to make it work.
-RUN pip install torchvision torch=2.6.0
+RUN pip install torchvision torch==2.6.0
 RUN cd ../
 RUN git clone https://github.com/helicalAI/helical.git && cd helical && git checkout evo-2
 # RUN cd helical/examples/run_models
