@@ -1,21 +1,23 @@
 import pytest
 
-pytestmark = pytest.mark.skip(
-    reason="Skipping this test file for now as the install is too comeplex for the test script currently. Run this test locally before pushing to the repo."
-)
-
 import csv
 from typing import List, Union
 import numpy as np
 import torch
 import torch.nn.functional as F
 
-from helical.models.evo_2 import Evo2, Evo2Config
+try:
+    from helical.models.evo_2 import Evo2, Evo2Config
+
+    evo2_unavailable = False  # only run tests if able to import the package
+except:
+    evo2_unavailable = True
 
 torch.manual_seed(1)
 torch.cuda.manual_seed(1)
 
 
+@pytest.mark.skipif(evo2_unavailable, reason="No Evo 2 module present")
 @pytest.fixture
 def read_prompts() -> Union[List[List[str]]]:
     """Read prompts from input file."""
@@ -30,6 +32,7 @@ def read_prompts() -> Union[List[List[str]]]:
     return promptseqs
 
 
+@pytest.mark.skipif(evo2_unavailable, reason="No Evo 2 module present")
 @pytest.fixture
 def evo2_model():
     """Initialize Evo2 model."""
@@ -38,6 +41,7 @@ def evo2_model():
     return model
 
 
+@pytest.mark.skipif(evo2_unavailable, reason="No Evo 2 module present")
 @pytest.fixture
 def test_forward_pass(evo2_model, read_prompts):
     """Test model forward pass accuracy on sequences."""
@@ -83,6 +87,7 @@ def test_forward_pass(evo2_model, read_prompts):
     return accuracies, losses
 
 
+@pytest.mark.skipif(evo2_unavailable, reason="No Evo 2 module present")
 def test_evo2(test_forward_pass, evo2_model):
     """
     Test sequence prediction accuracy using Evo2 models.
