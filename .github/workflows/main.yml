@@ -142,6 +142,7 @@ jobs:
       # because jobs may not be run in the same order, we need to install the dependencies again
       - name: Install helical
         run: |
+            pip install biopython==1.85
             pip install .[mamba-ssm]
         
       - name: Reduce datasets to speedup checks
