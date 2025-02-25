@@ -28,6 +28,7 @@ results*
 
 # Log
 debug.log
+*debug.log
 
 # Mac Files
 *.DS_Store

@@ -145,7 +145,7 @@ class HelicalRNAModel(HelicalBaseFoundationModel):
 
 class HelicalDNAModel(HelicalBaseFoundationModel):
     def get_valid_dna_sequence(
-        self, sequences: Union[list[str], DataFrame]
+        self, sequences: Union[list[str], DataFrame], enforce_characters: bool = True
     ) -> list[str]:
         """
         Returns valid DNA sequences that only contain the characters A, C, T, G, N.
@@ -174,16 +174,15 @@ class HelicalDNAModel(HelicalBaseFoundationModel):
 
             sequences = sequences["Sequence"].tolist()
 
-        valid_chars = set("ACTGN")
+        if enforce_characters:
+            valid_chars = set("ACTGN")
 
-        for sequence in sequences:
-            if not set(sequence.upper()).issubset(valid_chars):
-                invalid_chars = set(sequence.upper()) - valid_chars
-                message = (
-                    f"Invalid DNA sequence: found invalid characters {invalid_chars}"
-                )
-                LOGGER.error(message)
-                raise ValueError(message)
+            for sequence in sequences:
+                if not set(sequence.upper()).issubset(valid_chars):
+                    invalid_chars = set(sequence.upper()) - valid_chars
+                    message = f"Invalid DNA sequence: found invalid characters {invalid_chars}"
+                    LOGGER.error(message)
+                    raise ValueError(message)
 
         return sequences
 

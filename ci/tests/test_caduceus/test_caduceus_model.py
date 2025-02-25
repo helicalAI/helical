@@ -7,7 +7,7 @@ try:
 
     caduceus_unavailable = False  # only run tests if able to import the package
 except:
-    skip = True
+    caduceus_unavailable = True
 
 
 @pytest.mark.skipif(caduceus_unavailable, reason="No Caduceus module present")

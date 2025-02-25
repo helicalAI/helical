@@ -29,8 +29,8 @@ dependencies = [
     'gitpython==3.1.43',
     'torch==2.5.1',
     'torchvision==0.20.1',
-    'accelerate==0.29.3',
-    'transformers==4.48.0',
+    'accelerate==1.4.0',
+    'transformers==4.49.0',
     'loompy==3.0.7',
     'scib==1.1.5',
     'scikit-misc==0.3.1',
@@ -45,10 +45,16 @@ dependencies = [
     'datasets==2.20.0',
 ]
 
+
 [project.optional-dependencies]
 mamba-ssm = [
     'mamba-ssm==2.2.4',
     'causal-conv1d==1.5.0.post8',
+]
+
+evo-2 = [
+    'biopython==1.85',
+    'transformer-engine[pytorch]',
 ]
 
 [tool.hatch.metadata]
