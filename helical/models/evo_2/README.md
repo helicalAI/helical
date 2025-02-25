@@ -3,7 +3,9 @@
 ## Model Details
 
 **Model Name:** Evo 2  
+
 **Model Versions:** 1B, 7B and 40B  (Currently only the 1B and 7B models are available and the 40B coming soon)
+
 **Model Description:** Evo 2 is a next-generation genomic model that integrates DNA, RNA, and protein data across all domains of life. It leverages the StripedHyena 2 architecture, combining convolutional, linear attention, and state-space models to efficiently process long sequences and capture complex biological patterns. Evo 2 is trained on a vast dataset encompassing trillions of nucleotides from eukaryotic and prokaryotic genomes, enabling broad cross-species applications and insights into human diseases, agriculture, and environmental science.
 
 ## Model Developers
@@ -25,7 +27,9 @@
 **Contact Information:** 
 
 [Patrick D. Hsu](mailto:patrick@arcinstitute.org)
+
 [Brian L. Hie (Stanford Email)](mailto:brianhie@stanford.edu)
+
 [Brian L. Hie (Arc Institute Email)](mailto:brian.hie@arcinstitute.org)
 
 **License:** 
@@ -107,7 +111,7 @@ export CUDNN_PATH=$CONDA_PREFIX/lib/python3.11/site-packages/nvidia/cudnn
 export CPLUS_INCLUDE_PATH=$CONDA_PREFIX/lib/python3.11/site-packages/nvidia/nvtx/include
 
 pip install torch==2.6.0
-pip install git+https://github.com/helicalAI/helical.git@evo-2[evo-2]
+pip install git+https://github.com/helicalAI/helical.git[evo-2]
 
 git clone git@github.com:Zymrael/vortex.git
 cd vortex
