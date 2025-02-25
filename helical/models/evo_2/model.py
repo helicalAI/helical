@@ -32,7 +32,7 @@ class Evo2(HelicalDNAModel):
     Example
     -------
     ```python
-    from helical import Evo2, Evo2Config
+    from helical.models.evo_2 import Evo2, Evo2Config
 
     evo2_config = Evo2Config(batch_size=1)
 
@@ -107,6 +107,8 @@ class Evo2(HelicalDNAModel):
         ----------
         dataset : Evo2Dataset
             The dataset object.
+        embedding_layer : str
+            The layer to extract embeddings from. If None, the default embedding layer is used, which is the last layer.
 
         Returns
         -------
@@ -168,7 +170,7 @@ class Evo2(HelicalDNAModel):
 
         return batch_dict
 
-    def forward(
+    def _forward(
         self,
         input_ids: torch.Tensor,
         return_embeddings: bool = False,
@@ -224,7 +226,7 @@ class Evo2(HelicalDNAModel):
                 handle.remove()
 
     def __call__(self, input_ids, return_embeddings=False, layer_names=None):
-        return self.forward(input_ids, return_embeddings, layer_names)
+        return self._forward(input_ids, return_embeddings, layer_names)
 
     def score_sequences(
         self,
@@ -234,6 +236,27 @@ class Evo2(HelicalDNAModel):
         reduce_method: str = "mean",
         average_reverse_complement: bool = False,
     ) -> List[float]:
+        """
+        Score a list of sequences.
+
+        Parameters
+        ----------
+        seqs : List[str]
+            List of sequences to score.
+        batch_size : int
+            Batch size for scoring.
+        prepend_bos : bool
+            Whether to prepend the BOS token.
+        reduce_method : str
+            Method to reduce sequence scores.
+        average_reverse_complement : bool
+            Whether to average the forward and reverse complement scores.
+
+        Returns
+        ----------
+        List[float]
+            List of scores for the input sequences.
+        """
         scoring_func = partial(
             score_sequences_rc if average_reverse_complement else score_sequences,
             model=self.model,
@@ -266,9 +289,37 @@ class Evo2(HelicalDNAModel):
         """
         Generate sequences from a list of prompts.
 
-        force_prompt_threshold: If specified, avoids OOM errors through teacher forcing if the prompt is longer than this threshold.
+        Notes
+        ----------
+            force_prompt_threshold: If specified, avoids OOM errors through teacher forcing if the prompt is longer than this threshold.
 
-        If force_prompt_threshold is none, sets default assuming 1xH100 (evo2_7b) and 2xH100 (evo2_40b) to help avoid OOM errors.
+            If force_prompt_threshold is none, sets default assuming 1xH100 (evo2_7b) and 2xH100 (evo2_40b) to help avoid OOM errors.
+
+        Parameters
+        ----------
+        prompt_seqs : List[str]
+            List of prompts to generate sequences from.
+        n_tokens : int
+            Number of tokens to generate.
+        temperature : float
+            Temperature for sampling.
+        top_k : int
+            Top-k sampling.
+        top_p : float
+            Top-p sampling.
+        batched : bool
+            Whether to generate sequences in batches.
+        cached_generation : bool
+            Whether to cache generation.
+        verbose : int
+            Verbosity level.
+        force_prompt_threshold : int
+            Threshold for teacher forcing.
+
+        Returns
+        ----------
+        Tuple[List[str], List[float]]
+            List of generated sequences and their scores.
         """
 
         with torch.no_grad():

@@ -30,7 +30,6 @@ from .models.hyena_dna.model import HyenaDNA, HyenaDNAConfig
 from .models.hyena_dna.fine_tuning_model import HyenaDNAFineTuningModel
 from .models.helix_mrna import HelixmRNA, HelixmRNAConfig, HelixmRNAFineTuningModel
 from .models.mamba2_mrna import Mamba2mRNA, Mamba2mRNAConfig, Mamba2mRNAFineTuningModel
-from .models.evo_2 import Evo2, Evo2Config
 
 try:
     from .models.caduceus import Caduceus, CaduceusConfig, CaduceusFineTuningModel

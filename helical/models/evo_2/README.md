@@ -1,0 +1,151 @@
+# Model Card for Evo 2
+
+## Model Details
+
+**Model Name:** Evo 2  
+**Model Versions:** 7B and 40B  (Currently only the 7B model is available and the 40B coming soon)
+**Model Description:** Evo 2 is a next-generation genomic model that integrates DNA, RNA, and protein data across all domains of life. It leverages the StripedHyena 2 architecture, combining convolutional, linear attention, and state-space models to efficiently process long sequences and capture complex biological patterns. Evo 2 is trained on a vast dataset encompassing trillions of nucleotides from eukaryotic and prokaryotic genomes, enabling broad cross-species applications and insights into human diseases, agriculture, and environmental science.
+
+## Model Developers
+
+**Arc Institute**
+
+**Stanford University**
+
+**NVIDIA**
+
+**Liquid AI**
+
+**University of California, Berkeley**
+
+**Goodfire**
+
+**Columbia University**
+
+**Contact Information:** 
+
+[Patrick D. Hsu](mailto:patrick@arcinstitute.org)
+[Brian L. Hie (Stanford Email)](mailto:brianhie@stanford.edu)
+[Brian L. Hie (Arc Institute Email)](mailto:brian.hie@arcinstitute.org)
+
+**License:** 
+Apache-2.0 
+
+## Model Type
+
+**Architecture:** StripedHyena 2 (Multi-hybrid)  
+**Domain:** Genomics and Proteomics  
+**Input Data:** DNA, RNA, and protein sequences.
+
+## Model Purpose
+
+**Intended Use:**  
+- **Genomic Analysis:** Predicting mutation impacts, annotating genomes, and identifying essential genes.
+- **Protein Analysis:** Understanding protein structure and function.
+- **Cross-Species Applications:** Facilitating insights across different domains of life.
+- **Biological Design:** Generating complex biological systems.
+
+**Use Cases**
+
+- **Variant Impact Prediction:** Accurately predicting the effects of mutations across species.
+- **Gene Essentiality Analysis:** Identifying crucial genes in various organisms.
+- **Biological Design:** Designing genome-scale sequences and controlling chromatin accessibility.
+- **Therapeutic Applications:** Informing human disease research and agricultural innovations.
+
+## Training Data
+
+**Pretraining:**  
+
+- 7B model is trained on 4T tokens up to 1M nucleotides
+- 40B model is trained rained on 9.3T tokens up to 1M nucleotides
+For both the 7B and 40B models, a multi-stage pretraining approach was implemented. This began with an initial pretraining phase focused exclusively on sequences of 8,192 tokens, followed by a progressive increase in context length up to 1M tokens.
+
+**Preprocessing:**  
+
+- Utilizes novel data augmentation and weighting strategies to prioritize functional genetic elements.
+
+## Model Performance
+
+**Evaluation Metrics:**  
+- Accuracy in mutation impact prediction, gene essentiality identification, and genome annotation tasks.
+- AUROC for exon classification tasks.
+
+## Model Limitations
+
+**Known Limitations:**  
+- Performance may vary based on the complexity and length of input sequences.
+- Limited by the availability of diverse and high-quality training data.
+- Only runnable on NVIDIA GPUs with compute capability ≥8.9
+- These are very large models and need significant compute to run
+
+## Install the package
+
+### Via the Docker image
+
+```bash
+docker stuff
+```
+
+### Installing within a conda environment
+
+```bash
+conda stuff
+```
+
+## How to Use
+
+**Input Format**  
+- DNA, RNA, and protein sequences in standard formats.
+
+**Output Format**  
+- Sequence embeddings and predictions for various biological tasks.
+
+**Example Usage For Getting Embeddings**
+
+```python 
+from helical.models.evo_2 import Evo2, Evo2Config
+
+evo2_config = Evo2Config(batch_size=1)
+
+evo2 = Evo2(configurer=evo2_config)
+
+sequences = ["ACGT" * 1000]
+
+dataset = evo2.process_data(sequences)
+
+embeddings = evo2.get_embeddings(dataset)
+
+print(embeddings.shape)
+```
+
+**Example Usage For Sequence Generation**
+
+```python
+from helical.models.evo_2 import Evo2, Evo2Config
+
+evo2_config = Evo2Config(batch_size=1)
+
+evo2 = Evo2(configurer=evo2_config)
+
+sequences = ["ACGT" * 1000]
+
+generate = evo2.generate(sequences)
+```
+
+## Citation
+```bibtex
+@article {Brixi2025.02.18.638918,
+	author = {Brixi, Garyk and Durrant, Matthew G and Ku, Jerome and Poli, Michael and Brockman, Greg and Chang, Daniel and Gonzalez, Gabriel A and King, Samuel H and Li, David B and Merchant, Aditi T and Naghipourfar, Mohsen and Nguyen, Eric and Ricci-Tam, Chiara and Romero, David W and Sun, Gwanggyu and Taghibakshi, Ali and Vorontsov, Anton and Yang, Brandon and Deng, Myra and Gorton, Liv and Nguyen, Nam and Wang, Nicholas K and Adams, Etowah and Baccus, Stephen A and Dillmann, Steven and Ermon, Stefano and Guo, Daniel and Ilango, Rajesh and Janik, Ken and Lu, Amy X and Mehta, Reshma and Mofrad, Mohammad R.K. and Ng, Madelena Y and Pannu, Jaspreet and Re, Christopher and Schmok, Jonathan C and St. John, John and Sullivan, Jeremy and Zhu, Kevin and Zynda, Greg and Balsam, Daniel and Collison, Patrick and Costa, Anthony B. and Hernandez-Boussard, Tina and Ho, Eric and Liu, Ming-Yu and McGrath, Tom and Powell, Kimberly and Burke, Dave P. and Goodarzi, Hani and Hsu, Patrick D and Hie, Brian},
+	title = {Genome modeling and design across all domains of life with Evo 2},
+	elocation-id = {2025.02.18.638918},
+	year = {2025},
+	doi = {10.1101/2025.02.18.638918},
+	publisher = {Cold Spring Harbor Laboratory},
+	URL = {https://www.biorxiv.org/content/early/2025/02/21/2025.02.18.638918},
+	eprint = {https://www.biorxiv.org/content/early/2025/02/21/2025.02.18.638918.full.pdf},
+	journal = {bioRxiv}
+}
+```
+
+## Contact
+[Helical Support](mailto:support@helical-ai.com)

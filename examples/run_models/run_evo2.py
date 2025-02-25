@@ -1,4 +1,4 @@
-from helical import Evo2, Evo2Config
+from helical.models.evo_2 import Evo2, Evo2Config
 
 evo2_config = Evo2Config(batch_size=1)
 
