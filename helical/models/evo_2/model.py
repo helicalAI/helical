@@ -47,12 +47,19 @@ class Evo2(HelicalDNAModel):
 
     sequences = ["ACGT" * 1000]
 
-    dataset = evo2.process_data(sequences)
+    dataset = evo2.process_data(data)
+
+    print(evo2.max_seq_len)
 
     embeddings = evo2.get_embeddings(dataset)
 
-    generate = evo2.generate(sequences)
+    generate = evo2.generate(dataset)
+    # Get the last embedding of each sequence
+    print(embeddings["embeddings"][0][embeddings["original_lengths"][0]-1])
+    print(embeddings["embeddings"][1][embeddings["original_lengths"][1]-1])
+    print(embeddings["original_lengths"])
 
+    # Print the generated sequences
     print(generate)
     ```
 
@@ -74,10 +81,13 @@ class Evo2(HelicalDNAModel):
         self.config = configurer.config
 
         self.tokenizer = CharLevelTokenizer(self.config["model_map"]["vocab_size"])
-
         self.model = self._load_evo2_model(self.config["model_map"]["model_name"])
 
+        self.max_seq_len = self.config["model_map"]["max_seqlen"]
+
+        self.model.eval()
         LOGGER.info("Evo 2 initialized successfully.")
+
         mode = "training" if self.model.training else "eval"
 
         LOGGER.info(
@@ -100,11 +110,14 @@ class Evo2(HelicalDNAModel):
         LOGGER.info(f"Processing data for Evo 2.")
         sequences = self.get_valid_dna_sequence(sequences, enforce_characters=False)
 
-        tokenized_sequences = {}
+        self.max_seq_len = min(len(max(sequences, key=len)), self.max_seq_len)
+        LOGGER.info(f"Maximum sequence length: {self.max_seq_len}")
 
-        tokenized_sequences["input_ids"] = sequences
+        prepped_sequences = {}
 
-        dataset = Dataset.from_dict(tokenized_sequences)
+        prepped_sequences["input_ids"] = sequences
+
+        dataset = Dataset.from_dict(prepped_sequences)
 
         LOGGER.info("Successfully processed the data for Evo 2.")
         return dataset
@@ -133,7 +146,8 @@ class Evo2(HelicalDNAModel):
             batch_size=self.config["batch_size"],
             shuffle=False,
         )
-        embeddings = []
+
+        embeddings = {"embeddings": [], "original_lengths": []}
 
         if embedding_layer is None:
             embedding_layer = self.config["model_map"]["default_embedding_layer"]
@@ -147,26 +161,27 @@ class Evo2(HelicalDNAModel):
                     input_ids, return_embeddings=True, layer_names=[embedding_layer]
                 )
 
-                embeddings.append(
-                    layer_embedding[embedding_layer].float().cpu().numpy()
+                embeddings["embeddings"].append(
+                    np.concatenate(layer_embedding[embedding_layer].float().cpu().numpy())
                 )
+                embeddings["original_lengths"].append(batch["original_lengths"])
 
                 del batch
                 del layer_embedding
 
         LOGGER.info(f"Finished getting embeddings.")
-        return np.concatenate(embeddings)
+        embeddings["original_lengths"] = np.array(embeddings["original_lengths"])
+        return embeddings
 
     def _collate_fn(self, batch):
 
         input_ids = [item["input_ids"] for item in batch]
-
-        max_len = max(len(ids) for ids in input_ids)
+        original_lengths = [min(len(ids), self.max_seq_len) for ids in input_ids]
 
         input_ids = torch.tensor(
             [
                 self.tokenizer.tokenize(ids)
-                + [self.tokenizer.pad_id] * (max_len - len(ids))
+                + [self.tokenizer.pad_id] * (self.max_seq_len - len(ids))
                 for ids in input_ids
             ],
             dtype=torch.int,
@@ -174,6 +189,7 @@ class Evo2(HelicalDNAModel):
 
         batch_dict = {
             "input_ids": input_ids,
+            "original_lengths": original_lengths,
         }
 
         if "labels" in batch[0]:
@@ -287,29 +303,28 @@ class Evo2(HelicalDNAModel):
 
     def generate(
         self,
-        prompt_seqs: List[str],
+        dataset: List[str] | DataFrame,
         n_tokens: int = 500,
         temperature: float = 1.0,
         top_k: int = 4,
         top_p: float = 1.0,
         batched: bool = True,
         cached_generation: bool = True,
-        verbose: int = 1,
+        verbose: int = 0,
         force_prompt_threshold: int = None,
     ) -> Tuple[List[str], List[float]]:
         """
-        Generate sequences from a list of prompts.
+        Generate sequences from a processed Helical Evo 2 dataset.
 
         Notes
         ----------
-            force_prompt_threshold: If specified, avoids OOM errors through teacher forcing if the prompt is longer than this threshold.
-
-            If force_prompt_threshold is none, sets default assuming 1xH100 (evo2_7b) and 2xH100 (evo2_40b) to help avoid OOM errors.
+        force_prompt_threshold: If specified, avoids OOM errors through teacher forcing if the prompt is longer than this threshold.
+        If force_prompt_threshold is none, sets default assuming 1xH100 (evo2_7b) and 2xH100 (evo2_40b) to help avoid OOM errors.
 
         Parameters
         ----------
-        prompt_seqs : List[str]
-            List of prompts to generate sequences from.
+        prompt_seqs :  Dataset
+            The dataset object.
         n_tokens : int
             Number of tokens to generate.
         temperature : float
@@ -335,7 +350,7 @@ class Evo2(HelicalDNAModel):
 
         with torch.no_grad():
             output = vortex_generate(
-                prompt_seqs=prompt_seqs,
+                prompt_seqs=dataset["input_ids"],
                 model=self.model,
                 tokenizer=self.tokenizer,
                 n_tokens=n_tokens,

@@ -138,11 +138,13 @@ evo2 = Evo2(configurer=evo2_config)
 
 sequences = ["ACGT" * 1000]
 
-dataset = evo2.process_data(sequences)
+dataset = evo2.process_data(data)
 
 embeddings = evo2.get_embeddings(dataset)
-
-print(embeddings.shape)
+# Get the last embedding of each sequence
+print(embeddings["embeddings"][0][embeddings["original_lengths"][0]-1])
+print(embeddings["embeddings"][1][embeddings["original_lengths"][1]-1])
+print(embeddings["original_lengths"])
 ```
 
 **Example Usage For Sequence Generation**
@@ -156,7 +158,12 @@ evo2 = Evo2(configurer=evo2_config)
 
 sequences = ["ACGT" * 1000]
 
-generate = evo2.generate(sequences)
+dataset = evo2.process_data(data)
+
+generate = evo2.generate(dataset)
+
+# Print the generated sequences
+print(generate)
 ```
 
 ## Citation
