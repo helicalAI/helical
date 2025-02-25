@@ -86,13 +86,37 @@ Apache-2.0
 ### Via the Docker image
 
 ```bash
-docker stuff
+git clone https://github.com/helicalAI/helical.git
+
+cd helical/helical/models/evo_2
+
+docker build -t helical_with_evo_2 .
+
+docker run -it --gpus all helical_with_evo_2
 ```
 
 ### Installing within a conda environment
 
 ```bash
-conda stuff
+conda create -n helical-env-with-evo-2 python=3.11
+conda activate helical-env-with-evo-2
+
+conda install cuda-toolkit=12.4 -c nvidia
+
+export CUDNN_PATH=$CONDA_PREFIX/lib/python3.11/site-packages/nvidia/cudnn
+export CPLUS_INCLUDE_PATH=$CONDA_PREFIX/lib/python3.11/site-packages/nvidia/nvtx/include
+
+pip install torch==2.6.0
+pip install git+https://github.com/helicalAI/helical.git@evo-2[evo-2]
+
+git clone git@github.com:Zymrael/vortex.git
+cd vortex
+git checkout f243e8e
+sed -i 's/torch==2.5.1/torch==2.6.0/g' pyproject.toml
+make setup-full
+cd ..
+
+# pip install torch==2.6.0 torchvision
 ```
 
 ## How to Use

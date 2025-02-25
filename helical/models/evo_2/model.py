@@ -17,13 +17,20 @@ from pandas import DataFrame
 
 from .scoring import score_sequences, score_sequences_rc
 
-from vortex.model.generation import generate as vortex_generate
-from vortex.model.model import StripedHyena
-from vortex.model.utils import dotdict, load_checkpoint
-
 import logging
 
 LOGGER = logging.getLogger(__name__)
+
+try:
+    from vortex.model.generation import generate as vortex_generate
+    from vortex.model.model import StripedHyena
+    from vortex.model.utils import dotdict, load_checkpoint
+except:
+    message = "Vortex is required for Evo 2 model. Please follow the instructions in the README to install it."
+    LOGGER.error(message)
+    raise ImportError(
+        message
+    )
 
 
 class Evo2(HelicalDNAModel):
@@ -53,6 +60,10 @@ class Evo2(HelicalDNAModel):
     ----------
     configurer : Evo2Config
         The configuration object for the Evo 2 model.
+
+    Notes
+    -------
+    The Evo 2 model is a model for processing DNA sequences. It can be used to generate embeddings, score sequences, and generate sequences. These models are large and require sepcific hardware to run.
     """
 
     default_configurer = Evo2Config()

@@ -51,6 +51,11 @@ mamba-ssm = [
     'causal-conv1d==1.5.0.post8',
 ]
 
+evo-2 = [
+    'biopython==1.85',
+    'transformer-engine[pytorch]',
+]
+
 [tool.hatch.metadata]
 allow-direct-references = true # Allows installing package from git
 
