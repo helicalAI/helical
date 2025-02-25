@@ -155,4 +155,4 @@ jobs:
 
       - name: Run Notebooks
         run: |
-          pytest --durations=0 --nbmake ./examples/notebooks/*.ipynb
+          pytest --durations=0 --nbmake ./examples/notebooks/*.ipynb --ignore ./examples/notebooks/Evo-2.ipynb

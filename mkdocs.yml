@@ -58,6 +58,7 @@ nav:
     - Hyena-DNA-Inference: ./notebooks/Hyena-DNA-Inference.ipynb
     - HyenaDNA-Fine-Tuning: ./notebooks/HyenaDNA-Fine-Tuning.ipynb
     - Cell-Gene-Cls-embedding-generation: ./notebooks/Cell-Gene-Cls-embedding-generation.ipynb
+    - Evo-2-example: ./notebooks/Evo-2.ipynb
    
 theme:
   name: material

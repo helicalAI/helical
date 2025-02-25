@@ -186,6 +186,7 @@ class Evo2(HelicalDNAModel):
             ],
             dtype=torch.int,
         )
+        
 
         batch_dict = {
             "input_ids": input_ids,
