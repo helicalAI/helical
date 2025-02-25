@@ -1,4 +1,9 @@
 import pytest
+
+pytestmark = pytest.mark.skip(
+    reason="Skipping this test file for now as the install is too comeplex for the test script currently. Run this test locally before pushing to the repo."
+)
+
 import csv
 from typing import List, Union
 import numpy as np
@@ -7,10 +12,9 @@ import torch.nn.functional as F
 
 from helical.models.evo_2 import Evo2, Evo2Config
 
-pytestmark = pytest.mark.skip(reason="Skipping this test file for now as the install is too comeplex for the test script currently. Run this test locally before pushing to the repo.")
-
 torch.manual_seed(1)
 torch.cuda.manual_seed(1)
+
 
 @pytest.fixture
 def read_prompts() -> Union[List[List[str]]]:
