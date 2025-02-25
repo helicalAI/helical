@@ -64,7 +64,7 @@ class Evo2(HelicalDNAModel):
 
         self.tokenizer = CharLevelTokenizer(self.config["model_map"]["vocab_size"])
 
-        self.model = self._load_evo2_model("evo2_7b")
+        self.model = self._load_evo2_model(self.config["model_map"]["model_name"])
 
         LOGGER.info("Evo 2 initialized successfully.")
         mode = "training" if self.model.training else "eval"

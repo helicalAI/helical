@@ -3,7 +3,7 @@
 ## Model Details
 
 **Model Name:** Evo 2  
-**Model Versions:** 7B and 40B  (Currently only the 7B model is available and the 40B coming soon)
+**Model Versions:** 1B, 7B and 40B  (Currently only the 1B and 7B models are available and the 40B coming soon)
 **Model Description:** Evo 2 is a next-generation genomic model that integrates DNA, RNA, and protein data across all domains of life. It leverages the StripedHyena 2 architecture, combining convolutional, linear attention, and state-space models to efficiently process long sequences and capture complex biological patterns. Evo 2 is trained on a vast dataset encompassing trillions of nucleotides from eukaryotic and prokaryotic genomes, enabling broad cross-species applications and insights into human diseases, agriculture, and environmental science.
 
 ## Model Developers
@@ -56,9 +56,12 @@ Apache-2.0
 
 **Pretraining:**  
 
-- 7B model is trained on 4T tokens up to 1M nucleotides
-- 40B model is trained rained on 9.3T tokens up to 1M nucleotides
-For both the 7B and 40B models, a multi-stage pretraining approach was implemented. This began with an initial pretraining phase focused exclusively on sequences of 8,192 tokens, followed by a progressive increase in context length up to 1M tokens.
+- 1B model is trained on 1T tokens up to 8,192 tokens
+- 7B base model is trained on 2.1T tokens up to 8,192 tokens
+- 7B model is trained on 4T tokens up to 1M tokens
+- 40B base model is trained on 6.6T tokens at length 1,024 tokens and 1.1T tokens at length 8,192 tokens
+- 40B model is trained rained on 9.3T tokens up to 1M tokens
+- For both the 7B and 40B models, a multi-stage pretraining approach was implemented. This began with an initial pretraining phase focused exclusively on sequences of 8,192 (1024 as well as 8,192 for the 40B model) tokens, followed by a progressive increase in context length up to 1M tokens.
 
 **Preprocessing:**  
 
