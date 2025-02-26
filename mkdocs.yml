@@ -73,7 +73,6 @@ theme:
     primary: custom
   features:
     - content.code.copy
-    - navigation.expand
 
 extra_css:
   - stylesheets/extra.css
