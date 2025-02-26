@@ -45,7 +45,6 @@ ci/tests/test_output
 
 # mkdocs
 site
-docs/notebooks/
 
 # Keep unit tests data
 !ci/tests/data/*

@@ -4,11 +4,6 @@ build:
   tools:
     python: "3.11"
 
-  jobs:
-    pre_build:
-      - "mkdir -p ./docs/notebooks"
-      - "cp ./examples/notebooks/*.ipynb ./docs/notebooks"
-
 mkdocs:
   configuration: mkdocs.yml
   fail_on_warning: false

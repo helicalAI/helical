@@ -33,7 +33,7 @@ nav:
       - Fine-Tuning Model: ./fine_tuning_models/mamba2_mrna_fine_tune.md
   - DNA Sequence Models:
     - HyenaDNA:
-      - Model Card: ./model_cards/hyenadna.md
+      - Model Card: ./model_cards/hyena_dna.md
       - Config: ./configs/hyenadna_config.md
       - Model: ./models/hyenadna.md
       - Fine-Tuning Model: ./fine_tuning_models/hyenadna_fine_tune.md
@@ -73,7 +73,6 @@ theme:
     primary: custom
   features:
     - content.code.copy
-    - navigation.expand
 
 extra_css:
   - stylesheets/extra.css
