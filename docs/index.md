@@ -10,6 +10,10 @@ We will update this repo on a regular basis with new models, benchmarks, modalit
 Let’s build the most exciting AI-for-Bio community together!
 
 ## What's new?
+### Evo 2
+We have integrated [Evo 2](https://github.com/ArcInstitute/evo2) into our helical package and have made a model card for it in our [Evo 2 model card](./model_cards/evo_2.md). If you would like to test the model, take a look at our [example notebook](./notebooks/Evo-2.ipynb)!
+Let us know what you think and we are happy to help you with the larger model (40B parameters!) if needed!
+
 ### 🧬 Introducing Helix-mRNA-v0: Unlocking new frontiers & use cases in mRNA therapy 🧬
 We’re thrilled to announce the release of our first-ever mRNA Bio Foundation Model, designed to:
 
@@ -75,6 +79,7 @@ apptainer shell --nv --fakeroot singularity/helical/
 ### DNA models:
 - [HyenaDNA](./model_cards/hyenadna.md)
 - [Caduceus](./model_cards/caduceus.md)
+- [Evo 2](./model_cards/evo_2.md)
 
 
 ## Demo & Use Cases
