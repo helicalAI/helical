@@ -99,7 +99,7 @@ apptainer shell --nv --fakeroot singularity/helical/
 - [Universal Cell Embedding (UCE)](https://helical.readthedocs.io/en/latest/model_cards/uce/)
 
 ### DNA models:
-- [HyenaDNA](https://helical.readthedocs.io/en/latest/model_cards/hyenadna/)
+- [HyenaDNA](https://helical.readthedocs.io/en/latest/model_cards/hyena_dna/)
 - [Caduceus](https://helical.readthedocs.io/en/latest/model_cards/caduceus/)
 - [Evo 2](https://helical.readthedocs.io/en/latest/model_cards/evo_2/)
 
