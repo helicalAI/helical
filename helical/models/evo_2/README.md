@@ -111,7 +111,7 @@ export CUDNN_PATH=$CONDA_PREFIX/lib/python3.11/site-packages/nvidia/cudnn
 export CPLUS_INCLUDE_PATH=$CONDA_PREFIX/lib/python3.11/site-packages/nvidia/nvtx/include
 
 pip install torch==2.6.0
-pip install git+https://github.com/helicalAI/helical.git[evo-2]
+pip install "helical[evo-2]@git+https://github.com/helicalAI/helical.git"
 
 git clone git@github.com:Zymrael/vortex.git
 cd vortex
@@ -120,7 +120,7 @@ sed -i 's/torch==2.5.1/torch==2.6.0/g' pyproject.toml
 make setup-full
 cd ..
 
-# pip install torch==2.6.0 torchvision
+pip install torch==2.6.0 torchvision
 ```
 
 ## How to Use
