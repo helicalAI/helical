@@ -31,7 +31,7 @@ Let’s build the most exciting AI-for-Bio community together!
 
 ## What's new?
 ### Evo2
-We have integrated [Evo2](https://github.com/ArcInstitute/evo2) into our helical package and have made a model card for it in our [Evo2 model folder](helical/helical/models/evo_2/README.md). If you would like to test the model, take a look at our [example notebook](helical/examples/notebooks/Evo-2.ipynb)!
+We have integrated [Evo2](https://github.com/ArcInstitute/evo2) into our helical package and have made a model card for it in our [Evo2 model folder](helical/models/evo_2/README.md). If you would like to test the model, take a look at our [example notebook](examples/notebooks/Evo-2.ipynb)!
 Let us know what you think and we are happy to help you with the larger model (40B parameters!) if needed!
 
 ### 🧬 Introducing Helix-mRNA-v0: Unlocking new frontiers & use cases in mRNA therapy 🧬
@@ -101,6 +101,7 @@ apptainer shell --nv --fakeroot singularity/helical/
 ### DNA models:
 - [HyenaDNA](https://helical.readthedocs.io/en/latest/model_cards/hyenadna/)
 - [Caduceus](https://helical.readthedocs.io/en/latest/model_cards/caduceus/)
+- [Evo 2](https://helical.readthedocs.io/en/latest/model_cards/evo_2/)
 
 
 ## Demo & Use Cases
