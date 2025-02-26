@@ -16,7 +16,7 @@
 
 import math
 from dataclasses import dataclass
-from typing import Optional, Tuple, Union, Dict,Any,List
+from typing import Optional, Tuple, Union, Dict, Any, List
 import torch
 import torch.utils.checkpoint
 from torch import nn
@@ -39,7 +39,7 @@ from transformers.utils.import_utils import (
     is_causal_conv1d_available,
     is_flash_attn_2_available,
     is_flash_attn_greater_or_equal_2_10,
-    is_mamba_2_ssm_available
+    is_mamba_2_ssm_available,
 )
 
 logger = logging.get_logger(__name__)
@@ -49,7 +49,10 @@ if is_flash_attn_2_available():
 
 if is_mamba_2_ssm_available():
     from mamba_ssm.ops.triton.selective_state_update import selective_state_update
-    from mamba_ssm.ops.triton.ssd_combined import mamba_chunk_scan_combined, mamba_split_conv1d_scan_combined
+    from mamba_ssm.ops.triton.ssd_combined import (
+        mamba_chunk_scan_combined,
+        mamba_split_conv1d_scan_combined,
+    )
 else:
     selective_state_update = None
 
@@ -58,9 +61,12 @@ if is_causal_conv1d_available():
 else:
     causal_conv1d_update, causal_conv1d_fn = None, None
 
-is_fast_path_available = all((selective_state_update, causal_conv1d_fn, causal_conv1d_update))
+is_fast_path_available = all(
+    (selective_state_update, causal_conv1d_fn, causal_conv1d_update)
+)
 
 # copied from transformers.models.mistral.modeling_mistral.pad_tensor_by_size
+
 
 def pad_tensor_by_size(input_tensor: torch.Tensor, pad_size: int):
     """
@@ -68,7 +74,11 @@ def pad_tensor_by_size(input_tensor: torch.Tensor, pad_size: int):
 
     Assumes that we only have tensors of either size 4 or 3
     """
-    pad_shape = (0, 0, 0, 0, 0, pad_size, 0, 0) if len(input_tensor.shape) == 4 else (0, 0, 0, pad_size, 0, 0)
+    pad_shape = (
+        (0, 0, 0, 0, 0, pad_size, 0, 0)
+        if len(input_tensor.shape) == 4
+        else (0, 0, 0, pad_size, 0, 0)
+    )
 
     return torch.nn.functional.pad(input_tensor, pad_shape, mode="constant", value=0)
 
@@ -85,11 +95,17 @@ def reshape_into_chunks(input_tensor, pad_size, chunk_size):
 
     if len(input_tensor.shape) == 3:
         # [bsz, seq_len multiple of chunk_size, num_heads] -> [bsz, -1, chunk_size, num_heads]
-        return input_tensor.reshape(input_tensor.shape[0], -1, chunk_size, input_tensor.shape[2])
+        return input_tensor.reshape(
+            input_tensor.shape[0], -1, chunk_size, input_tensor.shape[2]
+        )
     else:
         # [bsz, seq_len multiple of chunk_size, num_heads, head_dim or state_size] -> [bsz, -1, chunk_size, num_heads, head_dim or state_size]
         return input_tensor.reshape(
-            input_tensor.shape[0], -1, chunk_size, input_tensor.shape[2], input_tensor.shape[3]
+            input_tensor.shape[0],
+            -1,
+            chunk_size,
+            input_tensor.shape[2],
+            input_tensor.shape[3],
         )
 
 
@@ -102,15 +118,26 @@ def segment_sum(input_tensor):
     # [..., chunk_size] -> [..., chunk_size, chunk_size]
     input_tensor = input_tensor[..., None].expand(*input_tensor.size(), chunk_size)
     # 2. create a lower triangular mask with the diagonal set to 0 to 0 out elements above diag
-    mask = torch.tril(torch.ones(chunk_size, chunk_size, device=input_tensor.device, dtype=torch.bool), diagonal=-1)
+    mask = torch.tril(
+        torch.ones(
+            chunk_size, chunk_size, device=input_tensor.device, dtype=torch.bool
+        ),
+        diagonal=-1,
+    )
     input_tensor = input_tensor.masked_fill(~mask, 0)
     # 3. compute actual cumsum
     tensor_segsum = torch.cumsum(input_tensor, dim=-2)
 
     # 4. apply mask to keep only the lower triangular part of the cumulative sum result (incl diagonal this time)
-    mask = torch.tril(torch.ones(chunk_size, chunk_size, device=input_tensor.device, dtype=torch.bool), diagonal=0)
+    mask = torch.tril(
+        torch.ones(
+            chunk_size, chunk_size, device=input_tensor.device, dtype=torch.bool
+        ),
+        diagonal=0,
+    )
     tensor_segsum = tensor_segsum.masked_fill(~mask, -torch.inf)
     return tensor_segsum
+
 
 # Copied from transformers.models.llama.modeling_llama.repeat_kv
 def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
@@ -121,7 +148,9 @@ def repeat_kv(hidden_states: torch.Tensor, n_rep: int) -> torch.Tensor:
     batch, num_key_value_heads, slen, head_dim = hidden_states.shape
     if n_rep == 1:
         return hidden_states
-    hidden_states = hidden_states[:, :, None, :, :].expand(batch, num_key_value_heads, n_rep, slen, head_dim)
+    hidden_states = hidden_states[:, :, None, :, :].expand(
+        batch, num_key_value_heads, n_rep, slen, head_dim
+    )
     return hidden_states.reshape(batch, num_key_value_heads * n_rep, slen, head_dim)
 
 
@@ -146,7 +175,7 @@ class HybridMambaAttentionDynamicCache(DynamicCache):
         self.has_previous_state = False  # only used by mamba
         intermediate_size = config.expand * config.hidden_size
         ssm_state_size = config.state_size
-        conv_kernel_size =  config.conv_kernel
+        conv_kernel_size = config.conv_kernel
         self.seqlen_offset = 0
         self.conv_states = []
         self.ssm_states = []
@@ -154,18 +183,36 @@ class HybridMambaAttentionDynamicCache(DynamicCache):
         for i in range(config.num_hidden_layers):
             if self.layers_block_type[i] == "mamba":
                 self.conv_states += [
-                    torch.zeros(batch_size, intermediate_size, conv_kernel_size, device=device, dtype=dtype)
+                    torch.zeros(
+                        batch_size,
+                        intermediate_size,
+                        conv_kernel_size,
+                        device=device,
+                        dtype=dtype,
+                    )
                 ]
                 self.ssm_states += [
-                    torch.zeros(batch_size, intermediate_size, ssm_state_size, device=device, dtype=dtype)
+                    torch.zeros(
+                        batch_size,
+                        intermediate_size,
+                        ssm_state_size,
+                        device=device,
+                        dtype=dtype,
+                    )
                 ]
             else:
                 self.conv_states += [torch.tensor([[]] * batch_size, device=device)]
                 self.ssm_states += [torch.tensor([[]] * batch_size, device=device)]
                 self.transformer_layers.append(i)
 
-        self.key_cache = [torch.tensor([[]] * batch_size, device=device) for _ in range(config.num_hidden_layers)]
-        self.value_cache = [torch.tensor([[]] * batch_size, device=device) for _ in range(config.num_hidden_layers)]
+        self.key_cache = [
+            torch.tensor([[]] * batch_size, device=device)
+            for _ in range(config.num_hidden_layers)
+        ]
+        self.value_cache = [
+            torch.tensor([[]] * batch_size, device=device)
+            for _ in range(config.num_hidden_layers)
+        ]
 
     def update(
         self,
@@ -179,8 +226,12 @@ class HybridMambaAttentionDynamicCache(DynamicCache):
             self.key_cache[layer_idx] = key_states
             self.value_cache[layer_idx] = value_states
         else:
-            self.key_cache[layer_idx] = torch.cat([self.key_cache[layer_idx], key_states], dim=2)
-            self.value_cache[layer_idx] = torch.cat([self.value_cache[layer_idx], value_states], dim=2)
+            self.key_cache[layer_idx] = torch.cat(
+                [self.key_cache[layer_idx], key_states], dim=2
+            )
+            self.value_cache[layer_idx] = torch.cat(
+                [self.value_cache[layer_idx], value_states], dim=2
+            )
 
         return self.key_cache[layer_idx], self.value_cache[layer_idx]
 
@@ -188,29 +239,47 @@ class HybridMambaAttentionDynamicCache(DynamicCache):
         """Reorders the cache for beam search, given the selected beam indices."""
         for layer_idx in range(len(self.key_cache)):
             device = self.key_cache[layer_idx].device
-            self.key_cache[layer_idx] = self.key_cache[layer_idx].index_select(0, beam_idx.to(device))
+            self.key_cache[layer_idx] = self.key_cache[layer_idx].index_select(
+                0, beam_idx.to(device)
+            )
             device = self.value_cache[layer_idx].device
-            self.value_cache[layer_idx] = self.value_cache[layer_idx].index_select(0, beam_idx.to(device))
+            self.value_cache[layer_idx] = self.value_cache[layer_idx].index_select(
+                0, beam_idx.to(device)
+            )
 
             device = self.conv_states[layer_idx].device
-            self.conv_states[layer_idx] = self.conv_states[layer_idx].index_select(0, beam_idx.to(device))
+            self.conv_states[layer_idx] = self.conv_states[layer_idx].index_select(
+                0, beam_idx.to(device)
+            )
             device = self.ssm_states[layer_idx].device
-            self.ssm_states[layer_idx] = self.ssm_states[layer_idx].index_select(0, beam_idx.to(device))
+            self.ssm_states[layer_idx] = self.ssm_states[layer_idx].index_select(
+                0, beam_idx.to(device)
+            )
 
     def get_seq_length(self, layer_idx: Optional[int] = 0) -> int:
         """Returns the sequence length of the cached states. A layer index can be optionally passed."""
         # take any layer that contains cache and not empty tensor
-        layer_idx = self.transformer_layers[0] if layer_idx not in self.transformer_layers else layer_idx
+        layer_idx = (
+            self.transformer_layers[0]
+            if layer_idx not in self.transformer_layers
+            else layer_idx
+        )
         if len(self.key_cache) <= layer_idx:
             return 0
         return self.key_cache[layer_idx].shape[-2]
 
     def to_legacy_cache(self) -> Tuple[Tuple[torch.Tensor], Tuple[torch.Tensor]]:
-        raise NotImplementedError("HybridMambaAttentionDynamicCache does not have a legacy cache equivalent.")
+        raise NotImplementedError(
+            "HybridMambaAttentionDynamicCache does not have a legacy cache equivalent."
+        )
 
     @classmethod
-    def from_legacy_cache(cls, past_key_values: Optional[Tuple[Tuple[torch.FloatTensor]]] = None) -> "DynamicCache":
-        raise NotImplementedError("HybridMambaAttentionDynamicCache does not have a legacy cache equivalent.")
+    def from_legacy_cache(
+        cls, past_key_values: Optional[Tuple[Tuple[torch.FloatTensor]]] = None
+    ) -> "DynamicCache":
+        raise NotImplementedError(
+            "HybridMambaAttentionDynamicCache does not have a legacy cache equivalent."
+        )
 
 
 # Adapted from transformers.models.mistral.modeling_mistral.MistralAttention with Mistral->Jamba
@@ -220,7 +289,9 @@ class HelixmRNAAttention(nn.Module):
     and "Generating Long Sequences with Sparse Transformers".
     """
 
-    def __init__(self, config: HelixmRNAPretrainedConfig, layer_idx: Optional[int] = None):
+    def __init__(
+        self, config: HelixmRNAPretrainedConfig, layer_idx: Optional[int] = None
+    ):
         super().__init__()
         self.config = config
         self.layer_idx = layer_idx
@@ -244,10 +315,18 @@ class HelixmRNAAttention(nn.Module):
                 f"hidden_size must be divisible by num_heads (got `hidden_size`: {self.hidden_size}"
                 f" and `num_heads`: {self.num_heads})."
             )
-        self.q_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim, bias=False)
-        self.k_proj = nn.Linear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=False)
-        self.v_proj = nn.Linear(self.hidden_size, self.num_key_value_heads * self.head_dim, bias=False)
-        self.o_proj = nn.Linear(self.num_heads * self.head_dim, self.hidden_size, bias=False)
+        self.q_proj = nn.Linear(
+            self.hidden_size, self.num_heads * self.head_dim, bias=False
+        )
+        self.k_proj = nn.Linear(
+            self.hidden_size, self.num_key_value_heads * self.head_dim, bias=False
+        )
+        self.v_proj = nn.Linear(
+            self.hidden_size, self.num_key_value_heads * self.head_dim, bias=False
+        )
+        self.o_proj = nn.Linear(
+            self.num_heads * self.head_dim, self.hidden_size, bias=False
+        )
 
     def forward(
         self,
@@ -265,26 +344,40 @@ class HelixmRNAAttention(nn.Module):
         key_states = self.k_proj(hidden_states)
         value_states = self.v_proj(hidden_states)
 
-        query_states = query_states.view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
-        key_states = key_states.view(bsz, q_len, self.num_key_value_heads, self.head_dim).transpose(1, 2)
-        value_states = value_states.view(bsz, q_len, self.num_key_value_heads, self.head_dim).transpose(1, 2)
+        query_states = query_states.view(
+            bsz, q_len, self.num_heads, self.head_dim
+        ).transpose(1, 2)
+        key_states = key_states.view(
+            bsz, q_len, self.num_key_value_heads, self.head_dim
+        ).transpose(1, 2)
+        value_states = value_states.view(
+            bsz, q_len, self.num_key_value_heads, self.head_dim
+        ).transpose(1, 2)
 
         if past_key_value is not None:
-            key_states, value_states = past_key_value.update(key_states, value_states, self.layer_idx)
+            key_states, value_states = past_key_value.update(
+                key_states, value_states, self.layer_idx
+            )
 
         # repeat k/v heads if n_kv_heads < n_heads
         key_states = repeat_kv(key_states, self.num_key_value_groups)
         value_states = repeat_kv(value_states, self.num_key_value_groups)
 
-        attn_weights = torch.matmul(query_states, key_states.transpose(2, 3)) / math.sqrt(self.head_dim)
+        attn_weights = torch.matmul(
+            query_states, key_states.transpose(2, 3)
+        ) / math.sqrt(self.head_dim)
 
         if attention_mask is not None:  # no matter the length, we just slice it
             causal_mask = attention_mask[:, :, :, : key_states.shape[-2]]
             attn_weights = attn_weights + causal_mask
 
         # upcast attention to fp32
-        attn_weights = nn.functional.softmax(attn_weights, dim=-1, dtype=torch.float32).to(query_states.dtype)
-        attn_weights = nn.functional.dropout(attn_weights, p=self.attention_dropout, training=self.training)
+        attn_weights = nn.functional.softmax(
+            attn_weights, dim=-1, dtype=torch.float32
+        ).to(query_states.dtype)
+        attn_weights = nn.functional.dropout(
+            attn_weights, p=self.attention_dropout, training=self.training
+        )
         attn_output = torch.matmul(attn_weights, value_states)
 
         if attn_output.size() != (bsz, self.num_heads, q_len, self.head_dim):
@@ -342,11 +435,17 @@ class HelixmRNAFlashAttention2(HelixmRNAAttention):
         # batch_size x seq_length x head_dim x hidden_dim
         # therefore we just need to keep the original shape
         query_states = query_states.view(bsz, q_len, self.num_heads, self.head_dim)
-        key_states = key_states.view(bsz, q_len, self.num_key_value_heads, self.head_dim).transpose(1, 2)
-        value_states = value_states.view(bsz, q_len, self.num_key_value_heads, self.head_dim).transpose(1, 2)
+        key_states = key_states.view(
+            bsz, q_len, self.num_key_value_heads, self.head_dim
+        ).transpose(1, 2)
+        value_states = value_states.view(
+            bsz, q_len, self.num_key_value_heads, self.head_dim
+        ).transpose(1, 2)
 
         if past_key_value is not None:
-            key_states, value_states = past_key_value.update(key_states, value_states, self.layer_idx)
+            key_states, value_states = past_key_value.update(
+                key_states, value_states, self.layer_idx
+            )
 
         # repeat k/v heads if n_kv_heads < n_heads
         key_states = repeat_kv(key_states, self.num_key_value_groups)
@@ -441,12 +540,20 @@ class HelixmRNASdpaAttention(HelixmRNAAttention):
         key_states = self.k_proj(hidden_states)
         value_states = self.v_proj(hidden_states)
 
-        query_states = query_states.view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
-        key_states = key_states.view(bsz, q_len, self.num_key_value_heads, self.head_dim).transpose(1, 2)
-        value_states = value_states.view(bsz, q_len, self.num_key_value_heads, self.head_dim).transpose(1, 2)
+        query_states = query_states.view(
+            bsz, q_len, self.num_heads, self.head_dim
+        ).transpose(1, 2)
+        key_states = key_states.view(
+            bsz, q_len, self.num_key_value_heads, self.head_dim
+        ).transpose(1, 2)
+        value_states = value_states.view(
+            bsz, q_len, self.num_key_value_heads, self.head_dim
+        ).transpose(1, 2)
 
         if past_key_value is not None:
-            key_states, value_states = past_key_value.update(key_states, value_states, self.layer_idx)
+            key_states, value_states = past_key_value.update(
+                key_states, value_states, self.layer_idx
+            )
 
         key_states = repeat_kv(key_states, self.num_key_value_groups)
         value_states = repeat_kv(value_states, self.num_key_value_groups)
@@ -465,7 +572,9 @@ class HelixmRNASdpaAttention(HelixmRNAAttention):
         # We dispatch to SDPA's Flash Attention or Efficient kernels via this `is_causal` if statement instead of an inline conditional assignment
         # in SDPA to support both torch.compile's dynamic shapes and full graph options. An inline conditional prevents dynamic shapes from compiling.
         # The q_len > 1 is necessary to match with AttentionMaskConverter.to_causal_4d that does not create a causal mask in case q_len == 1.
-        is_causal = True if self.is_causal and causal_mask is None and q_len > 1 else False
+        is_causal = (
+            True if self.is_causal and causal_mask is None and q_len > 1 else False
+        )
 
         attn_output = torch.nn.functional.scaled_dot_product_attention(
             query_states,
@@ -490,6 +599,7 @@ HelixmRNA_ATTENTION_CLASSES = {
     "sdpa": HelixmRNASdpaAttention,
 }
 
+
 class Mamba2Cache:
     """
     Arguments:
@@ -506,7 +616,11 @@ class Mamba2Cache:
     """
 
     def __init__(
-        self, config: HelixmRNAPretrainedConfig, batch_size: int, dtype: torch.dtype = torch.float16, device: Optional[str] = None
+        self,
+        config: HelixmRNAPretrainedConfig,
+        batch_size: int,
+        dtype: torch.dtype = torch.float16,
+        device: Optional[str] = None,
     ):
         self.seqlen_offset = 0
         self.dtype = dtype
@@ -525,7 +639,12 @@ class Mamba2Cache:
         }
         self.ssm_states = {
             i: torch.zeros(
-                batch_size, config.num_heads, config.head_dim, config.state_size, device=device, dtype=dtype
+                batch_size,
+                config.num_heads,
+                config.head_dim,
+                config.state_size,
+                device=device,
+                dtype=dtype,
             )
             for i in range(config.num_hidden_layers)
         }
@@ -533,7 +652,10 @@ class Mamba2Cache:
         self.act = ACT2FN[config.hidden_act]
 
     def update_conv_state(
-        self, layer_idx: int, new_conv_state: torch.Tensor, cache_position: torch.LongTensor
+        self,
+        layer_idx: int,
+        new_conv_state: torch.Tensor,
+        cache_position: torch.LongTensor,
     ) -> torch.Tensor:
         conv_state = self.conv_states[layer_idx]
         cache_position = cache_position.clamp(0, self.conv_kernel_size - 1)
@@ -627,11 +749,15 @@ class Mamba2Mixer(nn.Module):
         A = torch.arange(1, self.num_heads + 1)
         self.A_log = nn.Parameter(torch.log(A))
         self.A_log._no_weight_decay = True
-        self.norm = MambaRMSNormGated(self.intermediate_size, eps=self.layer_norm_epsilon)
+        self.norm = MambaRMSNormGated(
+            self.intermediate_size, eps=self.layer_norm_epsilon
+        )
         self.D = nn.Parameter(torch.ones(self.num_heads))
         self.D._no_weight_decay = True
 
-        self.out_proj = nn.Linear(self.intermediate_size, self.hidden_size, bias=config.use_bias)
+        self.out_proj = nn.Linear(
+            self.intermediate_size, self.hidden_size, bias=config.use_bias
+        )
         self.use_bias = config.use_bias
 
         if not is_fast_path_available:
@@ -649,17 +775,29 @@ class Mamba2Mixer(nn.Module):
         attention_mask: Optional[torch.Tensor] = None,
     ):
         # set up dimensions for reshapes later
-       
+
         batch_size, seq_len, _ = hidden_states.shape
         groups_time_state_size = self.n_groups * self.ssm_state_size
-        d_to_remove = 2 * self.intermediate_size + 2 * self.n_groups * self.ssm_state_size + self.num_heads
+        d_to_remove = (
+            2 * self.intermediate_size
+            + 2 * self.n_groups * self.ssm_state_size
+            + self.num_heads
+        )
 
         # getting projected states from cache if it exists
         if cache_params is not None and cache_params.seqlen_offset > 0:
             in_projected_states = self.in_proj(hidden_states.squeeze(1))  # (B 2D)
             d_mlp = (in_projected_states.shape[-1] - d_to_remove) // 2
-            split_projection_dim = [d_mlp, d_mlp, self.intermediate_size, self.conv_dim, self.num_heads]
-            _, _, gate, hidden_states_B_C, dt = torch.split(in_projected_states, split_projection_dim, dim=-1)
+            split_projection_dim = [
+                d_mlp,
+                d_mlp,
+                self.intermediate_size,
+                self.conv_dim,
+                self.num_heads,
+            ]
+            _, _, gate, hidden_states_B_C, dt = torch.split(
+                in_projected_states, split_projection_dim, dim=-1
+            )
 
             hidden_states_B_C = causal_conv1d_update(
                 hidden_states_B_C,
@@ -671,18 +809,28 @@ class Mamba2Mixer(nn.Module):
 
             hidden_states, B, C = torch.split(
                 hidden_states_B_C,
-                [self.intermediate_size, groups_time_state_size, groups_time_state_size],
+                [
+                    self.intermediate_size,
+                    groups_time_state_size,
+                    groups_time_state_size,
+                ],
                 dim=-1,
             )
             A = -torch.exp(self.A_log.float())  # (nheads,)
 
-            A = A[:, None, ...][:, :, None].expand(-1, self.head_dim, self.ssm_state_size).to(dtype=torch.float32)
+            A = (
+                A[:, None, ...][:, :, None]
+                .expand(-1, self.head_dim, self.ssm_state_size)
+                .to(dtype=torch.float32)
+            )
             dt = dt[:, :, None].expand(-1, -1, self.head_dim)
             dt_bias = self.dt_bias[:, None, ...].expand(-1, self.head_dim)
             D = self.D[:, None, ...].expand(-1, self.head_dim)
             B = B.view(batch_size, self.n_groups, B.shape[1] // self.n_groups)
             C = C.view(batch_size, self.n_groups, C.shape[1] // self.n_groups)
-            hidden_states_reshaped = hidden_states.view(batch_size, self.num_heads, self.head_dim)
+            hidden_states_reshaped = hidden_states.view(
+                batch_size, self.num_heads, self.head_dim
+            )
             hidden_states = selective_state_update(
                 cache_params.ssm_states[self.layer_idx],
                 hidden_states_reshaped,
@@ -695,19 +843,31 @@ class Mamba2Mixer(nn.Module):
                 dt_bias=dt_bias,
                 dt_softplus=True,
             )
-            hidden_states = hidden_states.view(batch_size, self.num_heads * self.head_dim)
+            hidden_states = hidden_states.view(
+                batch_size, self.num_heads * self.head_dim
+            )
             hidden_states = self.norm(hidden_states, gate)
             out = self.out_proj(hidden_states)[:, None, ...]
         # if no cache is found, calling the kernel
         else:
-            if attention_mask is not None and attention_mask.shape[1] > 1 and attention_mask.shape[0] > 1:
+            if (
+                attention_mask is not None
+                and attention_mask.shape[1] > 1
+                and attention_mask.shape[0] > 1
+            ):
                 # tune out hidden states for pad tokens, see https://github.com/state-spaces/mamba/issues/66
                 dtype = hidden_states.dtype
                 hidden_states = (hidden_states * attention_mask[:, :, None]).to(dtype)
             # 1. Gated MLP's linear projection
             projected_states = self.in_proj(hidden_states)
-            A = -torch.exp(self.A_log.float())  # (num_heads) or (intermediate_size, state_size)
-            dt_limit_kwargs = {} if self.time_step_limit == (0.0, float("inf")) else {"dt_limit": self.time_step_limit}
+            A = -torch.exp(
+                self.A_log.float()
+            )  # (num_heads) or (intermediate_size, state_size)
+            dt_limit_kwargs = (
+                {}
+                if self.time_step_limit == (0.0, float("inf"))
+                else {"dt_limit": self.time_step_limit}
+            )
 
             if self.training and cache_params is None:
                 out, ssm_state = mamba_split_conv1d_scan_combined(
@@ -741,7 +901,9 @@ class Mamba2Mixer(nn.Module):
                 # 1D Convolution
                 if causal_conv1d_fn is None or self.activation not in ["silu", "swish"]:
                     hidden_states_B_C = self.act(
-                        self.conv1d(hidden_states_B_C.transpose(1, 2)).transpose(1, 2)[:, :seq_len]
+                        self.conv1d(hidden_states_B_C.transpose(1, 2)).transpose(1, 2)[
+                            :, :seq_len
+                        ]
                     )  # (B, L, self.d_inner + 2 * ngroups * d_state)
                 else:
                     hidden_states_B_C = causal_conv1d_fn(
@@ -752,13 +914,23 @@ class Mamba2Mixer(nn.Module):
                     ).transpose(1, 2)[:, :seq_len]
                 hidden_states, B, C = torch.split(
                     hidden_states_B_C,
-                    [self.intermediate_size, groups_time_state_size, groups_time_state_size],
+                    [
+                        self.intermediate_size,
+                        groups_time_state_size,
+                        groups_time_state_size,
+                    ],
                     dim=-1,
                 )
-                if attention_mask is not None and attention_mask.shape[1] > 1 and attention_mask.shape[0] > 1:
+                if (
+                    attention_mask is not None
+                    and attention_mask.shape[1] > 1
+                    and attention_mask.shape[0] > 1
+                ):
                     # tune out hidden states for pad tokens, see https://github.com/state-spaces/mamba/issues/66
                     dtype = hidden_states.dtype
-                    hidden_states = (hidden_states * attention_mask[:, :, None]).to(dtype)
+                    hidden_states = (hidden_states * attention_mask[:, :, None]).to(
+                        dtype
+                    )
                 scan_output, ssm_state = mamba_chunk_scan_combined(
                     hidden_states.view(batch_size, seq_len, -1, self.head_dim),
                     time_step,
@@ -978,13 +1150,21 @@ class Mamba2Mixer(nn.Module):
         attention_mask: Optional[torch.Tensor] = None,
     ):
         if is_fast_path_available and "cuda" in self.in_proj.weight.device.type:
-            return self.cuda_kernels_forward(hidden_states, cache_params, cache_position, attention_mask)
+            return self.cuda_kernels_forward(
+                hidden_states, cache_params, cache_position, attention_mask
+            )
         dtype = hidden_states.dtype
-        if attention_mask is not None and attention_mask.shape[1] > 1 and attention_mask.shape[0] > 1:
+        if (
+            attention_mask is not None
+            and attention_mask.shape[1] > 1
+            and attention_mask.shape[0] > 1
+        ):
             # tune out hidden states for pad tokens, see https://github.com/state-spaces/mamba/issues/66
             hidden_states = (hidden_states * attention_mask[:, :, None]).to(dtype)
 
-        return self.torch_forward(hidden_states, cache_params, cache_position, attention_mask)
+        return self.torch_forward(
+            hidden_states, cache_params, cache_position, attention_mask
+        )
 
 
 class Mamba2RMSNorm(nn.Module):
@@ -1005,34 +1185,43 @@ class Mamba2RMSNorm(nn.Module):
 
 
 class HelixmRNAMLP(nn.Module):
-    def __init__(self, config,layer_idx=None):
+    def __init__(self, config, layer_idx=None):
         super().__init__()
         self.hidden_size = config.hidden_size
-        self.intermediate_size = self.hidden_size*4 #config.intermediate_size
+        self.intermediate_size = self.hidden_size * 4  # config.intermediate_size
         self.gate_proj = nn.Linear(self.hidden_size, self.intermediate_size, bias=False)
         self.up_proj = nn.Linear(self.hidden_size, self.intermediate_size, bias=False)
         self.down_proj = nn.Linear(self.intermediate_size, self.hidden_size, bias=False)
         self.act_fn = ACT2FN[config.hidden_act]
 
-    def forward(self, hidden_state,**kwargs):
-        hidden_states = self.down_proj(self.act_fn(self.gate_proj(hidden_state)) * self.up_proj(hidden_state))
+    def forward(self, hidden_state, **kwargs):
+        hidden_states = self.down_proj(
+            self.act_fn(self.gate_proj(hidden_state)) * self.up_proj(hidden_state)
+        )
         return (hidden_states,)
-    
 
 
 class HelixmRNAMLPLayer(nn.Module):
-    def __init__(self, config,layer_idx=None):
+    def __init__(self, config, layer_idx=None):
         super().__init__()
         ffn_layer_class = HelixmRNAMLP
         self.feed_forward = ffn_layer_class(config)
-        self.input_layernorm = Mamba2RMSNorm(config.hidden_size, eps=config.layer_norm_epsilon)
+        self.input_layernorm = Mamba2RMSNorm(
+            config.hidden_size, eps=config.layer_norm_epsilon
+        )
 
-    def forward(self, hidden_states,use_cache=True,past_key_value: Optional[HybridMambaAttentionDynamicCache] = None,**kwargs):
+    def forward(
+        self,
+        hidden_states,
+        use_cache=True,
+        past_key_value: Optional[HybridMambaAttentionDynamicCache] = None,
+        **kwargs,
+    ):
         residual = hidden_states
 
         hidden_states = self.input_layernorm(hidden_states)
         ff_outputs = self.feed_forward(hidden_states)
-        
+
         hidden_states = ff_outputs[0]
         hidden_states = residual + hidden_states
 
@@ -1053,7 +1242,6 @@ class Mamba2Block(nn.Module):
         self.norm = Mamba2RMSNorm(config.hidden_size, eps=config.layer_norm_epsilon)
         self.mixer = Mamba2Mixer(config, layer_idx=layer_idx)
 
-
     def forward(
         self,
         hidden_states,
@@ -1070,7 +1258,10 @@ class Mamba2Block(nn.Module):
             residual = residual.to(torch.float32)
 
         hidden_states = self.mixer(
-            hidden_states, cache_params=past_key_value, cache_position=cache_position, attention_mask=attention_mask
+            hidden_states,
+            cache_params=past_key_value,
+            cache_position=cache_position,
+            attention_mask=attention_mask,
         )
         hidden_states = residual + hidden_states
 
@@ -1083,15 +1274,22 @@ class Mamba2Block(nn.Module):
 
         return hidden_states
 
+
 class HelixmRNAAttentionDecoderLayer(nn.Module):
     def __init__(self, config: HelixmRNAPretrainedConfig, layer_idx: int):
         super().__init__()
-        self.self_attn = HelixmRNA_ATTENTION_CLASSES[config._attn_implementation](config, layer_idx)
+        self.self_attn = HelixmRNA_ATTENTION_CLASSES[config._attn_implementation](
+            config, layer_idx
+        )
 
         ffn_layer_class = HelixmRNAMLP
         self.feed_forward = ffn_layer_class(config)
-        self.input_layernorm = Mamba2RMSNorm(config.hidden_size, eps=config.layer_norm_epsilon)
-        self.pre_ff_layernorm = Mamba2RMSNorm(config.hidden_size, eps=config.layer_norm_epsilon)
+        self.input_layernorm = Mamba2RMSNorm(
+            config.hidden_size, eps=config.layer_norm_epsilon
+        )
+        self.pre_ff_layernorm = Mamba2RMSNorm(
+            config.hidden_size, eps=config.layer_norm_epsilon
+        )
 
     def forward(
         self,
@@ -1103,12 +1301,14 @@ class HelixmRNAAttentionDecoderLayer(nn.Module):
         output_router_logits: Optional[bool] = False,
         use_cache: Optional[bool] = False,
         cache_position: Optional[torch.LongTensor] = None,
-    ) -> Tuple[torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]]]:
+    ) -> Tuple[
+        torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]]
+    ]:
         """
         Args:
-            hidden_states (`torch.FloatTensor`): 
+            hidden_states (`torch.FloatTensor`):
                 Input to the layer of shape `(batch, seq_len, embed_dim)`
-            attention_mask (`torch.FloatTensor`, *optional*): 
+            attention_mask (`torch.FloatTensor`, *optional*):
                 Attention mask of size `(batch, sequence_length)` where padding elements are indicated by 0.
             past_key_value (`HybridMambaAttentionDynamicCache`, *optional*): cached past key and value projection states
             output_attentions (`bool`, *optional*):
@@ -1145,7 +1345,7 @@ class HelixmRNAAttentionDecoderLayer(nn.Module):
         residual = hidden_states
         hidden_states = self.pre_ff_layernorm(hidden_states)
         ff_outputs = self.feed_forward(hidden_states)
-        
+
         hidden_states = ff_outputs[0]
         hidden_states = residual + hidden_states
 
@@ -1158,6 +1358,7 @@ class HelixmRNAAttentionDecoderLayer(nn.Module):
             outputs += (present_key_value,)
 
         return outputs
+
 
 class HelixmRNAPreTrainedModel(PreTrainedModel):
     """
@@ -1183,7 +1384,10 @@ class HelixmRNAPreTrainedModel(PreTrainedModel):
 
             dt = torch.exp(
                 torch.rand(self.config.num_heads)
-                * (math.log(self.config.time_step_max) - math.log(self.config.time_step_min))
+                * (
+                    math.log(self.config.time_step_max)
+                    - math.log(self.config.time_step_min)
+                )
                 + math.log(self.config.time_step_min)
             ).clamp(min=self.config.time_step_floor)
 
@@ -1317,7 +1521,12 @@ MAMBA2_INPUTS_DOCSTRING = r"""
             Whether or not to return a [`~utils.ModelOutput`] instead of a plain tuple.
 """
 
-ALL_DECODER_LAYER_TYPES = {"attention": HelixmRNAAttentionDecoderLayer, "mamba": Mamba2Block,"mlp": HelixmRNAMLPLayer}
+ALL_DECODER_LAYER_TYPES = {
+    "attention": HelixmRNAAttentionDecoderLayer,
+    "mamba": Mamba2Block,
+    "mlp": HelixmRNAMLPLayer,
+}
+
 
 class HelixmRNAPretrainedModel(HelixmRNAPreTrainedModel):
     def __init__(self, config):
@@ -1363,13 +1572,23 @@ class HelixmRNAPretrainedModel(HelixmRNAPreTrainedModel):
         **kwargs,
     ) -> Union[Tuple, HelixmRNAOutput]:
         output_hidden_states = (
-            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
+            output_hidden_states
+            if output_hidden_states is not None
+            else self.config.output_hidden_states
         )
-        use_cache = use_cache if use_cache is not None else (self.config.use_cache if not self.training else False)
-        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+        use_cache = (
+            use_cache
+            if use_cache is not None
+            else (self.config.use_cache if not self.training else False)
+        )
+        return_dict = (
+            return_dict if return_dict is not None else self.config.use_return_dict
+        )
 
         if (input_ids is None) ^ (inputs_embeds is not None):  # ^ is python for xor
-            raise ValueError("You must specify exactly one of input_ids or inputs_embeds")
+            raise ValueError(
+                "You must specify exactly one of input_ids or inputs_embeds"
+            )
 
         if inputs_embeds is None:
             inputs_embeds = self.embeddings(input_ids)
@@ -1380,9 +1599,14 @@ class HelixmRNAPretrainedModel(HelixmRNAPreTrainedModel):
         if use_cache:
             if cache_params is None:
                 cache_params = HybridMambaAttentionDynamicCache(
-                    self.config, inputs_embeds.size(0), device=inputs_embeds.device, dtype=inputs_embeds.dtype
+                    self.config,
+                    inputs_embeds.size(0),
+                    device=inputs_embeds.device,
+                    dtype=inputs_embeds.dtype,
                 )
-                cache_position = torch.arange(0, self.config.conv_kernel, device=inputs_embeds.device)
+                cache_position = torch.arange(
+                    0, self.config.conv_kernel, device=inputs_embeds.device
+                )
             elif cache_position is None:
                 # cases when we do manual forward instead of using `model.generate` which will initiate
                 # `cache_position` and makes sure it is not None, throw error here instead of doing some
@@ -1402,18 +1626,23 @@ class HelixmRNAPretrainedModel(HelixmRNAPreTrainedModel):
 
         hidden_states = inputs_embeds
         if cache_position is None:
-            cache_position = torch.arange(hidden_states.shape[1], device=hidden_states.device)
+            cache_position = torch.arange(
+                hidden_states.shape[1], device=hidden_states.device
+            )
         if position_ids is None:
             position_ids = cache_position.unsqueeze(0)
-       
 
-        causal_mask = self._update_causal_mask(attention_mask, inputs_embeds, cache_position)
+        causal_mask = self._update_causal_mask(
+            attention_mask, inputs_embeds, cache_position
+        )
 
         all_hidden_states = () if output_hidden_states else None
         all_self_attns = () if output_attentions else None
         for helix_block in self.layers:
 
-            layer_mask = attention_mask if isinstance(helix_block, Mamba2Block) else causal_mask
+            layer_mask = (
+                attention_mask if isinstance(helix_block, Mamba2Block) else causal_mask
+            )
 
             if self.gradient_checkpointing and self.training:
                 layer_outputs = self._gradient_checkpointing_func(
@@ -1444,25 +1673,27 @@ class HelixmRNAPretrainedModel(HelixmRNAPreTrainedModel):
                     # append attentions only of attention layers. Mamba layers return `None` as the attention weights
                     all_self_attns += (layer_outputs[1],)
 
-
         if use_cache:
             cache_params.seqlen_offset += inputs_embeds.shape[1]
 
         hidden_states = self.norm_f(hidden_states)
 
-        
         if output_hidden_states:
             all_hidden_states += (hidden_states,)
 
         if not return_dict:
-            return tuple(v for v in [hidden_states, cache_params, all_hidden_states] if v is not None)
+            return tuple(
+                v
+                for v in [hidden_states, cache_params, all_hidden_states]
+                if v is not None
+            )
 
         return HelixmRNAOutput(
             last_hidden_state=hidden_states,
             cache_params=cache_params if use_cache else None,
             hidden_states=all_hidden_states,
         )
-    
+
     def _update_causal_mask(self, attention_mask, input_tensor, cache_position):
         if self.config._attn_implementation == "flash_attention_2":
             if attention_mask is not None and 0.0 in attention_mask:
@@ -1474,17 +1705,32 @@ class HelixmRNAPretrainedModel(HelixmRNAPreTrainedModel):
         sequence_length = input_tensor.shape[1]
         target_length = cache_position[-1] + 1
 
-        causal_mask = torch.full((sequence_length, target_length), fill_value=min_dtype, dtype=dtype, device=device)
+        causal_mask = torch.full(
+            (sequence_length, target_length),
+            fill_value=min_dtype,
+            dtype=dtype,
+            device=device,
+        )
         if sequence_length != 1:
             causal_mask = torch.triu(causal_mask, diagonal=1)
-        causal_mask *= torch.arange(target_length, device=device) > cache_position.reshape(-1, 1)
-        causal_mask = causal_mask[None, None, :, :].expand(input_tensor.shape[0], 1, -1, -1)
+        causal_mask *= torch.arange(
+            target_length, device=device
+        ) > cache_position.reshape(-1, 1)
+        causal_mask = causal_mask[None, None, :, :].expand(
+            input_tensor.shape[0], 1, -1, -1
+        )
         if attention_mask is not None:
-            causal_mask = causal_mask.clone()  # copy to contiguous memory for in-place edit
+            causal_mask = (
+                causal_mask.clone()
+            )  # copy to contiguous memory for in-place edit
             if attention_mask.dim() == 2:
                 mask_length = attention_mask.shape[-1]
-                padding_mask = causal_mask[..., :mask_length].eq(0.0) * attention_mask[:, None, None, :].eq(0.0)
-                causal_mask[..., :mask_length] = causal_mask[..., :mask_length].masked_fill(padding_mask, min_dtype)
+                padding_mask = causal_mask[..., :mask_length].eq(0.0) * attention_mask[
+                    :, None, None, :
+                ].eq(0.0)
+                causal_mask[..., :mask_length] = causal_mask[
+                    ..., :mask_length
+                ].masked_fill(padding_mask, min_dtype)
 
         if (
             self.config._attn_implementation == "sdpa"
@@ -1494,7 +1740,9 @@ class HelixmRNAPretrainedModel(HelixmRNAPreTrainedModel):
             # Attend to all tokens in fully masked rows in the causal_mask, for example the relevant first rows when
             # using left padding. This is required by F.scaled_dot_product_attention memory-efficient attention path.
             # Details: https://github.com/pytorch/pytorch/issues/110213
-            causal_mask = AttentionMaskConverter._unmask_unattended(causal_mask, min_dtype)
+            causal_mask = AttentionMaskConverter._unmask_unattended(
+                causal_mask, min_dtype
+            )
 
         return causal_mask
 
@@ -1505,9 +1753,12 @@ class HelixmRNAPretrainedModel(HelixmRNAPreTrainedModel):
             2. Attending to all inputs
         """
         mamba_mask = attention_mask
-        if cache_position[0] > 0 or (attention_mask is not None and torch.all(attention_mask == 1)):
+        if cache_position[0] > 0 or (
+            attention_mask is not None and torch.all(attention_mask == 1)
+        ):
             mamba_mask = None
         return mamba_mask
+
 
 # class HelixmRNAForCausalLM(HelixmRNAPreTrainedModel, GenerationMixin):
 #     _tied_weights_keys = []

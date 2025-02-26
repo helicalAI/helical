@@ -5,7 +5,7 @@ import numpy as np
 from anndata import AnnData
 from helical.utils.downloader import Downloader
 from transformers import BertForMaskedLM
-from helical.models.geneformer.geneformer_utils import get_embs,quant_layers
+from helical.models.geneformer.geneformer_utils import get_embs, quant_layers
 from helical.models.geneformer.geneformer_tokenizer import TranscriptomeTokenizer
 from helical.models.geneformer.geneformer_config import GeneformerConfig
 from helical.utils.mapping import map_gene_symbols_to_ensembl_ids
@@ -13,8 +13,10 @@ from datasets import Dataset
 from typing import Optional
 
 LOGGER = logging.getLogger(__name__)
+
+
 class Geneformer(HelicalRNAModel):
-    """Geneformer Model. 
+    """Geneformer Model.
     The Geneformer Model is a transformer-based model that can be used to extract gene embeddings from single-cell RNA-seq data. Both versions are made available through this interface.
     Both versions of Geneformer (v1 and v2) have different sub-models with varying numbers of layers, context size and pretraining set. The available models are the following:
 
@@ -62,72 +64,82 @@ class Geneformer(HelicalRNAModel):
 
     Notes
     -----
-    The first version of the model is published in this <a href="https://www.nature.com/articles/s41586-023-06139-9.epdf?sharing_token=u_5LUGVkd3A8zR-f73lU59RgN0jAjWel9jnR3ZoTv0N2UB4yyXENUK50s6uqjXH69sDxh4Z3J4plYCKlVME-W2WSuRiS96vx6t5ex2-krVDS46JkoVvAvJyWtYXIyj74pDWn_DutZq1oAlDaxfvBpUfSKDdBPJ8SKlTId8uT47M%3D">Nature Paper</a>. 
+    The first version of the model is published in this <a href="https://www.nature.com/articles/s41586-023-06139-9.epdf?sharing_token=u_5LUGVkd3A8zR-f73lU59RgN0jAjWel9jnR3ZoTv0N2UB4yyXENUK50s6uqjXH69sDxh4Z3J4plYCKlVME-W2WSuRiS96vx6t5ex2-krVDS46JkoVvAvJyWtYXIyj74pDWn_DutZq1oAlDaxfvBpUfSKDdBPJ8SKlTId8uT47M%3D">Nature Paper</a>.
     The second version of the model is available at <a href="https://pubmed.ncbi.nlm.nih.gov/39229018/">NIH</a>.
     We use the implementation from the <a href="https://huggingface.co/ctheodoris/Geneformer/tree/main">Geneformer</a> repository.
 
     """
+
     default_configurer = GeneformerConfig()
+
     def __init__(self, configurer: GeneformerConfig = default_configurer) -> None:
         super().__init__()
         self.configurer = configurer
         self.config = configurer.config
         self.files_config = configurer.files_config
-        self.device = self.config['device']
+        self.device = self.config["device"]
 
         downloader = Downloader()
         for file in self.configurer.list_of_files_to_download:
             downloader.download_via_name(file)
 
-        self.model =  BertForMaskedLM.from_pretrained(self.files_config['model_files_dir'], output_hidden_states=True, output_attentions=False)
+        self.model = BertForMaskedLM.from_pretrained(
+            self.files_config["model_files_dir"],
+            output_hidden_states=True,
+            output_attentions=False,
+        )
         self.model.eval()
         self.model = self.model.to(self.device)
 
-        self.layer_to_quant = quant_layers(self.model) + self.config['emb_layer']
-        self.emb_mode = self.config['emb_mode']
-        self.forward_batch_size = self.config['batch_size']
+        self.layer_to_quant = quant_layers(self.model) + self.config["emb_layer"]
+        self.emb_mode = self.config["emb_mode"]
+        self.forward_batch_size = self.config["batch_size"]
 
-        self.tk = TranscriptomeTokenizer(custom_attr_name_dict=self.config["custom_attr_name_dict"],
-                                         nproc=self.config['nproc'], 
-                                         model_input_size=self.config["input_size"],
-                                         special_token=self.config["special_token"],
-                                         gene_median_file = self.files_config["gene_median_path"], 
-                                         token_dictionary_file = self.files_config["token_path"],
-                                         gene_mapping_file = self.files_config["ensembl_dict_path"],
-                                        )
-        
+        self.tk = TranscriptomeTokenizer(
+            custom_attr_name_dict=self.config["custom_attr_name_dict"],
+            nproc=self.config["nproc"],
+            model_input_size=self.config["input_size"],
+            special_token=self.config["special_token"],
+            gene_median_file=self.files_config["gene_median_path"],
+            token_dictionary_file=self.files_config["token_path"],
+            gene_mapping_file=self.files_config["ensembl_dict_path"],
+        )
+
         self.pad_token_id = self.tk.gene_token_dict["<pad>"]
         self.cls_present = True if "<cls>" in self.tk.gene_token_dict else False
         self.eos_present = True if "<eos>" in self.tk.gene_token_dict else False
-        
+
         LOGGER.info(f"Model finished initializing.")
         mode = "training" if self.model.training else "eval"
-        LOGGER.info(f"'{self.config['model_name']}' model is in '{mode}' mode, on device '{self.device}' with embedding mode '{self.emb_mode}'.")
+        LOGGER.info(
+            f"'{self.config['model_name']}' model is in '{mode}' mode, on device '{self.device}' with embedding mode '{self.emb_mode}'."
+        )
 
-    def process_data(self, 
-                     adata: AnnData,  
-                     gene_names: str = "index", 
-                     output_path: Optional[str] = None,
-                     use_raw_counts: bool = True,
-                     ) -> Dataset:   
+    def process_data(
+        self,
+        adata: AnnData,
+        gene_names: str = "index",
+        output_path: Optional[str] = None,
+        use_raw_counts: bool = True,
+    ) -> Dataset:
         """
         Processes the data for the Geneformer model.
 
         Parameters
         ----------
         adata : AnnData
-            The AnnData object containing the data to be processed. Geneformer uses Ensembl IDs to identify genes 
-            and currently supports only human genes. If the AnnData object already has an 'ensembl_id' column, 
+            The AnnData object containing the data to be processed. Geneformer uses Ensembl IDs to identify genes
+            and currently supports only human genes. If the AnnData object already has an 'ensembl_id' column,
             the mapping step can be skipped.
         gene_names : str, optional, default="index"
-            The column in `adata.var` that contains the gene names. If set to a value other than "ensembl_id", 
-            the gene symbols in that column will be mapped to Ensembl IDs using the 'pyensembl' package, 
+            The column in `adata.var` that contains the gene names. If set to a value other than "ensembl_id",
+            the gene symbols in that column will be mapped to Ensembl IDs using the 'pyensembl' package,
             which retrieves mappings from the Ensembl FTP server and loads them into a local database.
             - If set to "index", the index of the AnnData object will be used and mapped to Ensembl IDs.
             - If set to "ensembl_id", no mapping will occur.
             Special case:
-                If the index of `adata` already contains Ensembl IDs, setting this to "index" will result in 
-                invalid mappings. In such cases, create a new column containing Ensembl IDs and pass "ensembl_id" 
+                If the index of `adata` already contains Ensembl IDs, setting this to "index" will result in
+                invalid mappings. In such cases, create a new column containing Ensembl IDs and pass "ensembl_id"
                 as the value of `gene_names`.
         output_path : str, optional, default=None
             If specified, saves the tokenized dataset to the given output path.
@@ -144,9 +156,13 @@ class Geneformer(HelicalRNAModel):
 
         # map gene symbols to ensemble ids if provided
         if gene_names != "ensembl_id":
-            if (adata.var[gene_names].str.startswith("ENS").all()) or (adata.var[gene_names].str.startswith("None").any()):
-                message = "It seems an anndata with 'ensemble ids' and/or 'None' was passed. " \
-                "Please set gene_names='ensembl_id' and remove 'None's to skip mapping."
+            if (adata.var[gene_names].str.startswith("ENS").all()) or (
+                adata.var[gene_names].str.startswith("None").any()
+            ):
+                message = (
+                    "It seems an anndata with 'ensemble ids' and/or 'None' was passed. "
+                    "Please set gene_names='ensembl_id' and remove 'None's to skip mapping."
+                )
                 LOGGER.info(message)
                 raise ValueError(message)
             adata = map_gene_symbols_to_ensembl_ids(adata, gene_names)
@@ -159,17 +175,19 @@ class Geneformer(HelicalRNAModel):
         tokenized_cells, cell_metadata = self.tk.tokenize_anndata(adata)
 
         # tokenized_cells, cell_metadata =  self.tk.tokenize_anndata(adata)
-        tokenized_dataset = self.tk.create_dataset(tokenized_cells, cell_metadata, use_generator=False)
-        
+        tokenized_dataset = self.tk.create_dataset(
+            tokenized_cells, cell_metadata, use_generator=False
+        )
+
         if output_path:
             output_path = Path(output_path).with_suffix(".dataset")
             tokenized_dataset.save_to_disk(output_path)
-        
+
         LOGGER.info(f"Successfully processed the data for Geneformer.")
         return tokenized_dataset
 
     def get_embeddings(self, dataset: Dataset) -> np.array:
-        """Gets the gene embeddings from the Geneformer model   
+        """Gets the gene embeddings from the Geneformer model
 
         Parameters
         ----------
@@ -193,7 +211,7 @@ class Geneformer(HelicalRNAModel):
             self.tk.token_to_ensembl_dict,
             self.cls_present,
             self.eos_present,
-            self.device
+            self.device,
         )
 
         LOGGER.info(f"Finished getting embeddings.")

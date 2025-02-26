@@ -42,6 +42,11 @@ nav:
       - Config: ./configs/caduceus_config.md
       - Model: ./models/caduceus.md
       - Fine-Tuning Model: ./fine_tuning_models/caduceus_fine_tune.md
+  - DNA and RNA Sequence models:
+    - Evo 2:
+      - Model Card: ./model_cards/evo_2.md
+      - Config: ./configs/evo_2_config.md
+      - Model: ./models/evo_2.md
   - Helical Base Models: ./models/base_models.md
   - Fine-Tuning Heads: ./models/fine_tuning_heads.md
   - Example Notebooks:
@@ -53,6 +58,7 @@ nav:
     - Hyena-DNA-Inference: ./notebooks/Hyena-DNA-Inference.ipynb
     - HyenaDNA-Fine-Tuning: ./notebooks/HyenaDNA-Fine-Tuning.ipynb
     - Cell-Gene-Cls-embedding-generation: ./notebooks/Cell-Gene-Cls-embedding-generation.ipynb
+    - Evo-2-example: ./notebooks/Evo-2.ipynb
    
 theme:
   name: material
@@ -67,6 +73,8 @@ theme:
     primary: custom
   features:
     - content.code.copy
+    - navigation.expand
+
 extra_css:
   - stylesheets/extra.css
 extra:

@@ -1,5 +1,5 @@
-"""Character tokenizer for Hugging Face.
-"""
+"""Character tokenizer for Hugging Face."""
+
 from typing import List, Optional, Dict, Sequence, Tuple
 
 from transformers import PreTrainedTokenizer
@@ -8,16 +8,18 @@ from transformers import PreTrainedTokenizer
 class CharTokenizer(PreTrainedTokenizer):
     model_input_names = ["input_ids"]
 
-    def __init__(self,
-                 model_max_length: int,
-                 bos_token="[BOS]",
-                 eos_token="[SEP]",
-                 sep_token="[SEP]",
-                 cls_token="[CLS]",
-                 pad_token="[PAD]",
-                 mask_token="[MASK]",
-                 unk_token="[UNK]",
-                 **kwargs):
+    def __init__(
+        self,
+        model_max_length: int,
+        bos_token="[BOS]",
+        eos_token="[SEP]",
+        sep_token="[SEP]",
+        cls_token="[CLS]",
+        pad_token="[PAD]",
+        mask_token="[MASK]",
+        unk_token="[UNK]",
+        **kwargs,
+    ):
         """Character tokenizer for Hugging Face transformers.
         Adapted from https://huggingface.co/LongSafari/hyenadna-tiny-1k-seqlen-hf/blob/main/tokenization_hyena.py
         Args:
@@ -52,7 +54,7 @@ class CharTokenizer(PreTrainedTokenizer):
         self._vocab_int_to_str = {v: k for k, v in self._vocab_str_to_int.items()}
         add_prefix_space = kwargs.pop("add_prefix_space", False)
         padding_side = kwargs.pop("padding_side", "left")
-        
+
         self._vocab_str_to_int["T"] = self._vocab_str_to_int["U"]
 
         super().__init__(
@@ -83,7 +85,9 @@ class CharTokenizer(PreTrainedTokenizer):
         return self._vocab_int_to_str[index]
 
     def convert_tokens_to_string(self, tokens):
-        return "".join(tokens)  # Note: this operation has lost info about which base pairs were originally lowercase
+        return "".join(
+            tokens
+        )  # Note: this operation has lost info about which base pairs were originally lowercase
 
     def get_special_tokens_mask(
         self,
@@ -117,5 +121,7 @@ class CharTokenizer(PreTrainedTokenizer):
         return self._vocab_str_to_int
 
     # Fixed vocabulary with no vocab file
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = None) -> Tuple:
+    def save_vocabulary(
+        self, save_directory: str, filename_prefix: Optional[str] = None
+    ) -> Tuple:
         return ()

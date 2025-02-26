@@ -9,12 +9,19 @@ from typing import Optional
 import torch
 from torch import Tensor
 from torch import nn
-from mamba_ssm.ops.triton.layer_norm import RMSNorm, layer_norm_fn, rms_norm_fn  # mambav2 file structure
+from mamba_ssm.ops.triton.layer_norm import (
+    RMSNorm,
+    layer_norm_fn,
+    rms_norm_fn,
+)  # mambav2 file structure
 
 
 class RCPSEmbedding(nn.Module):
     """Embedding layer that supports reverse-complement equivariance."""
-    def __init__(self, vocab_size: int, d_model: int, complement_map: dict, **factory_kwargs):
+
+    def __init__(
+        self, vocab_size: int, d_model: int, complement_map: dict, **factory_kwargs
+    ):
         """
         Args:
             vocab_size: Size of vocabulary.
@@ -24,7 +31,7 @@ class RCPSEmbedding(nn.Module):
         super().__init__()
         self.register_buffer(
             "complement_map",
-            torch.tensor(list(OrderedDict(complement_map).values()), dtype=torch.long)
+            torch.tensor(list(OrderedDict(complement_map).values()), dtype=torch.long),
         )
         self.embedding = nn.Embedding(vocab_size, d_model, **factory_kwargs)
 
@@ -42,7 +49,7 @@ class RCPSEmbedding(nn.Module):
         return torch.gather(
             self.complement_map.unsqueeze(0).expand(x.shape[0], -1),
             dim=1,
-            index=torch.flip(x, dims=[-1])
+            index=torch.flip(x, dims=[-1]),
         )
 
     def forward(self, input_ids):
@@ -67,6 +74,7 @@ class RCPSWrapper(nn.Module):
     See ref. "Towards a Better Understanding of Reverse-Complement Equivariance for Deep Learning Models in Regulatory
     Genomics", Zhou et al. (2022), https://proceedings.mlr.press/v165/zhou22a.html for more details.
     """
+
     def __init__(self, submodule: nn.Module):
         super().__init__()
         self.submodule = submodule
@@ -86,15 +94,16 @@ class RCPSWrapper(nn.Module):
         """
         n_channels = x.shape[-1]
         # Run submodule along sequence
-        fwd_out = self.submodule(x[..., :n_channels // 2], **kwargs)
+        fwd_out = self.submodule(x[..., : n_channels // 2], **kwargs)
         # Run submodule along rc-sequence
-        rc_out = self.submodule(self.rc(x[..., n_channels // 2:]), **kwargs)
+        rc_out = self.submodule(self.rc(x[..., n_channels // 2 :]), **kwargs)
         # Concatenate along channel dimension (dim=-1)
         return torch.cat([fwd_out, self.rc(rc_out)], dim=-1)
 
 
 class RCPSAddNormWrapper(RCPSWrapper):
     """RC equivariant AddNorm layer."""
+
     def __init__(self, submodule: nn.Module):
         super().__init__(submodule)
 
@@ -108,14 +117,20 @@ class RCPSAddNormWrapper(RCPSWrapper):
         n_channels = x.shape[-1]
         if residual is None:
             residual = x
-            x_fwd = self.submodule(x[..., :n_channels // 2].to(dtype=self.submodule.weight.dtype))
-            x_rc = self.submodule(self.rc(x[..., n_channels // 2:]).to(dtype=self.submodule.weight.dtype))
+            x_fwd = self.submodule(
+                x[..., : n_channels // 2].to(dtype=self.submodule.weight.dtype)
+            )
+            x_rc = self.submodule(
+                self.rc(x[..., n_channels // 2 :]).to(dtype=self.submodule.weight.dtype)
+            )
             x = torch.cat([x_fwd, self.rc(x_rc)], dim=-1)
         else:
-            residual_fwd = x[..., :n_channels // 2] + residual[..., :n_channels // 2]
+            residual_fwd = x[..., : n_channels // 2] + residual[..., : n_channels // 2]
             x_fwd = self.submodule(residual_fwd.to(dtype=self.submodule.weight.dtype))
 
-            residual_rc = self.rc(x[..., n_channels // 2:]) + self.rc(residual[..., n_channels // 2:])
+            residual_rc = self.rc(x[..., n_channels // 2 :]) + self.rc(
+                residual[..., n_channels // 2 :]
+            )
             x_rc = self.submodule(residual_rc.to(dtype=self.submodule.weight.dtype))
 
             residual = torch.cat([residual_fwd, self.rc(residual_rc)], dim=-1)
@@ -126,14 +141,14 @@ class RCPSAddNormWrapper(RCPSWrapper):
 
 class RCPSMambaBlock(nn.Module):
     def __init__(
-            self,
-            dim,
-            mixer_cls,
-            norm_cls=nn.LayerNorm,
-            fused_add_norm=False,
-            residual_in_fp32=False,
-            device=None,  # Keep for consistency with original Mamba Block
-            dtype=None,  # Keep for consistency with original Mamba Block
+        self,
+        dim,
+        mixer_cls,
+        norm_cls=nn.LayerNorm,
+        fused_add_norm=False,
+        residual_in_fp32=False,
+        device=None,  # Keep for consistency with original Mamba Block
+        dtype=None,  # Keep for consistency with original Mamba Block
     ):
         """RCPS version of simple block wrapping a mixer class with LayerNorm/RMSNorm and residual connection.
 
@@ -152,7 +167,10 @@ class RCPSMambaBlock(nn.Module):
             ), "Only LayerNorm and RMSNorm are supported for fused_add_norm"
 
     def forward(
-        self, hidden_states: Tensor, residual: Optional[Tensor] = None, inference_params=None
+        self,
+        hidden_states: Tensor,
+        residual: Optional[Tensor] = None,
+        inference_params=None,
     ):
         r"""Pass the input through the encoder layer.
 
@@ -162,33 +180,49 @@ class RCPSMambaBlock(nn.Module):
             inference_params: inference parameters for mixer.
         """
         if not self.fused_add_norm:
-            hidden_states, residual = self.norm(hidden_states, residual=residual, prenorm=True)
+            hidden_states, residual = self.norm(
+                hidden_states, residual=residual, prenorm=True
+            )
             if self.residual_in_fp32:
                 residual = residual.to(torch.float32)
         else:
-            fused_add_norm_fn = rms_norm_fn if isinstance(self.norm, RMSNorm) else layer_norm_fn
+            fused_add_norm_fn = (
+                rms_norm_fn if isinstance(self.norm, RMSNorm) else layer_norm_fn
+            )
 
             hidden_states_fwd, residual_fwd = fused_add_norm_fn(
-                hidden_states[..., hidden_states.shape[-1] // 2:],
+                hidden_states[..., hidden_states.shape[-1] // 2 :],
                 self.norm.weight,
                 self.norm.bias,
-                residual=residual[..., hidden_states.shape[-1] // 2:] if residual is not None else None,
+                residual=(
+                    residual[..., hidden_states.shape[-1] // 2 :]
+                    if residual is not None
+                    else None
+                ),
                 prenorm=True,
                 residual_in_fp32=self.residual_in_fp32,
                 eps=self.norm.eps,
             )
 
             hidden_states_rc, residual_rc = fused_add_norm_fn(
-                hidden_states[..., :hidden_states.shape[-1] // 2].flip(dims=[-2, -1]),
+                hidden_states[..., : hidden_states.shape[-1] // 2].flip(dims=[-2, -1]),
                 self.norm.weight,
                 self.norm.bias,
-                residual=residual[..., :hidden_states.shape[-1] // 2].flip(dims=[-2, -1]) if residual is not None else None,
+                residual=(
+                    residual[..., : hidden_states.shape[-1] // 2].flip(dims=[-2, -1])
+                    if residual is not None
+                    else None
+                ),
                 prenorm=True,
                 residual_in_fp32=self.residual_in_fp32,
                 eps=self.norm.eps,
             )
-            hidden_states = torch.cat([hidden_states_fwd, hidden_states_rc.flip(dims=[-2, -1])], dim=-1)
-            residual = torch.cat([residual_fwd, residual_rc.flip(dims=[-2, -1])], dim=-1)
+            hidden_states = torch.cat(
+                [hidden_states_fwd, hidden_states_rc.flip(dims=[-2, -1])], dim=-1
+            )
+            residual = torch.cat(
+                [residual_fwd, residual_rc.flip(dims=[-2, -1])], dim=-1
+            )
         hidden_states = self.mixer(hidden_states, inference_params=inference_params)
         return hidden_states, residual
 
@@ -197,4 +231,6 @@ class RCPSMambaBlock(nn.Module):
 
         Keep for compatibility with original Mamba Block.
         """
-        return self.mixer.allocate_inference_cache(batch_size, max_seqlen, dtype=dtype, **kwargs)
+        return self.mixer.allocate_inference_cache(
+            batch_size, max_seqlen, dtype=dtype, **kwargs
+        )
