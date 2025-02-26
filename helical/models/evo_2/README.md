@@ -4,25 +4,13 @@
 
 **Model Name:** Evo 2  
 
-**Model Versions:** 1B, 7B and 40B  (Currently only the 1B and 7B models are available and the 40B coming soon)
+**Model Versions:** 1B, 7B and 40B
 
 **Model Description:** Evo 2 is a next-generation genomic model that integrates DNA, RNA, and protein data across all domains of life. It leverages the StripedHyena 2 architecture, combining convolutional, linear attention, and state-space models to efficiently process long sequences and capture complex biological patterns. Evo 2 is trained on a vast dataset encompassing trillions of nucleotides from eukaryotic and prokaryotic genomes, enabling broad cross-species applications and insights into human diseases, agriculture, and environmental science.
 
 ## Model Developers
 
-**Arc Institute**
-
-**Stanford University**
-
-**NVIDIA**
-
-**Liquid AI**
-
-**University of California, Berkeley**
-
-**Goodfire**
-
-**Columbia University**
+Arc Institute, Stanford University, NVIDIA, Liquid AI, University of California, Berkeley, Goodfire, Columbia University
 
 **Contact Information:** 
 
