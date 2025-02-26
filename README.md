@@ -30,6 +30,10 @@ Let’s build the most exciting AI-for-Bio community together!
 </div>
 
 ## What's new?
+### Evo2
+We have integrated [Evo2](https://github.com/ArcInstitute/evo2) into our helical package and have made a model card for it in our [Evo2 model folder](helical/helical/models/evo_2/README.md). If you would like to test the model, take a look at our [example notebook](helical/examples/notebooks/Evo-2.ipynb)!
+Let us know what you think and we are happy to help you with the larger model (40B parameters!) if needed!
+
 ### 🧬 Introducing Helix-mRNA-v0: Unlocking new frontiers & use cases in mRNA therapy 🧬
 We’re thrilled to announce the release of our first-ever mRNA Bio Foundation Model, designed to:
 
@@ -151,6 +155,7 @@ A lot of our models have been published by talend authors developing these excit
 - [scikit-learn](https://github.com/scikit-learn/scikit-learn)
 - [GenePT](https://github.com/yiqunchen/GenePT)
 - [Caduceus](https://github.com/kuleshov-group/caduceus)
+- [Evo2](https://github.com/ArcInstitute/evo2)
 
 ### Licenses
 
@@ -162,6 +167,7 @@ You can find the Licenses for each model implementation in the model repositorie
 - [Geneformer](https://github.com/helicalAI/helical/blob/release/helical/models/geneformer/LICENSE)
 - [UCE](https://github.com/helicalAI/helical/blob/release/helical/models/uce/LICENSE)
 - [HyenaDNA](https://github.com/helicalAI/helical/blob/release/helical/models/hyena_dna/LICENSE)
+- [Evo2](https://github.com/helicalAI/helical/blob/release/helical/models/evo_2/LICENSE)
 
 ## Citation
 

@@ -2,7 +2,7 @@ from helical.models.scgpt.scgpt_utils import load_model
 from helical.models.scgpt.scgpt_config import scGPTConfig
 from helical.models.scgpt.model_dir import TransformerModel
 
-expected_model_str = '''\
+expected_model_str = """\
 TransformerModel(\n\
   (encoder): GeneEncoder(\n\
     (embedding): Embedding(60697, 512, padding_idx=60694)\n\
@@ -60,17 +60,18 @@ TransformerModel(\n\
     (cos): CosineSimilarity()\n\
   )\n\
   (creterion_cce): CrossEntropyLoss()\n\
-)'''
+)"""
+
 
 def test_load_model():
 
     configurer = scGPTConfig()
     model, vocab = load_model(configurer.config)
-    
+
     assert vocab["<pad>"] == 60694
     assert vocab["<cls>"] == 60695
     assert vocab["<eoc>"] == 60696
     assert len(vocab) == 60697
-    
+
     assert type(model) == TransformerModel
     assert str(model) == expected_model_str

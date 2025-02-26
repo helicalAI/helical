@@ -15,6 +15,7 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+
 class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
     """Fine-tuning model for the scGPT model.
 
@@ -66,21 +67,26 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
         Get the outputs of the fine-tuned model.
 
     """
-    def __init__(self, 
-                 scGPT_config: scGPTConfig, 
-                 fine_tuning_head: Literal["classification"] | HelicalBaseFineTuningHead, 
-                 output_size: Optional[int]=None):
+
+    def __init__(
+        self,
+        scGPT_config: scGPTConfig,
+        fine_tuning_head: Literal["classification"] | HelicalBaseFineTuningHead,
+        output_size: Optional[int] = None,
+    ):
         HelicalBaseFineTuningModel.__init__(self, fine_tuning_head, output_size)
         scGPT.__init__(self, scGPT_config)
 
         self.fine_tuning_head.set_dim_size(self.config["embsize"])
 
-    def _forward(self, 
-                 input_gene_ids: torch.Tensor, 
-                 data_dict: dict, 
-                 src_key_padding_mask: torch.Tensor, 
-                 use_batch_labels: bool, 
-                 device: torch.device) -> torch.Tensor:
+    def _forward(
+        self,
+        input_gene_ids: torch.Tensor,
+        data_dict: dict,
+        src_key_padding_mask: torch.Tensor,
+        use_batch_labels: bool,
+        device: torch.device,
+    ) -> torch.Tensor:
         """
         Forward method of the fine-tuning model.
 
@@ -96,7 +102,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
             Whether to use batch labels.
         device : torch.device
             The device to run the model on.
-            
+
         Returns
         -------
         torch.Tensor
@@ -106,9 +112,9 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
             input_gene_ids,
             data_dict["expr"].to(device),
             src_key_padding_mask=src_key_padding_mask,
-            batch_labels=data_dict["batch_labels"].to(device)
-            if use_batch_labels
-            else None,
+            batch_labels=(
+                data_dict["batch_labels"].to(device) if use_batch_labels else None
+            ),
         )
 
         if self.config["emb_mode"] == "cls":
@@ -118,20 +124,21 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
 
         output = self.fine_tuning_head(embeddings)
         return output
-    
+
     def train(
         self,
-        train_input_data: Dataset, 
-        train_labels: np.ndarray,     
-        validation_input_data = None,
-        validation_labels = None,
+        train_input_data: Dataset,
+        train_labels: np.ndarray,
+        validation_input_data=None,
+        validation_labels=None,
         optimizer: optim = optim.AdamW,
-        optimizer_params: dict = {'lr': 0.0001}, 
-        loss_function: loss = loss.CrossEntropyLoss(), 
+        optimizer_params: dict = {"lr": 0.0001},
+        loss_function: loss = loss.CrossEntropyLoss(),
         epochs: int = 1,
         # freeze_layers: int = 0,
-        lr_scheduler_params: Optional[dict] = None):
-        """Fine-tunes the scGPT model with different head modules. 
+        lr_scheduler_params: Optional[dict] = None,
+    ):
+        """Fine-tunes the scGPT model with different head modules.
 
         Parameters
         ----------
@@ -156,14 +163,14 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
             The learning rate scheduler parameters for the transformers get_scheduler method. The optimizer will be taken from the optimizer input and should not be included in the learning scheduler parameters. If not specified, no scheduler will be used.
             e.g. lr_scheduler_params = { 'name': 'linear', 'num_warmup_steps': 0, 'num_training_steps': 5 }
         """
-        
+
         device = next(self.model.parameters()).device
 
         try:
             use_batch_labels = train_input_data.batch_ids is not None
         except:
             use_batch_labels = False
-                
+
         collator = DataCollator(
             do_padding=True,
             pad_token_id=self.vocab[self.config["pad_token"]],
@@ -200,7 +207,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
         optimizer = optimizer(self.parameters(), **optimizer_params)
 
         lr_scheduler = None
-        if lr_scheduler_params is not None: 
+        if lr_scheduler_params is not None:
             lr_scheduler = get_scheduler(optimizer=optimizer, **lr_scheduler_params)
 
         logger.info("Starting Fine-Tuning")
@@ -214,8 +221,17 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
                 src_key_padding_mask = input_gene_ids.eq(
                     self.vocab[self.config["pad_token"]]
                 )
-                output = self._forward(input_gene_ids, data_dict, src_key_padding_mask, use_batch_labels, device)
-                labels = torch.tensor(train_labels[batch_count: batch_count + self.config["batch_size"]], device=device)
+                output = self._forward(
+                    input_gene_ids,
+                    data_dict,
+                    src_key_padding_mask,
+                    use_batch_labels,
+                    device,
+                )
+                labels = torch.tensor(
+                    train_labels[batch_count : batch_count + self.config["batch_size"]],
+                    device=device,
+                )
                 batch_count += self.config["batch_size"]
                 loss = loss_function(output, labels)
                 loss.backward()
@@ -224,14 +240,16 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
                 optimizer.step()
                 optimizer.zero_grad()
 
-                training_loop.set_postfix({"loss": batch_loss/batches_processed})
+                training_loop.set_postfix({"loss": batch_loss / batches_processed})
                 training_loop.set_description(f"Fine-Tuning: epoch {j+1}/{epochs}")
 
             if lr_scheduler is not None:
                 lr_scheduler.step()
 
             if validation_input_data is not None:
-                testing_loop = tqdm(validation_data_loader, desc="Fine-Tuning Validation")
+                testing_loop = tqdm(
+                    validation_data_loader, desc="Fine-Tuning Validation"
+                )
                 val_loss = 0.0
                 count = 0.0
                 validation_batch_count = 0
@@ -240,20 +258,32 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
                     src_key_padding_mask = input_gene_ids.eq(
                         self.vocab[self.config["pad_token"]]
                     )
-                    output = self._forward(input_gene_ids, validation_data_dict, src_key_padding_mask, use_batch_labels, device)
-                    val_labels = torch.tensor(validation_labels[validation_batch_count: validation_batch_count + self.config["batch_size"]], device=device)
+                    output = self._forward(
+                        input_gene_ids,
+                        validation_data_dict,
+                        src_key_padding_mask,
+                        use_batch_labels,
+                        device,
+                    )
+                    val_labels = torch.tensor(
+                        validation_labels[
+                            validation_batch_count : validation_batch_count
+                            + self.config["batch_size"]
+                        ],
+                        device=device,
+                    )
                     val_loss += loss_function(output, val_labels).item()
                     validation_batch_count += self.config["batch_size"]
                     count += 1.0
-                    testing_loop.set_postfix({"val_loss": val_loss/count})
+                    testing_loop.set_postfix({"val_loss": val_loss / count})
         logger.info(f"Fine-Tuning Complete. Epochs: {epochs}")
 
     def get_outputs(
-        self, 
+        self,
         dataset: Dataset,
     ) -> np.ndarray:
         """Get the outputs of the fine-tuned model.
-        
+
         Parameters
         ----------
         dataset : Dataset
@@ -272,7 +302,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
             use_batch_labels = dataset.batch_ids is not None
         except:
             use_batch_labels = False
-                
+
         collator = DataCollator(
             do_padding=True,
             pad_token_id=self.vocab[self.config["pad_token"]],
@@ -300,7 +330,13 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
             src_key_padding_mask = input_gene_ids.eq(
                 self.vocab[self.config["pad_token"]]
             )
-            output = self._forward(input_gene_ids, validation_data_dict, src_key_padding_mask, use_batch_labels, device)
+            output = self._forward(
+                input_gene_ids,
+                validation_data_dict,
+                src_key_padding_mask,
+                use_batch_labels,
+                device,
+            )
             outputs.append(output.detach().cpu().numpy())
-        
+
         return np.vstack(outputs)

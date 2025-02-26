@@ -1,5 +1,4 @@
-"""Character tokenizer for Caduceus from Hugging Face.
-"""
+"""Character tokenizer for Caduceus from Hugging Face."""
 
 from typing import List, Optional, Dict, Sequence, Tuple
 
@@ -9,18 +8,20 @@ from transformers import PreTrainedTokenizer
 class CaduceusTokenizer(PreTrainedTokenizer):
     model_input_names = ["input_ids"]
 
-    def __init__(self,
-                 model_max_length: int,
-                 characters: Sequence[str] = ("A", "C", "G", "T", "N"),
-                 complement_map=None,
-                 bos_token="[BOS]",
-                 eos_token="[SEP]",
-                 sep_token="[SEP]",
-                 cls_token="[CLS]",
-                 pad_token="[PAD]",
-                 mask_token="[MASK]",
-                 unk_token="[UNK]",
-                 **kwargs):
+    def __init__(
+        self,
+        model_max_length: int,
+        characters: Sequence[str] = ("A", "C", "G", "T", "N"),
+        complement_map=None,
+        bos_token="[BOS]",
+        eos_token="[SEP]",
+        sep_token="[SEP]",
+        cls_token="[CLS]",
+        pad_token="[PAD]",
+        mask_token="[MASK]",
+        unk_token="[UNK]",
+        **kwargs,
+    ):
         """Character tokenizer for Hugging Face transformers.
 
         Adapted from https://huggingface.co/LongSafari/hyenadna-tiny-1k-seqlen-hf/blob/main/tokenization_hyena.py
@@ -61,7 +62,11 @@ class CaduceusTokenizer(PreTrainedTokenizer):
 
         self._complement_map = {}
         for k, v in self._vocab_str_to_int.items():
-            complement_id = self._vocab_str_to_int[complement_map[k]] if k in complement_map.keys() else v
+            complement_id = (
+                self._vocab_str_to_int[complement_map[k]]
+                if k in complement_map.keys()
+                else v
+            )
             self._complement_map[self._vocab_str_to_int[k]] = complement_id
 
         super().__init__(
@@ -96,7 +101,9 @@ class CaduceusTokenizer(PreTrainedTokenizer):
         return self._vocab_int_to_str[index]
 
     def convert_tokens_to_string(self, tokens):
-        return "".join(tokens)  # Note: this operation has lost info about which base pairs were originally lowercase
+        return "".join(
+            tokens
+        )  # Note: this operation has lost info about which base pairs were originally lowercase
 
     def get_special_tokens_mask(
         self,
@@ -130,5 +137,7 @@ class CaduceusTokenizer(PreTrainedTokenizer):
         return self._vocab_str_to_int
 
     # Fixed vocabulary with no vocab file
-    def save_vocabulary(self, save_directory: str, filename_prefix: Optional[str] = None) -> Tuple:
+    def save_vocabulary(
+        self, save_directory: str, filename_prefix: Optional[str] = None
+    ) -> Tuple:
         return ()

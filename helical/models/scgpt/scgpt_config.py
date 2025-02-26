@@ -2,10 +2,11 @@ from typing import Optional, Literal
 from helical.constants.paths import CACHE_DIR_HELICAL
 from pathlib import Path
 
-class scGPTConfig():
+
+class scGPTConfig:
     """
     Configuration class to use the scGPT Model.
-    
+
     Parameters
     ----------
     pad_token : str, optional, default="<pad>"
@@ -20,7 +21,7 @@ class scGPTConfig():
         The number of heads
     embsize : int, optional, default=512
         The embedding size
-    d_hid : int, optional, default=512    
+    d_hid : int, optional, default=512
         The hidden dimension
     dropout : float, optional, default=0.2
         The dropout rate
@@ -41,7 +42,7 @@ class scGPTConfig():
 
     Returns
     -------
-    scGPTConfig 
+    scGPTConfig
         The scGPT configuration object
 
     Notes
@@ -51,32 +52,32 @@ class scGPTConfig():
     """
 
     def __init__(
-            self, 
-            pad_token: str = "<pad>",
-            batch_size: int = 24,
-            emb_mode: Literal["cls", "cell", "gene"] = "cls",
-            fast_transformer: bool = True,
-            nlayers: int = 12,
-            nheads: int = 8,
-            embsize: int = 512,
-            d_hid: int = 512,
-            dropout: float = 0.2,
-            n_layers_cls: int = 3,
-            mask_value: int = -1,
-            pad_value: int = -2,
-            world_size: int = 8,
-            accelerator: Optional[bool] = False,
-            device: Literal["cpu", "cuda"] = "cpu",
-            use_fast_transformer: bool = False,
-            binning_seed: int = 123
-            ):
-        
-        model_name = 'best_model' # TODO: Include more models
+        self,
+        pad_token: str = "<pad>",
+        batch_size: int = 24,
+        emb_mode: Literal["cls", "cell", "gene"] = "cls",
+        fast_transformer: bool = True,
+        nlayers: int = 12,
+        nheads: int = 8,
+        embsize: int = 512,
+        d_hid: int = 512,
+        dropout: float = 0.2,
+        n_layers_cls: int = 3,
+        mask_value: int = -1,
+        pad_value: int = -2,
+        world_size: int = 8,
+        accelerator: Optional[bool] = False,
+        device: Literal["cpu", "cuda"] = "cpu",
+        use_fast_transformer: bool = False,
+        binning_seed: int = 123,
+    ):
+
+        model_name = "best_model"  # TODO: Include more models
         list_of_files_to_download = [
-                                "scgpt/scGPT_CP/vocab.json",
-                                f"scgpt/scGPT_CP/{model_name}.pt",
-                                ]
-        model_path = Path(CACHE_DIR_HELICAL, 'scgpt/scGPT_CP', f'{model_name}.pt')
+            "scgpt/scGPT_CP/vocab.json",
+            f"scgpt/scGPT_CP/{model_name}.pt",
+        ]
+        model_path = Path(CACHE_DIR_HELICAL, "scgpt/scGPT_CP", f"{model_name}.pt")
 
         self.config = {
             "model_path": model_path,
@@ -98,5 +99,5 @@ class scGPTConfig():
             "device": device,
             "use_fast_transformer": use_fast_transformer,
             "MAX_LENGTH": 1200,
-            "binning_seed": binning_seed
-            }
+            "binning_seed": binning_seed,
+        }

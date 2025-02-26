@@ -6,7 +6,9 @@ from omegaconf import DictConfig
 import hydra
 
 
-@hydra.main(version_base=None, config_path="../run_models/configs", config_name="scgpt_config")
+@hydra.main(
+    version_base=None, config_path="../run_models/configs", config_name="scgpt_config"
+)
 def run_fine_tuning(cfg: DictConfig):
 
     # either load via huggingface
@@ -18,8 +20,12 @@ def run_fine_tuning(cfg: DictConfig):
     cell_types = ann_data.obs["LVL1"][:10].tolist()
     label_set = set(cell_types)
 
-    scgpt_config=scGPTConfig(**cfg)
-    scgpt_fine_tune = scGPTFineTuningModel(scGPT_config=scgpt_config, fine_tuning_head="classification", output_size=len(label_set))
+    scgpt_config = scGPTConfig(**cfg)
+    scgpt_fine_tune = scGPTFineTuningModel(
+        scGPT_config=scgpt_config,
+        fine_tuning_head="classification",
+        output_size=len(label_set),
+    )
 
     dataset = scgpt_fine_tune.process_data(ann_data[:10])
 
@@ -27,6 +33,7 @@ def run_fine_tuning(cfg: DictConfig):
     cell_types = [class_id_dict[cell] for cell in cell_types]
 
     scgpt_fine_tune.train(train_input_data=dataset, train_labels=cell_types)
+
 
 if __name__ == "__main__":
     run_fine_tuning()
