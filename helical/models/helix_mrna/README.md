@@ -109,7 +109,7 @@ dataset = helix_mrna.process_data(rna_sequences)
 
 rna_embeddings = helix_mrna.get_embeddings(dataset)
 
-print("Helix-mRNA embeddings shape: ", embeddings.shape)
+print("Helix-mRNA embeddings shape: ", rna_embeddings.shape)
 ```
 
 **Example Fine-Tuning:**
