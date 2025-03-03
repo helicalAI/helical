@@ -1,6 +1,6 @@
 import pytest
 import torch
-from helical import HyenaDNAConfig, HyenaDNAFineTuningModel
+from helical.models.hyena_dna import HyenaDNAConfig, HyenaDNAFineTuningModel
 
 
 class TestHyenaDNAFineTuning:

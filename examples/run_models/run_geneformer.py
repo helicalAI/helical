@@ -1,4 +1,4 @@
-from helical import Geneformer, GeneformerConfig
+from helical.models.geneformer import Geneformer, GeneformerConfig
 import hydra
 from omegaconf import DictConfig
 import anndata as ad

@@ -1,5 +1,4 @@
-from helical.models.scgpt.model import scGPT, scGPTConfig
-from helical.models.scgpt.fine_tuning_model import scGPTFineTuningModel
+from helical.models.scgpt import scGPT, scGPTConfig, scGPTFineTuningModel
 from anndata import AnnData
 import pytest
 import anndata as ad

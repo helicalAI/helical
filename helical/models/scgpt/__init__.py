@@ -14,8 +14,6 @@ if not logger.hasHandlers() or len(logger.handlers) == 0:
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
-from .model import scGPT, scGPTConfig
-from . import model_dir
-from .data_collator import DataCollator
-from .dataset import Dataset
+from .model import scGPT
+from .scgpt_config import scGPTConfig
 from .fine_tuning_model import scGPTFineTuningModel

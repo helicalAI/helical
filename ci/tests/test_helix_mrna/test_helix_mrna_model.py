@@ -1,4 +1,4 @@
-from helical import HelixmRNA, HelixmRNAConfig
+from helical.models.helix_mrna import HelixmRNA, HelixmRNAConfig
 import pytest
 from pandas import DataFrame
 import torch

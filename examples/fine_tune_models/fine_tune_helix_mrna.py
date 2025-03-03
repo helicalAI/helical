@@ -1,4 +1,4 @@
-from helical import HelixmRNAFineTuningModel, HelixmRNAConfig
+from helical.models.helix_mrna import HelixmRNAFineTuningModel, HelixmRNAConfig
 import hydra
 from omegaconf import DictConfig
 

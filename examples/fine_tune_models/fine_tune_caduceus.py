@@ -1,4 +1,4 @@
-from helical import CaduceusFineTuningModel, CaduceusConfig
+from helical.models.caduceus import CaduceusFineTuningModel, CaduceusConfig
 import hydra
 from omegaconf import DictConfig
 

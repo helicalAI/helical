@@ -3,7 +3,7 @@ import numpy as np
 import torch
 
 try:
-    from helical import Caduceus, CaduceusConfig
+    from helical.models.caduceus import Caduceus, CaduceusConfig
 
     caduceus_unavailable = False  # only run tests if able to import the package
 except:
