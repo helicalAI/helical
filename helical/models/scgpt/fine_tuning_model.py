@@ -22,7 +22,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
     Example
     ----------
     ```python
-    from helical import scGPTFineTuningModel, scGPTConfig
+    from helical.models.scgpt import scGPTFineTuningModel, scGPTConfig
 
     # Load the desired dataset
     adata = ad.read_h5ad("dataset.h5ad")

@@ -26,7 +26,7 @@ class HelixmRNA(HelicalRNAModel):
     Example
     -------
     ```python
-    from helical import HelixmRNA, HelixmRNAConfig
+    from helical.models.helix_mrna import HelixmRNA, HelixmRNAConfig
     import torch
 
     device = "cuda" if torch.cuda.is_available() else "cpu"

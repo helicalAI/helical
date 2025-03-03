@@ -1,4 +1,4 @@
-from helical import Caduceus, CaduceusConfig
+from helical.models.caduceus import Caduceus, CaduceusConfig
 import hydra
 from omegaconf import DictConfig
 from pandas import DataFrame

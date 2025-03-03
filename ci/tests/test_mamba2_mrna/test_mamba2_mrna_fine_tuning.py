@@ -1,6 +1,6 @@
 import pytest
 import torch
-from helical import Mamba2mRNAConfig, Mamba2mRNAFineTuningModel
+from helical.models.mamba2_mrna import Mamba2mRNAConfig, Mamba2mRNAFineTuningModel
 
 
 class TestHelixmRNAFineTuning:

@@ -25,7 +25,7 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
     Example
     ----------
     ```python
-    from helical import HyenaDNAFineTuningModel, HyenaDNAConfig
+    from helical.models.hyena_dna import HyenaDNAFineTuningModel, HyenaDNAConfig
     import torch
 
     device = "cuda" if torch.cuda.is_available() else "cpu"

@@ -96,7 +96,7 @@ mRNA Bioinformatics
 **Example Usage**
 
 ```python
-from helical import HelixmRNA, HelixmRNAConfig
+from helical.models.helix_mrna import HelixmRNA, HelixmRNAConfig
 import torch
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -109,13 +109,13 @@ dataset = helix_mrna.process_data(rna_sequences)
 
 rna_embeddings = helix_mrna.get_embeddings(dataset)
 
-print("Helix-mRNA embeddings shape: ", embeddings.shape)
+print("Helix-mRNA embeddings shape: ", rna_embeddings.shape)
 ```
 
 **Example Fine-Tuning:**
 
 ```python
-from helical import HelixmRNAFineTuningModel, HelixmRNAConfig
+from helical.models.helix_mrna import HelixmRNAFineTuningModel, HelixmRNAConfig
 import torch
 
 device = "cuda" if torch.cuda.is_available() else "cpu"

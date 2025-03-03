@@ -115,7 +115,7 @@
 **Example Usage:**
 
 ```python
-from helical import HyenaDNA, HyenaDNAConfig
+from helical.models.hyena_dna import HyenaDNA, HyenaDNAConfig
 
 hyena_config = HyenaDNAConfig(model_name = "hyenadna-tiny-1k-seqlen-d256")
 model = HyenaDNA(configurer = hyena_config)   
@@ -132,7 +132,7 @@ print(embeddings.shape)
 
 ```python
 from datasets import load_dataset
-from helical import HyenaDNAConfig, HyenaDNAFineTuningModel
+from helical.models.hyena_dna import HyenaDNAConfig, HyenaDNAFineTuningModel
 import torch
 
 device = "cuda" if torch.cuda.is_available() else "cpu"

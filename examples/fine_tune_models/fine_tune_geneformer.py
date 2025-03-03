@@ -1,4 +1,4 @@
-from helical import GeneformerConfig, GeneformerFineTuningModel
+from helical.models.geneformer import GeneformerConfig, GeneformerFineTuningModel
 from helical.utils import get_anndata_from_hf_dataset
 from datasets import load_dataset
 import anndata as ad

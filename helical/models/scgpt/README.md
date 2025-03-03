@@ -96,7 +96,7 @@
 
 **Example Usage:**
 ```python
-from helical.models.scgpt.model import scGPT, scGPTConfig
+from helical.models.scgpt import scGPT, scGPTConfig
 import anndata as ad
 
 scgpt_config = scGPTConfig(batch_size=10)
@@ -111,7 +111,7 @@ print(embeddings.shape)
 **Example Fine-Tuning:**
 
 ```python
-from helical import scGPTFineTuningModel, scGPTConfig
+from helical.models.scgpt import scGPTFineTuningModel, scGPTConfig
 
 # Load the desired dataset
 adata = ad.read_h5ad("dataset.h5ad")

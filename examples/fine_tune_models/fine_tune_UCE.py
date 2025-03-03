@@ -1,4 +1,4 @@
-from helical import UCEConfig, UCEFineTuningModel
+from helical.models.uce import UCEConfig, UCEFineTuningModel
 from helical.utils import get_anndata_from_hf_dataset
 from datasets import load_dataset
 import anndata as ad

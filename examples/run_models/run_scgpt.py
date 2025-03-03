@@ -1,4 +1,4 @@
-from helical.models.scgpt.model import scGPT, scGPTConfig
+from helical.models.scgpt import scGPT, scGPTConfig
 import hydra
 from omegaconf import DictConfig
 import anndata as ad

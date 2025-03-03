@@ -1,5 +1,9 @@
 import pytest
-from helical import GeneformerConfig, Geneformer, GeneformerFineTuningModel
+from helical.models.geneformer import (
+    GeneformerConfig,
+    Geneformer,
+    GeneformerFineTuningModel,
+)
 from anndata import AnnData
 import torch
 import pandas as pd

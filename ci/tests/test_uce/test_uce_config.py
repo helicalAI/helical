@@ -1,4 +1,4 @@
-from helical.models.uce.model import UCEConfig
+from helical.models.uce import UCEConfig
 import pytest
 
 
