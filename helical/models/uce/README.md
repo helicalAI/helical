@@ -109,7 +109,7 @@ The creation of the Integrated Mega-scale Atlas involved filtering:
 **Example Usage:**
 
 ```python
-from helical.models.uce.model import UCE, UCEConfig
+from helical.models.uce import UCE, UCEConfig
 import anndata as ad
 
 configurer=UCEConfig(batch_size=10)
@@ -128,7 +128,7 @@ print(embeddings.shape)
 **Example Fine-Tuning:**
 
 ```python
-from helical import UCEConfig, UCEFineTuningModel
+from helical.models.uce import UCEConfig, UCEFineTuningModel
 import anndata as ad
 
 # Load the data

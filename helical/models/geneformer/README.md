@@ -187,7 +187,7 @@ Single-cell transcriptomes
 
 **Example Usage:**
 ```python
-from helical import Geneformer, GeneformerConfig
+from helical.models.geneformer import Geneformer, GeneformerConfig
 import anndata as ad
 
 # Example configuration
@@ -213,7 +213,7 @@ print("Cancer-tuned model embeddings shape:", cancer_embeddings.shape)
 **Example Fine-Tuning:**
 
 ```python
-from helical import GeneformerConfig, GeneformerFineTuningModel
+from helical.models.geneformer import GeneformerConfig, GeneformerFineTuningModel
 import anndata as ad
 
 # Load the data

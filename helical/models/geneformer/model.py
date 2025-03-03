@@ -34,7 +34,7 @@ class Geneformer(HelicalRNAModel):
     Example
     -------
     ```python
-    from helical import Geneformer, GeneformerConfig
+    from helical.models.geneformer import Geneformer, GeneformerConfig
     import anndata as ad
 
     # Example configuration

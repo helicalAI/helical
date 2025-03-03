@@ -25,6 +25,8 @@ class CaduceusFineTuningModel(HelicalBaseFineTuningModel, Caduceus):
     Example
     ----------
     ```python
+    from helical.models.caduceus import CaduceusFineTuningModel, CaduceusConfig
+
     input_sequences = ["ACT"*20, "ATG"*20, "ATG"*20, "CTG"*20, "TTG"*20]
     labels = [0, 2, 2, 0, 1]
 

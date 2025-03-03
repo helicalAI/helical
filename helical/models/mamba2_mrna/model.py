@@ -24,7 +24,7 @@ class Mamba2mRNA(HelicalRNAModel):
     Example
     ----------
     ```python
-    from helical import Mamba2mRNA, Mamba2mRNAConfig
+    from helical.models.mamba2_mrna import Mamba2mRNA, Mamba2mRNAConfig
     import torch
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
