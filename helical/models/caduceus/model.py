@@ -26,7 +26,7 @@ class Caduceus(HelicalDNAModel):
     Example
     ----------
     ```python
-    from helical import Caduceus, CaduceusConfig
+    from helical.models.caduceus import Caduceus, CaduceusConfig
 
     caduceus_config = CaduceusConfig(model_name="caduceus-ph-4L-seqlen-1k-d118", batch_size=5)
     caduceus = Caduceus(configurer = caduceus_config)

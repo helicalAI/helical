@@ -22,7 +22,7 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel, UCE):
     Example
     ----------
     ```python
-    from helical import UCEConfig, UCEFineTuningModel
+    from helical.models.uce import UCEConfig, UCEFineTuningModel
     import anndata as ad
 
     # Load the data

@@ -1,6 +1,6 @@
 import pytest
 import torch
-from helical import HelixmRNAConfig, HelixmRNAFineTuningModel
+from helical.models.helix_mrna import HelixmRNAConfig, HelixmRNAFineTuningModel
 
 
 class TestHelixmRNAFineTuning:

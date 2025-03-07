@@ -1,4 +1,4 @@
-from helical import UCE, UCEConfig
+from helical.models.uce import UCE, UCEConfig
 import hydra
 from omegaconf import DictConfig
 import numpy as np

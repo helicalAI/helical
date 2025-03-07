@@ -31,7 +31,7 @@ class UCE(HelicalRNAModel):
     Example
     -------
     ```python
-    from helical import UCE, UCEConfig
+    from helical.models.uce import UCE, UCEConfig
     from datasets import load_dataset
     from helical.utils import get_anndata_from_hf_dataset
     import anndata as ad

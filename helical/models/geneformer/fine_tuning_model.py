@@ -31,7 +31,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
     Example
     ----------
     ```python
-    from helical import GeneformerConfig, GeneformerFineTuningModel
+    from helical.models.geneformer import GeneformerConfig, GeneformerFineTuningModel
     import anndata as ad
 
     # Load the data

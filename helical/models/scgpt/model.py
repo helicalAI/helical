@@ -31,7 +31,7 @@ class scGPT(HelicalRNAModel):
     Example
     -------
     ```python
-    from helical import scGPT,scGPTConfig
+    from helical.models.scgpt import scGPT,scGPTConfig
     from datasets import load_dataset
     from helical.utils import get_anndata_from_hf_dataset
     import anndata as ad

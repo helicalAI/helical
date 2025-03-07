@@ -1,6 +1,5 @@
-from helical.models.hyena_dna.model import HyenaDNAConfig
+from helical.models.hyena_dna import HyenaDNAConfig, HyenaDNA
 import pytest
-from helical.models.hyena_dna.model import HyenaDNA
 import numpy as np
 from pandas import DataFrame
 

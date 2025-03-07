@@ -1,4 +1,4 @@
-from helical import Mamba2mRNA, Mamba2mRNAConfig
+from helical.models.mamba2_mrna import Mamba2mRNA, Mamba2mRNAConfig
 import pytest
 import torch
 

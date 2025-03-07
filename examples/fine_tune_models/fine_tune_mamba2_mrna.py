@@ -1,4 +1,4 @@
-from helical import Mamba2mRNAFineTuningModel, Mamba2mRNAConfig
+from helical.models.mamba2_mrna import Mamba2mRNAFineTuningModel, Mamba2mRNAConfig
 import hydra
 from omegaconf import DictConfig
 
