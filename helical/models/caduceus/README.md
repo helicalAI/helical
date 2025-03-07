@@ -57,6 +57,7 @@ Human reference genome splits from Enformer study (Avsec et al., 2021)
 
 **Example Usage:**
 ```python
+from helical.models.caduceus import CaduceusConfig, Caduceus
 caduceus_config = CaduceusConfig(model_name="caduceus-ph-4L-seqlen-1k-d118", batch_size=2, pooling_strategy="mean")
 caduceus = Caduceus(configurer=caduceus_config)
 
@@ -69,6 +70,8 @@ print(embeddings.shape)
 
 **Example Fine-Tuning**
 ```python
+from helical.models.caduceus import CaduceusConfig, CaduceusFineTuningModel
+
 input_sequences = ["ACT"*20, "ATG"*20, "ATG"*20, "CTG"*20, "TTG"*20]
 labels = [0, 2, 2, 0, 1]
 

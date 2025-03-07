@@ -25,7 +25,7 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
     Example
     ----------
     ```python
-    from helical import HelixmRNAFineTuningModel, HelixmRNAConfig
+    from helical.models.helix_mrna import HelixmRNAFineTuningModel, HelixmRNAConfig
     import torch
 
     device = "cuda" if torch.cuda.is_available() else "cpu"

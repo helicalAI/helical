@@ -1,4 +1,4 @@
-from helical import HyenaDNAFineTuningModel, HyenaDNAConfig
+from helical.models.hyena_dna import HyenaDNAFineTuningModel, HyenaDNAConfig
 import hydra
 from omegaconf import DictConfig
 
