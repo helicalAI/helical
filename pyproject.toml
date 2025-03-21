@@ -54,7 +54,7 @@ mamba-ssm = [
 
 evo-2 = [
     'biopython==1.85',
-    'transformer-engine[pytorch]',
+    'transformer-engine[pytorch]==1.13.0',
 ]
 
 [tool.hatch.metadata]
