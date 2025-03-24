@@ -1,4 +1,4 @@
-::: helical.scGPT
+::: helical.models.scgpt.scGPT
     handler: python
     options:
       members:

@@ -1,4 +1,4 @@
-::: helical.UCEConfig
+::: helical.models.uce.UCEConfig
     handler: python
     options:
       show_root_heading: True

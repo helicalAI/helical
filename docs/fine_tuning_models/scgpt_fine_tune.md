@@ -1,4 +1,4 @@
-::: helical.scGPTFineTuningModel
+::: helical.models.scgpt.scGPTFineTuningModel
     handler: python
     options:
       members:

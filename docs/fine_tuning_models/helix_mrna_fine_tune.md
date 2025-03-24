@@ -1,4 +1,4 @@
-::: helical.HelixmRNAFineTuningModel
+::: helical.models.helix_mrna.HelixmRNAFineTuningModel
     handler: python
     options:
       members:
