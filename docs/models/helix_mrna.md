@@ -1,4 +1,4 @@
-::: helical.HelixmRNA
+::: helical.models.helix_mrna.HelixmRNA
     handler: python
     options:
       members:

@@ -1,32 +1,50 @@
 :root {
-  --md-primary-fg-color:        rgba(2, 109, 98, 0.8);
-  --md-code-hl-string-color: #77ff62; 
-  --md-primary-bg-color:  #2a2a2a;
-  --md-secondary-bg-color: #000000;
-  /* --md-default-fg-color--lightest: #026D63; */
+  --md-primary-fg-color: hsl(164, 49%, 38%); /* Helical Green #026D63 */
+  --md-code-hl-string-color: hsl(164, 49%, 38%); /* Lighter Green */
+  /* --md-primary-bg-color: hsl(0, 0%, 100%); /* Helical White */
+  /*--md-secondary-bg-color: hsl(0, 0%, 93%); Helical Grey */
+  --md-default-fg-color: hsl(0, 0%, 0%); /* Helical Black for text */
+  --md-default-fg-color--light: hsl(0, 0%, 20%); /* For secondary text */
   --md-code-font: Fira Code;
-  color: white;
 }
 
 body {
   background-color: var(--md-primary-bg-color);
-}
-.md-header {
-  background: linear-gradient(0deg, rgb(2, 109, 98) 0%, rgb(12, 12, 12) 100%);
+  color: hsl(0, 0%, 0%); /* Helical Black */
+  font-family: Arial, Helvetica, sans-serif;
 }
 
-.md-search__input{
-  background-color: #03574f;
+.md-header {
+  color: hsl(164, 49%, 38%) !important /* Helical Green */;
+  background: white
+}
+
+[data-md-toggle=search]:checked~.md-header .md-search__form {
+  background-color: var(--md-default-bg-color);
+  border-radius: 0.5rem;
+  box-shadow: 0 0 .6rem #00000012;
+  color: var(--md-default-fg-color);
+}
+
+.md-search__input {
+  /* color: black; */
+  background-color: hsl(164, 49%, 38%);
+  border-radius: 0.5rem;
+}
+
+form.md-search__form {
+  background-color: hsl(164, 49%, 38%);
+  border-radius: 0.5rem;
 }
 
 .md-search-result__meta {
-  background-color: #00766a;
+  background-color: hsl(164, 49%, 38%); /* Helical Green */
+  color: hsl(0, 0%, 100%); /* White text for contrast */
 }
 
 .md-ellipsis {
-  /* font-weight: bold; */
   font-weight: normal;
-  color: white;
+  color: hsl(0, 0%, 0%); /* White text for contrast on green header */
 }
 
 .md-ellipsis:hover {
@@ -34,96 +52,149 @@ body {
 }
 
 ::before {
-  background-color: #026D63;
-} 
+  background-color: hsl(164, 49%, 38%); /* Helical Green */
+}
 
 .md-typeset code {
-  border-radius: 0.2rem;
-  background-color: #1d1d1d;
-  color: rgb(232, 230, 230);
+  border-radius: 0.5rem; /* --radius from tailwind */
+  background-color: hsl(0, 0%, 93%); /* Helical Grey */
+  color: hsl(0, 0%, 0%); /* Helical Black */
 }
 
 .md-grid {
-  max-width: 75rem; 
-}
-
-body {
-  background-color: var(--md-primary-bg-color);
-  color: rgb(218, 217, 217);
+  max-width: 75rem;
 }
 
 .md-typeset h1 {
-  color: white;
+  color: hsl(0, 0%, 0%); /* Helical Black */
   font-weight: bold;
 }
 
 .md-typeset h2 {
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 600;
+  color: hsl(0, 0%, 0%); /* Helical Black */
 }
 
 .md-typeset h3 {
   font-size: 1rem;
   font-weight: 550;
+  color: hsl(0, 0%, 0%); /* Helical Black */
 }
 
-/* .md-typeset .quote>.admonition-title, .md-typeset .quote>summary {
-  background-color: #b1b1b1;
-} */
-
 .md-nav--primary .md-nav__title~.md-nav__list {
-    /* background-color: #1a1a1a; */
-    color: white;
+  color: hsl(0, 0%, 0%); /* Helical Black */
 }
 
 .md-nav--secondary .md-nav__title {
-    background-color: var(--md-primary-bg-color);
-    color: white;
-    box-shadow: 0 0 .4rem .4rem var(--md-primary-bg-color); 
+  background-color: var(--md-primary-bg-color);
+  color: hsl(0, 0%, 0%); /* Helical Black */
+  box-shadow: 0 0 .4rem .4rem var(--md-primary-bg-color);
 }
 
 .md-nav--primary .md-nav__title {
-    background-color: var(--md-primary-bg-color);
-    color: white;
-    box-shadow: 0 0 .4rem .4rem var(--md-primary-bg-color);
-} 
+  background-color: var(--md-primary-bg-color);
+  color: hsl(0, 0%, 0%); /* Helical Black */
+  box-shadow: 0 0 .4rem .4rem var(--md-primary-bg-color);
+}
 
 .md-nav__item .md-nav__link--active, .md-nav__item .md-nav__link--active code {
-  color: inherit;
-} 
+  color: hsl(164, 49%, 38%); /* Helical Green */
+}
 
 .md-nav__link--passed {
-  color: #a9a9a9;
+  color: hsl(0, 0%, 45.1%); /* Muted foreground from light theme */
 }
 
 a:link {
-  color: aqua;
+  color: hsl(164, 49%, 38%); /* Helical Green */
 }
 
 a:visited {
-  color: aqua;
+  color: hsl(164, 49%, 28%); /* Darker Green */
 }
 
 .md-search-result .md-typeset {
-  background-color: #3d3d3d;
-  text-decoration-color: #026D63;
+  background-color: hsl(0, 0%, 100%); /* White */
+  border: 1px solid hsl(0, 0%, 93%); /* Helical Grey */
+  color: hsl(0, 0%, 0%); /* Ensure text is black */
 }
 
 a.md-nav__link:hover {
-  color: #ba0000 !important;
+  color: hsl(164, 49%, 48%) !important; /* Lighter Green */
 }
 
 .jp-OutputPrompt.jp-OutputArea-prompt {
   background-color: transparent;
-} 
+}
 
 .jupyter-wrapper .jp-RenderedText[data-mime-type="application/vnd.jupyter.stderr"] {
   background: transparent !important;
 }
 
 .md-header__button.md-logo img, .md-header__button.md-logo svg {
-  fill: currentcolor;
+  fill: hsl(0, 0%, 100%); /* White for contrast */
   display: block;
   height: 2rem;
   width: auto;
+}
+
+/* Add border styling based on the Tailwind theme */
+.md-typeset table, .md-typeset th, .md-typeset td {
+  border-color: hsl(0, 0%, 93%); /* --border from light theme */
+}
+
+/* Input styling */
+input, select, textarea {
+  background-color: hsl(0, 0%, 93%); /* --input from light theme */
+  color: hsl(0, 0%, 0%); /* Helical Black */
+  border-radius: 0.5rem; /* --radius */
+}
+
+/* Add destructive color for errors or warnings */
+.md-typeset .admonition.error, .md-typeset details.error {
+  border-color: hsl(0, 84.2%, 60.2%); /* --destructive from light theme */
+}
+
+/* Light theme adjustments for other elements */
+.md-tabs {
+  background-color: hsl(164, 49%, 38%); /* Helical Green */
+  color: hsl(0, 0%, 0%); /* White for contrast */
+}
+
+.md-footer {
+  background-color: hsl(164, 49%, 38%); /* Helical Green */
+  color: hsl(0, 0%, 100%); /* White for contrast */
+}
+
+.md-footer-meta {
+  background-color: hsl(164, 49%, 28%); /* Darker Green */
+}
+
+/* Additional styles for better readability in light mode */
+.md-typeset {
+  color: hsl(0, 0%, 0%); /* Helical Black */
+}
+
+blockquote {
+  border-left: 4px solid hsl(164, 49%, 38%); /* Helical Green */
+  background-color: hsl(0, 0%, 93%); /* Helical Grey */
+}
+
+.md-typeset a {
+  color: hsl(164, 49%, 38%); /* Helical Green */
+}
+
+.md-nav {
+  background-color: hsl(0, 0%, 100%); /* White */
+}
+
+/* Adjustments for admonitions */
+.md-typeset .admonition {
+  border-left: 4px solid hsl(164, 49%, 38%); /* Helical Green */
+  background-color: hsl(0, 0%, 93%); /* Helical Grey */
+}
+
+.md-typeset .admonition-title {
+  background-color: hsla(164, 49%, 38%, 0.1); /* Light Helical Green */
 }

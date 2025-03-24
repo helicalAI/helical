@@ -1,4 +1,4 @@
-::: helical.GeneformerFineTuningModel
+::: helical.models.geneformer.GeneformerFineTuningModel
     handler: python
     options:
       members:

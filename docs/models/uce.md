@@ -1,4 +1,4 @@
-::: helical.UCE
+::: helical.models.uce.UCE
     handler: python
     options:
       members:

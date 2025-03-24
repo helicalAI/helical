@@ -1,4 +1,4 @@
-::: helical.Mamba2mRNAFineTuningModel
+::: helical.models.mamba2_mrna.Mamba2mRNAFineTuningModel
     handler: python
     options:
       members:
