@@ -1,4 +1,4 @@
-::: helical.HyenaDNA
+::: helical.models.hyena_dna.HyenaDNA
     handler: python
     options:
       members:

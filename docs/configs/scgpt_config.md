@@ -1,4 +1,4 @@
-::: helical.scGPTConfig
+::: helical.models.scgpt.scGPTConfig
     handler: python
     options:
       show_root_heading: True

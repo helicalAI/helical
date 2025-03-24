@@ -1,4 +1,4 @@
-::: helical.Caduceus
+::: helical.models.caduceus.Caduceus
     handler: python
     options:
       members:

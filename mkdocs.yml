@@ -68,9 +68,6 @@ theme:
     repo: fontawesome/brands/git-alt 
   font:
     text: Montserrat
-  palette:
-    scheme: slate
-    primary: custom
   features:
     - content.code.copy
 

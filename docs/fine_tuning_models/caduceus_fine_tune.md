@@ -1,4 +1,4 @@
-::: helical.CaduceusFineTuningModel
+::: helical.models.caduceus.CaduceusFineTuningModel
     handler: python
     options:
       members:
