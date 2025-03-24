@@ -1,4 +1,4 @@
-::: helical.Mamba2mRNA
+::: helical.models.mamba2_mrna.Mamba2mRNA
     handler: python
     options:
       members:

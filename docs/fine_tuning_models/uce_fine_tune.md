@@ -1,4 +1,4 @@
-::: helical.UCEFineTuningModel
+::: helical.models.uce.UCEFineTuningModel
     handler: python
     options:
       members:

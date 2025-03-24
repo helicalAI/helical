@@ -1,4 +1,4 @@
-::: helical.Geneformer
+::: helical.models.geneformer.Geneformer
     handler: python
     options:
       members:

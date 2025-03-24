@@ -3,6 +3,7 @@
 Helical provides a framework for state-of-the-art pre-trained bio foundation models on genomics and transcriptomics modalities.
 
 Helical simplifies the entire application lifecycle when building with bio foundation models. You will be able to:
+
 - Leverage the latest bio foundation models through our easy-to-use python package
 - Run example notebooks on key downstream tasks from examples
 
@@ -18,7 +19,9 @@ Let us know what you think and we are happy to help you with the larger model (4
 We’re thrilled to announce the release of our first-ever mRNA Bio Foundation Model, designed to:
 
 1) Be Efficient, handling long sequence lengths effortlessly
+
 2) Balance Diversity & Specificity, leveraging a 2-step pre-training approach
+
 3) Deliver High-Resolution, using single nucleotides as a resolution
 
 Check out our <a href="https://www.helical-ai.com/blog/helix-mrna-v0" target="_blank">blog post</a> to learn more about our approach and read the <a href="https://helical.readthedocs.io/en/latest/model_cards/helix_mrna/" target="_blank">model card</a> to get started.
@@ -105,7 +108,7 @@ Within the `example/notebooks` folder, open the notebook of your choice. We reco
 |[HyenaDNA-Fine-Tuning.ipynb](./notebooks/HyenaDNA-Fine-Tuning.ipynb)|An example of how to fine-tune the HyenaDNA model on downstream benchmarks.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/HyenaDNA-Fine-Tuning.ipynb) |
 |[Cell-Gene-Cls-embedding-generation.ipynb](./examples/notebooks/Cell-Gene-Cls-embedding-generation.ipynb)|A notebook explaining the different embedding modes of single cell RNA models.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Cell-Gene-Cls-embedding-generation.ipynb) |
 
-## Stuck somewhere ? Other ideas ?
+## Stuck somewhere? Other ideas?
 We are eager to help you and interact with you. Reach out via support@helical-ai.com. 
 You can also open github issues here.
 
@@ -142,6 +145,7 @@ You can find the Licenses for each model implementation in the model repositorie
 - [Geneformer](https://github.com/helicalAI/helical/blob/release/helical/models/geneformer/LICENSE)
 - [UCE](https://github.com/helicalAI/helical/blob/release/helical/models/uce/LICENSE)
 - [HyenaDNA](https://github.com/helicalAI/helical/blob/release/helical/models/hyena_dna/LICENSE)
+- [Evo2](https://github.com/helicalAI/helical/blob/release/helical/models/evo_2/LICENSE)
 
 
 ## Citation
@@ -151,11 +155,11 @@ Please use this BibTeX to cite this repository in your publications:
 ```bibtex
 @software{allard_2024_13135902,
   author       = {Helical Team},
-  title        = {helicalAI/helical: v0.0.1a14},
+  title        = {helicalAI/helical: v0.0.1a27},
   month        = nov,
   year         = 2024,
   publisher    = {Zenodo},
-  version      = {0.0.1a14},
+  version      = {0.0.1a27},
   doi          = {10.5281/zenodo.13135902},
   url          = {https://doi.org/10.5281/zenodo.13135902}
 }
