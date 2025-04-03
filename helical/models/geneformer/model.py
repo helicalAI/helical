@@ -91,7 +91,24 @@ class Geneformer(HelicalRNAModel):
         self.model.eval()
         self.model = self.model.to(self.device)
 
-        self.layer_to_quant = quant_layers(self.model) + self.config["emb_layer"]
+        num_available_layers = quant_layers(self.model)
+        available_layers = list(np.arange(num_available_layers))
+        available_layers.append(-1)
+        if self.config["emb_layer"] not in available_layers:
+            message = (
+                f"Layer {self.config['emb_layer']} is not available. Available layers are {available_layers}."
+            )
+            LOGGER.error(message)
+            raise ValueError(message)
+        
+        if self.config["emb_layer"] < (num_available_layers-1) and self.config["emb_layer"] != -1:
+            message = (
+                f"Layer {self.config['emb_layer']} is not the last layer. This can lead to different embeddings and fine-tuning results."
+            )
+            LOGGER.warning(message)
+
+        self.layer_to_quant = self.config["emb_layer"]
+
         self.emb_mode = self.config["emb_mode"]
         self.forward_batch_size = self.config["batch_size"]
 
