@@ -284,6 +284,9 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
         np.ndarray
             The outputs of the model for the given dataset
         """
+        self.model.eval()
+        self.fine_tuning_head.eval()
+        
         dataloader = DataLoader(
             dataset,
             collate_fn=self._collate_fn,
