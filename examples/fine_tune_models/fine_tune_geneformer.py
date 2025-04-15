@@ -42,10 +42,15 @@ def run_fine_tuning(cfg: DictConfig):
     dataset = dataset.map(classes_to_ids, num_proc=1)
 
     geneformer_fine_tune.train(train_dataset=dataset, label="cell_types")
-
     outputs = geneformer_fine_tune.get_outputs(dataset)
     print(outputs)
 
+    # save and load model
+    geneformer_fine_tune.save_model("./geneformer_fine_tuned_model.pt")
+    geneformer_fine_tune.load_model("./geneformer_fine_tuned_model.pt")
+
+    outputs = geneformer_fine_tune.get_outputs(dataset)
+    print(outputs)
 
 if __name__ == "__main__":
     run_fine_tuning()

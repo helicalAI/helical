@@ -1,7 +1,8 @@
 import pytest
 import torch
 from helical.models.hyena_dna import HyenaDNAConfig, HyenaDNAFineTuningModel
-
+from helical.models.fine_tune.fine_tuning_heads import ClassificationHead
+import os
 
 class TestHyenaDNAFineTuning:
     @pytest.fixture(params=["hyenadna-tiny-1k-seqlen", "hyenadna-tiny-1k-seqlen-d256"])
@@ -33,3 +34,18 @@ class TestHyenaDNAFineTuning:
         )
         outputs = hyenaDNAFineTune.get_outputs(input_sequences)
         assert outputs.shape == (len(input_sequences), 1)
+
+    def test_save_and_load_model(self, hyenaDNAFineTune):
+
+        try:
+            hyenaDNAFineTune.save_model("./hyena_dna_fine_tuned_model.pt")
+            hyenaDNAFineTune.load_model("./hyena_dna_fine_tuned_model.pt")
+            assert not hyenaDNAFineTune.model.training, "Model should be in eval mode"
+            assert not hyenaDNAFineTune.fine_tuning_head.training, "Fine-tuning head should be in eval mode"
+            assert hyenaDNAFineTune.model is not None
+            assert hyenaDNAFineTune.fine_tuning_head.output_size == 1, "Output size should be 1"
+            assert type(hyenaDNAFineTune.fine_tuning_head) == ClassificationHead, "Fine-tuning head should be a ClassificationHead"
+            assert hyenaDNAFineTune.model.state_dict() is not None
+        finally:
+            if os.path.exists("./hyena_dna_fine_tuned_model.pt"):
+                os.remove("./hyena_dna_fine_tuned_model.pt")

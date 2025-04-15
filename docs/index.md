@@ -11,6 +11,10 @@ We will update this repo on a regular basis with new models, benchmarks, modalit
 Let’s build the most exciting AI-for-Bio community together!
 
 ## What's new?
+### Saving fine-tuned models
+
+We give users the option now to save fine-tuned models. Please have a look at the examples folder [here](examples/fine_tune_models). 
+
 ### Evo 2
 We have integrated [Evo 2](https://github.com/ArcInstitute/evo2) into our helical package and have made a model card for it in our [Evo 2 model card](./model_cards/evo_2.md). If you would like to test the model, take a look at our [example notebook](./notebooks/Evo-2.ipynb)!
 Let us know what you think and we are happy to help you with the larger model (40B parameters!) if needed!
