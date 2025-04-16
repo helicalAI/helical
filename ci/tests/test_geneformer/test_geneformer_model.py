@@ -226,3 +226,43 @@ class TestGeneformer:
 
         outputs = fine_tuned_model.get_outputs(tokenized_dataset)
         assert outputs.shape == (len(mock_data), 1)
+
+    @pytest.mark.parametrize(
+        "model_name,emb_layer,expected_error",
+        [
+            ("gf-6L-30M-i2048", -1, "No Error"),
+            ("gf-6L-30M-i2048", 7, "Error"),
+            ("gf-12L-30M-i2048", 6, "No Error"),
+            ("gf-20L-95M-i4096", 23, "Error"),
+        ],
+    )
+    def test_embedding_layer_error(self, model_name, emb_layer, expected_error):
+        config = GeneformerConfig(
+            model_name=model_name, batch_size=5, emb_layer=emb_layer
+        )
+
+        if expected_error == "Error":
+            with pytest.raises(ValueError):
+                Geneformer(config)
+        else:
+            try:
+                Geneformer(config)
+            except Exception as error:
+                pytest.fail(f"Unexpected error: {error}")
+
+    @pytest.mark.parametrize(
+        "model_name,emb_layer",
+        [
+            ("gf-6L-30M-i2048", -1),
+            ("gf-6L-30M-i2048", 3),
+            ("gf-12L-30M-i2048", 6),
+            ("gf-20L-95M-i4096", -1),
+        ],
+    )
+    def test_layer_to_quant(self, model_name, emb_layer):
+        config = GeneformerConfig(
+            model_name=model_name, batch_size=5, emb_layer=emb_layer
+        )
+        geneformer = Geneformer(config)
+
+        assert geneformer.layer_to_quant == emb_layer

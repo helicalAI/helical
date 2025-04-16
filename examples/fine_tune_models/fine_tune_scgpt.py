@@ -34,6 +34,15 @@ def run_fine_tuning(cfg: DictConfig):
 
     scgpt_fine_tune.train(train_input_data=dataset, train_labels=cell_types)
 
+    outputs = scgpt_fine_tune.get_outputs(dataset)
+    print(outputs)
+
+    # save and load model
+    scgpt_fine_tune.save_model("./scgpt_fine_tuned_model.pt")
+    scgpt_fine_tune.load_model("./scgpt_fine_tuned_model.pt")
+
+    outputs = scgpt_fine_tune.get_outputs(dataset)
+    print(outputs)
 
 if __name__ == "__main__":
     run_fine_tuning()

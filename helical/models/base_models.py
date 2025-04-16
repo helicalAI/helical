@@ -279,3 +279,29 @@ class HelicalBaseFineTuningModel(torch.nn.Module):
     @abstractmethod
     def get_outputs():
         pass
+
+    def save_model(self, path: str):
+        """
+        Save the model to a file.
+
+        Parameters
+        ----------
+        path : str
+            The path to save the model to.
+        """
+        torch.save(self.model, path)
+        LOGGER.info(f"Model saved to {path}")
+
+    def load_model(self, path: str):
+        """
+        Load the model from a file.
+
+        Parameters
+        ----------
+        path : str
+            The path to load the model from.
+        """
+        self.model = torch.load(path, weights_only=False)
+        self.model.eval()
+        self.fine_tuning_head.eval()
+        LOGGER.info(f"Model loaded from {path}")

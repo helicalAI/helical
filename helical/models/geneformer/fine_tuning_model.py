@@ -340,6 +340,9 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
         np.ndarray
             The predicted labels in the form of a numpy array
         """
+        self.model.eval()
+        self.fine_tuning_head.eval()
+        
         model_input_size = get_model_input_size(self.model)
         self.to(self.device)
 
