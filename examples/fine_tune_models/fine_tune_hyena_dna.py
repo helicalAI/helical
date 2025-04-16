@@ -23,7 +23,14 @@ def run_fine_tuning(cfg: DictConfig):
 
     outputs = hyena_dna_fine_tune.get_outputs(train_dataset)
 
-    print(outputs.shape)
+    print(outputs)
+
+    # save and load model
+    hyena_dna_fine_tune.save_model("./hyena_dna_fine_tuned_model.pt")
+    hyena_dna_fine_tune.load_model("./hyena_dna_fine_tuned_model.pt")
+
+    outputs = hyena_dna_fine_tune.get_outputs(train_dataset)
+    print(outputs)
 
 
 if __name__ == "__main__":

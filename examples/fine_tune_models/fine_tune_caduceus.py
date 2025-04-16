@@ -24,8 +24,14 @@ def run_fine_tuning(cfg: DictConfig):
     caduceus_fine_tune.train(train_dataset=train_dataset, train_labels=labels)
 
     outputs = caduceus_fine_tune.get_outputs(train_dataset)
-    print(outputs.shape)
+    print(outputs)
 
+    # save and load model
+    caduceus_fine_tune.save_model("./caduceus_fine_tuned_model.pt")
+    caduceus_fine_tune.load_model("./caduceus_fine_tuned_model.pt")
+
+    outputs = caduceus_fine_tune.get_outputs(train_dataset)
+    print(outputs)  
 
 if __name__ == "__main__":
     run_fine_tuning()

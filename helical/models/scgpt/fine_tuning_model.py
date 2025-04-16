@@ -298,6 +298,11 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
         self.to(device)
         self.model.eval()
         self.fine_tuning_head.eval()
+        
+        # fix seeds
+        np.random.seed(self.config["binning_seed"])
+        torch.manual_seed(self.config["binning_seed"])
+
         try:
             use_batch_labels = dataset.batch_ids is not None
         except:

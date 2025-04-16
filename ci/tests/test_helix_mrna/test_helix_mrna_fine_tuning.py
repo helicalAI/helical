@@ -1,8 +1,8 @@
 import pytest
 import torch
 from helical.models.helix_mrna import HelixmRNAConfig, HelixmRNAFineTuningModel
-
-
+import os
+from helical.models.fine_tune.fine_tuning_heads import ClassificationHead
 class TestHelixmRNAFineTuning:
     @pytest.fixture
     def helixmRNAFineTune(self):
@@ -31,3 +31,19 @@ class TestHelixmRNAFineTuning:
         )
         outputs = helixmRNAFineTune.get_outputs(input_sequences)
         assert outputs.shape == (len(input_sequences), 1)
+    
+    def test_save_and_load_model(self, helixmRNAFineTune):
+
+        try:
+            helixmRNAFineTune.save_model("./helix_mrna_fine_tuned_model.pt")
+            helixmRNAFineTune.load_model("./helix_mrna_fine_tuned_model.pt")
+            assert not helixmRNAFineTune.model.training, "Model should be in eval mode"
+            assert not helixmRNAFineTune.fine_tuning_head.training, "Fine-tuning head should be in eval mode"
+            assert helixmRNAFineTune.model is not None
+            assert helixmRNAFineTune.fine_tuning_head.output_size == 1, "Output size should be 1"
+            assert type(helixmRNAFineTune.fine_tuning_head) == ClassificationHead, "Fine-tuning head should be a ClassificationHead"
+            assert helixmRNAFineTune.model.state_dict() is not None 
+        finally:
+            if os.path.exists("./helix_mrna_fine_tuned_model.pt"):
+                os.remove("./helix_mrna_fine_tuned_model.pt")
+        

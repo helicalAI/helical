@@ -34,7 +34,15 @@ def run_fine_tuning(cfg: DictConfig):
     cell_types = [class_id_dict[cell] for cell in cell_types]
 
     uce_fine_tune.train(train_input_data=dataset, train_labels=cell_types)
+    outputs = uce_fine_tune.get_outputs(dataset)
+    print(outputs)
 
+    # save and load model
+    uce_fine_tune.save_model("./uce_fine_tuned_model.pt")
+    uce_fine_tune.load_model("./uce_fine_tuned_model.pt")
+
+    outputs = uce_fine_tune.get_outputs(dataset)
+    print(outputs)
 
 if __name__ == "__main__":
     run_fine_tuning()
