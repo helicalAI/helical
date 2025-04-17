@@ -17,7 +17,7 @@ ENV NVIDIA_DRIVER_CAPABILITIES=all
 RUN pip install lightning wandb
 ENV CUDNN_PATH=/opt/conda/lib/python3.11/site-packages/nvidia/cudnn
 
-RUN pip install transformer-engine[pytorch]
+RUN pip install transformer-engine[pytorch]==1.13.0
 
 RUN git clone --recurse-submodules https://github.com/ArcInstitute/evo2.git
 RUN cd evo2 && pip install .
