@@ -20,7 +20,9 @@ def main(cfg: DictConfig):
 
     # Set the checkpoint paths based on the unified checkpoint_path
     cfg.model.inference_config.load_checkpoint = os.path.join(cfg.model.checkpoint_path, "model_weights.pt")
-    cfg.model.data_config.aux_vocab_path = os.path.join(cfg.model.checkpoint_path, "vocabs")
+    # cfg.model.data_config.aux_vocab_path = os.path.join(cfg.model.checkpoint_path, "vocabs")
+    cfg.model.data_config.aux_vocab_path = None
+    cfg.model.data_config.aux_cols = None
     cfg.model.data_config.esm2_mappings_path = os.path.join(cfg.model.checkpoint_path, "vocabs")
 
     adata_output = run_inference(cfg, data_files=cfg.model.inference_config.data_files)

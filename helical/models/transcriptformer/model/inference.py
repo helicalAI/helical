@@ -61,6 +61,12 @@ def run_inference(cfg, data_files: list[str] | list[anndata.AnnData]):
 
     # Validate and load weights
     # converter.validate_loaded_weights(model, state_dict)
+    
+    # Filter out auxiliary embedding weights if aux_vocab_path is None
+    if cfg.model.data_config.aux_vocab_path is None:
+        filtered_state_dict = {k: v for k, v in state_dict.items() if not k.startswith('aux_embeddings.')}
+        state_dict = filtered_state_dict
+    
     model.load_state_dict(state_dict)
     logging.info("Model weights loaded successfully")
 

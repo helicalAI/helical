@@ -89,7 +89,7 @@ class Transcriptformer(pl.LightningModule):
             )
 
     def _init_model_components(self):
-        if self.model_config.use_aux:
+        if hasattr(self.model_config, "use_aux"):
             self._init_aux_embeddings()
 
         # Encoder and heads
