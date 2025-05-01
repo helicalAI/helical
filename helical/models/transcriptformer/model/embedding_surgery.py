@@ -1,7 +1,7 @@
 import torch
 
-from transcriptformer.model.model import Transcriptformer
-from transcriptformer.tokenizer.vocab import SPECIAL_TOKENS, construct_gene_embeddings
+from helical.models.transcriptformer.model.model import Transcriptformer
+from helical.models.transcriptformer.tokenizer.vocab import SPECIAL_TOKENS, construct_gene_embeddings
 
 
 def change_embedding_layer(

@@ -8,10 +8,10 @@ from hydra.utils import instantiate
 from pytorch_lightning.loggers import CSVLogger
 from torch.utils.data import DataLoader
 
-from transcriptformer.data.dataloader import AnnDataset
-from transcriptformer.model.embedding_surgery import change_embedding_layer
-from transcriptformer.tokenizer.vocab import load_vocabs_and_embeddings
-from transcriptformer.utils.utils import stack_dict
+from helical.models.transcriptformer.data.dataloader import AnnDataset
+from helical.models.transcriptformer.model.embedding_surgery import change_embedding_layer
+from helical.models.transcriptformer.tokenizer.vocab import load_vocabs_and_embeddings
+from helical.models.transcriptformer.utils.utils import stack_dict
 
 # Set float32 matmul precision for better performance with Tensor Cores
 torch.set_float32_matmul_precision("high")

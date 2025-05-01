@@ -1,11 +1,10 @@
 import json
 import logging
 import os
-
 import numpy as np
 import torch
 
-from transcriptformer.utils.utils import load_embeddings
+from helical.models.transcriptformer.utils.utils import load_embeddings
 
 SPECIAL_TOKENS = ["unknown", "[START]", "[END]", "[RD]", "[CELL]", "[PAD]", "[MASK]"]
 

@@ -7,7 +7,7 @@ import torch
 from torch import Tensor, nn
 from torch.nn.attention.flex_attention import and_masks, create_block_mask
 
-from transcriptformer.data.dataclasses import (
+from helical.models.transcriptformer.data.dataclasses import (
     AuxVocab,
     BatchData,
     DataConfig,
@@ -16,19 +16,19 @@ from transcriptformer.data.dataclasses import (
     LossConfig,
     ModelConfig,
 )
-from transcriptformer.model.layers import (
+from helical.models.transcriptformer.model.layers import (
     MLP,
     CountDecoderHead,
     PretrainedEmbeddings,
     TranscriptEncoder,
     mean_embeddings,
 )
-from transcriptformer.model.losses import (
+from helical.models.transcriptformer.model.losses import (
     ZTP_NLL,
     CrossEntropyLoss,
     logit_softcap,
 )
-from transcriptformer.model.masks import (
+from helical.models.transcriptformer.model.masks import (
     causal_mask_factory,
     pad_mask_factory,
 )

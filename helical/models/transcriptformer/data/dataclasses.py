@@ -1,7 +1,6 @@
 """Dataclasses for the Transcripformer model."""
 
 from dataclasses import dataclass, field
-
 import numpy as np
 import torch
 
