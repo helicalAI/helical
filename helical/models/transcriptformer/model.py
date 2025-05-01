@@ -14,7 +14,8 @@ from helical.models.transcriptformer.tokenizer.vocab import load_vocabs_and_embe
 from helical.models.transcriptformer.utils.utils import stack_dict
 from helical.models.base_models import HelicalRNAModel
 from helical.utils.downloader import Downloader
-
+from omegaconf import OmegaConf
+import json
 from helical.models.transcriptformer.transcriptformer_config import TranscriptFormerConfig
 # Set float32 matmul precision for better performance with Tensor Cores
 torch.set_float32_matmul_precision("high")
@@ -22,6 +23,7 @@ torch.set_float32_matmul_precision("high")
 torch._dynamo.config.optimize_ddp = False
 torch._dynamo.config.cache_size_limit = 1000
 
+logger = logging.getLogger(__name__)
 class TranscriptFormer(HelicalRNAModel):
     configurer = TranscriptFormerConfig()
 
@@ -32,6 +34,16 @@ class TranscriptFormer(HelicalRNAModel):
         downloader = Downloader()
         for file in self.configurer.list_of_files_to_download:
             downloader.download_via_name(file)
+
+        logger.debug(OmegaConf.to_yaml(self.config))
+
+        config_path = os.path.join(self.config.model.checkpoint_path, "config.json")
+        with open(config_path) as f:
+            config_dict = json.load(f)
+        mlflow_cfg = OmegaConf.create(config_dict)
+
+        # Merge the MLflow config with the main config
+        self.config = OmegaConf.merge(mlflow_cfg, self.config)
 
         # Set the checkpoint paths based on the unified checkpoint_path
         self.config.model.inference_config.load_checkpoint = os.path.join(self.config.model.checkpoint_path, "model_weights.pt")
@@ -45,7 +57,7 @@ class TranscriptFormer(HelicalRNAModel):
         (self.gene_vocab, self.aux_vocab), self.emb_matrix = load_vocabs_and_embeddings(self.config)
 
         # Instantiate the model
-        logging.info("Instantiating the model")
+        logger.info("Instantiating the model")
         self.model = instantiate(
             self.config.model,
             gene_vocab_dict=self.gene_vocab,
@@ -54,7 +66,7 @@ class TranscriptFormer(HelicalRNAModel):
         )
         self.model.eval()
 
-        logging.info("Model instantiated successfully")
+        logger.info("Model instantiated successfully")
 
         # Check if checkpoint is supplied
         if not hasattr(self.model.inference_config, "load_checkpoint") or not self.model.inference_config.load_checkpoint:
@@ -63,7 +75,7 @@ class TranscriptFormer(HelicalRNAModel):
                 "model.inference_config.load_checkpoint"
             )
 
-        logging.info("Loading model checkpoint")
+        logger.info("Loading model checkpoint")
         # Instead of loading full checkpoint, just load weights
         state_dict = torch.load(self.model.inference_config.load_checkpoint, weights_only=True)
 
@@ -76,11 +88,11 @@ class TranscriptFormer(HelicalRNAModel):
             state_dict = filtered_state_dict
         
         self.model.load_state_dict(state_dict)
-        logging.info("Model weights loaded successfully")
+        logger.info("Model weights loaded successfully")
 
         # Perform embedding surgery if specified in config
         if self.model.inference_config.pretrained_embedding is not None:
-            logging.info("Performing embedding surgery")
+            logger.info("Performing embedding surgery")
             # Check if pretrained_embedding_paths is a list, if not convert it to a list
             if not isinstance(self.model.inference_config.pretrained_embedding, list):
                 pretrained_embedding_paths = [self.model.inference_config.pretrained_embedding]
@@ -134,7 +146,7 @@ class TranscriptFormer(HelicalRNAModel):
         output = trainer.predict(self.model, dataloaders=dataloader)
 
         # Combine predictions
-        logging.info("Combining predictions")
+        logger.info("Combining predictions")
         concat_output = stack_dict(output)
 
         # TODO: Add back in when we want to return an AnnData object
