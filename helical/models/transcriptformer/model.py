@@ -121,21 +121,23 @@ class TranscriptFormer(HelicalRNAModel):
         logging.info("Combining predictions")
         concat_output = stack_dict(output)
 
-        # Create pandas DataFrames from the obs and uns data in concat_output
-        obs_df = pd.DataFrame(concat_output["obs"])
-        uns = {"llh": pd.DataFrame({"llh": concat_output["llh"]})} if "llh" in concat_output else None
-        obsm = {}
+        # TODO: Add back in when we want to return an AnnData object
+        # # Create pandas DataFrames from the obs and uns data in concat_output
+        # obs_df = pd.DataFrame(concat_output["obs"])
+        # uns = {"llh": pd.DataFrame({"llh": concat_output["llh"]})} if "llh" in concat_output else None
+        # obsm = {}
 
-        # Add all other output keys to the obsm
-        for k in self.model.inference_config.output_keys:
-            if k in concat_output:
-                obsm[k] = concat_output[k].numpy()
+        # # Add all other output keys to the obsm
+        # for k in self.model.inference_config.output_keys:
+        #     if k in concat_output:
+        #         obsm[k] = concat_output[k].numpy()
 
-        # Create a new AnnData object with the embeddings
-        output_adata = anndata.AnnData(
-            obs=obs_df,
-            obsm=obsm,
-            uns=uns,
-        )
+        # # Create a new AnnData object with the embeddings
+        # output_adata = anndata.AnnData(
+        #     obs=obs_df,
+        #     obsm=obsm,
+        #     uns=uns,
+        # )
 
-        return output_adata
+        embeddings = concat_output["embeddings"]
+        return embeddings

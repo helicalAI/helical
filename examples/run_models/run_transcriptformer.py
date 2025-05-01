@@ -28,17 +28,8 @@ def main(cfg: DictConfig):
 
     model = TranscriptFormer(cfg)
     dataset = model.process_data(cfg.model.inference_config.data_files)
-    adata_output = model.get_embeddings(dataset)
-
-
-    # Save the output adata
-    output_path = cfg.model.inference_config.output_path
-    if not os.path.exists(output_path):
-        os.makedirs(output_path)
-    save_file = os.path.join(output_path, "embeddings.h5ad")
-    adata_output.write_h5ad(save_file)
-    logging.info(f"Saved embeddings to {save_file}")
-
+    embeddings = model.get_embeddings(dataset)
+    print(embeddings)
 
 if __name__ == "__main__":
     main()
