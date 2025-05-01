@@ -222,10 +222,12 @@ class Downloader(Logger):
             LOGGER.info(
                 f"File does not exist or has incorrect hash. Starting to download: '{blob_url}'"
             )
-            # disabling logging info messages from Azure package as there are too many
-            logging.disable(logging.INFO)
+            # temporarily disable INFO logging from Azure package
+            original_level = logging.getLogger().getEffectiveLevel()
+            logging.getLogger().setLevel(logging.WARNING)
             self.display_azure_download_progress(blob_client, blob_url, output)
-            logging.disable(logging.NOTSET)
+            # restore original logging level
+            logging.getLogger().setLevel(original_level)
             assert (
                 self.calculate_partial_file_hash(output) == HASH_DICT[name]
             ), f"Hash of downloaded file '{output}' does not match the expected hash."
