@@ -31,6 +31,7 @@ def load_data(file_path):
 def load_gene_features(adata, gene_col_name):
     """Load gene features from a CSV file."""
     try:
+        # TODO make this applicable to any dataset
         adata = map_gene_symbols_to_ensembl_ids(adata, gene_names="gene_names")
         gene_names = np.array(list(adata.var[gene_col_name].values))
         return gene_names, True
