@@ -15,7 +15,7 @@ model:
       # - cell_type  # Uncomment to only return cell_type column
       # - tissue  # Uncomment to only return tissue column
     data_files:
-      - /home/benoit/Documents/helical/adjusted_17_04_24_YolkSacRaw_F158_WE_annots.h5ad   # Path to input AnnData file(s)
+      - null   # Path to input AnnData file(s)
     output_path: ./inference_results  # Directory where results will be saved
     load_checkpoint: null  # Path to model weights file (automatically set by inference.py)
     pretrained_embedding: null  # Path to pretrained embeddings for out-of-distribution species

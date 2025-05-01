@@ -74,6 +74,10 @@ HASH_DICT = {
     "caduceus/caduceus-ps-4L-seqlen-1k-d256/config.json": "655d2c3a692ab35718cfe87ce98b14c4e57807f85089c2af81809873f356349f",
     "genept/genept_embeddings/genept_embeddings.json": "54a58177e6f4cb9c2d98f39cb8c586bd347a526375eba861df15a3714f737ccc",
     "17_04_24_YolkSacRaw_F158_WE_annots.h5ad": "0585c186ef23951a538522dd6882492c2d5c165c615543fe01bf0d0daedc2f5a",
+    "transcriptformer/tf_sapiens/config.json": "49aad694a275fca6baa1f5a4c53a40739e510235ac02427c3268b400a0bbde87",
+    "transcriptformer/tf_sapiens/model_weights.pt": "3f1a3fd4ce8b0eb71648148017376464de993559184cc0c1ae69c9c7780e79b4",
+    "transcriptformer/tf_sapiens/vocabs/assay_vocab.json": "0c405e4ead45a4b8350d8e874f834273efdd3f7ad4669b52d3e3727fb4fe70af",
+    "transcriptformer/tf_sapiens/vocabs/homo_sapiens_gene.h5": "74366d4f45c4bd60983c3d1d1c406d7d58d30a798455c239eb2691eaa162e2dc",
 }
 
 

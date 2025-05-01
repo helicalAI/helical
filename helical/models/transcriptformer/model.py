@@ -7,13 +7,15 @@ import torch
 from hydra.utils import instantiate
 from pytorch_lightning.loggers import CSVLogger
 from torch.utils.data import DataLoader
-
+import os
 from helical.models.transcriptformer.data.dataloader import AnnDataset
 from helical.models.transcriptformer.model_dir.embedding_surgery import change_embedding_layer
 from helical.models.transcriptformer.tokenizer.vocab import load_vocabs_and_embeddings
 from helical.models.transcriptformer.utils.utils import stack_dict
 from helical.models.base_models import HelicalRNAModel
-from omegaconf import DictConfig
+from helical.utils.downloader import Downloader
+
+from helical.models.transcriptformer.transcriptformer_config import TranscriptFormerConfig
 # Set float32 matmul precision for better performance with Tensor Cores
 torch.set_float32_matmul_precision("high")
 
@@ -21,17 +23,31 @@ torch._dynamo.config.optimize_ddp = False
 torch._dynamo.config.cache_size_limit = 1000
 
 class TranscriptFormer(HelicalRNAModel):
+    configurer = TranscriptFormerConfig()
 
-    def __init__(self, cfg: DictConfig):
-        super().__init__(cfg)
+    def __init__(self, configurer: TranscriptFormerConfig = configurer):
+        super().__init__(configurer.config)
+        self.config = configurer.config
+
+        downloader = Downloader()
+        for file in self.configurer.list_of_files_to_download:
+            downloader.download_via_name(file)
+
+        # Set the checkpoint paths based on the unified checkpoint_path
+        self.config.model.inference_config.load_checkpoint = os.path.join(self.config.model.checkpoint_path, "model_weights.pt")
+        # cfg.model.data_config.aux_vocab_path = os.path.join(cfg.model.checkpoint_path, "vocabs")
+        self.config.model.data_config.aux_vocab_path = None
+        self.config.model.data_config.aux_cols = None
+        self.config.model.data_config.esm2_mappings_path = os.path.join(self.config.model.checkpoint_path, "vocabs")
+
 
         # Load vocabs and embeddings
-        (self.gene_vocab, self.aux_vocab), self.emb_matrix = load_vocabs_and_embeddings(cfg)
+        (self.gene_vocab, self.aux_vocab), self.emb_matrix = load_vocabs_and_embeddings(self.config)
 
         # Instantiate the model
         logging.info("Instantiating the model")
         self.model = instantiate(
-            cfg.model,
+            self.config.model,
             gene_vocab_dict=self.gene_vocab,
             aux_vocab_dict=self.aux_vocab,
             emb_matrix=self.emb_matrix,
