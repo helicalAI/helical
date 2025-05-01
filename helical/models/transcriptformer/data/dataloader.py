@@ -9,12 +9,13 @@ import torch
 from scipy.sparse import csc_matrix, csr_matrix
 from torch import tensor
 from torch.utils.data import Dataset
-
-from transcriptformer.data.dataclasses import BatchData
-from transcriptformer.tokenizer.tokenizer import (
+from helical.utils.mapping import map_gene_symbols_to_ensembl_ids
+from helical.models.transcriptformer.data.dataclasses import BatchData
+from helical.models.transcriptformer.tokenizer.tokenizer import (
     BatchGeneTokenizer,
     BatchObsTokenizer,
 )
+
 
 
 def load_data(file_path):
@@ -30,6 +31,7 @@ def load_data(file_path):
 def load_gene_features(adata, gene_col_name):
     """Load gene features from a CSV file."""
     try:
+        adata = map_gene_symbols_to_ensembl_ids(adata, gene_names="gene_names")
         gene_names = np.array(list(adata.var[gene_col_name].values))
         return gene_names, True
     except KeyError:
@@ -216,9 +218,7 @@ class AnnDataset(Dataset):
 
     def _get_batch_from_file(self, file: str | anndata.AnnData) -> BatchData | None:
         if isinstance(file, str):
-            if self.data_dir is not None:
-                file_path = os.path.join(self.data_dir, file)
-
+            file_path = file if self.data_dir is None else os.path.join(self.data_dir, file)
             adata, success = load_data(file_path)
         elif isinstance(file, anndata.AnnData):
             adata = file
@@ -228,12 +228,12 @@ class AnnDataset(Dataset):
             raise ValueError(f"Invalid file type: {type(file)}")
 
         if not success:
-            logging.error(f"Failed to load data from {file_path}")
+            logging.error(f"Failed to load data from {file_path if file_path else 'provided AnnData object'}")
             return None
 
         gene_names, success = load_gene_features(adata, self.gene_col_name)
         if not success:
-            logging.error(f"Failed to load gene features from {file_path}")
+            logging.error(f"Failed to load gene features from {file_path if file_path else 'provided AnnData object'}")
             return None
 
         X = adata.X.toarray() if isinstance(adata.X, csr_matrix | csc_matrix) else adata.X
@@ -251,7 +251,7 @@ class AnnDataset(Dataset):
             self.min_expressed_genes,
         )
         if X is None:
-            logging.warning(f"Data was filtered out completely for {file_path}")
+            logging.warning(f"Data was filtered out completely for {file_path if file_path else 'provided AnnData object'}")
             return None
 
         batch = process_batch(
@@ -270,7 +270,7 @@ class AnnDataset(Dataset):
             self.clip_counts,
             self.aux_vocab,
         )
-        batch["file_path"] = np.array([file_path] * X.shape[0])
+        batch["file_path"] = np.array([file_path] * X.shape[0]) if file_path is not None else None
 
         if self.obs_keys is not None:
             obs_data = {}
