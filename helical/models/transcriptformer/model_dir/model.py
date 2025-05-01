@@ -16,19 +16,19 @@ from helical.models.transcriptformer.data.dataclasses import (
     LossConfig,
     ModelConfig,
 )
-from helical.models.transcriptformer.model.layers import (
+from helical.models.transcriptformer.model_dir.layers import (
     MLP,
     CountDecoderHead,
     PretrainedEmbeddings,
     TranscriptEncoder,
     mean_embeddings,
 )
-from helical.models.transcriptformer.model.losses import (
+from helical.models.transcriptformer.model_dir.losses import (
     ZTP_NLL,
     CrossEntropyLoss,
     logit_softcap,
 )
-from helical.models.transcriptformer.model.masks import (
+from helical.models.transcriptformer.model_dir.masks import (
     causal_mask_factory,
     pad_mask_factory,
 )

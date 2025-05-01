@@ -1,6 +1,6 @@
 import torch
 
-from helical.models.transcriptformer.model.model import Transcriptformer
+from helical.models.transcriptformer.model_dir.model import Transcriptformer
 from helical.models.transcriptformer.tokenizer.vocab import SPECIAL_TOKENS, construct_gene_embeddings
 
 

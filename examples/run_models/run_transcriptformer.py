@@ -3,7 +3,8 @@ import logging
 import os
 import hydra
 from omegaconf import DictConfig, OmegaConf
-from helical.models.transcriptformer.model.inference import run_inference
+from helical.models.transcriptformer.model import TranscriptFormer
+
 logger = logging.getLogger(__name__)
 
 @hydra.main(version_base=None, config_path="configs", config_name="transcriptformer_config")
@@ -25,7 +26,10 @@ def main(cfg: DictConfig):
     cfg.model.data_config.aux_cols = None
     cfg.model.data_config.esm2_mappings_path = os.path.join(cfg.model.checkpoint_path, "vocabs")
 
-    adata_output = run_inference(cfg, data_files=cfg.model.inference_config.data_files)
+    model = TranscriptFormer(cfg)
+    dataset = model.process_data(cfg.model.inference_config.data_files)
+    adata_output = model.get_embeddings(dataset)
+
 
     # Save the output adata
     output_path = cfg.model.inference_config.output_path
