@@ -11,13 +11,8 @@ We will update this repo on a regular basis with new models, benchmarks, modalit
 Let’s build the most exciting AI-for-Bio community together!
 
 ## What's new?
-### Saving fine-tuned models
-
-We give users the option now to save fine-tuned models. Please have a look at the examples folder [here](examples/fine_tune_models). 
-
-### Evo 2
-We have integrated [Evo 2](https://github.com/ArcInstitute/evo2) into our helical package and have made a model card for it in our [Evo 2 model card](./model_cards/evo_2.md). If you would like to test the model, take a look at our [example notebook](./notebooks/Evo-2.ipynb)!
-Let us know what you think and we are happy to help you with the larger model (40B parameters!) if needed!
+### TranscriptFormer
+We have integrated [TranscriptFormer](https://github.com/czi-ai/transcriptformer) into our helical package and have made a model card for it in our [Transcriptformer model folder](helical/models/transcriptformer/README.md). If you would like to test the model, take a look at our [example notebook](examples/notebooks/Geneformer-vs-TranscriptFormer.ipynb)!
 
 ### 🧬 Introducing Helix-mRNA-v0: Unlocking new frontiers & use cases in mRNA therapy 🧬
 We’re thrilled to announce the release of our first-ever mRNA Bio Foundation Model, designed to:
@@ -82,6 +77,7 @@ apptainer shell --nv --fakeroot singularity/helical/
 - [Geneformer](./model_cards/geneformer.md)
 - [scGPT](./model_cards/scgpt.md)
 - [Universal Cell Embedding (UCE)](./model_cards/uce.md)
+- [TranscriptFormer](./model_cards/transcriptformer.md)
 
 ### DNA models:
 - [HyenaDNA](./model_cards/hyenadna.md)
@@ -105,7 +101,7 @@ Within the `example/notebooks` folder, open the notebook of your choice. We reco
 | ----------- | ----------- |----------- |                                                        
 |[Quick-Start-Tutorial.ipynb](./notebooks/Quick-Start-Tutorial.ipynb)| A tutorial to quickly get used to the helical package and environment. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Quick-Start-Tutorial.ipynb)|
 |[Helix-mRNA.ipynb](./notebooks/Helix-mRNA.ipynb)|An example of how to use the Helix-mRNA model.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Helix-mRNA.ipynb) |
-|[Geneformer-vs-UCE.ipynb](./notebooks/Geneformer-vs-UCE.ipynb) | Zero-Shot Reference Mapping with Geneformer & UCE and compare the outcomes. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Geneformer-vs-UCE.ipynb) |
+|[Geneformer-vs-TranscriptFormer.ipynb](./notebooks/Geneformer-vs-TranscriptFormer.ipynb) | Zero-Shot Reference Mapping with Geneformer & UCE and compare the outcomes. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Geneformer-vs-TranscriptFormer.ipynb) |
 |[Hyena-DNA-Inference.ipynb](./notebooks/Hyena-DNA-Inference.ipynb)|An example how to do probing with HyenaDNA by training a neural network on 18 downstream classification tasks.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Hyena-DNA-Inference.ipynb)|
 |[Cell-Type-Annotation.ipynb](./notebooks/Cell-Type-Annotation.ipynb)|An example how to do probing with scGPT by training a neural network to predict cell type annotations.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Cell-Type-Annotation.ipynb) |
 |[Cell-Type-Classification-Fine-Tuning.ipynb](./notebooks/Cell-Type-Classification-Fine-Tuning.ipynb)|An example how to fine-tune different models on classification tasks.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Cell-Type-Classification-Fine-Tuning.ipynb) |
@@ -134,10 +130,15 @@ A lot of our models have been published by talented authors developing these exc
 - [scGPT](https://github.com/bowang-lab/scGPT/)
 - [Geneformer](https://huggingface.co/ctheodoris/Geneformer)
 - [UCE](https://github.com/snap-stanford/UCE)
+- [TranscriptFormer](https://github.com/czi-ai/transcriptformer)
 - [HyenaDNA](https://github.com/HazyResearch/hyena-dna)
 - [anndata](https://github.com/scverse/anndata)
 - [scanpy](https://github.com/scverse/scanpy)
 - [transformers](https://github.com/huggingface/transformers)
+- [scikit-learn](https://github.com/scikit-learn/scikit-learn)
+- [GenePT](https://github.com/yiqunchen/GenePT)
+- [Caduceus](https://github.com/kuleshov-group/caduceus)
+- [Evo2](https://github.com/ArcInstitute/evo2)
 
 ### Licenses
 
@@ -148,9 +149,9 @@ You can find the Licenses for each model implementation in the model repositorie
 - [scGPT](https://github.com/helicalAI/helical/blob/release/helical/models/scgpt/LICENSE)
 - [Geneformer](https://github.com/helicalAI/helical/blob/release/helical/models/geneformer/LICENSE)
 - [UCE](https://github.com/helicalAI/helical/blob/release/helical/models/uce/LICENSE)
+- [TranscriptFormer](https://github.com/helicalAI/helical/blob/release/helical/models/transcriptformer/LICENSE)
 - [HyenaDNA](https://github.com/helicalAI/helical/blob/release/helical/models/hyena_dna/LICENSE)
 - [Evo2](https://github.com/helicalAI/helical/blob/release/helical/models/evo_2/LICENSE)
-
 
 ## Citation
 
