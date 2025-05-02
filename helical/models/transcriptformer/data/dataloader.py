@@ -30,7 +30,9 @@ def load_data(file_path):
 
 def load_gene_features(adata, gene_col_name):
     """Load ensembl ids from adata object."""
-    if gene_col_name not in adata.var.columns:
+    if gene_col_name == "index":
+        adata.var["index"] = adata.var_names
+    elif gene_col_name not in adata.var.columns:
         message = f"Gene column '{gene_col_name}' not found in adata.var.columns. Available columns: {adata.var.columns}. Modify config accordingly."
         logging.error(message)
         raise ValueError(message)
