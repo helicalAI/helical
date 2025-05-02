@@ -1,16 +1,24 @@
-import logging
 import hydra
 from omegaconf import DictConfig
 from helical.models.transcriptformer.model import TranscriptFormer
 from helical.models.transcriptformer.transcriptformer_config import TranscriptFormerConfig
-
-logger = logging.getLogger(__name__)
+from datasets import load_dataset
+from helical.utils import get_anndata_from_hf_dataset
+import anndata as ad
 
 @hydra.main(version_base=None, config_path="configs", config_name="transcriptformer_config")
 def run(cfg: DictConfig):
-    configurer = TranscriptFormerConfig(cfg)
+    configurer = TranscriptFormerConfig(**cfg)
     model = TranscriptFormer(configurer)
-    dataset = model.process_data(["/home/benoit/Documents/helical/examples/run_models/adjusted_17_04_24_YolkSacRaw_F158_WE_annots.h5ad"])
+    
+    # # either load via huggingface
+    # hf_dataset = load_dataset("helical-ai/yolksac_human",split="train[:5%]", trust_remote_code=True, download_mode="reuse_cache_if_exists")
+    # ann_data = get_anndata_from_hf_dataset(hf_dataset)
+
+    # or load directly
+    ann_data = ad.read_h5ad("./yolksac_human.h5ad")
+
+    dataset = model.process_data([ann_data])
     embeddings = model.get_embeddings(dataset)
     print(embeddings)
 
