@@ -58,7 +58,7 @@ nav:
     - Helix-mRNA: ./notebooks/Helix-mRNA.ipynb
     - Cell-Type Annotation: ./notebooks/Cell-Type-Annotation.ipynb
     - Cell-Type-Classification-Fine-Tuning: ./notebooks/Cell-Type-Classification-Fine-Tuning.ipynb
-    - Geneformer-vs-UCE: ./notebooks/Geneformer-vs-UCE.ipynb
+    - Geneformer-vs-TranscriptFormer: ./notebooks/Geneformer-vs-TranscriptFormer.ipynb
     - Hyena-DNA-Inference: ./notebooks/Hyena-DNA-Inference.ipynb
     - HyenaDNA-Fine-Tuning: ./notebooks/HyenaDNA-Fine-Tuning.ipynb
     - Cell-Gene-Cls-embedding-generation: ./notebooks/Cell-Gene-Cls-embedding-generation.ipynb
