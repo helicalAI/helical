@@ -20,6 +20,10 @@ nav:
       - Config: ./configs/uce_config.md
       - Model: ./models/uce.md
       - Fine-Tuning Model: ./fine_tuning_models/uce_fine_tune.md
+    - TranscriptFormer:
+      - Model Card: ./model_cards/transcriptformer.md
+      - Config: ./configs/transcriptformer.md
+      - Model: ./models/transcriptformer.md
   - RNA Sequence Models:
     - Helix-mRNA: 
       - Model Card: ./model_cards/helix_mrna.md
