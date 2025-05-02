@@ -20,7 +20,7 @@ class TranscriptFormerConfig:
             },
             data_config: dict = {
                 "_target_": "helical.models.transcriptformer.data.dataclasses.DataConfig",
-                "gene_col_name": "ensembl_id",
+                "gene_col_name": "index",
                 "clip_counts": 30,
                 "filter_to_vocabs": True,
                 "filter_outliers": 0.0,
