@@ -1,13 +1,10 @@
 import logging
-
 import anndata
-import pandas as pd
 import pytorch_lightning as pl
 import torch
 from hydra.utils import instantiate
 from pytorch_lightning.loggers import CSVLogger
 from torch.utils.data import DataLoader
-import os
 from helical.models.transcriptformer.data.dataloader import AnnDataset
 from helical.models.transcriptformer.model_dir.embedding_surgery import change_embedding_layer
 from helical.models.transcriptformer.tokenizer.vocab import load_vocabs_and_embeddings
@@ -15,7 +12,6 @@ from helical.models.transcriptformer.utils.utils import stack_dict
 from helical.models.base_models import HelicalRNAModel
 from helical.utils.downloader import Downloader
 from omegaconf import OmegaConf
-import json
 from helical.models.transcriptformer.transcriptformer_config import TranscriptFormerConfig
 # Set float32 matmul precision for better performance with Tensor Cores
 torch.set_float32_matmul_precision("high")
@@ -32,26 +28,10 @@ class TranscriptFormer(HelicalRNAModel):
         self.config = configurer.config
 
         downloader = Downloader()
-        for file in self.configurer.list_of_files_to_download:
+        for file in configurer.list_of_files_to_download:
             downloader.download_via_name(file)
 
         logger.debug(OmegaConf.to_yaml(self.config))
-
-        config_path = os.path.join(self.config.model.checkpoint_path, "config.json")
-        with open(config_path) as f:
-            config_dict = json.load(f)
-        mlflow_cfg = OmegaConf.create(config_dict)
-
-        # Merge the MLflow config with the main config
-        self.config = OmegaConf.merge(mlflow_cfg, self.config)
-
-        # Set the checkpoint paths based on the unified checkpoint_path
-        self.config.model.inference_config.load_checkpoint = os.path.join(self.config.model.checkpoint_path, "model_weights.pt")
-        # cfg.model.data_config.aux_vocab_path = os.path.join(cfg.model.checkpoint_path, "vocabs")
-        self.config.model.data_config.aux_vocab_path = None
-        self.config.model.data_config.aux_cols = None
-        self.config.model.data_config.esm2_mappings_path = os.path.join(self.config.model.checkpoint_path, "vocabs")
-
 
         # Load vocabs and embeddings
         (self.gene_vocab, self.aux_vocab), self.emb_matrix = load_vocabs_and_embeddings(self.config)
@@ -102,6 +82,9 @@ class TranscriptFormer(HelicalRNAModel):
 
     def process_data(self, data_files: list[str] | list[anndata.AnnData]):
         # Load dataset
+                
+        logger.info(f"Processing data for TranscriptFormer.")
+
         data_kwargs = {
             "gene_vocab": self.gene_vocab,
             "aux_vocab": self.aux_vocab,
