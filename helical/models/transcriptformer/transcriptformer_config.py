@@ -1,13 +1,14 @@
 from omegaconf import OmegaConf
 from typing import Literal
 
+
 class TranscriptFormerConfig:
     """
     TranscriptFormerConfig constructor.
 
     Parameters
     ----------
-        model_name: Literal["tf_sapiens", "tf_metazoa", "tf_exemplar"] = "tf_sapiens"
+        model_name: Literal["tf_sapiens", "tf_metazoa", "tf_exemplar"] = "tf_metazoa"
             The name of the model to use.
         inference_config: dict = {
             "_target_": "helical.models.transcriptformer.data.dataclasses.InferenceConfig",
@@ -34,6 +35,7 @@ class TranscriptFormerConfig:
             }
             The data configuration.
     """
+
     def __init__(
         self,
         model_name: Literal["tf_sapiens", "tf_metazoa", "tf_exemplar"] = "tf_sapiens",
