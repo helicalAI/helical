@@ -12,6 +12,9 @@ from helical.models.transcriptformer.utils.utils import stack_dict
 from helical.models.base_models import HelicalRNAModel
 from helical.utils.downloader import Downloader
 from omegaconf import OmegaConf
+import json
+import os
+from helical.constants.paths import CACHE_DIR_HELICAL
 from helical.models.transcriptformer.transcriptformer_config import TranscriptFormerConfig
 # Set float32 matmul precision for better performance with Tensor Cores
 torch.set_float32_matmul_precision("high")
@@ -30,6 +33,21 @@ class TranscriptFormer(HelicalRNAModel):
         downloader = Downloader()
         for file in configurer.list_of_files_to_download:
             downloader.download_via_name(file)
+
+        logger.info(f"Loading cache config for {configurer.model_name}")
+        cache_config_path = os.path.join(CACHE_DIR_HELICAL, "transcriptformer", configurer.model_name, "config.json")
+        with open(cache_config_path) as f:
+            cache_config_dict = json.load(f)
+        cache_config = OmegaConf.create(cache_config_dict)
+
+        # Merge the cache config with the config provided by the user
+        self.config = OmegaConf.merge(cache_config, self.config)
+
+        self.config.model.inference_config.load_checkpoint = os.path.join(CACHE_DIR_HELICAL, "transcriptformer", configurer.model_name, "model_weights.pt")
+        self.config.model.data_config.aux_vocab_path = os.path.join(CACHE_DIR_HELICAL, "transcriptformer", configurer.model_name, "vocabs")
+        self.config.model.data_config.aux_cols = "assay"
+        self.config.model.data_config.esm2_mappings_path = os.path.join(CACHE_DIR_HELICAL, "transcriptformer", configurer.model_name, "vocabs")
+        logger.info(f"Merged cache config with user config for {configurer.model_name}")
 
         logger.debug(OmegaConf.to_yaml(self.config))
 
