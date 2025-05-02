@@ -17,7 +17,6 @@ from helical.models.transcriptformer.tokenizer.tokenizer import (
 )
 
 
-
 def load_data(file_path):
     """Load H5AD file."""
     try:
@@ -108,7 +107,9 @@ def process_batch(
             non_zero_indices = torch.nonzero(sample, as_tuple=True)[0]
             zero_indices = torch.nonzero(sample == 0, as_tuple=True)[0]
             if randomize_order:
-                non_zero_indices = non_zero_indices[torch.randperm(len(non_zero_indices))]
+                non_zero_indices = non_zero_indices[
+                    torch.randperm(len(non_zero_indices))
+                ]
                 zero_indices = zero_indices[torch.randperm(len(zero_indices))]
             sample_ids = torch.cat([non_zero_indices, zero_indices])
             ids_batch[i] = sample_ids
@@ -125,7 +126,9 @@ def process_batch(
 
     # Apply padding and normalization
     if pad_zeros:
-        gene_tokens_batch = gene_tokens_batch.masked_fill(counts_batch == 0, gene_vocab[pad_token])
+        gene_tokens_batch = gene_tokens_batch.masked_fill(
+            counts_batch == 0, gene_vocab[pad_token]
+        )
 
     # Pad ids_batch to max_len
     tok_bz, tok_sq = gene_tokens_batch.shape
@@ -143,7 +146,9 @@ def process_batch(
             ]
         )
 
-        counts_batch = torch.cat([counts_batch, torch.zeros_like(padding, dtype=counts_batch.dtype)], dim=1)
+        counts_batch = torch.cat(
+            [counts_batch, torch.zeros_like(padding, dtype=counts_batch.dtype)], dim=1
+        )
 
     # Normalize to scale if specified
     if normalize_to_scale is not None and normalize_to_scale > 0:
@@ -162,7 +167,9 @@ def process_batch(
 
     # Add auxiliary and tokens if specified
     if aux_vocab is not None:
-        aux_tokens_batch = torch.stack([aux_tokenizer(obs) for _, obs in obs_batch.iterrows()])
+        aux_tokens_batch = torch.stack(
+            [aux_tokenizer(obs) for _, obs in obs_batch.iterrows()]
+        )
         result["aux_token_indices"] = aux_tokens_batch
 
     return result
@@ -221,7 +228,9 @@ class AnnDataset(Dataset):
 
     def _get_batch_from_file(self, file: str | anndata.AnnData) -> BatchData | None:
         if isinstance(file, str):
-            file_path = file if self.data_dir is None else os.path.join(self.data_dir, file)
+            file_path = (
+                file if self.data_dir is None else os.path.join(self.data_dir, file)
+            )
             adata, success = load_data(file_path)
         elif isinstance(file, anndata.AnnData):
             adata = file
@@ -231,19 +240,29 @@ class AnnDataset(Dataset):
             raise ValueError(f"Invalid file type: {type(file)}")
 
         if not success:
-            logging.error(f"Failed to load data from {file_path if file_path else 'provided AnnData object'}")
+            logging.error(
+                f"Failed to load data from {file_path if file_path else 'provided AnnData object'}"
+            )
             return None
 
         gene_names, success = load_gene_features(adata, self.gene_col_name)
         if not success:
-            logging.error(f"Failed to load gene features from {file_path if file_path else 'provided AnnData object'}")
+            logging.error(
+                f"Failed to load gene features from {file_path if file_path else 'provided AnnData object'}"
+            )
             return None
 
-        X = adata.X.toarray() if isinstance(adata.X, csr_matrix | csc_matrix) else adata.X
+        X = (
+            adata.X.toarray()
+            if isinstance(adata.X, csr_matrix | csc_matrix)
+            else adata.X
+        )
         obs = adata.obs
 
         if not hasattr(obs, "assay"):
-            logging.warning(f"'assay' column not found in {file_path if file_path else 'provided AnnData object'}. Adding 'unknown' as default.")
+            logging.warning(
+                f"'assay' column not found in {file_path if file_path else 'provided AnnData object'}. Adding 'unknown' as default."
+            )
             obs["assay"] = "unknown"
 
         vocab = self.gene_vocab
@@ -258,7 +277,9 @@ class AnnDataset(Dataset):
             self.min_expressed_genes,
         )
         if X is None:
-            logging.warning(f"Data was filtered out completely for {file_path if file_path else 'provided AnnData object'}")
+            logging.warning(
+                f"Data was filtered out completely for {file_path if file_path else 'provided AnnData object'}"
+            )
             return None
 
         batch = process_batch(
@@ -277,7 +298,9 @@ class AnnDataset(Dataset):
             self.clip_counts,
             self.aux_vocab,
         )
-        batch["file_path"] = np.array([file_path] * X.shape[0]) if file_path is not None else None
+        batch["file_path"] = (
+            np.array([file_path] * X.shape[0]) if file_path is not None else None
+        )
 
         if self.obs_keys is not None:
             obs_data = {}
@@ -313,7 +336,9 @@ class AnnDataset(Dataset):
 
         concatenated_batch = BatchData(
             gene_counts=torch.concat([batch.gene_counts for batch in all_data]),
-            gene_token_indices=torch.concat([batch.gene_token_indices for batch in all_data]),
+            gene_token_indices=torch.concat(
+                [batch.gene_token_indices for batch in all_data]
+            ),
             file_path=None,
             aux_token_indices=(
                 torch.concat([batch.aux_token_indices for batch in all_data])
@@ -321,7 +346,10 @@ class AnnDataset(Dataset):
                 else None
             ),
             obs=(
-                {col: np.vstack([batch.obs[col] for batch in all_data]) for col in self.obs_keys}
+                {
+                    col: np.vstack([batch.obs[col] for batch in all_data])
+                    for col in self.obs_keys
+                }
                 if self.obs_keys is not None
                 else None
             ),
@@ -358,7 +386,10 @@ class AnnDataset(Dataset):
                 else None
             ),
             obs=(
-                {col: np.vstack([item.obs[col] for item in batch]) for col in batch[0].obs.keys()}
+                {
+                    col: np.vstack([item.obs[col] for item in batch])
+                    for col in batch[0].obs.keys()
+                }
                 if batch[0].obs is not None
                 else None
             ),

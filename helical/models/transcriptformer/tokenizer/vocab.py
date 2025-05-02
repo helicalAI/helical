@@ -53,7 +53,9 @@ def construct_gene_embeddings(
     rng = np.random.RandomState(random_seed)
     special_tokens_emb = rng.rand(len(special_tokens), emb_dim)
 
-    return gene_vocab_dict, np.concatenate([special_tokens_emb, np.array(deduped_embeddings)], axis=0)
+    return gene_vocab_dict, np.concatenate(
+        [special_tokens_emb, np.array(deduped_embeddings)], axis=0
+    )
 
 
 def load_vocabs_and_embeddings(cfg):
@@ -63,10 +65,16 @@ def load_vocabs_and_embeddings(cfg):
         aux_cols = None
 
     # Load vocabularies
-    aux_vocab = open_vocabs(cfg.model.data_config.aux_vocab_path, aux_cols) if aux_cols is not None else None
+    aux_vocab = (
+        open_vocabs(cfg.model.data_config.aux_vocab_path, aux_cols)
+        if aux_cols is not None
+        else None
+    )
 
     # Load embeddings
-    logging.info(f"Loading ESM2 mappings from {cfg.model.data_config.esm2_mappings_path}")
+    logging.info(
+        f"Loading ESM2 mappings from {cfg.model.data_config.esm2_mappings_path}"
+    )
     emb_files = []
     for file in cfg.model.data_config.esm2_mappings:
         emb_files.append(os.path.join(cfg.model.data_config.esm2_mappings_path, file))
@@ -104,7 +112,9 @@ def open_vocabs(path, cols_to_load=None, verbose=True):
             if cols_to_load is not None and variable_name not in cols_to_load:
                 continue
             if verbose:
-                logging.info(f"Loading vocabulary file: {os.path.join(path, variable_name)}")
+                logging.info(
+                    f"Loading vocabulary file: {os.path.join(path, variable_name)}"
+                )
             with open(os.path.join(path, file_name)) as f:
                 vocabs[variable_name] = json.load(f)
     if len(vocabs) == 0:

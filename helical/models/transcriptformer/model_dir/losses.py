@@ -101,7 +101,9 @@ class ZTP_NLL(torch.nn.Module):
         **kwargs,
     ) -> torch.Tensor:
         assert isinstance(mu, torch.Tensor), "mu must be a torch.Tensor"
-        assert isinstance(input_counts, torch.Tensor), "input_counts must be a torch.Tensor"
+        assert isinstance(
+            input_counts, torch.Tensor
+        ), "input_counts must be a torch.Tensor"
 
         # Clamp input_counts between 1 and max_counts
         counts_clamped = torch.clamp(input_counts, min=self.eps, max=self.max_counts)
@@ -116,7 +118,9 @@ class ZTP_NLL(torch.nn.Module):
             # Only average the likelihoods along genes, not along cells
             if mask is not None:
                 nll = nll.masked_fill(mask, 0)
-                return torch.Tensor([nll[i, ~mask[i]].mean() for i in range(nll.size(0))])
+                return torch.Tensor(
+                    [nll[i, ~mask[i]].mean() for i in range(nll.size(0))]
+                )
             else:
                 return nll.mean(dim=1)
         else:
@@ -130,7 +134,9 @@ class ZTP_NLL(torch.nn.Module):
 
 
 class CrossEntropyLoss(torch.nn.Module):
-    def __init__(self, shift_right: bool = False, softcap: int = 0, reduction: str = "mean"):
+    def __init__(
+        self, shift_right: bool = False, softcap: int = 0, reduction: str = "mean"
+    ):
         super().__init__()
         self.ce = torch.nn.CrossEntropyLoss(reduction="none")
         self.shift_right = shift_right

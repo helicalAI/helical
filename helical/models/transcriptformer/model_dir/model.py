@@ -84,7 +84,9 @@ class Transcriptformer(pl.LightningModule):
             self.aux_vocab = AuxVocab(
                 vocab_dict=self.aux_vocab_dict,
                 vocab_size=sum([len(v) + 1 for v in self.aux_vocab_dict.values()]),
-                pad_ids=[self.aux_vocab_dict[k]["unknown"] for k in self.aux_vocab_dict],
+                pad_ids=[
+                    self.aux_vocab_dict[k]["unknown"] for k in self.aux_vocab_dict
+                ],
                 aux_seq_len=len(self.aux_vocab_dict),
             )
 
@@ -121,7 +123,10 @@ class Transcriptformer(pl.LightningModule):
         # Initialize auxiliary embeddings based on model_config and vocab
         aux_vocab_dict = self.aux_vocab.vocab_dict
         self.aux_embeddings = nn.ModuleDict(
-            {key: nn.Embedding(len(vocab), self.model_config.embed_dim) for key, vocab in aux_vocab_dict.items()}
+            {
+                key: nn.Embedding(len(vocab), self.model_config.embed_dim)
+                for key, vocab in aux_vocab_dict.items()
+            }
         )
 
     def _init_encoder(self):
@@ -140,7 +145,8 @@ class Transcriptformer(pl.LightningModule):
     def _init_count_heads(self):
         # Head layers
         self.mu = CountDecoderHead(
-            model_dim=2 * self.model_config.embed_dim,  # Double the embedding dim for the skip connection
+            model_dim=2
+            * self.model_config.embed_dim,  # Double the embedding dim for the skip connection
             link_func=self.model_config.mu_link_fn,
             eps=self.model_config.log_counts_eps,
             dropout=self.model_config.dropout,
@@ -174,7 +180,9 @@ class Transcriptformer(pl.LightningModule):
         # False for masked positions
         pad_mask = gene_tokens == self.gene_vocab.pad_idx
         if aux_tokens is not None:
-            aux_pad_mask = torch.stack([aux_tokens == pad_id for pad_id in self.aux_vocab.pad_ids], dim=-1).any(dim=-1)
+            aux_pad_mask = torch.stack(
+                [aux_tokens == pad_id for pad_id in self.aux_vocab.pad_ids], dim=-1
+            ).any(dim=-1)
             pad_mask = torch.cat([aux_pad_mask, pad_mask], dim=1)
         # convert mask to float
         if dtype == "float":
@@ -187,13 +195,16 @@ class Transcriptformer(pl.LightningModule):
     def get_gene_embeddings(self, batch: BatchData):
         right_shifted_gene_tokens = torch.cat(
             [
-                self.gene_vocab.start_idx * torch.ones_like(batch.gene_token_indices[:, :1]),
+                self.gene_vocab.start_idx
+                * torch.ones_like(batch.gene_token_indices[:, :1]),
                 batch.gene_token_indices[:, :-1],
             ],
             dim=1,
         )
 
-        return self.gene_embeddings(right_shifted_gene_tokens), self.gene_embeddings(batch.gene_token_indices)
+        return self.gene_embeddings(right_shifted_gene_tokens), self.gene_embeddings(
+            batch.gene_token_indices
+        )
 
     def get_aux_embeddings(self, aux_token_indices):
         aux_embeddings = []
@@ -248,7 +259,9 @@ class Transcriptformer(pl.LightningModule):
             ],
             dim=1,
         )
-        right_shifted_counts = torch.cat([torch.ones_like(gene_counts[:, :1]), gene_counts[:, :-1]], dim=1)
+        right_shifted_counts = torch.cat(
+            [torch.ones_like(gene_counts[:, :1]), gene_counts[:, :-1]], dim=1
+        )
 
         # Embed the gene_tokens
         right_shifted_gene_embeddings, gene_embeddings = self.get_gene_embeddings(batch)
@@ -256,11 +269,17 @@ class Transcriptformer(pl.LightningModule):
         # Add auxiliary tokens to the embeddings
         if aux_token_indices is not None:
             aux_embeddings = self.get_aux_embeddings(aux_token_indices)
-            right_shifted_gene_embeddings = torch.cat([aux_embeddings, right_shifted_gene_embeddings], dim=1)
-            right_shifted_counts = torch.cat([torch.ones_like(aux_token_indices), right_shifted_counts], dim=1)
+            right_shifted_gene_embeddings = torch.cat(
+                [aux_embeddings, right_shifted_gene_embeddings], dim=1
+            )
+            right_shifted_counts = torch.cat(
+                [torch.ones_like(aux_token_indices), right_shifted_counts], dim=1
+            )
 
         # Compile the block mask
-        pad_mask = self._pad_mask(right_shifted_gene_tokens, aux_token_indices, dtype="bool")
+        pad_mask = self._pad_mask(
+            right_shifted_gene_tokens, aux_token_indices, dtype="bool"
+        )
         mask_mod = and_masks(pad_mask_factory(pad_mask), self.causal_mask)
 
         block_mask = create_block_mask(
@@ -274,7 +293,9 @@ class Transcriptformer(pl.LightningModule):
         )
 
         # Score mode
-        log_counts = torch.log1p(right_shifted_counts + self.model_config.log_counts_eps)
+        log_counts = torch.log1p(
+            right_shifted_counts + self.model_config.log_counts_eps
+        )
         score_mod = self._score_mod_factory(log_counts, emb_mode=embed)
 
         # Apply the transformer encoder
@@ -312,7 +333,9 @@ class Transcriptformer(pl.LightningModule):
         )
 
         # set last count to zero
-        result["input_counts"] = torch.cat([gene_counts[:, :-1], torch.ones_like(gene_counts[:, :1])], dim=1)
+        result["input_counts"] = torch.cat(
+            [gene_counts[:, :-1], torch.ones_like(gene_counts[:, :1])], dim=1
+        )
 
         # concatenate gene_output with input embeddings
         # this allows the model to condition on the input gene tokens
@@ -354,13 +377,17 @@ class Transcriptformer(pl.LightningModule):
         batch_size = batch.gene_counts.shape[0]
 
         if batch_size > self.inference_config.batch_size:
-            raise ValueError(f"Batch size {batch_size} exceeds model batch size {self.inference_config.batch_size}")
+            raise ValueError(
+                f"Batch size {batch_size} exceeds model batch size {self.inference_config.batch_size}"
+            )
 
         pad_rows = self.inference_config.batch_size - batch_size
 
         resized_batch = BatchData(
             **{
-                field_name: (self._resize_data(field_value, self.inference_config.batch_size))
+                field_name: (
+                    self._resize_data(field_value, self.inference_config.batch_size)
+                )
                 for field_name, field_value in batch.__dict__.items()
             }
         )
@@ -375,7 +402,11 @@ class Transcriptformer(pl.LightningModule):
                     assert len(transformer_output[key]) == batch_size
 
         if "llh" in self.inference_config.output_keys:
-            llh = self.criterion(**transformer_output, eval_mode=not self.training).detach().cpu()
+            llh = (
+                self.criterion(**transformer_output, eval_mode=not self.training)
+                .detach()
+                .cpu()
+            )
             transformer_output["llh"] = llh
 
         if "gene_llh" in self.inference_config.output_keys:
@@ -393,7 +424,9 @@ class Transcriptformer(pl.LightningModule):
 
         results = {}
         results["obs"] = batch.obs
-        results.update({key: transformer_output[key] for key in self.inference_config.output_keys})
+        results.update(
+            {key: transformer_output[key] for key in self.inference_config.output_keys}
+        )
         return results
 
     def _resize_data(self, data, config_batch_size):
@@ -427,5 +460,7 @@ class Transcriptformer(pl.LightningModule):
         return torch.cat([x, pad], dim=0)
 
     def predict_step(self, batch, batch_idx):
-        assert self.inference_config.output_keys, "output_keys must be set in inference_config"
+        assert (
+            self.inference_config.output_keys
+        ), "output_keys must be set in inference_config"
         return self.inference(batch)

@@ -27,6 +27,9 @@ class BatchObsTokenizer:
 
     def __call__(self, obs):
         return torch.tensor(
-            [self.vocab[key].get(obs[key], self.vocab[key]["unknown"]) for key in self.vocab],
+            [
+                self.vocab[key].get(obs[key], self.vocab[key]["unknown"])
+                for key in self.vocab
+            ],
             dtype=torch.int64,
         )

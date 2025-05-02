@@ -361,7 +361,9 @@ class PretrainedEmbeddings(nn.Module):
         if torch.isnan(embedding_matrix).any():
             raise ValueError("The embedding matrix contains NaN values.")
 
-        self.embedding = nn.Embedding.from_pretrained(embedding_matrix.type(torch.float32), freeze=freeze)
+        self.embedding = nn.Embedding.from_pretrained(
+            embedding_matrix.type(torch.float32), freeze=freeze
+        )
         if freeze:
             self.embedding.weight.requires_grad = False
 
@@ -413,7 +415,9 @@ class MLP(nn.Module):
             else:
                 layers.append(nn.Linear(hidden_dim, hidden_dim))
 
-            if i < num_layers - 1:  # Don't add activation and normalization after the last layer
+            if (
+                i < num_layers - 1
+            ):  # Don't add activation and normalization after the last layer
                 layers.append(nn.ReLU())
                 if use_layer_norm:
                     layers.append(nn.LayerNorm(hidden_dim))

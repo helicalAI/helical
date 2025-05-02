@@ -7,7 +7,9 @@ import pandas as pd
 import torch
 
 # Set up logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 
 def load_embeddings(embeddings_path):
@@ -52,12 +54,17 @@ def stack_dict(output):
             if output[0][key].dim() == 0:  # Scalar tensor
                 concatenated_data[key] = [batch[key].item() for batch in output]
             else:
-                concatenated_data[key] = torch.cat([batch[key] for batch in output], dim=0)
+                concatenated_data[key] = torch.cat(
+                    [batch[key] for batch in output], dim=0
+                )
         elif isinstance(output[0][key], np.ndarray):
-            concatenated_data[key] = np.concatenate([batch[key] for batch in output], axis=0)
+            concatenated_data[key] = np.concatenate(
+                [batch[key] for batch in output], axis=0
+            )
         elif isinstance(output[0][key], dict):
             concatenated_data[key] = {
-                k: np.vstack([batch[key][k] for batch in output]).flatten() for k in output[0][key].keys()
+                k: np.vstack([batch[key][k] for batch in output]).flatten()
+                for k in output[0][key].keys()
             }
         elif isinstance(output[0][key], int | float):  # Python scalar
             concatenated_data[key] = [batch[key] for batch in output]
@@ -89,7 +96,9 @@ def filter_minimum_class(
     logging.info(f"Total classes before filtering: {len(value_counts)}")
 
     filtered_counts = value_counts[value_counts >= min_class_size]
-    logging.info(f"Total classes after filtering (min_class_size={min_class_size}): {len(filtered_counts)}")
+    logging.info(
+        f"Total classes after filtering (min_class_size={min_class_size}): {len(filtered_counts)}"
+    )
 
     y = pd.Series(y) if isinstance(y, np.ndarray) else y
     class_counts = y.value_counts()

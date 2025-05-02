@@ -6,7 +6,9 @@ from hydra.utils import instantiate
 from pytorch_lightning.loggers import CSVLogger
 from torch.utils.data import DataLoader
 from helical.models.transcriptformer.data.dataloader import AnnDataset
-from helical.models.transcriptformer.model_dir.embedding_surgery import change_embedding_layer
+from helical.models.transcriptformer.model_dir.embedding_surgery import (
+    change_embedding_layer,
+)
 from helical.models.transcriptformer.tokenizer.vocab import load_vocabs_and_embeddings
 from helical.models.transcriptformer.utils.utils import stack_dict
 from helical.models.base_models import HelicalRNAModel
@@ -16,7 +18,10 @@ import json
 import os
 import pandas as pd
 from helical.constants.paths import CACHE_DIR_HELICAL
-from helical.models.transcriptformer.transcriptformer_config import TranscriptFormerConfig
+from helical.models.transcriptformer.transcriptformer_config import (
+    TranscriptFormerConfig,
+)
+
 # Set float32 matmul precision for better performance with Tensor Cores
 torch.set_float32_matmul_precision("high")
 
@@ -24,6 +29,8 @@ torch._dynamo.config.optimize_ddp = False
 torch._dynamo.config.cache_size_limit = 1000
 
 logger = logging.getLogger(__name__)
+
+
 class TranscriptFormer(HelicalRNAModel):
     configurer = TranscriptFormerConfig()
 
@@ -36,7 +43,9 @@ class TranscriptFormer(HelicalRNAModel):
             downloader.download_via_name(file)
 
         logger.info(f"Loading cache config for {configurer.model_name}")
-        cache_config_path = os.path.join(CACHE_DIR_HELICAL, "transcriptformer", configurer.model_name, "config.json")
+        cache_config_path = os.path.join(
+            CACHE_DIR_HELICAL, "transcriptformer", configurer.model_name, "config.json"
+        )
         with open(cache_config_path) as f:
             cache_config_dict = json.load(f)
         cache_config = OmegaConf.create(cache_config_dict)
@@ -44,16 +53,27 @@ class TranscriptFormer(HelicalRNAModel):
         # Merge the cache config with the config provided by the user
         self.config = OmegaConf.merge(cache_config, self.config)
 
-        self.config.model.inference_config.load_checkpoint = os.path.join(CACHE_DIR_HELICAL, "transcriptformer", configurer.model_name, "model_weights.pt")
-        self.config.model.data_config.aux_vocab_path = os.path.join(CACHE_DIR_HELICAL, "transcriptformer", configurer.model_name, "vocabs")
+        self.config.model.inference_config.load_checkpoint = os.path.join(
+            CACHE_DIR_HELICAL,
+            "transcriptformer",
+            configurer.model_name,
+            "model_weights.pt",
+        )
+        self.config.model.data_config.aux_vocab_path = os.path.join(
+            CACHE_DIR_HELICAL, "transcriptformer", configurer.model_name, "vocabs"
+        )
         self.config.model.data_config.aux_cols = "assay"
-        self.config.model.data_config.esm2_mappings_path = os.path.join(CACHE_DIR_HELICAL, "transcriptformer", configurer.model_name, "vocabs")
+        self.config.model.data_config.esm2_mappings_path = os.path.join(
+            CACHE_DIR_HELICAL, "transcriptformer", configurer.model_name, "vocabs"
+        )
         logger.info(f"Merged cache config with user config for {configurer.model_name}")
 
         logger.debug(OmegaConf.to_yaml(self.config))
 
         # Load vocabs and embeddings
-        (self.gene_vocab, self.aux_vocab), self.emb_matrix = load_vocabs_and_embeddings(self.config)
+        (self.gene_vocab, self.aux_vocab), self.emb_matrix = load_vocabs_and_embeddings(
+            self.config
+        )
 
         # Instantiate the model
         logger.info("Instantiating the model")
@@ -68,7 +88,10 @@ class TranscriptFormer(HelicalRNAModel):
         logger.info("Model instantiated successfully")
 
         # Check if checkpoint is supplied
-        if not hasattr(self.model.inference_config, "load_checkpoint") or not self.model.inference_config.load_checkpoint:
+        if (
+            not hasattr(self.model.inference_config, "load_checkpoint")
+            or not self.model.inference_config.load_checkpoint
+        ):
             raise ValueError(
                 "No checkpoint provided for inference. Please specify a checkpoint path in "
                 "model.inference_config.load_checkpoint"
@@ -76,16 +99,22 @@ class TranscriptFormer(HelicalRNAModel):
 
         logger.info("Loading model checkpoint")
         # Instead of loading full checkpoint, just load weights
-        state_dict = torch.load(self.model.inference_config.load_checkpoint, weights_only=True)
+        state_dict = torch.load(
+            self.model.inference_config.load_checkpoint, weights_only=True
+        )
 
         # Validate and load weights
         # converter.validate_loaded_weights(model, state_dict)
-        
+
         # Filter out auxiliary embedding weights if aux_vocab_path is None
         if self.model.data_config.aux_vocab_path is None:
-            filtered_state_dict = {k: v for k, v in state_dict.items() if not k.startswith('aux_embeddings.')}
+            filtered_state_dict = {
+                k: v
+                for k, v in state_dict.items()
+                if not k.startswith("aux_embeddings.")
+            }
             state_dict = filtered_state_dict
-        
+
         self.model.load_state_dict(state_dict)
         logger.info("Model weights loaded successfully")
 
@@ -94,10 +123,16 @@ class TranscriptFormer(HelicalRNAModel):
             logger.info("Performing embedding surgery")
             # Check if pretrained_embedding_paths is a list, if not convert it to a list
             if not isinstance(self.model.inference_config.pretrained_embedding, list):
-                pretrained_embedding_paths = [self.model.inference_config.pretrained_embedding]
+                pretrained_embedding_paths = [
+                    self.model.inference_config.pretrained_embedding
+                ]
             else:
-                pretrained_embedding_paths = self.model.inference_config.pretrained_embedding
-            self.model, self.gene_vocab = change_embedding_layer(self.model, pretrained_embedding_paths)
+                pretrained_embedding_paths = (
+                    self.model.inference_config.pretrained_embedding
+                )
+            self.model, self.gene_vocab = change_embedding_layer(
+                self.model, pretrained_embedding_paths
+            )
 
     def process_data(self, data_files: list[str] | list[anndata.AnnData]):
         """
@@ -113,7 +148,7 @@ class TranscriptFormer(HelicalRNAModel):
             dataset: The processed dataset.
         """
         # Load dataset
-                
+
         logger.info(f"Processing data for TranscriptFormer.")
 
         data_kwargs = {
@@ -134,7 +169,7 @@ class TranscriptFormer(HelicalRNAModel):
         }
         dataset = AnnDataset(data_files, **data_kwargs)
         return dataset
-    
+
     def get_embeddings(self, dataset: AnnDataset) -> torch.Tensor:
         """
         Get the embeddings for the dataset.
@@ -178,7 +213,11 @@ class TranscriptFormer(HelicalRNAModel):
 
         # Create pandas DataFrames from the obs and uns data in concat_output
         obs_df = pd.DataFrame(concat_output["obs"])
-        uns = {"llh": pd.DataFrame({"llh": concat_output["llh"]})} if "llh" in concat_output else None
+        uns = (
+            {"llh": pd.DataFrame({"llh": concat_output["llh"]})}
+            if "llh" in concat_output
+            else None
+        )
         obsm = {}
 
         # Add all other output keys to the obsm
@@ -205,8 +244,12 @@ class TranscriptFormer(HelicalRNAModel):
             output_adata: The output AnnData object.
         """
         if not hasattr(self, "output_adata"):
-            message = "Output AnnData object not found. Please run 'get_embeddings' first."
+            message = (
+                "Output AnnData object not found. Please run 'get_embeddings' first."
+            )
             logger.error(message)
             raise ValueError(message)
-        logger.info("Returning output AnnData object, embeddings are stored in .obsm['embeddings'], uns['llh'] contains the log-likelihoods")
+        logger.info(
+            "Returning output AnnData object, embeddings are stored in .obsm['embeddings'], uns['llh'] contains the log-likelihoods"
+        )
         return self.output_adata

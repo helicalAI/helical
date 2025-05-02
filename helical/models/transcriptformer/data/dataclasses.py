@@ -53,7 +53,9 @@ class ModelConfig:
 
     def __post_init__(self):
         if (self.seq_len + self.aux_len) % self.block_len != 0:
-            raise ValueError("Sum of sequence length and auxiliary length must be divisible by block length")
+            raise ValueError(
+                "Sum of sequence length and auxiliary length must be divisible by block length"
+            )
         if self.mu_link_fn not in {
             "exp",
             "log",

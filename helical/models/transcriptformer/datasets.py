@@ -216,7 +216,10 @@ def download_all_embeddings(
         # Remove extracted files if they exist
         for item in os.listdir(extraction_dir):
             item_path = os.path.join(extraction_dir, item)
-            if os.path.isdir(item_path) and item != os.path.basename(file_name).split(".")[0]:
+            if (
+                os.path.isdir(item_path)
+                and item != os.path.basename(file_name).split(".")[0]
+            ):
                 shutil.rmtree(item_path)
             elif os.path.isfile(item_path) and item != file_name:
                 os.remove(item_path)
@@ -236,15 +239,17 @@ def download_all_embeddings(
             if not member_path.startswith(os.path.abspath(extraction_dir)):
                 raise ValueError(f"Illegal tar archive entry: {member.name}")
             if member.islnk() or member.issym():
-                raise ValueError(f"Unsupported symbolic link in tar archive: {member.name}")
+                raise ValueError(
+                    f"Unsupported symbolic link in tar archive: {member.name}"
+                )
         tar.extractall(
             extraction_dir,
             members=[
                 member
                 for member in tar.getmembers()
-                if os.path.abspath(os.path.join(extraction_dir, member.name)).startswith(
-                    os.path.abspath(extraction_dir)
-                )
+                if os.path.abspath(
+                    os.path.join(extraction_dir, member.name)
+                ).startswith(os.path.abspath(extraction_dir))
             ],
         )
 
@@ -259,7 +264,9 @@ def _load_dataset_from_url(
     **kwargs: Any,
 ) -> ad.AnnData:
     fpath = os.path.expanduser(fpath)
-    assert file_type in ["h5ad"], f"Invalid type `{file_type}`. Must be one of `['h5ad']`."
+    assert file_type in [
+        "h5ad"
+    ], f"Invalid type `{file_type}`. Must be one of `['h5ad']`."
     if not fpath.endswith(file_type):
         fpath += f".{file_type}"
     if force_download and os.path.exists(fpath):

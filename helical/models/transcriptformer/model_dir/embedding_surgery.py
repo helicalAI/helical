@@ -1,7 +1,10 @@
 import torch
 
 from helical.models.transcriptformer.model_dir.model import Transcriptformer
-from helical.models.transcriptformer.tokenizer.vocab import SPECIAL_TOKENS, construct_gene_embeddings
+from helical.models.transcriptformer.tokenizer.vocab import (
+    SPECIAL_TOKENS,
+    construct_gene_embeddings,
+)
 
 
 def change_embedding_layer(
@@ -34,7 +37,9 @@ def change_embedding_layer(
     )
     # Move model to GPU - needed if model is not re-loaded from checkpoint
     model = model.to("cuda")
-    old_special_token_embeddings = model.gene_embeddings.embedding(old_special_token_indices.to("cuda"))
+    old_special_token_embeddings = model.gene_embeddings.embedding(
+        old_special_token_indices.to("cuda")
+    )
 
     # Read the new embeddings from the files
     gene_vocab, new_embedding_matrix = construct_gene_embeddings(
@@ -49,7 +54,9 @@ def change_embedding_layer(
     )
 
     # Update the vocab indices of the model
-    gene_vocab = {gene: idx + len(old_special_tokens) for gene, idx in gene_vocab.items()}
+    gene_vocab = {
+        gene: idx + len(old_special_tokens) for gene, idx in gene_vocab.items()
+    }
 
     # Update the gene_vocab with the special tokens
     gene_vocab.update({token: idx for idx, token in enumerate(old_special_tokens)})
