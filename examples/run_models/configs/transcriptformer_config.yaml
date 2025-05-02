@@ -1,0 +1,28 @@
+
+model_name: "tf_sapiens" # "tf_sapiens", "tf_metazoa", "tf_exemplar
+
+inference_config: # inference settings
+  batch_size: 8  # Number of samples to process in each batch
+  output_keys:
+    - embeddings  # Include cell embeddings in the output
+    - llh # ztp log-likelihood
+  obs_keys:
+    - all  # Return all columns from the obs dataframe in the output
+    # - cell_type  # Uncomment to only return cell_type column
+    # - tissue  # Uncomment to only return tissue column
+  data_files:
+    - null   # Path to input AnnData file(s)
+  output_path: ./inference_results  # Directory where results will be saved
+  load_checkpoint: null  # Path to model weights file (automatically set by inference.py)
+  pretrained_embedding: null  # Path to pretrained embeddings for out-of-distribution species
+  precision: 16-mixed  # Numerical precision for inference (16-mixed, 32, etc.)
+
+data_config:
+  gene_col_name: 'index'  # Column name in AnnData.var containing gene names which will be mapped to ensembl ids. If index is set, .var_names will be used.
+  clip_counts: 30  # Maximum count value (higher values will be clipped)
+  filter_to_vocabs: true  # Whether to filter genes to only those in the vocabulary
+  filter_outliers: 0.0  # Standard deviation threshold for filtering outlier cells (0.0 = no filtering)
+  normalize_to_scale: 0  # Scale factor for count normalization (0 = no normalization)
+  sort_genes: false  # Whether to sort genes by expression level
+  randomize_genes: false  # Whether to randomize gene order
+  min_expressed_genes: 0  # Minimum number of expressed genes required per cell
