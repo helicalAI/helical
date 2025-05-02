@@ -51,11 +51,9 @@ class TranscriptFormerConfig:
         self.config.model.inference_config.load_checkpoint = os.path.join(CACHE_DIR_HELICAL, "transcriptformer", model_name, "model_weights.pt")
 
         # Set the auxiliary vocabulary paths to None 
-        self.config.model.data_config.aux_vocab_path = None
-        self.config.model.data_config.aux_cols = None
+        self.config.model.data_config.aux_vocab_path = os.path.join(CACHE_DIR_HELICAL, "transcriptformer", model_name, "vocabs")
+        self.config.model.data_config.aux_cols = "assay"
         self.config.model.data_config.esm2_mappings_path = os.path.join(CACHE_DIR_HELICAL, "transcriptformer", model_name, "vocabs")
-
-
 
         self.list_of_files_to_download = [
             f"transcriptformer/{model_name}/config.json",

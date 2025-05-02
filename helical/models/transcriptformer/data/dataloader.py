@@ -240,6 +240,10 @@ class AnnDataset(Dataset):
         X = adata.X.toarray() if isinstance(adata.X, csr_matrix | csc_matrix) else adata.X
         obs = adata.obs
 
+        if not hasattr(obs, "assay"):
+            logging.warning(f"'assay' column not found in {file_path if file_path else 'provided AnnData object'}. Adding 'unknown' as default.")
+            obs["assay"] = "unknown"
+
         vocab = self.gene_vocab
         X, obs, gene_names = apply_filters(
             X,
