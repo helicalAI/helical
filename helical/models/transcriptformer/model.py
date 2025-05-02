@@ -32,6 +32,40 @@ logger = logging.getLogger(__name__)
 
 
 class TranscriptFormer(HelicalRNAModel):
+    """
+    TranscriptFormer model for RNA-seq data.
+    This class is a wrapper around the TranscriptFormer model and provides methods for
+    processing data, getting embeddings, and loading the model.
+
+    Parameters
+    ----------
+    configurer: TranscriptFormerConfig
+        Configuration object for the TranscriptFormer model.
+
+    Example
+    -------
+    ```python
+    from helical.models.transcriptformer.model import TranscriptFormer
+    from helical.models.transcriptformer.transcriptformer_config import TranscriptFormerConfig
+    import anndata as ad
+
+    configurer = TranscriptFormerConfig()
+    model = TranscriptFormer(configurer)
+
+    ann_data = ad.read_h5ad("/path/to/data.h5ad")
+
+    dataset = model.process_data([ann_data])
+    embeddings = model.get_embeddings(dataset)
+    print(embeddings)
+    ```
+
+    Notes
+    -----
+    We use the implementation from [this repository](https://github.com/czi-ai/transcriptformer),
+    which comes from the original authors. You can find the description of the method in
+    [this paper](https://www.biorxiv.org/content/10.1101/2025.04.25.650731v1).
+    """
+
     configurer = TranscriptFormerConfig()
 
     def __init__(self, configurer: TranscriptFormerConfig = configurer):

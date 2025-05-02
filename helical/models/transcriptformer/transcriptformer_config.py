@@ -1,11 +1,39 @@
-import os
-import json
 from omegaconf import OmegaConf
-from helical.constants.paths import CACHE_DIR_HELICAL
 from typing import Literal
 
-
 class TranscriptFormerConfig:
+    """
+    TranscriptFormerConfig constructor.
+
+    Parameters
+    ----------
+        model_name: Literal["tf_sapiens", "tf_metazoa", "tf_exemplar"] = "tf_sapiens"
+            The name of the model to use.
+        inference_config: dict = {
+            "_target_": "helical.models.transcriptformer.data.dataclasses.InferenceConfig",
+            "batch_size": 8,
+            "output_keys": ["embeddings"],
+            "obs_keys": ["all"],
+            "data_files": [None],
+            "output_path": "./inference_results",
+            "load_checkpoint": None,
+            "pretrained_embedding": None,
+            "precision": "16-mixed"
+            }
+            The inference configuration.
+        data_config: dict = {
+            "_target_": "helical.models.transcriptformer.data.dataclasses.DataConfig",
+            "gene_col_name": "ensembl_id",
+            "clip_counts": 30,
+            "filter_to_vocabs": True,
+            "filter_outliers": 0.0,
+            "normalize_to_scale": 0,
+            "sort_genes": False,
+            "randomize_genes": False,
+            "min_expressed_genes": 0
+            }
+            The data configuration.
+    """
     def __init__(
         self,
         model_name: Literal["tf_sapiens", "tf_metazoa", "tf_exemplar"] = "tf_sapiens",
@@ -32,39 +60,6 @@ class TranscriptFormerConfig:
             "min_expressed_genes": 0,
         },
     ):
-        """
-        TranscriptFormerConfig constructor.
-
-        Parameters
-        ----------
-            model_name: Literal["tf_sapiens", "tf_metazoa", "tf_exemplar"] = "tf_sapiens"
-                The name of the model to use.
-            inference_config: dict = {
-                "_target_": "helical.models.transcriptformer.data.dataclasses.InferenceConfig",
-                "batch_size": 8,
-                "output_keys": ["embeddings"],
-                "obs_keys": ["all"],
-                "data_files": [None],
-                "output_path": "./inference_results",
-                "load_checkpoint": None,
-                "pretrained_embedding": None,
-                "precision": "16-mixed"
-                }
-                The inference configuration.
-            data_config: dict = {
-                "_target_": "helical.models.transcriptformer.data.dataclasses.DataConfig",
-                "gene_col_name": "ensembl_id",
-                "clip_counts": 30,
-                "filter_to_vocabs": True,
-                "filter_outliers": 0.0,
-                "normalize_to_scale": 0,
-                "sort_genes": False,
-                "randomize_genes": False,
-                "min_expressed_genes": 0
-                }
-                The data configuration.
-        """
-
         self.config = OmegaConf.create(
             {
                 "model": {
