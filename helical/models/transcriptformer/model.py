@@ -98,13 +98,9 @@ class TranscriptFormer(HelicalRNAModel):
             )
 
         logger.info("Loading model checkpoint")
-        # Instead of loading full checkpoint, just load weights
         state_dict = torch.load(
             self.model.inference_config.load_checkpoint, weights_only=True
         )
-
-        # Validate and load weights
-        # converter.validate_loaded_weights(model, state_dict)
 
         # Filter out auxiliary embedding weights if aux_vocab_path is None
         if self.model.data_config.aux_vocab_path is None:
