@@ -21,6 +21,8 @@ def run(cfg: DictConfig):
     dataset = model.process_data([ann_data])
     embeddings = model.get_embeddings(dataset)
     print(embeddings)
+    log_likelihoods = model.get_output_adata().uns["llh"]
+    print(log_likelihoods)
 
 if __name__ == "__main__":
     run()

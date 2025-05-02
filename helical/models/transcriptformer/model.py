@@ -14,6 +14,7 @@ from helical.utils.downloader import Downloader
 from omegaconf import OmegaConf
 import json
 import os
+import pandas as pd
 from helical.constants.paths import CACHE_DIR_HELICAL
 from helical.models.transcriptformer.transcriptformer_config import TranscriptFormerConfig
 # Set float32 matmul precision for better performance with Tensor Cores
@@ -99,6 +100,18 @@ class TranscriptFormer(HelicalRNAModel):
             self.model, self.gene_vocab = change_embedding_layer(self.model, pretrained_embedding_paths)
 
     def process_data(self, data_files: list[str] | list[anndata.AnnData]):
+        """
+        Process the data for TranscriptFormer.
+
+        Parameters
+        ----------
+        data_files: list[str] | list[anndata.AnnData]
+            List of paths to AnnData files or AnnData objects.
+
+        Returns
+        -------
+            dataset: The processed dataset.
+        """
         # Load dataset
                 
         logger.info(f"Processing data for TranscriptFormer.")
@@ -122,7 +135,20 @@ class TranscriptFormer(HelicalRNAModel):
         dataset = AnnDataset(data_files, **data_kwargs)
         return dataset
     
-    def get_embeddings(self, dataset: AnnDataset):
+    def get_embeddings(self, dataset: AnnDataset) -> torch.Tensor:
+        """
+        Get the embeddings for the dataset.
+
+        Parameters
+        ----------
+        dataset: AnnDataset
+            The dataset to get the embeddings for.
+
+        Returns
+        -------
+        embeddings: torch.Tensor
+            The embeddings for the dataset.
+        """
         # Create dataloader
         dataloader = DataLoader(
             dataset,
@@ -150,23 +176,37 @@ class TranscriptFormer(HelicalRNAModel):
         logger.info("Combining predictions")
         concat_output = stack_dict(output)
 
-        # TODO: Add back in when we want to return an AnnData object
-        # # Create pandas DataFrames from the obs and uns data in concat_output
-        # obs_df = pd.DataFrame(concat_output["obs"])
-        # uns = {"llh": pd.DataFrame({"llh": concat_output["llh"]})} if "llh" in concat_output else None
-        # obsm = {}
+        # Create pandas DataFrames from the obs and uns data in concat_output
+        obs_df = pd.DataFrame(concat_output["obs"])
+        uns = {"llh": pd.DataFrame({"llh": concat_output["llh"]})} if "llh" in concat_output else None
+        obsm = {}
 
-        # # Add all other output keys to the obsm
-        # for k in self.model.inference_config.output_keys:
-        #     if k in concat_output:
-        #         obsm[k] = concat_output[k].numpy()
+        # Add all other output keys to the obsm
+        for k in self.model.inference_config.output_keys:
+            if k in concat_output:
+                obsm[k] = concat_output[k].numpy()
 
-        # # Create a new AnnData object with the embeddings
-        # output_adata = anndata.AnnData(
-        #     obs=obs_df,
-        #     obsm=obsm,
-        #     uns=uns,
-        # )
+        # Create a new AnnData object with the embeddings
+        self.output_adata = anndata.AnnData(
+            obs=obs_df,
+            obsm=obsm,
+            uns=uns,
+        )
 
         embeddings = concat_output["embeddings"]
         return embeddings
+
+    def get_output_adata(self) -> anndata.AnnData:
+        """
+        Get the output AnnData object. Only call this after running 'get_embeddings'.
+
+        Returns
+        -------
+            output_adata: The output AnnData object.
+        """
+        if not hasattr(self, "output_adata"):
+            message = "Output AnnData object not found. Please run 'get_embeddings' first."
+            logger.error(message)
+            raise ValueError(message)
+        logger.info("Returning output AnnData object, embeddings are stored in .obsm['embeddings'], uns['llh'] contains the log-likelihoods")
+        return self.output_adata
