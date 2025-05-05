@@ -116,6 +116,7 @@ class TranscriptFormer(HelicalRNAModel):
             gene_vocab_dict=self.gene_vocab,
             aux_vocab_dict=self.aux_vocab,
             emb_matrix=self.emb_matrix,
+            emb_mode=self.config.model.inference_config.emb_mode,
         )
         self.model.eval()
 
@@ -163,6 +164,12 @@ class TranscriptFormer(HelicalRNAModel):
             self.model, self.gene_vocab = change_embedding_layer(
                 self.model, pretrained_embedding_paths
             )
+
+        mode = "training" if self.model.training else "eval"
+        logger.info(
+            f"TranscriptFormer '{configurer.model_name}' model is in '{mode}' mode, "
+            f"on device GPU generating embeddings for '{self.model.inference_config.output_keys}' & {self.model.emb_mode} embeddings."
+        )
 
     def process_data(self, data_files: list[str] | list[anndata.AnnData]):
         """
@@ -262,7 +269,8 @@ class TranscriptFormer(HelicalRNAModel):
             uns=uns,
         )
 
-        embeddings = concat_output["embeddings"]
+        logger.info(f"Returning '{self.model.emb_mode}_embeddings' from output.")
+        embeddings = concat_output[self.model.emb_mode + "_embeddings"]
         return embeddings
 
     def get_output_adata(self) -> anndata.AnnData:

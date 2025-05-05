@@ -12,7 +12,9 @@ class TranscriptFormerConfig:
             The name of the model to use.
         batch_size: int = 8
             The number of samples to process in each batch.
-        output_keys: List[Literal["gene_llh", "llh", "embeddings"]] = ["gene_llh"]
+        emb_mode: Literal["gene", "cell"] = "cell"
+            The mode to use for the embeddings.
+        output_keys: List[Literal["gene_llh", "llh"]] = ["gene_llh"]
             The keys to output.
         obs_keys: List[str] = ["all"]
             The keys to include in the output.
@@ -49,8 +51,8 @@ class TranscriptFormerConfig:
         self,
         model_name: Literal["tf_sapiens", "tf_metazoa", "tf_exemplar"] = "tf_sapiens",
         batch_size: int = 8,
-        output_keys: List[Literal["gene_llh", "llh", "embeddings"]] = [
-            "embeddings",
+        emb_mode: Literal["gene", "cell"] = "cell",
+        output_keys: List[Literal["gene_llh", "llh"]] = [
             "llh",
         ],
         obs_keys: List[str] = ["all"],
@@ -78,6 +80,7 @@ class TranscriptFormerConfig:
             "load_checkpoint": load_checkpoint,
             "pretrained_embedding": pretrained_embedding,
             "precision": precision,
+            "emb_mode": emb_mode,
         }
 
         data_config: dict = {
