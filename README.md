@@ -131,7 +131,6 @@ Within the `examples/notebooks` folder, open the notebook of your choice. We rec
 ## Stuck somewhere ? Other ideas ?
 We are eager to help you and interact with you:
 - Join our [Slack channel](https://dk1sxv04.eu1.hubspotlinksfree.com/Ctc/L2+113/dk1sxv04/VWtlqj8M7nFNVf1vhw52bPfMW8wLjj95ptQw7N1k24YY3m2ndW8wLKSR6lZ3ldW7fZmPx5PxJ2lW8mYJtq5xWH5BVsxw821cWpdKW8CYXdj753XHSW8b5vG-7PTQ2LW1zs6x622rZxDW6930hX7RPKh3N5-trBXyRHkwVfJ3Zs3wRQV_N5NbYL3-lm47W1HvYX63pJp9cW6QXY-x6QsWMTW8G5jZh7T4vphN4Qtr7dMCxlJW8rM1-Y42pS-PW5sfJbh4FyRMhW5mHPkD4yCl56W36YW1_4GpPrGW7-sRYG1gXy8hMXqK6Sp5p69W8YTpvd3tC80SW2PTYtr6hP0dxW863B5F4KNCYkVFSWl390bSlQW78rxWn7JbS3LW14ZJ735n7SpFVSVlQr7lm7vwVlWslf6g9JRQf8mBL3b04) where you can discuss applications of bio foundation models.
-- Reach out via support@helical-ai.com. 
 - You can also open Github issues [here](https://github.com/helicalAI/helical/issues).
 
 ## Why should I use Helical & what to expect in the future?
@@ -182,11 +181,11 @@ Please use this BibTeX to cite this repository in your publications:
 ```bibtex
 @software{allard_2024_13135902,
   author       = {Helical Team},
-  title        = {helicalAI/helical: v1.0.0},
+  title        = {helicalAI/helical: v1.1.0},
   month        = nov,
   year         = 2024,
   publisher    = {Zenodo},
-  version      = {0.0.1a27},
+  version      = {1.1.0},
   doi          = {10.5281/zenodo.13135902},
   url          = {https://doi.org/10.5281/zenodo.13135902}
 }

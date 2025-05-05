@@ -29,7 +29,7 @@ jobs:
 
       - name: Execute unittests
         run: |
-          CUDA_VISIBLE_DEVICES=-1 pytest --cov-report=html:html_cov --cov-branch --cov-report term --cov=helical ci/
+          pytest --cov-report=html:html_cov --cov-branch --cov-report term --cov=helical ci/
       
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
