@@ -1,5 +1,5 @@
 from omegaconf import OmegaConf
-from typing import Literal
+from typing import Literal, List
 
 
 class TranscriptFormerConfig:
@@ -10,58 +10,87 @@ class TranscriptFormerConfig:
     ----------
         model_name: Literal["tf_sapiens", "tf_metazoa", "tf_exemplar"] = "tf_metazoa"
             The name of the model to use.
-        inference_config: dict = {
-            "_target_": "helical.models.transcriptformer.data.dataclasses.InferenceConfig",
-            "batch_size": 8,
-            "output_keys": ["embeddings"],
-            "obs_keys": ["all"],
-            "data_files": [None],
-            "output_path": "./inference_results",
-            "load_checkpoint": None,
-            "pretrained_embedding": None,
-            "precision": "16-mixed"
-            }
-            The inference configuration.
-        data_config: dict = {
-            "_target_": "helical.models.transcriptformer.data.dataclasses.DataConfig",
-            "gene_col_name": "ensembl_id",
-            "clip_counts": 30,
-            "filter_to_vocabs": True,
-            "filter_outliers": 0.0,
-            "normalize_to_scale": 0,
-            "sort_genes": False,
-            "randomize_genes": False,
-            "min_expressed_genes": 0
-            }
-            The data configuration.
+        batch_size: int = 8
+            The number of samples to process in each batch.
+        output_keys: List[Literal["gene_llh", "llh", "embeddings"]] = ["gene_llh"]
+            The keys to output.
+        obs_keys: List[str] = ["all"]
+            The keys to include in the output.
+        data_files: List[str] = [None]
+            Path to input AnnData file(s)
+        output_path: str = "./inference_results"
+            Directory where results will be saved
+        load_checkpoint: str = None
+            Path to model weights file (automatically set by inference.py)
+        pretrained_embedding: str = None
+            Path to pretrained embeddings for out-of-distribution species
+        precision: str = "16-mixed"
+            Numerical precision for inference (16-mixed, 32, etc.)
+        gene_col_name: str = "ensembl_id"
+            Column name in AnnData.var containing gene names which will be mapped to ensembl ids. If index is set, .var_names will be used.
+        clip_counts: int = 30
+            Maximum count value (higher values will be clipped)
+        filter_to_vocabs: bool = True
+            Whether to filter genes to only those in the vocabulary
+        filter_outliers: float = 0.0
+            Standard deviation threshold for filtering outlier cells (0.0 = no filtering)
+        normalize_to_scale: float = 0
+            Scale factor for count normalization (0 = no normalization)
+        sort_genes: bool = False
+            Whether to sort the genes.
+        randomize_genes: bool = False
+            Whether to randomize the genes.
+        min_expressed_genes: int = 0
+            Minimum number of expressed genes required per cell
+
     """
 
     def __init__(
         self,
         model_name: Literal["tf_sapiens", "tf_metazoa", "tf_exemplar"] = "tf_sapiens",
-        inference_config: dict = {
-            "_target_": "helical.models.transcriptformer.data.dataclasses.InferenceConfig",
-            "batch_size": 8,
-            "output_keys": ["embeddings"],
-            "obs_keys": ["all"],
-            "data_files": [None],
-            "output_path": "./inference_results",
-            "load_checkpoint": None,
-            "pretrained_embedding": None,
-            "precision": "16-mixed",
-        },
-        data_config: dict = {
-            "_target_": "helical.models.transcriptformer.data.dataclasses.DataConfig",
-            "gene_col_name": "index",
-            "clip_counts": 30,
-            "filter_to_vocabs": True,
-            "filter_outliers": 0.0,
-            "normalize_to_scale": 0,
-            "sort_genes": False,
-            "randomize_genes": False,
-            "min_expressed_genes": 0,
-        },
+        batch_size: int = 8,
+        output_keys: List[Literal["gene_llh", "llh", "embeddings"]] = [
+            "embeddings",
+            "llh",
+        ],
+        obs_keys: List[str] = ["all"],
+        data_files: List[str] = [None],
+        output_path: str = "./inference_results",
+        load_checkpoint: str = None,
+        pretrained_embedding: str = None,
+        precision: str = "16-mixed",
+        gene_col_name: str = "index",
+        clip_counts: int = 30,
+        filter_to_vocabs: bool = True,
+        filter_outliers: float = 0.0,
+        normalize_to_scale: float = 0,
+        sort_genes: bool = False,
+        randomize_genes: bool = False,
+        min_expressed_genes: int = 0,
     ):
+
+        inference_config: dict = {
+            "batch_size": batch_size,
+            "output_keys": output_keys,
+            "obs_keys": obs_keys,
+            "data_files": data_files,
+            "output_path": output_path,
+            "load_checkpoint": load_checkpoint,
+            "pretrained_embedding": pretrained_embedding,
+            "precision": precision,
+        }
+
+        data_config: dict = {
+            "gene_col_name": gene_col_name,
+            "clip_counts": clip_counts,
+            "filter_to_vocabs": filter_to_vocabs,
+            "filter_outliers": filter_outliers,
+            "normalize_to_scale": normalize_to_scale,
+            "sort_genes": sort_genes,
+            "randomize_genes": randomize_genes,
+            "min_expressed_genes": min_expressed_genes,
+        }
+
         self.config = OmegaConf.create(
             {
                 "model": {
