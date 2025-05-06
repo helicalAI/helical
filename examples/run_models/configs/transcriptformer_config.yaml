@@ -16,7 +16,7 @@ data_files:
 output_path: ./inference_results  # Directory where results will be saved
 load_checkpoint: null  # Path to model weights file (automatically set by inference.py)
 pretrained_embedding: null  # Path to pretrained embeddings for out-of-distribution species
-precision: 16-mixed  # Numerical precision for inference (16-mixed, 32, etc.)
+device: "cuda"  # Device to use for inference (e.g., "cuda" or "cpu")
 
 # data settings
 gene_col_name: 'index'  # Column name in AnnData.var containing gene names which will be mapped to ensembl ids. If index is set, .var_names will be used.
