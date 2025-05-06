@@ -1,11 +1,12 @@
 """Transcriptformer model implementation."""
 
 import logging
-
+from typing import Literal
 import pytorch_lightning as pl
 import torch
 from torch import Tensor, nn
 from torch.nn.attention.flex_attention import and_masks, create_block_mask
+import pandas as pd
 
 from helical.models.transcriptformer.data.dataclasses import (
     AuxVocab,
@@ -35,6 +36,8 @@ from helical.models.transcriptformer.model_dir.masks import (
 
 logger = logging.getLogger(__name__)
 
+NON_GENE_TOKENS = ["unknown", "[PAD]", "[START]", "[END]", "[RD]", "[CELL]", "[MASK]"]
+
 
 class Transcriptformer(pl.LightningModule):
     """Autoregressive model that predicts the gene tokens and counts of a cell."""
@@ -48,6 +51,7 @@ class Transcriptformer(pl.LightningModule):
         gene_vocab_dict: dict = None,
         aux_vocab_dict: dict = None,
         emb_matrix: Tensor = None,
+        emb_mode: Literal["gene", "cell"] = "cell",
         **kwargs,
     ):
         super().__init__()
@@ -57,7 +61,7 @@ class Transcriptformer(pl.LightningModule):
         self.model_config = model_config
         self.loss_config = loss_config
         self.inference_config = inference_config
-
+        self.emb_mode = emb_mode
         # initialize vocab dicts
         self.gene_vocab_dict = gene_vocab_dict
         self.aux_vocab_dict = aux_vocab_dict
@@ -78,6 +82,9 @@ class Transcriptformer(pl.LightningModule):
             cell_idx=self.gene_vocab_dict.get("[CELL]"),
             embedding_matrix=None,
         )
+        # Create reverse dictionary for efficient token to gene name lookup
+        self.token_to_gene_dict = {v: k for k, v in self.gene_vocab_dict.items()}
+
         # Load the auxiliary vocab if provided
         if self.aux_vocab_dict is not None:
             self.model_config.use_aux = True
@@ -225,6 +232,39 @@ class Transcriptformer(pl.LightningModule):
 
         return score_mod
 
+    def _get_gene_embeddings(self, transformer_output) -> list[pd.Series]:
+        """
+        Get the gene embeddings from the transformer output.
+
+        Returns
+        -------
+            list[pd.Series]: A list of pandas Series, one for each cell, with the gene names as index and the embeddings as values.
+        """
+        # Create a list where each entry is a cell's gene embeddings Series
+        gene_embeddings = []
+        gene_output_cpu = transformer_output["gene_embeddings"].detach().cpu().numpy()
+        gene_tokens = transformer_output["input_gene_token_indices"]
+
+        for cell_idx in range(gene_output_cpu.shape[0]):
+            # Get the actual gene tokens for this cell
+            cell_gene_tokens = gene_tokens[cell_idx]
+            gene_names = []
+            embeddings = []
+            for pos_idx in range(gene_output_cpu.shape[1]):
+                if not transformer_output["mask"][
+                    cell_idx, pos_idx
+                ]:  # Only include non-padded positions
+                    gene_token = cell_gene_tokens[pos_idx].item()
+                    gene_name = self.token_to_gene_dict[gene_token]
+                    if gene_name in NON_GENE_TOKENS:
+                        continue
+                    gene_names.append(gene_name)
+                    embeddings.append(gene_output_cpu[cell_idx, pos_idx])
+            # Create a pandas Series with gene names as index
+            cell_gene_series = pd.Series(embeddings, index=gene_names)
+            gene_embeddings.append(cell_gene_series)
+        return gene_embeddings
+
     def forward(
         self,
         batch: BatchData,
@@ -321,7 +361,10 @@ class Transcriptformer(pl.LightningModule):
         result = {}
 
         if embed:
-            result["embeddings"] = mean_embeddings(gene_output, pad_mask).detach().cpu()
+            result["cell_embeddings"] = (
+                mean_embeddings(gene_output, pad_mask).detach().cpu()
+            )
+            result["gene_embeddings"] = gene_output.detach().cpu()
 
         # Append the end token to the gene_tokens
         result["input_gene_token_indices"] = torch.cat(
@@ -427,6 +470,16 @@ class Transcriptformer(pl.LightningModule):
         results.update(
             {key: transformer_output[key] for key in self.inference_config.output_keys}
         )
+
+        if self.emb_mode == "gene":
+            results["gene_embeddings"] = self._get_gene_embeddings(transformer_output)
+        elif self.emb_mode == "cell":
+            results["cell_embeddings"] = (
+                transformer_output["cell_embeddings"].detach().cpu()
+            )
+        else:
+            raise ValueError(f"Invalid embedding mode: {self.emb_mode}")
+
         return results
 
     def _resize_data(self, data, config_batch_size):
