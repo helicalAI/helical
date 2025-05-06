@@ -3,7 +3,7 @@ model_name: "tf_sapiens" # "tf_sapiens", "tf_metazoa", "tf_exemplar
 
 # inference settings
 batch_size: 8  # Number of samples to process in each batch
-emb_mode: "cell" # "gene" or "cell"
+emb_mode: "gene" # "gene" or "cell"
 output_keys:
   - llh # ztp log-likelihood
   - gene_llh # gene log-likelihood
