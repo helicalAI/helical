@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 NON_GENE_TOKENS = ["unknown", "[PAD]", "[START]", "[END]", "[RD]", "[CELL]", "[MASK]"]
 
 
-class Transcriptformer(pl.LightningModule):
+class Transcriptformer(nn.Module):
     """Autoregressive model that predicts the gene tokens and counts of a cell."""
 
     def __init__(
