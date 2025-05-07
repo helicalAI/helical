@@ -58,7 +58,6 @@ class TranscriptFormerConfig:
         output_path: str = "./inference_results",
         load_checkpoint: str = None,
         pretrained_embedding: str = None,
-        device: str = "cpu",
         gene_col_name: str = "index",
         clip_counts: int = 30,
         filter_to_vocabs: bool = True,

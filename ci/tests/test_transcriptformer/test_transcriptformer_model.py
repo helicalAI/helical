@@ -6,7 +6,7 @@ from anndata import AnnData
 
 
 class TestTranscriptFormerModel:
-    configurer = TranscriptFormerConfig(emb_mode="gene", device="cuda")
+    configurer = TranscriptFormerConfig(emb_mode="gene")
     transcriptformer = TranscriptFormer(configurer)
 
     # Create a dummy AnnData object
