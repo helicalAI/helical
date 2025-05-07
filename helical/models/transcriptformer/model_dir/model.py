@@ -2,7 +2,6 @@
 
 import logging
 from typing import Literal
-import pytorch_lightning as pl
 import torch
 from torch import Tensor, nn
 from torch.nn.attention.flex_attention import and_masks, create_block_mask
@@ -39,7 +38,7 @@ logger = logging.getLogger(__name__)
 NON_GENE_TOKENS = ["unknown", "[PAD]", "[START]", "[END]", "[RD]", "[CELL]", "[MASK]"]
 
 
-class Transcriptformer(pl.LightningModule):
+class Transcriptformer(nn.Module):
     """Autoregressive model that predicts the gene tokens and counts of a cell."""
 
     def __init__(
@@ -286,9 +285,10 @@ class Transcriptformer(pl.LightningModule):
                 - input_counts: Input count data
                 - embeddings: Optional cell embeddings
         """
-        aux_token_indices = batch.aux_token_indices
-        gene_token_indices = batch.gene_token_indices
-        gene_counts = batch.gene_counts
+        device = next(self.parameters()).device
+        aux_token_indices = batch.aux_token_indices.to(device)
+        gene_token_indices = batch.gene_token_indices.to(device)
+        gene_counts = batch.gene_counts.to(device)
 
         # append the start token to the gene_tokens
         # drop the last token from the gene_tokens to keep the same length as the counts
