@@ -81,7 +81,7 @@ pip install .[mamba-ssm]
 - The package `causal_conv1d` requires `torch` to be installed already. First installing `helical` separately (without `[mamba-ssm]`) will install `torch` for you. A second installation (with `[mamba-ssm]`), installs the packages correctly.
 - If you have problems installing `mamba-ssm`, you can install the package via the provided `.whl` files on their release page [here](https://github.com/state-spaces/mamba/releases/tag/v2.2.4). Choose the package according to your cuda, torch and python version:
 ```
-https://github.com/state-spaces/mamba/releases/download/v2.2.4/mamba_ssm-2.2.4+cu12torch2.3cxx11abiFALSE-cp311-cp311-linux_x86_64.whl
+pip install https://github.com/state-spaces/mamba/releases/download/v2.2.4/mamba_ssm-2.2.4+cu12torch2.3cxx11abiFALSE-cp311-cp311-linux_x86_64.whl
 ```
 - Now continue with `pip install .[mamba-ssm]` to also install the remaining `causal-conv1d`.
 
