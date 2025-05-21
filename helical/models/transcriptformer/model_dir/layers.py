@@ -50,7 +50,7 @@ class MultiHeadSelfFlexAttn(nn.Module):
         self.d_k = d_model // nheads
         self.h = nheads
         self.linears = clones(nn.Linear(d_model, d_model, bias=bias), 4)
-        self.self_attn = flex_attention
+        self.self_attn = torch.compile(flex_attention, fullgraph=True)
 
     def forward(self, inp, score_mod=None, block_mask=None, **kwargs):
         """Forward pass of the MultiHeadSelfFlexAttn."""
@@ -63,7 +63,21 @@ class MultiHeadSelfFlexAttn(nn.Module):
         )
 
         # 2) Apply attention on all the projected vectors in batch.
-        o = self.self_attn(q, k, v, score_mod=score_mod, block_mask=block_mask)
+        o = self.self_attn(
+            q,
+            k,
+            v,
+            score_mod=score_mod,
+            block_mask=block_mask,
+            kernel_options={
+                "BLOCK_M": 32,
+                "BLOCK_N": 32,
+                "BLOCK_M1": 32,
+                "BLOCK_N1": 32,
+                "BLOCK_M2": 32,
+                "BLOCK_N2": 32,
+            },
+        )
 
         # 3) "Concat" using a view and apply a final linear.
         o = o.transpose(1, 2).contiguous().view(batch_size, -1, self.h * self.d_k)
