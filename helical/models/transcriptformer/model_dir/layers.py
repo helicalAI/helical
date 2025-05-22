@@ -50,7 +50,7 @@ class MultiHeadSelfFlexAttn(nn.Module):
         self.d_k = d_model // nheads
         self.h = nheads
         self.linears = clones(nn.Linear(d_model, d_model, bias=bias), 4)
-        self.self_attn = torch.compile(flex_attention, fullgraph=True)
+        self.self_attn = flex_attention
 
     def forward(self, inp, score_mod=None, block_mask=None, **kwargs):
         """Forward pass of the MultiHeadSelfFlexAttn."""
