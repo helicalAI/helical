@@ -95,6 +95,7 @@ class HelixmRNA(HelicalRNAModel):
             sequences,
             return_tensors="pt",
             truncation=True,
+            padding="longest",
             max_length=self.config["input_size"],
             return_special_tokens_mask=True,
         )
