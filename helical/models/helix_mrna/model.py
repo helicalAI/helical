@@ -94,7 +94,6 @@ class HelixmRNA(HelicalRNAModel):
         tokenized_sequences = self.tokenizer(
             sequences,
             return_tensors="pt",
-            padding="max_length",
             truncation=True,
             max_length=self.config["input_size"],
             return_special_tokens_mask=True,
