@@ -640,6 +640,7 @@ class TransformerEncoderLayer(Module):
                 key_padding_mask=key_padding_mask,
                 need_weights=True,
                 is_causal=is_causal,
+                average_attn_weights=False,
             )
             return self.dropout1(x), attn_map
         else:
