@@ -13,6 +13,8 @@ class scGPTConfig:
         The padding token
     batch_size : int, optional, default=24
         The batch size
+    emb_mode : Literal["cls", "cell", "gene"], optional, default="cell"
+        The embedding mode to use. "cls" uses the cls token, "cell" uses the cell token, "gene" uses the gene token.
     fast_transformer : bool, optional, default=True
         Whether to use fast transformer or not
     nlayers : int, optional, default=12
@@ -55,7 +57,7 @@ class scGPTConfig:
         self,
         pad_token: str = "<pad>",
         batch_size: int = 24,
-        emb_mode: Literal["cls", "cell", "gene"] = "cls",
+        emb_mode: Literal["cls", "cell", "gene"] = "cell",
         fast_transformer: bool = True,
         nlayers: int = 12,
         nheads: int = 8,
