@@ -202,7 +202,9 @@ class Geneformer(HelicalRNAModel):
         LOGGER.info(f"Successfully processed the data for Geneformer.")
         return tokenized_dataset
 
-    def get_embeddings(self, dataset: Dataset, output_attentions=False) -> np.array:
+    def get_embeddings(
+        self, dataset: Dataset, output_attentions: bool = False
+    ) -> np.array:
         """Gets the gene embeddings from the Geneformer model
 
         Parameters

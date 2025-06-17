@@ -86,7 +86,9 @@ class scGPT(HelicalRNAModel):
             f"'scGPT' model is in '{mode}' mode, on device '{next(self.model.parameters()).device.type}' with embedding mode '{self.config['emb_mode']}'."
         )
 
-    def get_embeddings(self, dataset: Dataset, output_attentions=False) -> np.array:
+    def get_embeddings(
+        self, dataset: Dataset, output_attentions: bool = False
+    ) -> np.array:
         """Gets the gene embeddings
 
         Parameters
