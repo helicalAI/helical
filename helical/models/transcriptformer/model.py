@@ -1,9 +1,7 @@
 import logging
 import anndata
-import pytorch_lightning as pl
 import torch
 from hydra.utils import instantiate
-from pytorch_lightning.loggers import CSVLogger
 from torch.utils.data import DataLoader
 from helical.models.transcriptformer.data.dataloader import AnnDataset
 from helical.models.transcriptformer.model_dir.embedding_surgery import (
@@ -21,12 +19,9 @@ from helical.constants.paths import CACHE_DIR_HELICAL
 from helical.models.transcriptformer.transcriptformer_config import (
     TranscriptFormerConfig,
 )
+from tqdm import tqdm
 
-# Set float32 matmul precision for better performance with Tensor Cores
 torch.set_float32_matmul_precision("high")
-
-torch._dynamo.config.optimize_ddp = False
-torch._dynamo.config.cache_size_limit = 1000
 
 logger = logging.getLogger(__name__)
 
@@ -231,20 +226,20 @@ class TranscriptFormer(HelicalRNAModel):
             collate_fn=dataset.collate_fn,
         )
 
-        # Create Trainer
-        trainer = pl.Trainer(
-            accelerator="gpu",
-            devices=1,  # Multiple GPUs/nodes not supported for inference
-            num_nodes=1,
-            precision=self.model.inference_config.precision,
-            limit_predict_batches=None,
-            logger=CSVLogger("logs", name="inference"),
+        output = []
+        progress_bar = tqdm(
+            dataloader,
+            desc="Embedding Cells",
+            total=len(dataloader),
+            unit="batch",
         )
 
-        # Run prediction
-        output = trainer.predict(self.model, dataloaders=dataloader)
+        self.model.to(self.config.model.inference_config.device)
+        with torch.no_grad():
+            for batch in progress_bar:
+                output_batch = self.model.inference(batch)
+                output.append(output_batch)
 
-        # Combine predictions
         logger.info("Combining predictions")
         concat_output = stack_dict(output)
 

@@ -26,8 +26,6 @@ class TranscriptFormerConfig:
             Path to model weights file (automatically set by inference.py)
         pretrained_embedding: str = None
             Path to pretrained embeddings for out-of-distribution species
-        precision: str = "16-mixed"
-            Numerical precision for inference (16-mixed, 32, etc.)
         gene_col_name: str = "ensembl_id"
             Column name in AnnData.var containing gene names which will be mapped to ensembl ids. If index is set, .var_names will be used.
         clip_counts: int = 30
@@ -60,7 +58,6 @@ class TranscriptFormerConfig:
         output_path: str = "./inference_results",
         load_checkpoint: str = None,
         pretrained_embedding: str = None,
-        precision: str = "16-mixed",
         gene_col_name: str = "index",
         clip_counts: int = 30,
         filter_to_vocabs: bool = True,
@@ -78,8 +75,8 @@ class TranscriptFormerConfig:
             "data_files": data_files,
             "output_path": output_path,
             "load_checkpoint": load_checkpoint,
+            "device": "cuda",
             "pretrained_embedding": pretrained_embedding,
-            "precision": precision,
             "emb_mode": emb_mode,
         }
 

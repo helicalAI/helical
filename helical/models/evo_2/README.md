@@ -101,7 +101,7 @@ export CPLUS_INCLUDE_PATH=$CONDA_PREFIX/lib/python3.11/site-packages/nvidia/nvtx
 pip install torch==2.6.0
 pip install "helical[evo-2]@git+https://github.com/helicalAI/helical.git"
 
-git clone git@github.com:Zymrael/vortex.git
+git clone https://github.com/Zymrael/vortex.git
 cd vortex
 git checkout f243e8e
 sed -i 's/torch==2.5.1/torch==2.6.0/g' pyproject.toml
