@@ -16,6 +16,7 @@ INTERVAL = 1000  # interval to get gene mappings
 CHUNK_SIZE = 1024 * 1024 * 10  # 8192 # size of individual chunks to download
 LOADING_BAR_LENGTH = 50  # size of the download progression bar in console
 
+
 class Downloader(Logger):
     def __init__(
         self, loging_type=LoggingType.CONSOLE, level=LoggingLevel.INFO
