@@ -86,13 +86,18 @@ class scGPT(HelicalRNAModel):
             f"'scGPT' model is in '{mode}' mode, on device '{next(self.model.parameters()).device.type}' with embedding mode '{self.config['emb_mode']}'."
         )
 
-    def get_embeddings(self, dataset: Dataset) -> np.array:
+    def get_embeddings(
+        self, dataset: Dataset, output_attentions: bool = False
+    ) -> np.array:
         """Gets the gene embeddings
 
         Parameters
         ----------
         dataset : Dataset
             The processed dataset to get the embeddings from.
+        output_attentions : bool, optional, default=False
+            Whether to output the attention maps from the model. If set to True, the attention maps will be returned along with the embeddings.
+            If set to False, only the embeddings will be returned. **Note**: This will increase the memory usage of the model significantly, so use it only if you need the attention maps.
 
         Returns
         -------
@@ -100,6 +105,9 @@ class scGPT(HelicalRNAModel):
             The embeddings produced by the model.
             The return type depends on the `emb_mode` parameter in the configuration.
             If `emb_mode` is set to "gene", the embeddings are returned as a list of pd.Series which contain a mapping of gene_name:embedding for each cell.
+
+        np.ndarray
+            If `output_attentions` is set to True, the attention maps will be returned as a numpy array of shape (n_layers, n_heads, n_cells, n_tokens, n_tokens).
         """
         LOGGER.info(f"Started getting embeddings:")
 
@@ -136,6 +144,7 @@ class scGPT(HelicalRNAModel):
         device = next(self.model.parameters()).device
 
         resulting_embeddings = []
+        resulting_attn_maps = []
 
         with (
             torch.no_grad(),
@@ -147,16 +156,30 @@ class scGPT(HelicalRNAModel):
                 src_key_padding_mask = input_gene_ids.eq(
                     self.vocab[self.config["pad_token"]]
                 )
-                embeddings = self.model._encode(
-                    input_gene_ids,
-                    data_dict["expr"].to(device),
-                    src_key_padding_mask=src_key_padding_mask,
-                    batch_labels=(
-                        data_dict["batch_labels"].to(device)
-                        if use_batch_labels
-                        else None
-                    ),
-                )
+                if output_attentions:
+                    embeddings, attn_maps = self.model._encode(
+                        input_gene_ids,
+                        data_dict["expr"].to(device),
+                        src_key_padding_mask=src_key_padding_mask,
+                        batch_labels=(
+                            data_dict["batch_labels"].to(device)
+                            if use_batch_labels
+                            else None
+                        ),
+                        output_attentions=output_attentions,
+                    )
+                    resulting_attn_maps.extend(attn_maps)
+                else:
+                    embeddings = self.model._encode(
+                        input_gene_ids,
+                        data_dict["expr"].to(device),
+                        src_key_padding_mask=src_key_padding_mask,
+                        batch_labels=(
+                            data_dict["batch_labels"].to(device)
+                            if use_batch_labels
+                            else None
+                        ),
+                    )
 
                 resulting_embeddings.extend(
                     self._compute_embeddings_depending_on_mode(embeddings, data_dict)
@@ -165,7 +188,10 @@ class scGPT(HelicalRNAModel):
         resulting_embeddings = self._normalize_embeddings(resulting_embeddings)
 
         LOGGER.info(f"Finished getting embeddings.")
-        return resulting_embeddings
+        if output_attentions:
+            return resulting_embeddings, torch.stack(resulting_attn_maps).cpu().numpy()
+        else:
+            return resulting_embeddings
 
     def _normalize_embeddings(self, resulting_embeddings: torch.tensor) -> np.ndarray:
         """

@@ -95,16 +95,15 @@ class Geneformer(HelicalRNAModel):
         available_layers = list(np.arange(num_available_layers))
         available_layers.append(-1)
         if self.config["emb_layer"] not in available_layers:
-            message = (
-                f"Layer {self.config['emb_layer']} is not available. Available layers are {available_layers}."
-            )
+            message = f"Layer {self.config['emb_layer']} is not available. Available layers are {available_layers}."
             LOGGER.error(message)
             raise ValueError(message)
-        
-        if self.config["emb_layer"] < (num_available_layers-1) and self.config["emb_layer"] != -1:
-            message = (
-                f"Layer {self.config['emb_layer']} is not the last layer. This can lead to different embeddings and fine-tuning results."
-            )
+
+        if (
+            self.config["emb_layer"] < (num_available_layers - 1)
+            and self.config["emb_layer"] != -1
+        ):
+            message = f"Layer {self.config['emb_layer']} is not the last layer. This can lead to different embeddings and fine-tuning results."
             LOGGER.warning(message)
 
         self.layer_to_quant = self.config["emb_layer"]
@@ -203,18 +202,27 @@ class Geneformer(HelicalRNAModel):
         LOGGER.info(f"Successfully processed the data for Geneformer.")
         return tokenized_dataset
 
-    def get_embeddings(self, dataset: Dataset) -> np.array:
+    def get_embeddings(
+        self, dataset: Dataset, output_attentions: bool = False
+    ) -> np.array:
         """Gets the gene embeddings from the Geneformer model
 
         Parameters
         ----------
         dataset : Dataset
             The tokenized dataset containing the processed data
+        output_attentions : bool, optional, default=False
+            Whether to output attentions from the model. This is useful for debugging or analysis purposes.
+            The attention maps are averaged across heads and use the same layer as the embeddings.
 
         Returns
         -------
         np.array
             The gene embeddings in the form of a numpy array
+        np.array, optional
+            The attention weights from the model, if `output_attentions` is set to True.
+            The shape of the attention weights is (batch_size, num_heads, seq_length, seq_length).
+            If `output_attentions` is False, this will not be returned.
         """
         LOGGER.info(f"Started getting embeddings:")
         embeddings = get_embs(
@@ -229,6 +237,7 @@ class Geneformer(HelicalRNAModel):
             self.cls_present,
             self.eos_present,
             self.device,
+            output_attentions=output_attentions,
         )
 
         LOGGER.info(f"Finished getting embeddings.")

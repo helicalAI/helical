@@ -7,7 +7,10 @@ import numpy as np
 from torch import nn, Tensor
 import torch.distributed as dist
 import torch.nn.functional as F
-from torch.nn import TransformerEncoder, TransformerEncoderLayer
+
+# from torch.nn import TransformerEncoder, TransformerEncoderLayer
+### Needed a custom version to output attention weights
+from .transformer import TransformerEncoder, TransformerEncoderLayer
 from torch.distributions import Bernoulli
 from tqdm import trange
 
@@ -170,6 +173,7 @@ class TransformerModel(nn.Module):
         values: Tensor,
         src_key_padding_mask: Tensor,
         batch_labels: Optional[Tensor] = None,  # (batch,)
+        output_attentions: bool = False,
     ) -> Tensor:
         self._check_batch_labels(batch_labels)
 
@@ -191,10 +195,18 @@ class TransformerModel(nn.Module):
         elif getattr(self, "bn", None) is not None:
             total_embs = self.bn(total_embs.permute(0, 2, 1)).permute(0, 2, 1)
 
-        output = self.transformer_encoder(
-            total_embs, src_key_padding_mask=src_key_padding_mask
-        )
-        return output  # (batch, seq_len, embsize)
+        if output_attentions:
+            output, attn_maps = self.transformer_encoder(
+                total_embs,
+                src_key_padding_mask=src_key_padding_mask,
+                output_attentions=output_attentions,
+            )
+            return output, attn_maps
+        else:
+            output = self.transformer_encoder(
+                total_embs, src_key_padding_mask=src_key_padding_mask
+            )
+            return output  # (batch, seq_len, embsize)
 
     def _get_cell_emb_from_layer(
         self, layer_output: Tensor, weights: Tensor = None
