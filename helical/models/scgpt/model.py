@@ -189,7 +189,7 @@ class scGPT(HelicalRNAModel):
 
         LOGGER.info(f"Finished getting embeddings.")
         if output_attentions:
-            return resulting_embeddings, np.array(resulting_attn_maps)
+            return resulting_embeddings, torch.stack(resulting_attn_maps).cpu().numpy()
         else:
             return resulting_embeddings
 
