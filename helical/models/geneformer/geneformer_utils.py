@@ -154,10 +154,12 @@ def get_embs(
     eos_present,
     device,
     silent=False,
+    output_attentions=False,
 ):
     model_input_size = get_model_input_size(model)
     total_batch_length = len(filtered_input_data)
     embs_list = []
+    attn_list = []
 
     _check_for_expected_special_tokens(
         filtered_input_data, emb_mode, cls_present, eos_present, gene_token_dict
@@ -182,9 +184,15 @@ def get_embs(
             outputs = model(
                 input_ids=input_data_minibatch,
                 attention_mask=gen_attention_mask(minibatch),
+                output_attentions=output_attentions,
             )
 
         embs_i = outputs.hidden_states[layer_to_quant]
+        # attention of size (batch_size, num_heads, sequence_length, sequence_length)
+        if output_attentions:
+            attn_i = outputs.attentions[layer_to_quant]
+            # attn_i = torch.mean(attn_i, dim=1).cpu().numpy()  # average over heads
+            attn_list.extend(attn_i.cpu().numpy())
 
         embs_list.extend(
             _compute_embeddings_depending_on_mode(
@@ -207,6 +215,8 @@ def get_embs(
     if emb_mode != "gene":
         embs_list = np.array(embs_list)
 
+    if output_attentions:
+        return embs_list, np.array(attn_list)
     return embs_list
 
 
