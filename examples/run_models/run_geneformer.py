@@ -23,7 +23,7 @@ def run(cfg: DictConfig):
     # or load directly
     ann_data = ad.read_h5ad("./yolksac_human.h5ad")
 
-    dataset = geneformer.process_data(ann_data[:10])
+    dataset = geneformer.process_data(ann_data[:10, :100])
     embeddings = geneformer.get_embeddings(dataset)
 
     print(embeddings)
