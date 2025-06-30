@@ -65,7 +65,9 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
     def __init__(
         self,
         hyena_config: HyenaDNAConfig,
-        fine_tuning_head: Literal["classification"] | HelicalBaseFineTuningHead,
+        fine_tuning_head: (
+            Literal["classification", "regression"] | HelicalBaseFineTuningHead
+        ),
         output_size: Optional[int] = None,
     ):
         HelicalBaseFineTuningModel.__init__(self, fine_tuning_head, output_size)
