@@ -8,8 +8,10 @@ from pathlib import Path
 from tqdm import tqdm
 from azure.storage.blob import BlobClient
 from helical.constants.paths import CACHE_DIR_HELICAL
-from helical.constants.hash_values import HASH_DICT
 import hashlib
+import boto3
+from botocore import UNSIGNED
+from botocore.config import Config
 
 LOGGER = logging.getLogger(__name__)
 INTERVAL = 1000  # interval to get gene mappings
@@ -88,35 +90,14 @@ class Downloader(Logger):
         sys.stdout.write("\r[%s%s]" % ("=" * done, " " * (LOADING_BAR_LENGTH - done)))
         sys.stdout.flush()
 
-    def calculate_partial_file_hash(
-        self, file_path: str, chunk_size: int = 8192, algorithm: str = "sha256"
-    ) -> str:
-        """
-        Calculate the hash of the first and last chunks of a file.
-
-        Args:
-            file_path (str): Path to the file.
-            chunk_size (int): Size of the chunks to hash (in bytes).
-            algorithm (str): Hashing algorithm (e.g., 'sha256', 'blake2b', 'md5'), default is 'sha256'.
-
-        Returns:
-            str: Combined hash of the first and last chunks.
-        """
-        hash_func = hashlib.new(algorithm)
-        file_size = os.path.getsize(file_path)
-
-        with open(file_path, "rb") as f:
-            # Read the first chunk
-            first_chunk = f.read(chunk_size)
-            hash_func.update(first_chunk)
-
-            # Read the last chunk
-            if file_size > chunk_size:
-                f.seek(-chunk_size, os.SEEK_END)
-                last_chunk = f.read(chunk_size)
-                hash_func.update(last_chunk)
-
-        return hash_func.hexdigest()
+    def s3_download_with_progress(self, s3client, bucket, key, output):
+        with open(output, "wb") as f:
+            s3client.download_fileobj(
+                Bucket=bucket,
+                Key=key,
+                Fileobj=f,
+                Callback=S3ProgressPercentage(bucket, key, s3client),
+            )
 
     def download_via_name(self, name: str) -> None:
         """
@@ -128,90 +109,81 @@ class Downloader(Logger):
         Returns:
             None
         """
-
-        main_link = "https://helicalpackage.blob.core.windows.net/helicalpackage/data"
+        s3 = boto3.client("s3", config=Config(signature_version=UNSIGNED))
+        # Example usage
+        bucket_name = "helicalpackage"
+        s3_key = name
         output = os.path.join(CACHE_DIR_HELICAL, name)
-
-        blob_url = f"{main_link}/{name}"
-
-        # Create a BlobClient object for the specified blob
-        blob_client = BlobClient.from_blob_url(
-            blob_url,
-            max_single_get_size=1024 * 1024 * 32,
-            max_chunk_get_size=1024 * 1024 * 4,
-            session=self.session,
-        )
 
         if not os.path.exists(os.path.dirname(output)):
             os.makedirs(os.path.dirname(output), exist_ok=True)
             LOGGER.info(f"Creating Folder {os.path.dirname(output)}")
 
-        if (
-            Path(output).is_file()
-            and self.calculate_partial_file_hash(output) == HASH_DICT[name]
-        ):
-            LOGGER.debug(
-                f"File: '{output}' exists already. File is not overwritten and nothing is downloaded."
-            )
-
-        else:
+        if not Path(output).is_file() or not self.etag_compare(s3_key, output, s3):
             LOGGER.info(
-                f"File does not exist or has incorrect hash. Starting to download: '{blob_url}'"
+                f"File does not exist or has incorrect hash. Starting to download: '{s3_key}'"
             )
             # temporarily disable INFO logging from Azure package
             original_level = logging.getLogger().getEffectiveLevel()
             logging.getLogger().setLevel(logging.WARNING)
-            self.display_azure_download_progress(blob_client, blob_url, output)
+            self.s3_download_with_progress(s3, bucket_name, s3_key, output)
             # restore original logging level
             logging.getLogger().setLevel(original_level)
-            assert (
-                self.calculate_partial_file_hash(output) == HASH_DICT[name]
+            assert self.etag_compare(
+                s3_key, output, s3
             ), f"Hash of downloaded file '{output}' does not match the expected hash."
             LOGGER.info(f"File saved to: '{output}'")
-
-    def display_azure_download_progress(
-        self, blob_client: BlobClient, blob_url: str, output: Path
-    ) -> None:
-        """
-        Displays the progress of an Azure blob download and saves the downloaded file.
-
-        Args:
-            blob_client (BlobClient): The BlobClient object used to download the blob.
-            blob_url (str): The URL of the blob to be downloaded.
-            output (Path): The path where the downloaded file will be saved.
-
-        Returns:
-            None
-        """
-        # Resetting for visualization
-        self.data_length = 0
-        total_length = blob_client.get_blob_properties().size
-
-        # handle displaying download progress or not
-        if self.display:
-            pbar = tqdm(
-                total=total_length, unit="B", unit_scale=True, desc="Downloading"
+        else:
+            LOGGER.debug(
+                f"File: '{output}' exists already. File is not overwritten and nothing is downloaded."
             )
 
-            def progress_callback(bytes_transferred, total_bytes):
-                pbar.update(bytes_transferred - pbar.n)
+    def etag_compare(self, s3_key, filename, s3client, bucket_name="helicalpackage"):
 
-        else:
-            pbar = None
+        # obj = s3client.get_object(Bucket=bucket_name, Key=filename)
+        # Get the object's metadata
+        response = s3client.head_object(Bucket=bucket_name, Key=s3_key)
 
-            def progress_callback(bytes_transferred, total_bytes):
-                pass
+        # Extract the ETag
+        etag = response["ETag"].strip('"')  # Remove quotes if needed
+        # etag = obj.e_tag
 
-        # actual download
-        try:
-            with open(output, "wb") as sample_blob:
-                download_stream = blob_client.download_blob(
-                    max_concurrency=100, progress_hook=progress_callback
-                )
+        def md5_checksum(filename):
+            m = hashlib.md5()
+            with open(filename, "rb") as f:
+                for data in iter(lambda: f.read(1024 * 1024), b""):
+                    m.update(data)
+            return m.hexdigest()
 
-                sample_blob.write(download_stream.readall())
-        except:
-            LOGGER.error(f"Failed downloading file from '{blob_url}'")
+        def etag_checksum(filename, chunk_size=8 * 1024 * 1024):
+            md5s = []
+            with open(filename, "rb") as f:
+                for data in iter(lambda: f.read(chunk_size), b""):
+                    md5s.append(hashlib.md5(data).digest())
+            m = hashlib.md5(b"".join(md5s))
+            return "{}-{}".format(m.hexdigest(), len(md5s))
 
-        if self.display:
-            pbar.close()
+        et = etag  # [1:-1]  # strip quotes
+        if "-" in et and et == etag_checksum(filename):
+            return True
+        if "-" not in et and et == md5_checksum(filename):
+            return True
+        return False
+
+
+class S3ProgressPercentage:
+    def __init__(self, bucket, key, s3_client):
+        self._key = key
+        self._size = s3_client.head_object(Bucket=bucket, Key=key)["ContentLength"]
+        self._seen_so_far = 0
+        self._tqdm = tqdm(total=self._size, unit="B", unit_scale=True, desc=key)
+
+    def __call__(self, bytes_amount):
+        self._seen_so_far += bytes_amount
+        self._tqdm.update(bytes_amount)
+
+
+if __name__ == "__main__":
+    # Example usage
+    downloader = Downloader()
+    downloader.download_via_name("10k_pbmcs_proc.h5ad")
