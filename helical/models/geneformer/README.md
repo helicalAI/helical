@@ -55,7 +55,7 @@ Key improvements in v2.0:
     - 12 layers
     - 4096 input size
     - Trained on ~95 million cells
-- **gf-20L-95M-i4096**
+- **gf-20L-151M-i4096**
     - 20 layers
     - 4096 input size
     - Trained on ~95 million cells
@@ -64,6 +64,19 @@ Key improvements in v2.0:
     - 4096 input size
     - Initially trained on ~95 million cells
     - Further tuned on ~14 million cancer cells
+- **gf-12L-104M-i4096**
+    - 12 layers
+    - 4096 input size
+    - Initially trained on ~104M human single cell transcriptomes
+- **gf-12L-104M-i4096-CLcancer**
+    - 12 layers
+    - 4096 input size
+    - Initially trained on ~104M human single cell transcriptomes
+    - Further tuned on ~14 million cancer cells
+- **gf-18L-316M-i4096**
+    - 18 layers
+    - 4096 input size
+    - Initially trained on ~104M human single cell transcriptomes
 
 ## Model Developers
 
