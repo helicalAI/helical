@@ -9,7 +9,7 @@ class GeneformerConfig:
 
     Parameters
     ----------
-    model_name : Literal["gf-6L-30M-i2048", "gf-12L-30M-i2048", "gf-12L-95M-i4096", "gf-20L-95M-i4096", "gf-12L-95M-i4096-CLcancer", "gf-12L-104M-i4096", "gf-12L-104M-i4096-CLcancer", "gf-18L-316M-i4096"], optional, default="gf-12L-30M-i2048"
+    model_name : Literal["gf-6L-10M-i2048", "gf-12L-30M-i2048", "gf-12L-38M-i4096", "gf-20L-95M-i4096", "gf-12L-38M-i4096-CLcancer", "gf-12L-104M-i4096", "gf-12L-104M-i4096-CLcancer", "gf-18L-316M-i4096"], optional, default="gf-12L-30M-i2048"
         The name of the model.
     batch_size : int, optional, default = 24
         The batch size
@@ -38,11 +38,11 @@ class GeneformerConfig:
     def __init__(
         self,
         model_name: Literal[
-            "gf-6L-30M-i2048",
+            "gf-6L-10M-i2048",
             "gf-12L-30M-i2048",
-            "gf-12L-95M-i4096",
+            "gf-12L-38M-i4096",
             "gf-20L-95M-i4096",
-            "gf-12L-95M-i4096-CLcancer",
+            "gf-12L-38M-i4096-CLcancer",
             "gf-12L-104M-i4096",
             "gf-12L-104M-i4096-CLcancer",
             "gf-18L-316M-i4096",
@@ -57,13 +57,13 @@ class GeneformerConfig:
 
         # model specific parameters
         self.model_map = {
-            "gf-12L-95M-i4096": {
+            "gf-12L-38M-i4096": {
                 "input_size": 4096,
                 "special_token": True,
                 "embsize": 512,
                 "model_version": "v2",
             },
-            "gf-12L-95M-i4096-CLcancer": {
+            "gf-12L-38M-i4096-CLcancer": {
                 "input_size": 4096,
                 "special_token": True,
                 "embsize": 512,
@@ -81,7 +81,7 @@ class GeneformerConfig:
                 "embsize": 512,
                 "model_version": "v1",
             },
-            "gf-6L-30M-i2048": {
+            "gf-6L-10M-i2048": {
                 "input_size": 2048,
                 "special_token": False,
                 "embsize": 256,

@@ -41,7 +41,7 @@ Key improvements in v2.0:
 ## Available Models for each Version
 
 ### Version 1.0 (30M dataset)
-- **gf-6L-30M-i2048**
+- **gf-6L-10M-i2048**
     - 6 layers
     - 2048 input size
     - Trained on ~30 million cells
@@ -51,7 +51,7 @@ Key improvements in v2.0:
     - Trained on ~30 million cells
 
 ### Version 2.0 (95M dataset)
-- **gf-12L-95M-i4096**
+- **gf-12L-38M-i4096**
     - 12 layers
     - 4096 input size
     - Trained on ~95 million cells
@@ -59,7 +59,7 @@ Key improvements in v2.0:
     - 20 layers
     - 4096 input size
     - Trained on ~95 million cells
-- **gf-12L-95M-i4096-CLcancer**
+- **gf-12L-38M-i4096-CLcancer**
     - 12 layers
     - 4096 input size
     - Initially trained on ~95 million cells
@@ -191,7 +191,7 @@ from helical.models.geneformer import Geneformer, GeneformerConfig
 import anndata as ad
 
 # Example configuration
-model_config = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
+model_config = GeneformerConfig(model_name="gf-12L-38M-i4096", batch_size=10)
 geneformer_v2 = Geneformer(model_config)
 
 # Example usage for base pretrained model
@@ -201,7 +201,7 @@ embeddings = geneformer_v2.get_embeddings(dataset)
 print("Base model embeddings shape:", embeddings.shape)
 
 # Example usage for cancer-tuned model
-model_config_cancer = GeneformerConfig(model_name="gf-12L-95M-i4096-CLcancer", batch_size=10)
+model_config_cancer = GeneformerConfig(model_name="gf-12L-38M-i4096-CLcancer", batch_size=10)
 geneformer_v2_cancer = Geneformer(model_config)
 
 cancer_ann_data = ad.read_h5ad("anndata_file.h5ad")
@@ -224,7 +224,7 @@ cell_types = list(ann_data.obs["cell_types"])
 label_set = set(cell_types)
 
 # Create a GeneformerConfig object
-geneformer_config = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
+geneformer_config = GeneformerConfig(model_name="gf-12L-38M-i4096", batch_size=10)
 
 # Create a GeneformerFineTuningModel object
 geneformer_fine_tune = GeneformerFineTuningModel(geneformer_config=geneformer_config, fine_tuning_head="classification", output_size=len(label_set))

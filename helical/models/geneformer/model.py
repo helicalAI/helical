@@ -22,11 +22,11 @@ class Geneformer(HelicalRNAModel):
 
     Version 1.0:
     - gf-12L-30M-i2048
-    - gf-6L-30M-i2048
+    - gf-6L-10M-i2048
 
     Version 2.0:
-    - gf-12L-95M-i4096
-    - gf-12L-95M-i4096-CLcancer
+    - gf-12L-38M-i4096
+    - gf-12L-38M-i4096-CLcancer
     - gf-20L-95M-i4096
 
     For a detailed explanation of the differences between these models and versions, please refer to the Geneformer model card: https://helical.readthedocs.io/en/latest/model_cards/geneformer/
@@ -38,7 +38,7 @@ class Geneformer(HelicalRNAModel):
     import anndata as ad
 
     # Example configuration
-    model_config = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
+    model_config = GeneformerConfig(model_name="gf-12L-38M-i4096", batch_size=10)
     geneformer_v2 = Geneformer(model_config)
 
     # Example usage for base pretrained model
@@ -48,7 +48,7 @@ class Geneformer(HelicalRNAModel):
     print("Base model embeddings shape:", embeddings.shape)
 
     # Example usage for cancer-tuned model
-    model_config_cancer = GeneformerConfig(model_name="gf-12L-95M-i4096-CLcancer", batch_size=10)
+    model_config_cancer = GeneformerConfig(model_name="gf-12L-38M-i4096-CLcancer", batch_size=10)
     geneformer_v2_cancer = Geneformer(model_config)
 
     cancer_ann_data = ad.read_h5ad("anndata_file.h5ad")

@@ -71,7 +71,7 @@ jobs:
 
       - name: Execute Geneformer v2
         run: |
-          python examples/run_models/run_geneformer.py ++model_name="gf-12L-95M-i4096" ++device="cuda"
+          python examples/run_models/run_geneformer.py ++model_name="gf-12L-38M-i4096" ++device="cuda"
 
       - name: Fine-tune Geneformer v2
         run: |
