@@ -21,13 +21,18 @@ class Geneformer(HelicalRNAModel):
     Both versions of Geneformer (v1 and v2) have different sub-models with varying numbers of layers, context size and pretraining set. The available models are the following:
 
     Version 1.0:
-    - gf-12L-30M-i2048
+    - gf-12L-40M-i2048
     - gf-6L-10M-i2048
 
     Version 2.0:
     - gf-12L-38M-i4096
     - gf-12L-38M-i4096-CLcancer
     - gf-20L-95M-i4096
+
+    Version 3.0:
+    - gf-12L-104M-i4096
+    - gf-12L-104M-i4096-CLcancer
+    - gf-18L-316M-i4096
 
     For a detailed explanation of the differences between these models and versions, please refer to the Geneformer model card: https://helical.readthedocs.io/en/latest/model_cards/geneformer/
 
