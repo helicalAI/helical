@@ -67,56 +67,48 @@ class GeneformerConfig:
         # model specific parameters
         self.model_map = {
             "gf-12L-38M-i4096": {
-                "download_name": "gf-12L-95M-i4096",
                 "input_size": 4096,
                 "special_token": True,
                 "embsize": 512,
                 "model_version": "v2",
             },
             "gf-12L-38M-i4096-CLcancer": {
-                "download_name": "gf-12L-95M-i4096-CLcancer",
                 "input_size": 4096,
                 "special_token": True,
                 "embsize": 512,
                 "model_version": "v2",
             },
             "gf-20L-151M-i4096": {
-                "download_name": "gf-20L-95M-i4096",
                 "input_size": 4096,
                 "special_token": True,
                 "embsize": 896,
                 "model_version": "v2",
             },
             "gf-12L-40M-i2048": {
-                "download_name": "gf-12L-30M-i2048",
                 "input_size": 2048,
                 "special_token": False,
                 "embsize": 512,
                 "model_version": "v1",
             },
             "gf-6L-10M-i2048": {
-                "download_name": "gf-6L-30M-i2048",
                 "input_size": 2048,
                 "special_token": False,
                 "embsize": 256,
                 "model_version": "v1",
             },
             "gf-12L-104M-i4096": {
-                "download_name": "gf-12L-104M-i4096",
                 "input_size": 4096,
                 "special_token": True,
                 "embsize": 768,
                 "model_version": "v3",
             },
             "gf-12L-104M-i4096-CLcancer": {
-                "download_name": "gf-12L-104M-i4096-CLcancer",
                 "input_size": 4096,
                 "special_token": True,
                 "embsize": 768,
                 "model_version": "v3",
             },
             "gf-18L-316M-i4096": {
-                "download_name": "gf-18L-316M-i4096",
                 "input_size": 4096,
                 "special_token": True,
                 "embsize": 1152,
@@ -138,8 +130,8 @@ class GeneformerConfig:
             f"geneformer/{self.model_map[model_name]['model_version']}/gene_median_dictionary.pkl",
             f"geneformer/{self.model_map[model_name]['model_version']}/token_dictionary.pkl",
             f"geneformer/{self.model_map[model_name]['model_version']}/ensembl_mapping_dict.pkl",
-            f"geneformer/{self.model_map[model_name]['model_version']}/{self.model_map[model_name]['download_name']}/config.json",
-            f"geneformer/{self.model_map[model_name]['model_version']}/{self.model_map[model_name]['download_name']}/training_args.bin",
+            f"geneformer/{self.model_map[model_name]['model_version']}/{model_name}/config.json",
+            f"geneformer/{self.model_map[model_name]['model_version']}/{model_name}/training_args.bin",
         ]
 
         # Add model weight files to download based on the model version (v1 or v2)
@@ -148,11 +140,11 @@ class GeneformerConfig:
             or self.model_map[model_name]["model_version"] == "v3"
         ):
             self.list_of_files_to_download.append(
-                f"geneformer/{self.model_map[model_name]['model_version']}/{self.model_map[model_name]['download_name']}/model.safetensors"
+                f"geneformer/{self.model_map[model_name]['model_version']}/{model_name}/model.safetensors"
             )
         else:
             self.list_of_files_to_download.append(
-                f"geneformer/{self.model_map[model_name]['model_version']}/{self.model_map[model_name]['download_name']}/pytorch_model.bin"
+                f"geneformer/{self.model_map[model_name]['model_version']}/{model_name}/pytorch_model.bin"
             )
 
         self.model_dir = Path(CACHE_DIR_HELICAL, "geneformer")
@@ -162,7 +154,7 @@ class GeneformerConfig:
                 CACHE_DIR_HELICAL,
                 "geneformer",
                 self.model_map[model_name]["model_version"],
-                self.model_map[model_name]["download_name"],
+                model_name,
             ),
             "gene_median_path": self.model_dir
             / self.model_map[model_name]["model_version"]
