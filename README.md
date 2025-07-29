@@ -31,6 +31,10 @@ Let’s build the most exciting AI-for-Bio community together!
 
 ## What's new?
 
+### New Larger Geneformer Models
+We have integrated the new Geneformer models which are larger and have been trained on more data. Find out which models have been integrated into the Geneformer suite in the [model card](./helical/models/geneformer/README.md). Check out the our notebook on drug perturbation prediction using different Geneformer scalings [here](./examples/notebooks/Geneformer-Series-Comparison.ipynb).
+
+
 ### TranscriptFormer
 We have integrated [TranscriptFormer](https://github.com/czi-ai/transcriptformer) into our helical package and have made a model card for it in our [Transcriptformer model folder](helical/models/transcriptformer/README.md). If you would like to test the model, take a look at our [example notebook](examples/notebooks/Geneformer-vs-TranscriptFormer.ipynb)!
 
