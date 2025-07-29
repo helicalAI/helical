@@ -31,11 +31,10 @@ def load_pretrained(
         torch.nn.Module: The model with pretrained weights.
     """
 
-    use_flash_attn = getattr(model, "use_fast_transformer", True)
-    if not use_flash_attn:
-        pretrained_params = {
-            k.replace("Wqkv.", "in_proj_"): v for k, v in pretrained_params.items()
-        }
+    # as we do not use fast transformer, we need to rename the keys
+    pretrained_params = {
+        k.replace("Wqkv.", "in_proj_"): v for k, v in pretrained_params.items()
+    }
 
     if prefix is not None and len(prefix) > 0:
         if isinstance(prefix, str):
@@ -96,8 +95,6 @@ def load_model(model_configs: scGPTConfig):
         use_batch_labels=False,
         domain_spec_batchnorm=False,
         explicit_zero_prob=False,
-        use_fast_transformer=model_configs["use_fast_transformer"],
-        fast_transformer_backend="flash",
         pre_norm=False,
     )
 
