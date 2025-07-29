@@ -231,9 +231,9 @@ class TestGeneformer:
         "model_name,emb_layer,expected_error",
         [
             ("gf-6L-10M-i2048", -1, "No Error"),
-            ("gf-6L-28M-i2048", 7, "Error"),
+            ("gf-6L-10M-i2048", 7, "Error"),
             ("gf-12L-40M-i2048", 6, "No Error"),
-            ("gf-20L-23M-i4096", 23, "Error"),
+            ("gf-20L-151M-i4096", 23, "Error"),
         ],
     )
     def test_embedding_layer_error(self, model_name, emb_layer, expected_error):
