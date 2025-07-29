@@ -15,8 +15,6 @@ class scGPTConfig:
         The batch size
     emb_mode : Literal["cls", "cell", "gene"], optional, default="cell"
         The embedding mode to use. "cls" uses the cls token, "cell" uses the cell token, "gene" uses the gene token.
-    fast_transformer : bool, optional, default=True
-        Whether to use fast transformer or not
     nlayers : int, optional, default=12
         The number of layers
     nheads : int, optional, default=8
@@ -39,8 +37,8 @@ class scGPTConfig:
         The accelerator configuration. By default same device as model.
     device : Literal["cpu", "cuda"], optional, default="cpu"
         The device to use. Either use "cuda" or "cpu".
-    use_fast_transformer : bool, optional, default=False
-        Wheter to use fast transformer or nots
+    binning_seed : int, optional, default=123
+        The seed for the binning
 
     Returns
     -------
@@ -58,7 +56,6 @@ class scGPTConfig:
         pad_token: str = "<pad>",
         batch_size: int = 24,
         emb_mode: Literal["cls", "cell", "gene"] = "cell",
-        fast_transformer: bool = True,
         nlayers: int = 12,
         nheads: int = 8,
         embsize: int = 512,
@@ -70,7 +67,6 @@ class scGPTConfig:
         world_size: int = 8,
         accelerator: Optional[bool] = False,
         device: Literal["cpu", "cuda"] = "cpu",
-        use_fast_transformer: bool = False,
         binning_seed: int = 123,
     ):
 
@@ -87,7 +83,6 @@ class scGPTConfig:
             "pad_token": pad_token,
             "batch_size": batch_size,
             "emb_mode": emb_mode,
-            "fast_transformer": fast_transformer,
             "nlayers": nlayers,
             "nheads": nheads,
             "embsize": embsize,
@@ -99,7 +94,6 @@ class scGPTConfig:
             "world_size": world_size,
             "accelerator": accelerator,
             "device": device,
-            "use_fast_transformer": use_fast_transformer,
             "MAX_LENGTH": 1200,
             "binning_seed": binning_seed,
         }
