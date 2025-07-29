@@ -11,8 +11,11 @@ We will update this repo on a regular basis with new models, benchmarks, modalit
 Let’s build the most exciting AI-for-Bio community together!
 
 ## What's new?
+### New Larger Geneformer Models
+We have integrated the new Geneformer models which are larger and have been trained on more data. Find out which models have been integrated into the Geneformer suite in the [model card](./model_cards/geneformer.md). Check out the our notebook on drug perturbation prediction using different Geneformer scalings [here](./notebooks/Geneformer-Series-Comparison.ipynb).
+
 ### TranscriptFormer
-We have integrated [TranscriptFormer](https://github.com/czi-ai/transcriptformer) into our helical package and have made a model card for it in our [Transcriptformer model folder](helical/models/transcriptformer/README.md). If you would like to test the model, take a look at our [example notebook](examples/notebooks/Geneformer-vs-TranscriptFormer.ipynb)!
+We have integrated [TranscriptFormer](https://github.com/czi-ai/transcriptformer) into our helical package and have made a model card for it in our [Transcriptformer model folder](./model_cards/transcriptformer.md). If you would like to test the model, take a look at our [example notebook](./notebooks/Geneformer-vs-TranscriptFormer.ipynb)!
 
 ### 🧬 Introducing Helix-mRNA-v0: Unlocking new frontiers & use cases in mRNA therapy 🧬
 We’re thrilled to announce the release of our first-ever mRNA Bio Foundation Model, designed to:
@@ -107,6 +110,7 @@ Within the `example/notebooks` folder, open the notebook of your choice. We reco
 |[Cell-Type-Classification-Fine-Tuning.ipynb](./notebooks/Cell-Type-Classification-Fine-Tuning.ipynb)|An example how to fine-tune different models on classification tasks.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Cell-Type-Classification-Fine-Tuning.ipynb) |
 |[HyenaDNA-Fine-Tuning.ipynb](./notebooks/HyenaDNA-Fine-Tuning.ipynb)|An example of how to fine-tune the HyenaDNA model on downstream benchmarks.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/HyenaDNA-Fine-Tuning.ipynb) |
 |[Cell-Gene-Cls-embedding-generation.ipynb](./examples/notebooks/Cell-Gene-Cls-embedding-generation.ipynb)|A notebook explaining the different embedding modes of single cell RNA models.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Cell-Gene-Cls-embedding-generation.ipynb) |
+|[Geneformer-Series-Comparison.ipynb](./notebooks/Geneformer-Series-Comparison.ipynb)|A zero shot comparison between Geneformer model scaling on drug perturbation prediction|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Geneformer-Series-Comparison.ipynb) |
 
 ## Stuck somewhere ? Other ideas ?
 We are eager to help you and interact with you:

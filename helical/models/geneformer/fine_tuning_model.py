@@ -42,7 +42,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
     label_set = set(cell_types)
 
     # Create a GeneformerConfig object
-    geneformer_config = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
+    geneformer_config = GeneformerConfig(model_name="gf-12L-38M-i4096", batch_size=10)
 
     # Create a GeneformerFineTuningModel object
     geneformer_fine_tune = GeneformerFineTuningModel(geneformer_config=geneformer_config, fine_tuning_head="classification", output_size=len(label_set))
@@ -342,7 +342,7 @@ class GeneformerFineTuningModel(HelicalBaseFineTuningModel, Geneformer):
         """
         self.model.eval()
         self.fine_tuning_head.eval()
-        
+
         model_input_size = get_model_input_size(self.model)
         self.to(self.device)
 
