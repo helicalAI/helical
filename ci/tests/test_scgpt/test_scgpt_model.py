@@ -211,8 +211,9 @@ class TestSCGPTModel:
                 atol=1e-4,  # absolute tolerance
             )
             assert len(genes) == len(embeddings)
-            for gene in genes:
-                assert gene in ["SAMD11", "PLEKHN1", "HES4"]
+            for gene_list in genes:
+                for gene in gene_list:
+                    assert gene in ["SAMD11", "PLEKHN1", "HES4"]
 
     @pytest.mark.parametrize("emb_mode", ["cls", "cell"])
     def test_normalization_cell_and_cls(self, emb_mode):

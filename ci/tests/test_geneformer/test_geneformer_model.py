@@ -179,11 +179,11 @@ class TestGeneformer:
 
         expected = np.array([[4, 4.333333, 4.666667, 4.333333, 4]])
         np.testing.assert_allclose(embeddings, expected, rtol=1e-4, atol=1e-4)
-        assert set(genes).intersection(["ENSG00000187583", "ENSG00000187634", "ENSG00000188290"]) == {
-            "ENSG00000187583",
-            "ENSG00000187634",
-            "ENSG00000188290",
-        }
+        for gene_list in genes:
+            assert len(gene_list) == 3
+            assert "ENSG00000187583" in gene_list
+            assert "ENSG00000187634" in gene_list
+            assert "ENSG00000188290" in gene_list
 
     @pytest.mark.parametrize("emb_mode", ["cell", "gene", "cls"])
     def test_get_embeddings_of_different_modes_v2(
