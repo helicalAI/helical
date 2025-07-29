@@ -199,8 +199,9 @@ class TestSCGPTModel:
         if emb_mode == "cls":
             assert (embeddings == np.array([1.0, 1.0, 1.0, 1.0, 1.0])).all()
             assert len(genes) == len(embeddings)
-            for gene in genes:
-                assert gene in ["SAMD11", "PLEKHN1", "HES4"]
+            for gene_list in genes:
+                for gene in gene_list:
+                    assert gene in ["SAMD11", "PLEKHN1", "HES4"]
         if emb_mode == "cell":
             # average column wise excluding first row
             expected = np.array([[4.0, 4.3333335, 4.6666665, 4.3333335, 4.0]])
