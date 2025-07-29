@@ -87,7 +87,7 @@ class scGPT(HelicalRNAModel):
         )
 
     def get_embeddings(
-        self, dataset: Dataset, output_attentions: bool = False
+        self, dataset: Dataset, output_attentions: bool = False, output_genes: bool = False
     ) -> np.array:
         """Gets the gene embeddings
 
@@ -98,6 +98,8 @@ class scGPT(HelicalRNAModel):
         output_attentions : bool, optional, default=False
             Whether to output the attention maps from the model. If set to True, the attention maps will be returned along with the embeddings.
             If set to False, only the embeddings will be returned. **Note**: This will increase the memory usage of the model significantly, so use it only if you need the attention maps.
+        output_genes : bool, optional, default=False
+            Whether to output the genes corresponding to the embeddings. If set to True, the genes will be returned as a list of strings corresponding to the embeddings.
 
         Returns
         -------
@@ -105,9 +107,12 @@ class scGPT(HelicalRNAModel):
             The embeddings produced by the model.
             The return type depends on the `emb_mode` parameter in the configuration.
             If `emb_mode` is set to "gene", the embeddings are returned as a list of pd.Series which contain a mapping of gene_name:embedding for each cell.
-
         np.ndarray
             If `output_attentions` is set to True, the attention maps will be returned as a numpy array of shape (n_layers, n_heads, n_cells, n_tokens, n_tokens).
+        list, optional
+            If `output_genes` is set to True, the genes corresponding to the embeddings will be returned as a list of strings.
+            Each element in the list corresponds to the genes for each input in the dataset.
+            If `output_genes` is False, this will not be returned
         """
         LOGGER.info(f"Started getting embeddings:")
 
@@ -145,6 +150,7 @@ class scGPT(HelicalRNAModel):
 
         resulting_embeddings = []
         resulting_attn_maps = []
+        input_genes = [] 
 
         with (
             torch.no_grad(),
@@ -181,15 +187,25 @@ class scGPT(HelicalRNAModel):
                         ),
                     )
 
-                resulting_embeddings.extend(
-                    self._compute_embeddings_depending_on_mode(embeddings, data_dict)
-                )
+                if output_genes and self.config["emb_mode"] != "gene":
+                    embeddings_batch, input_genes_batch = self._compute_embeddings_depending_on_mode(
+                        embeddings, data_dict, output_genes=output_genes)
+                    resulting_embeddings.extend(embeddings_batch)
+                    input_genes.extend(input_genes_batch)
+                else:
+                    resulting_embeddings.extend(
+                        self._compute_embeddings_depending_on_mode(embeddings, data_dict, output_genes=output_genes)
+                    )
 
         resulting_embeddings = self._normalize_embeddings(resulting_embeddings)
 
         LOGGER.info(f"Finished getting embeddings.")
-        if output_attentions:
+        if output_attentions and output_genes:
+            return resulting_embeddings, torch.stack(resulting_attn_maps).cpu().numpy(), input_genes
+        elif output_attentions:
             return resulting_embeddings, torch.stack(resulting_attn_maps).cpu().numpy()
+        elif output_genes:
+            return resulting_embeddings, input_genes
         else:
             return resulting_embeddings
 
@@ -209,7 +225,7 @@ class scGPT(HelicalRNAModel):
         return resulting_embeddings
 
     def _compute_embeddings_depending_on_mode(
-        self, embeddings: torch.tensor, data_dict: dict
+        self, embeddings: torch.tensor, data_dict: dict, output_genes: bool = False
     ) -> np.ndarray:
         """
         Compute the embeddings depending on the mode set in the configuration.
@@ -220,15 +236,36 @@ class scGPT(HelicalRNAModel):
             The embeddings to be processed.
         data_dict : dict
             The data dictionary containing the data to be processed.
+        output_genes : bool, optional, default=False
+            Whether to output the genes corresponding to the embeddings.
 
         Returns
         -------
         np.ndarray
             The embeddings corresponding to the mode selected
+        list, optional
+            If `output_genes` is set to True, the genes corresponding to the embeddings will be returned as a list of strings.
+            Each element in the list corresponds to the genes for each input in the dataset.
+            If `output_genes` is False, this will not be returned
         """
+        input_genes = []
+        if output_genes and self.config["emb_mode"] != "gene":
+            gene_ids = data_dict["gene"].cpu().numpy()
+
+            batch_embeddings = []
+            for ids in gene_ids:
+                gene_list = []
+                for id in ids[1:]: # skip the <cls> token
+                    if id != self.vocab[self.config["pad_token"]]:
+                        gene_list.append(self.vocab_id_to_str[id])
+                input_genes.append(gene_list)
+
         if self.config["emb_mode"] == "cls":
             embeddings = embeddings[:, 0, :]  # get the <cls> position embedding
             embeddings = embeddings.cpu().numpy()
+            if output_genes:
+                # if we output genes, we return the embeddings and the genes
+                return embeddings, input_genes
             return embeddings
 
         elif self.config["emb_mode"] == "cell":
@@ -239,6 +276,9 @@ class scGPT(HelicalRNAModel):
                 embeddings, dim=1
             )  # mean embeddings to get cell embedding
             embeddings = embeddings.cpu().numpy()
+            if output_genes:
+                # if we output genes, we return the embeddings and the genes
+                return embeddings, input_genes
             return embeddings
 
         elif self.config["emb_mode"] == "gene":

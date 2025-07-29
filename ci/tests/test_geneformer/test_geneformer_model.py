@@ -163,6 +163,28 @@ class TestGeneformer:
             expected = np.array([[4, 4.333333, 4.666667, 4.333333, 4]])
             np.testing.assert_allclose(embeddings, expected, rtol=1e-4, atol=1e-4)
 
+    def test_get_embeddings_with_output_genes(
+        self, mock_data, mock_embeddings_v1, mocker
+    ):
+        config = GeneformerConfig(
+            model_name="gf-12L-30M-i2048", batch_size=5, emb_mode="cell"
+        )
+        geneformer = Geneformer(config)
+        mocker.patch.object(
+            geneformer.model, "forward", return_value=mock_embeddings_v1
+        )
+
+        dataset = geneformer.process_data(mock_data, gene_names="gene_symbols")
+        embeddings, genes = geneformer.get_embeddings(dataset, output_genes=True)
+
+        expected = np.array([[4, 4.333333, 4.666667, 4.333333, 4]])
+        np.testing.assert_allclose(embeddings, expected, rtol=1e-4, atol=1e-4)
+        assert set(genes).intersection(["ENSG00000187583", "ENSG00000187634", "ENSG00000188290"]) == {
+            "ENSG00000187583",
+            "ENSG00000187634",
+            "ENSG00000188290",
+        }
+
     @pytest.mark.parametrize("emb_mode", ["cell", "gene", "cls"])
     def test_get_embeddings_of_different_modes_v2(
         self, emb_mode, mock_data, mock_embeddings_v2, mocker

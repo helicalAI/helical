@@ -170,6 +170,50 @@ class TestSCGPTModel:
                 atol=1e-4,  # absolute tolerance
             )
 
+    @pytest.mark.parametrize("emb_mode", ["cell", "cls"])
+    def test_get_embeddings_with_gene_outputs(self, mocker, emb_mode):
+        self.scgpt.config["emb_mode"] = emb_mode
+        self.scgpt.config["embsize"] = 5
+
+        # Mock the method directly on the instance
+        mocked_embeddings = torch.tensor(
+            [
+                [
+                    [1.0, 1.0, 1.0, 1.0, 1.0],
+                    [5.0, 5.0, 5.0, 5.0, 5.0],
+                    [1.0, 2.0, 3.0, 2.0, 1.0],
+                    [6.0, 6.0, 6.0, 6.0, 6.0],
+                ],
+            ]
+        )
+        mocker.patch.object(self.scgpt.model, "_encode", return_value=mocked_embeddings)
+
+        # mocking the normalization of embeddings makes it easier to test the output
+        mocker.patch.object(
+            self.scgpt, "_normalize_embeddings", side_effect=lambda x: x
+        )
+
+        dataset = self.scgpt.process_data(self.data, gene_names="gene_names")
+        embeddings, genes = self.scgpt.get_embeddings(dataset, output_genes=True)
+
+        if emb_mode == "cls":
+            assert (embeddings == np.array([1.0, 1.0, 1.0, 1.0, 1.0])).all()
+            assert len(genes) == len(embeddings)
+            for gene in genes:
+                assert gene in ["SAMD11", "PLEKHN1", "HES4"]
+        if emb_mode == "cell":
+            # average column wise excluding first row
+            expected = np.array([[4.0, 4.3333335, 4.6666665, 4.3333335, 4.0]])
+            np.testing.assert_allclose(
+                embeddings,
+                expected,
+                rtol=1e-4,  # relative tolerance
+                atol=1e-4,  # absolute tolerance
+            )
+            assert len(genes) == len(embeddings)
+            for gene in genes:
+                assert gene in ["SAMD11", "PLEKHN1", "HES4"]
+
     @pytest.mark.parametrize("emb_mode", ["cls", "cell"])
     def test_normalization_cell_and_cls(self, emb_mode):
         mocked_embeddings = np.array(
