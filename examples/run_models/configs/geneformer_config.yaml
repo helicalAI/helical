@@ -1,4 +1,4 @@
-model_name: "gf-12L-30M-i2048"
+model_name: "gf-12L-40M-i2048"
 batch_size: 24
 emb_layer: -1
 emb_mode: "cell"

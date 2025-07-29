@@ -45,7 +45,7 @@ Key improvements in v2.0:
     - 6 layers
     - 2048 input size
     - Trained on ~30 million cells
-- **gf-12L-30M-i2048**
+- **gf-12L-40M-i2048**
     - 12 layers
     - 2048 input size
     - Trained on ~30 million cells

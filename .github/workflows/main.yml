@@ -63,11 +63,11 @@ jobs:
 
       - name: Execute Geneformer v1
         run: |
-          python examples/run_models/run_geneformer.py ++model_name="gf-12L-30M-i2048" ++device="cuda"
+          python examples/run_models/run_geneformer.py ++model_name="gf-12L-40M-i2048" ++device="cuda"
 
       - name: Fine-tune Geneformer v1
         run: |
-          python examples/fine_tune_models/fine_tune_geneformer.py ++model_name="gf-12L-30M-i2048" ++device="cuda"
+          python examples/fine_tune_models/fine_tune_geneformer.py ++model_name="gf-12L-40M-i2048" ++device="cuda"
 
       - name: Execute Geneformer v2
         run: |
@@ -75,7 +75,7 @@ jobs:
 
       - name: Fine-tune Geneformer v2
         run: |
-          python examples/fine_tune_models/fine_tune_geneformer.py ++model_name="gf-12L-30M-i2048" ++device="cuda"
+          python examples/fine_tune_models/fine_tune_geneformer.py ++model_name="gf-12L-40M-i2048" ++device="cuda"
 
       - name: Execute scGPT
         run: |
