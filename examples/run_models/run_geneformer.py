@@ -32,7 +32,7 @@ def run(cfg: DictConfig):
     )
 
     print(embeddings)
-    print(attention_weights.shape)
+    print(attention_weights)
 
 
 if __name__ == "__main__":
