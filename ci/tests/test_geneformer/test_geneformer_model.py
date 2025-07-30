@@ -51,7 +51,7 @@ class TestGeneformer:
         ).repeat(12, 1, 1, 1)
         return embs
 
-    @pytest.fixture(params=["gf-12L-30M-i2048", "gf-12L-95M-i4096"])
+    @pytest.fixture(params=["gf-12L-40M-i2048", "gf-12L-38M-i4096"])
     def geneformer(self, request):
         config = GeneformerConfig(model_name=request.param, batch_size=5)
         geneformer = Geneformer(config)
@@ -132,14 +132,14 @@ class TestGeneformer:
                 "This test is only for v1 models and should thus be only executed once."
             )
         with pytest.raises(ValueError):
-            GeneformerConfig(model_name="gf-12L-30M-i2048", emb_mode="cls")
+            GeneformerConfig(model_name="gf-12L-40M-i2048", emb_mode="cls")
 
     @pytest.mark.parametrize("emb_mode", ["cell", "gene"])
     def test_get_embeddings_of_different_modes_v1(
         self, emb_mode, mock_data, mock_embeddings_v1, mocker
     ):
         config = GeneformerConfig(
-            model_name="gf-12L-30M-i2048", batch_size=5, emb_mode=emb_mode
+            model_name="gf-12L-40M-i2048", batch_size=5, emb_mode=emb_mode
         )
         geneformer = Geneformer(config)
         mocker.patch.object(
@@ -190,7 +190,7 @@ class TestGeneformer:
         self, emb_mode, mock_data, mock_embeddings_v2, mocker
     ):
         config = GeneformerConfig(
-            model_name="gf-12L-95M-i4096", batch_size=5, emb_mode=emb_mode
+            model_name="gf-12L-38M-i4096", batch_size=5, emb_mode=emb_mode
         )
         geneformer = Geneformer(config)
         mocker.patch.object(
@@ -235,7 +235,7 @@ class TestGeneformer:
 
     def test_fine_tune_classifier_cls_returns_correct_shape(self, mock_data):
         fine_tuned_model = GeneformerFineTuningModel(
-            GeneformerConfig(model_name="gf-12L-95M-i4096", emb_mode="cls"),
+            GeneformerConfig(model_name="gf-12L-38M-i4096", emb_mode="cls"),
             fine_tuning_head="classification",
             output_size=1,
         )
@@ -252,10 +252,10 @@ class TestGeneformer:
     @pytest.mark.parametrize(
         "model_name,emb_layer,expected_error",
         [
-            ("gf-6L-30M-i2048", -1, "No Error"),
-            ("gf-6L-30M-i2048", 7, "Error"),
-            ("gf-12L-30M-i2048", 6, "No Error"),
-            ("gf-20L-95M-i4096", 23, "Error"),
+            ("gf-6L-10M-i2048", -1, "No Error"),
+            ("gf-6L-10M-i2048", 7, "Error"),
+            ("gf-12L-40M-i2048", 6, "No Error"),
+            ("gf-20L-151M-i4096", 23, "Error"),
         ],
     )
     def test_embedding_layer_error(self, model_name, emb_layer, expected_error):
@@ -275,10 +275,10 @@ class TestGeneformer:
     @pytest.mark.parametrize(
         "model_name,emb_layer",
         [
-            ("gf-6L-30M-i2048", -1),
-            ("gf-6L-30M-i2048", 3),
-            ("gf-12L-30M-i2048", 6),
-            ("gf-20L-95M-i4096", -1),
+            ("gf-6L-10M-i2048", -1),
+            ("gf-6L-10M-i2048", 3),
+            ("gf-12L-40M-i2048", 6),
+            ("gf-20L-151M-i4096", -1),
         ],
     )
     def test_layer_to_quant(self, model_name, emb_layer):

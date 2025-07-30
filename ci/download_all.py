@@ -11,8 +11,8 @@ def download_geneformer_models():
 
     # We can decide to download more models by simply adding the model names from the full list as reported in geneformer_config.py
     version_models_dict = {
-        "v1": ["gf-12L-30M-i2048", "gf-6L-30M-i2048"],
-        "v2": ["gf-12L-95M-i4096", "gf-12L-95M-i4096-CLcancer", "gf-20L-95M-i4096"],
+        "v1": ["gf-12L-40M-i2048", "gf-6L-10M-i2048"],
+        "v2": ["gf-12L-38M-i4096", "gf-12L-38M-i4096-CLcancer", "gf-20L-151M-i4096"],
     }
 
     for version in versions:
