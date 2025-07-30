@@ -167,7 +167,7 @@ class TestGeneformer:
         self, mock_data, mock_embeddings_v1, mocker
     ):
         config = GeneformerConfig(
-            model_name="gf-12L-30M-i2048", batch_size=5, emb_mode="cell"
+            model_name="gf-12L-40M-i2048", batch_size=5, emb_mode="cell"
         )
         geneformer = Geneformer(config)
         mocker.patch.object(
