@@ -11,7 +11,7 @@ class GeneformerConfig:
     ----------
     model_name : Literal[
          "gf-6L-10M-i2048",
-         "gf-12L-38M-i4096",,
+         "gf-12L-38M-i4096",
          "gf-12L-38M-i4096-CLcancer",
          "gf-12L-40M-i2048",
          "gf-12L-40M-i2048-CZI-CellxGene",
