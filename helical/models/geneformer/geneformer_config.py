@@ -11,9 +11,10 @@ class GeneformerConfig:
     ----------
     model_name : Literal[
          "gf-6L-10M-i2048",
-         "gf-12L-38M-i4096",
+         "gf-12L-38M-i4096",,
          "gf-12L-38M-i4096-CLcancer",
          "gf-12L-40M-i2048",
+         "gf-12L-40M-i2048-CZI-CellxGene",
          "gf-12L-104M-i4096",
          "gf-12L-104M-i4096-CLcancer",
          "gf-20L-151M-i4096",
@@ -55,6 +56,7 @@ class GeneformerConfig:
             "gf-12L-104M-i4096-CLcancer",
             "gf-20L-151M-i4096",
             "gf-18L-316M-i4096",
+            "gf-12L-40M-i2048-CZI-CellxGene",
         ] = "gf-12L-38M-i4096",
         batch_size: int = 24,
         emb_layer: int = -1,
@@ -114,6 +116,12 @@ class GeneformerConfig:
                 "embsize": 1152,
                 "model_version": "v3",
             },
+            "gf-12L-40M-i2048-CZI-CellxGene": {
+                "input_size": 2048,
+                "special_token": False,
+                "embsize": 512,
+                "model_version": "v1",
+            },
         }
 
         if model_name not in self.model_map:
@@ -136,8 +144,7 @@ class GeneformerConfig:
 
         # Add model weight files to download based on the model version (v1 or v2)
         if (
-            self.model_map[model_name]["model_version"] == "v2"
-            or self.model_map[model_name]["model_version"] == "v3"
+            self.model_map[model_name]["model_version"] != "v1" or model_name == "gf-12L-40M-i2048-CZI-CellxGene"
         ):
             self.list_of_files_to_download.append(
                 f"geneformer/{self.model_map[model_name]['model_version']}/{model_name}/model.safetensors"

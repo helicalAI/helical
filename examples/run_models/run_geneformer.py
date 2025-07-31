@@ -11,6 +11,9 @@ def run(cfg: DictConfig):
     geneformer_config = GeneformerConfig(**cfg)
     geneformer = Geneformer(configurer=geneformer_config)
 
+    num = geneformer.model.num_parameters(only_trainable=False)
+    print(f"Number of parameters: {num:_}".replace("_", " "))
+
     # either load via huggingface
     # hf_dataset = load_dataset(
     #     "helical-ai/yolksac_human",
