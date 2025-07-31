@@ -208,7 +208,7 @@ class Geneformer(HelicalRNAModel):
         return tokenized_dataset
 
     def get_embeddings(
-        self, dataset: Dataset, output_attentions: bool = False
+        self, dataset: Dataset, output_attentions: bool = False, output_genes: bool = False
     ) -> np.array:
         """Gets the gene embeddings from the Geneformer model
 
@@ -219,15 +219,21 @@ class Geneformer(HelicalRNAModel):
         output_attentions : bool, optional, default=False
             Whether to output attentions from the model. This is useful for debugging or analysis purposes.
             The attention maps are averaged across heads and use the same layer as the embeddings.
+        output_genes : bool, optional, default=False
+            Whether to output the genes corresponding to the embeddings.
 
         Returns
         -------
         np.array
             The gene embeddings in the form of a numpy array
-        np.array, optional
+        list, optional
             The attention weights from the model, if `output_attentions` is set to True.
             The shape of the attention weights is (batch_size, num_heads, seq_length, seq_length).
             If `output_attentions` is False, this will not be returned.
+        list, optional
+            The list of genes corresponding to the embeddings, if `output_genes` is set to True.
+            Each element in the list corresponds to the genes for each input in the dataset.
+            If `output_genes` is False, this will not be returned.
         """
         LOGGER.info(f"Started getting embeddings:")
         embeddings = get_embs(
@@ -243,6 +249,7 @@ class Geneformer(HelicalRNAModel):
             self.eos_present,
             self.device,
             output_attentions=output_attentions,
+            output_genes=output_genes,
         )
 
         LOGGER.info(f"Finished getting embeddings.")

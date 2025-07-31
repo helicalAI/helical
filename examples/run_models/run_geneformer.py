@@ -24,7 +24,7 @@ def run(cfg: DictConfig):
     ann_data = ad.read_h5ad("./yolksac_human.h5ad")
 
     dataset = geneformer.process_data(ann_data[:10, :100])
-    embeddings = geneformer.get_embeddings(dataset)
+    embeddings = geneformer.get_embeddings(dataset, output_genes=True)
 
     print(embeddings)
     embeddings, attention_weights = geneformer.get_embeddings(
@@ -32,7 +32,7 @@ def run(cfg: DictConfig):
     )
 
     print(embeddings)
-    print(attention_weights.shape)
+    print(attention_weights)
 
 
 if __name__ == "__main__":
