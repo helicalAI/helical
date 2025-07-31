@@ -54,7 +54,6 @@ class UCEDataset(Dataset):
                     counts = cts[idx]
                     counts = torch.tensor(counts).unsqueeze(0)
                     weights = torch.log1p(counts)
-                    # weights = weights / torch.sum(weights) 
                     weights_sum = torch.sum(weights)
                     # Changes made on July 15th, 2025 to avoid numpy error ValueError: probabilities contain NaN
                     if weights_sum==0:
