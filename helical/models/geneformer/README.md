@@ -49,6 +49,14 @@ Key improvements in v2.0:
     - 12 layers
     - 2048 input size
     - Trained on ~30 million cells
+- **gf-12L-40M-i2048-CZI-CellxGene**
+    - 12 layers
+    - 2048 input size
+    - Pretrained on ~30 million cells
+    - Fine-tuned by the CELLxGENE Discover Team at CZI using multi-task learning on the CELLxGENE Census
+    - Optimized to distinguish context-specific cell states across cell types, tissues, developmental stages, and diseases
+    - [CC BY 4.0 License](https://creativecommons.org/licenses/by/4.0/)
+    - [CELLxGENE Discover Team](mailto:soma@chanzuckerberg.com)
 
 ### Version 2.0 (95M dataset)
 - **gf-12L-38M-i4096**
