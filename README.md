@@ -170,6 +170,7 @@ While the Helical team actively works to support and integrate new foundation mo
 2. Link related issue(s) in your PR description, if applicable.
 3. Be ready for constructive feedback and revision requests.
 4. Squash commits if needed before final merge.
+5. Make sure to open your pull request against the `main` branch. By default, GitHub may select the `release` branch as the base, so you'll need to manually switch it to `main`. The `release` branch is updated periodically by the team and should not be used for contributions.
 
 ### Reporting Bugs
 When reporting a bug, please provide a clear description of the issue, the steps to reproduce it, and any relevant environment details (e.g., OS, version, browser). If the problem can't be easily reproduced, the team may ask for a minimal code snippet or example that demonstrates the issue end to end.
