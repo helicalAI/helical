@@ -55,7 +55,7 @@ class UCEDataset(Dataset):
                     counts = torch.tensor(counts).unsqueeze(0)
                     weights = torch.log1p(counts)
                     weights_sum = torch.sum(weights)
-                    # Changes made on July 15th, 2025 to avoid numpy error ValueError: probabilities contain NaN
+                    # zero-valued input (e.g., counts = [0, 0, 0]) must still produce a valid distribution
                     if weights_sum==0:
                         weights = torch.ones_like(weights) / len(weights)
                     else:
