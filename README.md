@@ -51,7 +51,7 @@ Check out our <a href="https://www.helical-ai.com/blog/helix-mrna-v0" target="_b
 
 We recommend installing Helical within a conda environment with the commands below (run them in your terminal) - this step is optional:
 ```
-conda create --name helical-package python=3.11.8
+conda create --name helical-package python=3.11.13
 conda activate helical-package
 ```
 
