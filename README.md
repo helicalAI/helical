@@ -153,6 +153,9 @@ If you are (or plan to) working with bio foundation models s.a. Geneformer or UC
 
 We will continuously upload the latest model, publish benchmarks and make our code more efficient.
 
+## Contributing
+
+We welcome all kinds of contributions, including code, documentation, bug reports, and feature suggestions. Please read our [Contributing Guidelines](CONTRIBUTING.md) to help us keep the project organized and collaborative.
 
 ## Acknowledgements
 
