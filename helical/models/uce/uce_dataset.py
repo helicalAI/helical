@@ -54,7 +54,12 @@ class UCEDataset(Dataset):
                     counts = cts[idx]
                     counts = torch.tensor(counts).unsqueeze(0)
                     weights = torch.log1p(counts)
-                    weights = weights / torch.sum(weights)
+                    weights_sum = torch.sum(weights)
+                    # zero-valued input (e.g., counts = [0, 0, 0]) must still produce a valid distribution
+                    if weights_sum==0:
+                        weights = torch.ones_like(weights) / len(weights)
+                    else:
+                        weights = weights / weights_sum
                     batch_sentences, mask, seq_len, cell_sentences = (
                         self.sample_cell_sentences(counts, weights)
                     )
