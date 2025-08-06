@@ -41,29 +41,50 @@ Key improvements in v2.0:
 ## Available Models for each Version
 
 ### Version 1.0 (30M dataset)
-- **gf-6L-30M-i2048**
+- **gf-6L-10M-i2048**
     - 6 layers
     - 2048 input size
     - Trained on ~30 million cells
-- **gf-12L-30M-i2048**
+- **gf-12L-40M-i2048**
     - 12 layers
     - 2048 input size
     - Trained on ~30 million cells
+- **gf-12L-40M-i2048-CZI-CellxGene**
+    - 12 layers
+    - 2048 input size
+    - Pretrained on ~30 million cells
+    - Fine-tuned by the CELLxGENE Discover Team at CZI using multi-task learning on the CELLxGENE Census
+    - Optimized to distinguish context-specific cell states across cell types, tissues, developmental stages, and diseases
+    - [CC BY 4.0 License](https://creativecommons.org/licenses/by/4.0/)
+    - [CELLxGENE Discover Team](mailto:soma@chanzuckerberg.com)
 
 ### Version 2.0 (95M dataset)
-- **gf-12L-95M-i4096**
+- **gf-12L-38M-i4096**
     - 12 layers
     - 4096 input size
     - Trained on ~95 million cells
-- **gf-20L-95M-i4096**
+- **gf-20L-151M-i4096**
     - 20 layers
     - 4096 input size
     - Trained on ~95 million cells
-- **gf-12L-95M-i4096-CLcancer**
+- **gf-12L-38M-i4096-CLcancer**
     - 12 layers
     - 4096 input size
     - Initially trained on ~95 million cells
     - Further tuned on ~14 million cancer cells
+- **gf-12L-104M-i4096**
+    - 12 layers
+    - 4096 input size
+    - Initially trained on ~104M human single cell transcriptomes
+- **gf-12L-104M-i4096-CLcancer**
+    - 12 layers
+    - 4096 input size
+    - Initially trained on ~104M human single cell transcriptomes
+    - Further tuned on ~14 million cancer cells
+- **gf-18L-316M-i4096**
+    - 18 layers
+    - 4096 input size
+    - Initially trained on ~104M human single cell transcriptomes
 
 ## Model Developers
 
@@ -191,7 +212,7 @@ from helical.models.geneformer import Geneformer, GeneformerConfig
 import anndata as ad
 
 # Example configuration
-model_config = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
+model_config = GeneformerConfig(model_name="gf-12L-38M-i4096", batch_size=10)
 geneformer_v2 = Geneformer(model_config)
 
 # Example usage for base pretrained model
@@ -201,7 +222,7 @@ embeddings = geneformer_v2.get_embeddings(dataset)
 print("Base model embeddings shape:", embeddings.shape)
 
 # Example usage for cancer-tuned model
-model_config_cancer = GeneformerConfig(model_name="gf-12L-95M-i4096-CLcancer", batch_size=10)
+model_config_cancer = GeneformerConfig(model_name="gf-12L-38M-i4096-CLcancer", batch_size=10)
 geneformer_v2_cancer = Geneformer(model_config)
 
 cancer_ann_data = ad.read_h5ad("anndata_file.h5ad")
@@ -224,7 +245,7 @@ cell_types = list(ann_data.obs["cell_types"])
 label_set = set(cell_types)
 
 # Create a GeneformerConfig object
-geneformer_config = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
+geneformer_config = GeneformerConfig(model_name="gf-12L-38M-i4096", batch_size=10)
 
 # Create a GeneformerFineTuningModel object
 geneformer_fine_tune = GeneformerFineTuningModel(geneformer_config=geneformer_config, fine_tuning_head="classification", output_size=len(label_set))

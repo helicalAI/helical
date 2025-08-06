@@ -1666,7 +1666,13 @@ class HelixmRNAPretrainedModel(HelixmRNAPreTrainedModel):
                     cache_position=cache_position,
                 )
 
-            hidden_states = layer_outputs[0]
+            if output_hidden_states:
+                all_hidden_states += (layer_outputs[0],)
+
+        hidden_states = self.norm_f(layer_outputs[0])
+
+        if output_hidden_states:
+            all_hidden_states = all_hidden_states + (hidden_states,)
 
             if output_attentions:
                 if layer_outputs[1] is not None:
@@ -1675,11 +1681,6 @@ class HelixmRNAPretrainedModel(HelixmRNAPreTrainedModel):
 
         if use_cache:
             cache_params.seqlen_offset += inputs_embeds.shape[1]
-
-        hidden_states = self.norm_f(hidden_states)
-
-        if output_hidden_states:
-            all_hidden_states += (hidden_states,)
 
         if not return_dict:
             return tuple(

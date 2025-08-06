@@ -24,8 +24,8 @@ def run(cfg: DictConfig):
     ann_data = ad.read_h5ad("./yolksac_human.h5ad")
 
     data = scgpt.process_data(ann_data[:10])
-    embeddings = scgpt.get_embeddings(data, output_attentions=False)
-    print(embeddings)
+    embeddings, input_genes = scgpt.get_embeddings(data, output_genes=True)
+    print(embeddings, input_genes)
     embeddings, attn_weights = scgpt.get_embeddings(data, output_attentions=True)
 
     print(embeddings)
