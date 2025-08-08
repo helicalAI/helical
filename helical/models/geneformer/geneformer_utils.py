@@ -155,11 +155,13 @@ def get_embs(
     device,
     silent=False,
     output_attentions=False,
+    output_genes=False
 ):
     model_input_size = get_model_input_size(model)
     total_batch_length = len(filtered_input_data)
     embs_list = []
     attn_list = []
+    input_genes = []
 
     _check_for_expected_special_tokens(
         filtered_input_data, emb_mode, cls_present, eos_present, gene_token_dict
@@ -194,6 +196,13 @@ def get_embs(
             # attn_i = torch.mean(attn_i, dim=1).cpu().numpy()  # average over heads
             attn_list.extend(attn_i.cpu().numpy())
 
+        if output_genes:
+            for input_ids in minibatch["input_ids"]:
+                gene_list = []
+                for id in input_ids:
+                    gene_list.append(token_to_ensembl_dict[id.item()])
+                input_genes.append(gene_list)
+
         embs_list.extend(
             _compute_embeddings_depending_on_mode(
                 embs_i,
@@ -216,7 +225,13 @@ def get_embs(
         embs_list = np.array(embs_list)
 
     if output_attentions:
-        return embs_list, np.array(attn_list)
+        if output_genes:
+            return embs_list, attn_list, input_genes
+        return embs_list, attn_list
+    
+    if output_genes:
+        return embs_list, input_genes
+    
     return embs_list
 
 

@@ -14,10 +14,6 @@ import logging
 
 LOGGER = logging.getLogger(__name__)
 
-try:
-    from flash_attn.flash_attention import FlashMHA
-except ImportError:
-    LOGGER.warning("flash_attn is not installed.")
 
 from .dsbn import DomainSpecificBatchNorm1d
 from .grad_reverse import grad_reverse
@@ -48,8 +44,6 @@ class MultiOmicTransformerModel(nn.Module):
         mvc_decoder_style: str = "inner product",
         ecs_threshold: float = 0.3,
         explicit_zero_prob: bool = False,
-        use_fast_transformer: bool = False,
-        fast_transformer_backend: str = "flash",
         pre_norm: bool = False,
         use_mod: bool = False,
         ntokens_mod: Optional[int] = None,
@@ -111,26 +105,10 @@ class MultiOmicTransformerModel(nn.Module):
             print("Using simple batchnorm instead of domain specific batchnorm")
             self.bn = nn.BatchNorm1d(d_model, eps=6.1e-5)
 
-        if use_fast_transformer:
-            if fast_transformer_backend == "linear":
-                self.transformer_encoder = FastTransformerEncoderWrapper(
-                    d_model, nhead, d_hid, nlayers, dropout
-                )
-            elif fast_transformer_backend == "flash":
-                encoder_layers = FlashTransformerEncoderLayer(
-                    d_model,
-                    nhead,
-                    d_hid,
-                    dropout,
-                    batch_first=True,
-                    norm_scheme=self.norm_scheme,
-                )
-                self.transformer_encoder = TransformerEncoder(encoder_layers, nlayers)
-        else:
-            encoder_layers = TransformerEncoderLayer(
-                d_model, nhead, d_hid, dropout, batch_first=True
-            )
-            self.transformer_encoder = TransformerEncoder(encoder_layers, nlayers)
+        encoder_layers = TransformerEncoderLayer(
+            d_model, nhead, d_hid, dropout, batch_first=True
+        )
+        self.transformer_encoder = TransformerEncoder(encoder_layers, nlayers)
 
         self.decoder = ExprDecoder(
             d_model,

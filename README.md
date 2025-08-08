@@ -31,6 +31,10 @@ Let’s build the most exciting AI-for-Bio community together!
 
 ## What's new?
 
+### New Larger Geneformer Models
+We have integrated the new Geneformer models which are larger and have been trained on more data. Find out which models have been integrated into the Geneformer suite in the [model card](./helical/models/geneformer/README.md). Check out the our notebook on drug perturbation prediction using different Geneformer scalings [here](./examples/notebooks/Geneformer-Series-Comparison.ipynb).
+
+
 ### TranscriptFormer
 We have integrated [TranscriptFormer](https://github.com/czi-ai/transcriptformer) into our helical package and have made a model card for it in our [Transcriptformer model folder](helical/models/transcriptformer/README.md). If you would like to test the model, take a look at our [example notebook](examples/notebooks/Geneformer-vs-TranscriptFormer.ipynb)!
 
@@ -47,7 +51,7 @@ Check out our <a href="https://www.helical-ai.com/blog/helix-mrna-v0" target="_b
 
 We recommend installing Helical within a conda environment with the commands below (run them in your terminal) - this step is optional:
 ```
-conda create --name helical-package python=3.11.8
+conda create --name helical-package python=3.11.13
 conda activate helical-package
 ```
 
@@ -132,6 +136,7 @@ Within the `examples/notebooks` folder, open the notebook of your choice. We rec
 |[Cell-Type-Classification-Fine-Tuning.ipynb](./examples/notebooks/Cell-Type-Classification-Fine-Tuning.ipynb)|An example how to fine-tune different models on classification tasks.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Cell-Type-Classification-Fine-Tuning.ipynb) |
 |[HyenaDNA-Fine-Tuning.ipynb](./examples/notebooks/HyenaDNA-Fine-Tuning.ipynb)|An example of how to fine-tune the HyenaDNA model on downstream benchmarks.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/HyenaDNA-Fine-Tuning.ipynb) |
 |[Cell-Gene-Cls-embedding-generation.ipynb](./examples/notebooks/Cell-Gene-Cls-embedding-generation.ipynb)|A notebook explaining the different embedding modes of single cell RNA models.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Cell-Gene-Cls-embedding-generation.ipynb) |
+|[Geneformer-Series-Comparison.ipynb](./examples/notebooks/Geneformer-Series-Comparison.ipynb)|A zero shot comparison between Geneformer model scaling on drug perturbation prediction|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Geneformer-Series-Comparison.ipynb) |
 
 ## Stuck somewhere ? Other ideas ?
 We are eager to help you and interact with you:
@@ -148,6 +153,9 @@ If you are (or plan to) working with bio foundation models s.a. Geneformer or UC
 
 We will continuously upload the latest model, publish benchmarks and make our code more efficient.
 
+## Contributing
+
+We welcome all kinds of contributions, including code, documentation, bug reports, and feature suggestions. Please read our [Contributing Guidelines](CONTRIBUTING.md) to help us keep the project organized and collaborative.
 
 ## Acknowledgements
 

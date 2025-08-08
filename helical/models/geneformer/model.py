@@ -21,13 +21,18 @@ class Geneformer(HelicalRNAModel):
     Both versions of Geneformer (v1 and v2) have different sub-models with varying numbers of layers, context size and pretraining set. The available models are the following:
 
     Version 1.0:
-    - gf-12L-30M-i2048
-    - gf-6L-30M-i2048
+    - gf-12L-40M-i2048
+    - gf-6L-10M-i2048
 
     Version 2.0:
-    - gf-12L-95M-i4096
-    - gf-12L-95M-i4096-CLcancer
-    - gf-20L-95M-i4096
+    - gf-12L-38M-i4096
+    - gf-12L-38M-i4096-CLcancer
+    - gf-20L-151M-i4096
+
+    Version 3.0:
+    - gf-12L-104M-i4096
+    - gf-12L-104M-i4096-CLcancer
+    - gf-18L-316M-i4096
 
     For a detailed explanation of the differences between these models and versions, please refer to the Geneformer model card: https://helical.readthedocs.io/en/latest/model_cards/geneformer/
 
@@ -38,7 +43,7 @@ class Geneformer(HelicalRNAModel):
     import anndata as ad
 
     # Example configuration
-    model_config = GeneformerConfig(model_name="gf-12L-95M-i4096", batch_size=10)
+    model_config = GeneformerConfig(model_name="gf-12L-38M-i4096", batch_size=10)
     geneformer_v2 = Geneformer(model_config)
 
     # Example usage for base pretrained model
@@ -48,7 +53,7 @@ class Geneformer(HelicalRNAModel):
     print("Base model embeddings shape:", embeddings.shape)
 
     # Example usage for cancer-tuned model
-    model_config_cancer = GeneformerConfig(model_name="gf-12L-95M-i4096-CLcancer", batch_size=10)
+    model_config_cancer = GeneformerConfig(model_name="gf-12L-38M-i4096-CLcancer", batch_size=10)
     geneformer_v2_cancer = Geneformer(model_config)
 
     cancer_ann_data = ad.read_h5ad("anndata_file.h5ad")
@@ -203,7 +208,7 @@ class Geneformer(HelicalRNAModel):
         return tokenized_dataset
 
     def get_embeddings(
-        self, dataset: Dataset, output_attentions: bool = False
+        self, dataset: Dataset, output_attentions: bool = False, output_genes: bool = False
     ) -> np.array:
         """Gets the gene embeddings from the Geneformer model
 
@@ -214,15 +219,21 @@ class Geneformer(HelicalRNAModel):
         output_attentions : bool, optional, default=False
             Whether to output attentions from the model. This is useful for debugging or analysis purposes.
             The attention maps are averaged across heads and use the same layer as the embeddings.
+        output_genes : bool, optional, default=False
+            Whether to output the genes corresponding to the embeddings.
 
         Returns
         -------
         np.array
             The gene embeddings in the form of a numpy array
-        np.array, optional
+        list, optional
             The attention weights from the model, if `output_attentions` is set to True.
             The shape of the attention weights is (batch_size, num_heads, seq_length, seq_length).
             If `output_attentions` is False, this will not be returned.
+        list, optional
+            The list of genes corresponding to the embeddings, if `output_genes` is set to True.
+            Each element in the list corresponds to the genes for each input in the dataset.
+            If `output_genes` is False, this will not be returned.
         """
         LOGGER.info(f"Started getting embeddings:")
         embeddings = get_embs(
@@ -238,6 +249,7 @@ class Geneformer(HelicalRNAModel):
             self.eos_present,
             self.device,
             output_attentions=output_attentions,
+            output_genes=output_genes,
         )
 
         LOGGER.info(f"Finished getting embeddings.")
