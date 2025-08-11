@@ -300,8 +300,8 @@ class TestGeneformer:
         ],
     )
     def test_model_name_mapping(self, old_model_name, new_model_name, caplog):
-        with caplog.at_level("WARNING"):
-            config = GeneformerConfig(model_name=old_model_name)
+        caplog.set_level("WARNING")
+        config = GeneformerConfig(model_name=old_model_name)
 
         assert config.config["model_name"] == new_model_name
 
