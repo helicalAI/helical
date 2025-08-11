@@ -2,6 +2,9 @@ from typing import Optional
 from pathlib import Path
 from helical.constants.paths import CACHE_DIR_HELICAL
 from typing import Literal
+import logging
+
+LOGGER = logging.getLogger(__name__)
 
 
 class GeneformerConfig:
@@ -48,6 +51,7 @@ class GeneformerConfig:
     def __init__(
         self,
         model_name: Literal[
+            # new and renamed models
             "gf-6L-10M-i2048",
             "gf-12L-38M-i4096",
             "gf-12L-38M-i4096-CLcancer",
@@ -57,6 +61,12 @@ class GeneformerConfig:
             "gf-20L-151M-i4096",
             "gf-18L-316M-i4096",
             "gf-12L-40M-i2048-CZI-CellxGene",
+            # old models
+            "gf-6L-30M-i2048",
+            "gf-12L-30M-i2048",
+            "gf-12L-95M-i4096",
+            "gf-12L-95M-i4096-CLcancer",
+            "gf-20L-95M-i4096",
         ] = "gf-12L-38M-i4096",
         batch_size: int = 24,
         emb_layer: int = -1,
@@ -65,6 +75,23 @@ class GeneformerConfig:
         nproc: int = 1,
         custom_attr_name_dict: Optional[dict] = None,
     ):
+
+        old_model_to_new_model_map = {
+            "gf-6L-30M-i2048": "gf-6L-10M-i2048",
+            "gf-12L-30M-i2048": "gf-12L-40M-i2048",
+            "gf-12L-95M-i4096": "gf-12L-38M-i4096",
+            "gf-12L-95M-i4096-CLcancer": "gf-12L-38M-i4096-CLcancer",
+            "gf-20L-95M-i4096": "gf-20L-151M-i4096",
+        }
+
+        if model_name in old_model_to_new_model_map:
+            message = (
+                f"Setting model to {old_model_to_new_model_map[model_name]}. Model name {model_name} is deprecated. "
+                "Please use the new name going forward to avoid code breakages."
+                "Geneformer models have been renamed to better reflect their size."
+            )
+            LOGGER.warning(message)
+            model_name = old_model_to_new_model_map[model_name]
 
         # model specific parameters
         self.model_map = {
@@ -144,7 +171,8 @@ class GeneformerConfig:
 
         # Add model weight files to download based on the model version (v1 or v2)
         if (
-            self.model_map[model_name]["model_version"] != "v1" or model_name == "gf-12L-40M-i2048-CZI-CellxGene"
+            self.model_map[model_name]["model_version"] != "v1"
+            or model_name == "gf-12L-40M-i2048-CZI-CellxGene"
         ):
             self.list_of_files_to_download.append(
                 f"geneformer/{self.model_map[model_name]['model_version']}/{model_name}/model.safetensors"
