@@ -23,7 +23,7 @@ from einops import rearrange
 from typing import Optional
 from functools import partial
 from torch import Tensor
-from torchvision.ops import StochasticDepth
+from helical.models.hyena_dna.stochastic_depth import StochasticDepth
 from collections import namedtuple
 import numpy as np
 import os
