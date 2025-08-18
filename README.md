@@ -173,6 +173,8 @@ A lot of our models have been published by talend authors developing these excit
 - [GenePT](https://github.com/yiqunchen/GenePT)
 - [Caduceus](https://github.com/kuleshov-group/caduceus)
 - [Evo2](https://github.com/ArcInstitute/evo2)
+- [torch](https://github.com/pytorch/pytorch/blob/main/LICENSE)
+- [torchvision](https://github.com/pytorch/vision/blob/release/0.21/LICENSE)
 
 ### Licenses
 
