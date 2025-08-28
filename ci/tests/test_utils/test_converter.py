@@ -3,7 +3,6 @@ import numpy as np
 from datasets import Dataset, Features, Value, Sequence
 from helical.utils import get_anndata_from_hf_dataset
 
-
 def create_mock_dataset(gene_names: str):
     data = {
         "raw_counts": [[1, 2, 3, 2], [98], [72, 19]],
@@ -49,3 +48,4 @@ def test_get_anndata_from_hf_dataset_mismatched_gene_names():
 
     with pytest.raises(ValueError):
         get_anndata_from_hf_dataset(dataset)
+
