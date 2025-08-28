@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from datasets import Dataset, Features, Value, Sequence
 from helical.utils import get_anndata_from_hf_dataset
-
+from helical.utils.mapping import convert_list_ensembl_ids_to_gene_symbols
 
 def create_mock_dataset(gene_names: str):
     data = {
@@ -49,3 +49,9 @@ def test_get_anndata_from_hf_dataset_mismatched_gene_names():
 
     with pytest.raises(ValueError):
         get_anndata_from_hf_dataset(dataset)
+
+
+def test_convert_list_ensembl_ids_to_gene_symbols():
+    ensembl_ids = ["ENSG00000139618", "ENSG00000139619", "ENSG00000139620"]
+    gene_symbols = convert_list_ensembl_ids_to_gene_symbols(ensembl_ids)
+    assert gene_symbols == ["TNF", "IL6", "IL10"]
