@@ -135,3 +135,34 @@ def convert_list_ensembl_ids_to_gene_symbols(ensembl_ids: List[str], species=hum
         gene_symbols.append(symbol)
 
     return gene_symbols
+
+
+def convert_list_gene_symbols_to_ensembl_ids(gene_symbols: List[str], species=human) -> List[Optional[str]]:
+    """
+    Map a list of gene symbols to Ensembl IDs using pyensembl.
+
+    Parameters
+    ----------
+    gene_symbols : List[str]
+        List of gene symbols (e.g., BRCA2, KANSL2).
+    species : pyensembl.species.Species, optional
+        Species to use for mapping (default is human, GRCh38).
+
+    Returns
+    -------
+    List[Optional[str]]
+        List of Ensembl Gene IDs (or None if not found), in the same order as the input list.
+    """
+    genome_reference = genome_for_reference_name(next(iter(species.reference_assemblies)))
+    genome_reference.download(overwrite=False)
+    genome_reference.index(overwrite=False)
+
+    ensembl_ids = []
+    for symbol in gene_symbols:
+        try:
+            eid = genome_reference.gene_ids_of_gene_name(symbol)[0]
+        except Exception:
+            eid = None
+        ensembl_ids.append(eid)
+
+    return ensembl_ids

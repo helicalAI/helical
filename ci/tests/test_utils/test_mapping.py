@@ -1,6 +1,6 @@
 from helical.utils.mapping import map_gene_symbols_to_ensembl_ids
 from helical.utils.mapping import map_ensembl_ids_to_gene_symbols
-from helical.utils.mapping import convert_list_ensembl_ids_to_gene_symbols
+from helical.utils.mapping import convert_list_ensembl_ids_to_gene_symbols, convert_list_gene_symbols_to_ensembl_ids
 from pyensembl.species import human
 from pyensembl.species import macaque
 import anndata as ad
@@ -49,4 +49,7 @@ def test_convert_list_ensembl_ids_to_gene_symbols():
     assert gene_symbols == ["BRCA2", "KANSL2"]
 
 
-
+def test_convert_list_gene_symbols_to_ensembl_ids():
+    gene_symbols = ["BRCA2", "KANSL2"]
+    ensembl_ids = convert_list_gene_symbols_to_ensembl_ids(gene_symbols, species=human)
+    assert ensembl_ids == ["ENSG00000139618", "ENSG00000139620"]
