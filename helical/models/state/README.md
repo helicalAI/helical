@@ -110,7 +110,7 @@ embeddings = state_embed.get_embeddings(processed_data)
 
 **Example State Transitions Usage:**
 
-See below for the steps to run the STATE transition model for perturbing cells. We show a more concrete example shortly for the Virtual Cell Challenge data with input data.
+See below for the steps to run the STATE transition model for perturbing cells. We show a more concrete example shortly for the Virtual Cell Challenge with input data.
 
 ```python
 from helical.models.state import stateTransitionModel
