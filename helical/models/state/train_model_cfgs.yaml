@@ -1,0 +1,101 @@
+data:
+  name: PerturbationDataModule
+  kwargs:
+    toml_config_path: competition_support_set/starter.toml
+    embed_key: null
+    output_space: all
+    pert_rep: onehot
+    basal_rep: sample
+    num_workers: 4
+    pin_memory: true
+    n_basal_samples: 1
+    basal_mapping_strategy: random
+    should_yield_control_cells: true
+    batch_col: batch_var
+    pert_col: target_gene
+    cell_type_key: cell_type
+    control_pert: non-targeting
+    map_controls: true
+    perturbation_features_file: competition_support_set/ESM2_pert_features.pt
+    store_raw_basal: false
+    int_counts: false
+    barcode: true
+  output_dir: null
+  debug: true
+model:
+  name: state
+  checkpoint: null
+  device: cuda
+  kwargs:
+    cell_set_len: 128
+    blur: 0.05
+    hidden_dim: 672
+    loss: energy
+    confidence_head: false
+    n_encoder_layers: 4
+    n_decoder_layers: 4
+    predict_residual: true
+    softplus: true
+    freeze_pert: false
+    transformer_decoder: false
+    finetune_vci_decoder: false
+    residual_decoder: false
+    batch_encoder: false
+    nb_decoder: false
+    mask_attn: false
+    use_effect_gating_token: false
+    use_basal_projection: false
+    distributional_loss: energy
+    gene_decoder_bool: false
+    init_from: null
+    transformer_backbone_key: llama
+    transformer_backbone_kwargs:
+      max_position_embeddings: 128
+      hidden_size: 672
+      intermediate_size: 2688
+      num_hidden_layers: 4
+      num_attention_heads: 8
+      num_key_value_heads: 8
+      head_dim: 84
+      use_cache: false
+      attention_dropout: 0.0
+      hidden_dropout: 0.0
+      layer_norm_eps: 1.0e-06
+      pad_token_id: 0
+      bos_token_id: 1
+      eos_token_id: 2
+      tie_word_embeddings: false
+      rotary_dim: 0
+      use_rotary_embeddings: false
+training:
+  wandb_track: true
+  weight_decay: 0.0005
+  batch_size: 16
+  lr: 0.0001
+  max_steps: 40000
+  train_seed: 42
+  val_freq: 2000
+  ckpt_every_n_steps: 20000
+  gradient_clip_val: 10
+  loss_fn: mse
+  devices: 1
+  strategy: auto
+  use_mfu: true
+  mfu_kwargs:
+    available_flops: 60000000000000.0
+    use_backward: true
+    logging_interval: 10
+    window_size: 2
+wandb:
+  entity: your_entity_name
+  project: state
+  local_wandb_dir: ./wandb_logs
+  tags:
+  - first_run
+name: first_run
+output_dir: rh_test
+use_wandb: true
+overwrite: false
+return_adatas: false
+pred_adata_path: null
+true_adata_path: null
