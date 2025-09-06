@@ -133,9 +133,9 @@ We can add a classification or regression head to the perturbed cell embeddings 
 ```python
 from helical.models.state import stateFineTuningModel
 
-scgpt_fine_tune = stateFineTuningModel(configurer = state_config, fine_tuning_head = "classification", output_size = 2) 
-data = scgpt_fine_tune.process_data("input_dict")
-scgpt_fine_tune.train()
+state_fine_tune = stateFineTuningModel(configurer = state_config, fine_tuning_head = "classification", output_size = 2) 
+data = state_fine_tune.process_data("input_dict")
+state_fine_tune.train()
 ```
 
 **Creasting a Virtual Cell Challenge Submission:**
