@@ -138,9 +138,9 @@ data = state_fine_tune.process_data("input_dict")
 state_fine_tune.train()
 ```
 
-**Creasting a Virtual Cell Challenge Submission:**
+**Creating a Virtual Cell Challenge Submission:**
 
-Similar to the Colab code by the authors we download the relevant datasets.
+Similar to the Colab notebook by the authors we download the relevant datasets.
 
 ```python
 '''
@@ -180,8 +180,7 @@ with ZipFile(output_path, 'r') as z:
         z.extract(member, out_dir)
 ```
 
-Once downloaded, edit the competition_support_set/starter.toml to point to the correct dataset path at the top. 
-
+Once downloaded, edit `competition_support_set/starter.toml` to point to the correct dataset path (the top line). 
 We can now train the model on the dataset with the below code.
 
 ```python
@@ -207,9 +206,9 @@ state_train.predict()
 
 ```
 
-We use the `stateTransitionTrainModel` class when wanting to train on new datasets. Once complete, checkpoint files will be generated that can be used to initialise the `stateTransitionModel` class for inference.
+We use the `stateTransitionTrainModel` class when wanting to train on new datasets. Once complete, checkpoint files will be generated that can be used to initialise the `stateTransitionModel` class for future inference.
 
-We can now use the model for inference on the validation dataset 
+We run model inference using the new checkpoint on the validation dataset. 
 
 ```python
 from helical.models.state import stateConfig
@@ -238,7 +237,7 @@ adata = state_transition.process_data(adata)
 embeds = state_transition.get_embeddings(adata)
 ```
 
-The code will generate a .vcc file for predictions which can be evaluated using the cell-eval package for submission to the public Virtual Cell Challenge leaderboard.
+This will generate a `.vcc` predictions file which can be evaluated using the `cell-eval` package for submission to the public Virtual Cell Challenge leaderboard.
 
 ```python
 # evaluate the model - underlying function uses cell-eval package 
