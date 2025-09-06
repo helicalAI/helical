@@ -31,8 +31,8 @@
 
 - Tokenizing transcriptomes
 - Tokenizing conditions (i.e. meta-information associated with individual genes, like perturbation experiment alterations, which are indicated by perturbation tokens)
-- Pre-training
-- Fine-tuning 
+- Pretraining
+- Finetuning 
 - Pre- and post-perturbation cell embeddings
 
 **Broader research applications:**  
@@ -64,23 +64,22 @@
 **Testing Data:**  
 
 - Held-out subsets of the training dataset
-- Additional file for inference on new .anndata
 
 ## Model Limitations
 
 **Known Limitations:**
 
-- An inherent limitations of single-cell RNA sequencing data requires the destruction of cells during measurement. This prevents observations of their non-perturbed states. Additionally, some perturbations such as gene knockout may not occur experimentally and incorrectly flagged as a pertubed datapoint. 
+- An inherent limitations of single-cell RNA sequencing data requires the destruction of cells during measurement. This prevents observations of their non-perturbed states. Some perturbations such as gene knockout may also not occur experimentally and incorrectly flagged as a pertubed datapoint. 
 
-- STATE evaluation metrics are more sensitive on an individual gene basis but stronger on an ensemble (perturbation effect) level. As pointed out by the authors metrics such as accuracy of individual DE genes is depends on dataset size and quality.
+- STATE evaluation metrics are more sensitive on an individual gene basis but stronger on an ensemble level. As pointed out by the authors metrics such as accuracy of individual DE genes depends on dataset size and quality.
 
-- Attention maps are sensitive to cell set heterogeneity
+- Attention maps are sensitive to cell set heterogeneity.
 
 **Future Improvements:**  
 
 - Improving perturbation featurisation between modalities such as drugs and gene knockdown, which would allow for combinatorial perturbation predictions.
 
-- STATE has not been trained on over 70 cell contexts but not tested for cell context not completely seen during training (e.g., unseen cell types)
+- STATE has been trained on over 70 cell contexts but not tested for cell context not completely seen during training (e.g., unseen cell types).
 
 - Training of the STATE embedding model on larger datasets.
 
@@ -92,9 +91,7 @@
 
 **Output Format:**  
 
-- Cell and perturbation embeddings
-
-
+- Cell embeddings
 
 
 **Example State Embedding Usage:**
