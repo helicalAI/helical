@@ -69,9 +69,9 @@
 
 **Known Limitations:**
 
-- An inherent limitations of single-cell RNA sequencing data requires the destruction of cells during measurement. This prevents observations of their non-perturbed states. Some perturbations such as gene knockout may also not occur experimentally and incorrectly flagged as a pertubed datapoint. 
+- Single-cell RNA sequencing data requires the destruction of cells during measurement. This prevents observations of their non-perturbed states. Some perturbations such as gene knockout may also not occur experimentally and incorrectly flagged as a pertubed datapoint. 
 
-- STATE evaluation metrics are more sensitive on an individual gene basis but stronger on an ensemble level. As pointed out by the authors metrics such as accuracy of individual DE genes depends on dataset size and quality.
+- STATE evaluation metrics are more sensitive on an individual gene basis but stronger on an ensemble level. As pointed out by the authors metrics such as accuracy of individual DE genes depends on dataset size/quality.
 
 - Attention maps are sensitive to cell set heterogeneity.
 
