@@ -11,10 +11,8 @@ from helical.models.state.state_config import stateConfig
 from helical.utils.downloader import Downloader
 from huggingface_hub import hf_hub_download, snapshot_download
 
-
 LOGGER = logging.getLogger(__name__)
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
-
 
 # this code to do embedding generation
 class stateEmbeddingsModel(HelicalBaseFoundationModel):
@@ -51,7 +49,6 @@ class stateEmbeddingsModel(HelicalBaseFoundationModel):
         LOGGER.info(f"Using model checkpoint: {ckpt_path}")
 
         # Create inference object
-        # embeddings for the proteins e.g. drugs
         embedding_file = os.path.join(
             self.config["model_dir"], "protein_embeddings.pt"
         )

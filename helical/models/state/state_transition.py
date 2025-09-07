@@ -70,6 +70,7 @@ class stateTransitionModel(HelicalBaseFoundationModel):
         self.model = StateTransitionPerturbationModel.load_from_checkpoint(
             self.checkpoint_path, 
         )
+        
         self.model.eval()
         self.device = next(self.model.parameters()).device
 

@@ -13,17 +13,51 @@ from helical.models.state._perturb_utils.state_transition_model import (
 from helical.models.base_models import HelicalBaseFineTuningModel
 import logging
 import numpy as np
+import scanpy as sc
+import anndata as ad
 
 logger = logging.getLogger(__name__)
 
 
 class stateFineTuningModel(HelicalBaseFineTuningModel):
+    """Fine-tuning model for the state model.
+
+    Example
+    ----------
+    ```python
+    from helical.models.state import stateFineTuningModel, stateConfig
+
+    # Load the desired dataset
+    adata = sc.read_h5ad("competition_val_template.h5ad")
+
+    # Get the desired label class
+    cell_types = list(adata.obs.cell_type)
+
+    # Get unique labels
+    label_set = set(cell_types)
+
+    # Create the fine-tuning model with the relevant configs
+    config = stateConfig()
+    model = stateFineTuningModel(
+        configurer=config, 
+        fine_tuning_head="classification", 
+        output_size=len(label_set),
+        freeze_backbone=True
+    )
+
+    # Fine-tune
+    model.train(train_input_data=adata, train_labels=cell_types)
+    ```
+    """
+
     def __init__(
         self,
         configurer: stateConfig = None,
         fine_tuning_head: Literal["classification"] | HelicalBaseFineTuningHead = "classification",
         output_size: Optional[int] = None,
+        freeze_backbone: bool = True,
     ):
+
         if configurer is None:
             self.config = stateConfig().config["finetune"]
         else:
@@ -33,7 +67,7 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         
         # Load the pre-trained state model
         self.model = StateTransitionPerturbationModel.load_from_checkpoint(
-            self.config["checkpoint_path"]
+            self.config["checkpoint"]
         )
 
         # Get the actual output dimension from the loaded model
@@ -41,33 +75,110 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         self.cell_sentence_len = self.model.cell_sentence_len
         self.device = next(self.model.parameters()).device
         self.fine_tuning_head.set_dim_size(self.embed_dim)
+        
+        # Freeze backbone if requested
+        self.freeze_backbone = freeze_backbone
+        if freeze_backbone:
+            for param in self.model.parameters():
+                param.requires_grad = False
+            logger.info("Backbone model frozen - only fine-tuning head will be trained")
+        else:
+            logger.info("Full model fine-tuning - both backbone and head will be trained")
+        
+        # We'll process data directly using the model, no need for inference wrapper
 
-    def _forward(self, data_dict: dict) -> torch.Tensor:
+    def _forward(self, embeddings: torch.Tensor) -> torch.Tensor:
         """
         Forward method for fine-tuning.
         """
-        # Move data to device
-        data_dict = {
-            k: v.to(self.device) if isinstance(v, torch.Tensor) else v
-            for k, v in data_dict.items()
+        output = self.fine_tuning_head(embeddings)
+        return output
+
+    def process_data(self, adata: ad.AnnData, label_column: str = "cell_type"):
+        """
+        Process AnnData through the state model to get embeddings.
+        
+        Parameters
+        ----------
+        adata : AnnData
+            Input AnnData with perturbation data
+        label_column : str
+            Column name in adata.obs containing the labels for classification
+            
+        Returns
+        -------
+        tuple
+            (embeddings, labels) where embeddings are numpy arrays
+        """
+        # Extract labels first
+        if label_column not in adata.obs.columns:
+            raise ValueError(f"Label column '{label_column}' not found in adata.obs")
+        
+        labels = adata.obs[label_column].values
+        
+        # Convert AnnData to the format expected by the model
+        # We need to create a batch dict similar to what the model expects
+        batch_size = len(adata)
+        
+        # Get perturbation info
+        if "target_gene" in adata.obs.columns:
+            pert_names = adata.obs["target_gene"].values
+        else:
+            # Default to non-targeting if no perturbation column
+            pert_names = ["non-targeting"] * batch_size
+        
+        # Create dummy perturbation embeddings (zeros) - the model will handle this
+        pert_emb = torch.zeros(batch_size, self.model.pert_dim, dtype=torch.float32)
+        
+        # Use the expression data as control cell embeddings
+        if hasattr(adata.X, 'toarray'):
+            ctrl_cell_emb = torch.tensor(adata.X.toarray(), dtype=torch.float32)
+        else:
+            ctrl_cell_emb = torch.tensor(adata.X, dtype=torch.float32)
+        
+        # Create batch dict
+        batch = {
+            "pert_emb": pert_emb,
+            "ctrl_cell_emb": ctrl_cell_emb,
+            "pert_name": pert_names,
         }
         
-        # Use the state model's forward method to get embeddings
-        embeddings = self.model.forward(data_dict, padded=True)  # Shape: [B*S, output_dim]
+        # Add batch info if available
+        if "batch_var" in adata.obs.columns:
+            batch["batch"] = torch.zeros(batch_size, dtype=torch.long)  # Dummy batch indices
+        
+        # Get embeddings using the model's forward method
+        self.model.eval()
+        with torch.no_grad():
+            embeddings = self.model.forward(batch, padded=False)
+        
+        return embeddings.cpu().numpy(), labels
 
-        batch_size = data_dict["pert_emb"].shape[0] // self.cell_sentence_len
-        embeddings = embeddings.reshape(
-            batch_size, self.cell_sentence_len, self.embed_dim
-        )
-        cell_embeddings = embeddings.mean(dim=1)  # Shape: [B, output_dim]
-
-        output = self.fine_tuning_head(cell_embeddings)
-        return output
+    def create_label_mapping(self, labels):
+        """
+        Create integer mapping for string labels, similar to scGPT example.
+        
+        Parameters
+        ----------
+        labels : array-like
+            String labels to convert to integers
+            
+        Returns
+        -------
+        tuple
+            (integer_labels, label_to_int_dict)
+        """
+        unique_labels = list(set(labels))
+        label_to_int_dict = dict(zip(unique_labels, range(len(unique_labels))))
+        integer_labels = [label_to_int_dict[label] for label in labels]
+        
+        logger.info(f"Created label mapping: {label_to_int_dict}")
+        return np.array(integer_labels), label_to_int_dict
 
     def train(
         self,
-        train_input_data: torch.Tensor,
-        train_labels: np.ndarray,
+        train_input_data,
+        train_labels,
         validation_input_data=None,
         validation_labels=None,
         optimizer: optim = optim.AdamW,
@@ -80,57 +191,87 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
 
         Parameters
         ----------
-        train_input_data : Dataset
-            A state model processed dataset for fine-tuning
-        train_labels : ndarray
-            The labels for the training data. These should be stored as unique per class integers.
-        validation_input_data : Dataset, default = None
-            A state model processed dataset for per epoch validation. If this is not specified, no validation will be performed.
-        validation_labels : ndarray, default = None
-            The labels for the validation data. These should be stored as unique per class integers.
+        train_input_data : AnnData
+            AnnData object for fine-tuning
+        train_labels : array-like
+            The labels for the training data. Can be string labels (will be converted to integers) or integer labels.
+        validation_input_data : AnnData, default = None
+            AnnData object for per epoch validation. If this is not specified, no validation will be performed.
+        validation_labels : array-like, default = None
+            The labels for the validation data. Can be string labels (will be converted to integers) or integer labels.
         optimizer : torch.optim, default = torch.optim.AdamW
             The optimizer to be used for training.
         optimizer_params : dict
-            The optimizer parameters to be used for the optimizer specified. This list should NOT include model parameters.
-            e.g. optimizer_params = {'lr': 0.0001}
+            The optimizer parameters to be used for the optimizer specified.
         loss_function : torch.nn.modules.loss, default = torch.nn.modules.loss.CrossEntropyLoss()
             The loss function to be used.
         epochs : int, optional, default = 10
             The number of epochs to train the model
         lr_scheduler_params : dict, default = None
-            The learning rate scheduler parameters for the transformers get_scheduler method. The optimizer will be taken from the optimizer input and should not be included in the learning scheduler parameters. If not specified, no scheduler will be used.
-            e.g. lr_scheduler_params = { 'name': 'linear', 'num_warmup_steps': 0, 'num_training_steps': 5 }
+            The learning rate scheduler parameters for the transformers get_scheduler method.
         """
 
-        # Simple collator for state model
-        def state_collator(batch):
-            """Collate function for state model batches"""
+        # Convert string labels to integers if needed
+        if isinstance(train_labels[0], str):
+            train_labels, self.label_mapping = self.create_label_mapping(train_labels)
+            logger.info(f"Converted string labels to integers: {len(self.label_mapping)} classes")
+        
+        if validation_labels is not None and isinstance(validation_labels[0], str):
+            # Use the same mapping for validation labels
+            if hasattr(self, 'label_mapping'):
+                validation_labels = np.array([self.label_mapping[label] for label in validation_labels])
+            else:
+                validation_labels, _ = self.create_label_mapping(validation_labels)
+
+        # Process training data
+        train_embeddings, _ = self.process_data(train_input_data)
+        
+        # Create simple dataset from embeddings
+        class EmbeddingDataset:
+            def __init__(self, embeddings, labels):
+                self.embeddings = torch.tensor(embeddings, dtype=torch.float32)
+                self.labels = labels
+            
+            def __len__(self):
+                return len(self.embeddings)
+            
+            def __getitem__(self, idx):
+                return {
+                    "embedding": self.embeddings[idx],
+                    "label": self.labels[idx]
+                }
+        
+        train_dataset = EmbeddingDataset(train_embeddings, train_labels)
+        
+        # Handle validation data if provided
+        val_dataset = None
+        if validation_input_data is not None:
+            val_embeddings, _ = self.process_data(validation_input_data)
+            val_dataset = EmbeddingDataset(val_embeddings, validation_labels)
+
+        # Simple collator for embedding dataset
+        def embedding_collator(batch):
+            """Collate function for embedding batches"""
             return {
-                "pert_emb": torch.stack([item["pert_emb"] for item in batch]),
-                "ctrl_cell_emb": torch.stack([item["ctrl_cell_emb"] for item in batch]),
-                "batch": (
-                    torch.stack([item["batch"] for item in batch])
-                    if "batch" in batch[0]
-                    else None
-                ),
-                "pert_name": [item["pert_name"] for item in batch],
+                "embeddings": torch.stack([item["embedding"] for item in batch]),
+                "labels": torch.tensor([item["label"] for item in batch])
             }
 
         data_loader = DataLoader(
-            train_input_data,
+            train_dataset,
             batch_size=self.config["batch_size"],
-            sampler=SequentialSampler(train_input_data),
-            collate_fn=state_collator,
+            sampler=SequentialSampler(train_dataset),
+            collate_fn=embedding_collator,
             drop_last=False,
             pin_memory=True,
         )
 
-        if validation_input_data is not None:
+        if val_dataset is not None:
             validation_data_loader = DataLoader(
-                validation_input_data,
+                val_dataset,
                 batch_size=self.config["batch_size"],
-                sampler=SequentialSampler(validation_input_data),
-                collate_fn=state_collator,
+                sampler=SequentialSampler(val_dataset),
+                collate_fn=embedding_collator,
                 drop_last=False,
                 pin_memory=True,
             )
@@ -138,7 +279,16 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         self.to(self.device)
         self.model.train()
         self.fine_tuning_head.train()
-        optimizer = optimizer(self.parameters(), **optimizer_params)
+        
+        # Set up optimizer based on freeze_backbone setting
+        if self.freeze_backbone:
+            # Only train the fine-tuning head
+            optimizer = optimizer(self.fine_tuning_head.parameters(), **optimizer_params)
+            logger.info("Optimizer set up for fine-tuning head only")
+        else:
+            # Train the entire model
+            optimizer = optimizer(self.parameters(), **optimizer_params)
+            logger.info("Optimizer set up for full model fine-tuning")
 
         lr_scheduler = None
         if lr_scheduler_params is not None:
@@ -146,22 +296,15 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
 
         logger.info("Starting Fine-Tuning")
         for j in range(epochs):
-            batch_count = 0
             batch_loss = 0.0
             batches_processed = 0
             training_loop = tqdm(data_loader)
 
             for data_dict in training_loop:
                 # Forward pass
-                output = self._forward(data_dict)
-
-                # Get labels for this batch
-                batch_size = data_dict["pert_emb"].shape[0] // self.cell_sentence_len
-                labels = torch.tensor(
-                    train_labels[batch_count : batch_count + batch_size],
-                    device=self.device,
-                )
-                batch_count += batch_size
+                embeddings = data_dict["embeddings"].to(self.device)
+                labels = data_dict["labels"].to(self.device)
+                output = self._forward(embeddings)
 
                 # Compute loss
                 loss = loss_function(output, labels)
@@ -177,59 +320,35 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             if lr_scheduler is not None:
                 lr_scheduler.step()
 
-            if validation_input_data is not None:
+            if val_dataset is not None:
                 testing_loop = tqdm(
                     validation_data_loader, desc="Fine-Tuning Validation"
                 )
                 val_loss = 0.0
                 count = 0.0
-                validation_batch_count = 0
 
                 for validation_data_dict in testing_loop:
                     # Forward pass
-                    output = self._forward(validation_data_dict)
-
-                    # Get validation labels
-                    val_batch_size = (
-                        validation_data_dict["pert_emb"].shape[0]
-                        // self.cell_sentence_len
-                    )
-                    val_labels = torch.tensor(
-                        validation_labels[
-                            validation_batch_count : validation_batch_count
-                            + val_batch_size
-                        ],
-                        device=self.device,
-                    )
-                    validation_batch_count += val_batch_size
+                    embeddings = validation_data_dict["embeddings"].to(self.device)
+                    val_labels = validation_data_dict["labels"].to(self.device)
+                    output = self._forward(embeddings)
 
                     # Compute validation loss
                     val_loss += loss_function(output, val_labels).item()
                     count += 1.0
                     testing_loop.set_postfix({"val_loss": val_loss / count})
-
-        # save the model
-        torch.save({
-            'model_state_dict': self.model.state_dict(),
-            'fine_tuning_head_state_dict': self.fine_tuning_head.state_dict(),
-            'embed_dim': self.embed_dim,
-            'cell_sentence_len': self.cell_sentence_len,
-            'config': self.config,
-        }, f"{self.config['model_path']}_finetuned.pt")
-        # save just the fine-tuning head separately
-        self.fine_tuning_head.save_model(f"{self.config['model_path']}_head.pt")
         logger.info(f"Fine-Tuning Complete. Epochs: {epochs}")
 
     def get_outputs(
         self,
-        dataset: torch.Tensor,
+        dataset,
     ) -> np.ndarray:
         """Get the outputs of the fine-tuned model.
 
         Parameters
         ----------
-        dataset : Dataset
-            The dataset to get the outputs from.
+        dataset : AnnData
+            AnnData object to get the outputs from.
 
         Returns
         -------
@@ -240,25 +359,34 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         self.model.eval()
         self.fine_tuning_head.eval()
 
-        # Simple collator for state model
-        def state_collator(batch):
-            """Collate function for state model batches"""
+        # Process data to get embeddings
+        embeddings, _ = self.process_data(dataset)
+        
+        # Create simple dataset from embeddings
+        class EmbeddingDataset:
+            def __init__(self, embeddings):
+                self.embeddings = torch.tensor(embeddings, dtype=torch.float32)
+            
+            def __len__(self):
+                return len(self.embeddings)
+            
+            def __getitem__(self, idx):
+                return {"embedding": self.embeddings[idx]}
+        
+        dataset = EmbeddingDataset(embeddings)
+
+        # Simple collator for embedding dataset
+        def embedding_collator(batch):
+            """Collate function for embedding batches"""
             return {
-                "pert_emb": torch.stack([item["pert_emb"] for item in batch]),
-                "ctrl_cell_emb": torch.stack([item["ctrl_cell_emb"] for item in batch]),
-                "batch": (
-                    torch.stack([item["batch"] for item in batch])
-                    if "batch" in batch[0]
-                    else None
-                ),
-                "pert_name": [item["pert_name"] for item in batch],
+                "embeddings": torch.stack([item["embedding"] for item in batch])
             }
 
         data_loader = DataLoader(
             dataset,
             batch_size=self.config["batch_size"],
             sampler=SequentialSampler(dataset),
-            collate_fn=state_collator,
+            collate_fn=embedding_collator,
             drop_last=False,
             pin_memory=True,
         )
@@ -269,7 +397,8 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         with torch.no_grad():
             for data_dict in testing_loop:
                 # Forward pass
-                output = self._forward(data_dict)
+                embeddings = data_dict["embeddings"].to(self.device)
+                output = self._forward(embeddings)
                 outputs.append(output.detach().cpu().numpy())
 
         return np.vstack(outputs)

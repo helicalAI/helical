@@ -29,13 +29,13 @@ class stateConfig:
     ):
 
         model_path = Path(CACHE_DIR_HELICAL, "state/state_CP", f"{model_name}.pt")
-        self.config = {
-            "model_path": model_path,
-            
+        os.makedirs(os.path.join(CACHE_DIR_HELICAL, "state/state_CP"), exist_ok=True)
+        self.config = {            
             "finetune": {
                 "batch_size": batch_size,
                 "head": head,
-                # "checkpoint_path": os.path.join(perturb_model_dir, perturb_checkpoint),
+                "checkpoint": checkpoint,
+                "model_path": model_path,
             },
             "embed": {
                 "repo_id": embed_repo_id,

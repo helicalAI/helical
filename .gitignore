@@ -25,6 +25,8 @@ singularity/*
 *.dataset
 *.ipynb_checkpoints
 results*
+competition/
+competition_support_set/
 
 # Log
 debug.log
