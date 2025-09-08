@@ -7,7 +7,7 @@ import torch.nn as nn
 from lightning.pytorch import LightningModule
 import typing as tp
 
-from helical.models.state._perturb_utils.model_utils import get_loss_fn
+from .model_utils import get_loss_fn
 
 logger = logging.getLogger(__name__)
 

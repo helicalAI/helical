@@ -7,12 +7,12 @@ import scanpy as sc
 import torch
 from tqdm import tqdm
 
-from helical.models.state._perturb_utils.state_transition_model import (
+from .model_dir._perturb_utils.state_transition_model import (
     StateTransitionPerturbationModel,
 )
 
-from helical.models.state.state_config import stateConfig
-from helical.models.state._perturb_utils.utils import (
+from .state_config import stateConfig
+from .model_dir._perturb_utils.utils import (
     to_dense,
     argmax_index_from_any,
     pad_adata_with_tsv,
@@ -54,7 +54,7 @@ class stateTransitionModel(HelicalBaseFoundationModel):
             self.config["model_dir"], "batch_onehot_map.pkl"
         )
 
-        self.checkpoint_path = os.path.join(self.config["model_dir"], "final.ckpt")
+        self.checkpoint_path = os.path.join(self.config["model_dir"], self.config["checkpoint_name"])
         print(f"Using checkpoint: {self.checkpoint_path}")
 
         self.model = StateTransitionPerturbationModel.load_from_checkpoint(

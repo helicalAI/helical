@@ -2,7 +2,7 @@ import argparse as ap
 import glob
 import logging
 import os
-from helical.models.state._embed_utils.inference import Inference
+from .model_dir._embed_utils.inference import Inference
 import torch
 from omegaconf import OmegaConf
 import numpy as np
@@ -26,9 +26,11 @@ class stateEmbeddingsModel(HelicalBaseFoundationModel):
         # downloader = Downloader()
         # # we need to download the model weights for SE
         # downloader.download_via_name(self.config["list_of_files_to_download"])
+        self.model_dir = self.config["cache_dir"]
+
         snapshot_download(
             repo_id=self.config["repo_id"],
-            local_dir=self.config["model_dir"],
+            local_dir=self.model_dir,
             local_dir_use_symlinks=False,
             allow_patterns=[
                 self.config["filename"],
@@ -36,20 +38,20 @@ class stateEmbeddingsModel(HelicalBaseFoundationModel):
                 "protein_embeddings.pt",
             ]
         )
-        ckpt_path = os.path.join(self.config["model_dir"], self.config["filename"])
+        ckpt_path = os.path.join(self.model_dir, self.config["filename"])
 
         LOGGER.info(f"Using model checkpoint: {ckpt_path}")
 
         # Create inference object
         embedding_file = os.path.join(
-            self.config["model_dir"], "protein_embeddings.pt"
+            self.model_dir, "protein_embeddings.pt"
         )
         protein_embeds = torch.load(
             embedding_file, weights_only=False, map_location="cpu"
         )
 
         self.model_conf = OmegaConf.load(
-            os.path.join(self.config["model_dir"], "config.yaml")
+            os.path.join(self.model_dir, "config.yaml")
         )
 
         self.embed_model = Inference(cfg=self.model_conf, protein_embeds=protein_embeds)

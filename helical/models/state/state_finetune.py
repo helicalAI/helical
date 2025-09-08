@@ -7,15 +7,14 @@ from torch.utils.data import DataLoader, SequentialSampler
 from tqdm import tqdm
 from transformers import get_scheduler
 from helical.models.base_models import HelicalBaseFineTuningHead
-from helical.models.state._perturb_utils.state_transition_model import (
+from .model_dir._perturb_utils.state_transition_model import (
     StateTransitionPerturbationModel,
 )
 from helical.models.base_models import HelicalBaseFineTuningModel
 import logging
 import numpy as np
-import scanpy as sc
-import anndata as ad
 import os
+import anndata as ad
 
 logger = logging.getLogger(__name__)
 
@@ -110,10 +109,16 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         self.use_perturbation_embeddings = use_perturbation_embeddings
         self.default_perturbation_type = default_perturbation_type
         
-        # Load the pre-trained state model
-        self.model = StateTransitionPerturbationModel.load_from_checkpoint(
-            os.path.join(self.config["model_dir"], "final.ckpt")
-        )
+        # Load the pre-trained state model or initialize fresh
+        checkpoint_path = os.path.join(self.config["model_dir"], "final.ckpt")
+        
+        if os.path.exists(checkpoint_path):
+            logger.info(f"Loading pre-trained model from: {checkpoint_path}")
+            self.model = StateTransitionPerturbationModel.load_from_checkpoint(checkpoint_path)
+        else:
+            logger.info(f"No checkpoint found at {checkpoint_path}, initializing fresh model from config")
+            # Initialize fresh model using config.yaml and var_dims.pkl (same as training)
+            self._initialize_fresh_model()
 
         # Get the actual output dimension from the loaded model
         self.embed_dim = self.model.output_dim
@@ -129,6 +134,61 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             logger.info("Backbone model frozen - only fine-tuning head will be trained")
         else:
             logger.info("Full model fine-tuning - both backbone and head will be trained")
+
+    def _initialize_fresh_model(self):
+        """Initialize a fresh model using config.yaml and var_dims.pkl (same as training model)."""
+        import yaml
+        import pickle
+        from omegaconf import OmegaConf
+        
+        model_dir = self.config["model_dir"]
+        
+        # Load config.yaml
+        config_yaml_path = self.config["model_config"]
+        if not os.path.exists(config_yaml_path):
+            raise FileNotFoundError(f"config.yaml not found at {config_yaml_path}")
+        
+        with open(config_yaml_path, "r") as f:
+            self.model_config = yaml.safe_load(f)
+        
+        # Load var_dims.pkl
+        var_dims_path = os.path.join(model_dir, "var_dims.pkl")
+        if not os.path.exists(var_dims_path):
+            raise FileNotFoundError(f"var_dims.pkl not found at {var_dims_path}")
+        
+        with open(var_dims_path, "rb") as f:
+            var_dims = pickle.load(f)
+        
+        # Calculate gene_dim (same logic as training)
+        output_space = self.model_config["data"]["kwargs"].get("output_space", "gene")
+        if output_space == "gene":
+            gene_dim = var_dims.get("hvg_dim", 2000)
+        else:
+            gene_dim = var_dims.get("gene_dim", 2000)
+        
+        # Prepare module config (same as training)
+        training_config = self.model_config["training"]
+        data_config = self.model_config["data"]["kwargs"]
+        module_config = {**self.model_config["model"]["kwargs"], **training_config}
+        
+        module_config["embed_key"] = data_config["embed_key"]
+        module_config["output_space"] = data_config["output_space"]
+        module_config["gene_names"] = var_dims["gene_names"]
+        module_config["batch_size"] = training_config["batch_size"]
+        module_config["control_pert"] = data_config.get("control_pert", "non-targeting")
+        
+        # Initialize model with same parameters as training
+        self.model = StateTransitionPerturbationModel(
+            input_dim=var_dims["input_dim"],
+            gene_dim=gene_dim,
+            hvg_dim=var_dims["hvg_dim"],
+            output_dim=var_dims["output_dim"],
+            pert_dim=var_dims["pert_dim"],
+            batch_dim=var_dims["batch_dim"],
+            **module_config,
+        )
+        
+        logger.info("Successfully initialized fresh model from config.yaml and var_dims.pkl")
 
     def _forward(self, embeddings: torch.Tensor) -> torch.Tensor:
         """

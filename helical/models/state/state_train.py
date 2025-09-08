@@ -14,14 +14,14 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from helical.models.state._perturb_utils.utils import (
+from .model_dir._perturb_utils.utils import (
     get_checkpoint_callbacks,
     RobustCSVLogger,
 )
-from helical.models.state._perturb_utils.state_transition_model import (
+from .model_dir._perturb_utils.state_transition_model import (
     StateTransitionPerturbationModel,
 )
-from helical.models.state._perturb_utils.callbacks import (
+from .model_dir._perturb_utils.callbacks import (
     BatchSpeedMonitorCallback,
 )
 
@@ -169,7 +169,7 @@ class stateTransitionTrainModel:
         trainer = pl.Trainer(**trainer_kwargs)
         print("Trainer built successfully")
         # Load checkpoint if exists
-        checkpoint_path = os.path.join(self.run_output_dir, self.cfg["checkpoint_filename"])
+        checkpoint_path = os.path.join(self.run_output_dir, self.cfg["checkpoint_name"])
         if not exists(checkpoint_path):
             checkpoint_path = None
         else:
@@ -184,7 +184,7 @@ class stateTransitionTrainModel:
 
         print("Training completed, saving final checkpoint...")
 
-        checkpoint_path = join(self.run_output_dir, self.cfg["checkpoint_filename"])
+        checkpoint_path = join(self.run_output_dir, self.cfg["checkpoint_name"])
         if not exists(checkpoint_path):
             trainer.save_checkpoint(checkpoint_path)
 
@@ -194,7 +194,7 @@ class stateTransitionTrainModel:
         test_loader = self.data_module.test_dataloader()
 
         checkpoint_path = os.path.join(
-            self.run_output_dir, self.cfg["checkpoint_filename"]
+            self.run_output_dir, self.cfg["checkpoint_name"]
         )
 
         if not os.path.exists(checkpoint_path):

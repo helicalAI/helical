@@ -9,11 +9,11 @@ import torch.nn as nn
 from geomloss import SamplesLoss
 from typing import Tuple
 
-from helical.models.state._perturb_utils.base import PerturbationModel
+from .base import PerturbationModel
 
 # from .decoders import FinetuneVCICountsDecoder
-from helical.models.state._perturb_utils.decoders_nb import NBDecoder, nb_nll
-from helical.models.state._perturb_utils.model_utils import (
+from .decoders_nb import NBDecoder, nb_nll
+from .model_utils import (
     build_mlp,
     get_activation_class,
     get_transformer_backbone,

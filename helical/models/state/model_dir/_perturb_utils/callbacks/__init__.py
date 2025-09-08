@@ -2,9 +2,9 @@ import lightning.pytorch as pl
 from lightning.pytorch.callbacks import Callback
 from torch.optim import Optimizer
 
-from helical.models.state._perturb_utils.base import PerturbationModel
-from helical.models.state._perturb_utils.callbacks.batch_speed_monitor import BatchSpeedMonitorCallback
-from helical.models.state._perturb_utils.callbacks.model_flops_utilization import (
+from ..base import PerturbationModel
+from .batch_speed_monitor import BatchSpeedMonitorCallback
+from .model_flops_utilization import (
     ModelFLOPSUtilizationCallback,
 )
 

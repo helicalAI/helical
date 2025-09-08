@@ -28,7 +28,7 @@ class trainingConfig:
         model: str = "state",
         output_dir: str = "competition",
         name: str = "first_run",
-        checkpoint_filename: str = "final.ckpt",
+        checkpoint_name: str = "final.ckpt",
         predict_only: bool = False,
         profile: str = "full",
         device: str = "cuda",
@@ -38,7 +38,7 @@ class trainingConfig:
             "name": name,
             # we have to put checkpint last.cpkt in join(output_dir, name)
             "output_dir": output_dir,
-            "checkpoint_filename": checkpoint_filename,
+            "checkpoint_name": checkpoint_name,
             "predict_only": predict_only,
             "profile": profile,
             "data": {
