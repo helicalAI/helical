@@ -68,9 +68,9 @@ class stateEmbeddingsModel(HelicalBaseFoundationModel):
         os.makedirs(output_dir, exist_ok=True)
         LOGGER.info(f"Created output directory: {self.config['output_path']}")
 
-    def process_data(self, ann_data_path):
+    def process_data(self, adata):
         dataloader = self.embed_model.process_data(
-            input_adata_path=ann_data_path,
+            adata=adata,
         )
         LOGGER.info("Successfully processed the data for State Embeddings.")
         return dataloader

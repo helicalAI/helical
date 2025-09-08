@@ -18,6 +18,7 @@ if not logger.hasHandlers() or len(logger.handlers) == 0:
 from .state_embeddings import stateEmbeddingsModel
 from .state_transition import stateTransitionModel
 from .state_finetune import stateFineTuningModel
+from .modular_finetune import stateModularFineTuningModel
 
 from .state_config import stateConfig
 from .train_configs import trainingConfig

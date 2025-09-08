@@ -2,7 +2,7 @@
 
 ## Model Details
 
-**Model Name:** STATE 
+**Model Name:** STATE
 
 **Model Version:** 0.9.14
 
@@ -99,11 +99,14 @@
 
 from helical.models.state import stateEmbeddingsModel
 from helical.models.state import stateConfig
+import scanpy as sc
 
 state_config = stateConfig()
+state_embed = stateEmbeddingsModel(configurer=state_config)
 
-state_embed = stateEmbeddingsModel(configurer = state_config)
-processed_data = state_embed.process_data(ann_data_path="path/to/data.h5ad")
+adata = sc.read_h5ad("example.h5ad")
+
+processed_data = state_embed.process_data(adata=adata)
 embeddings = state_embed.get_embeddings(processed_data)
 
 ```
@@ -118,10 +121,10 @@ from helical.models.state import stateConfig
 import scanpy as sc
 
 state_config = stateConfig()
-
 state_transition = stateTransitionModel(configurer=state_config)
 
 adata = sc.read_h5ad("example_data.h5ad")
+
 adata = state_transition.process_data(adata)
 adata = state_transition.get_embeddings(adata)
 ```
@@ -131,11 +134,40 @@ adata = state_transition.get_embeddings(adata)
 We can add a classification or regression head to the perturbed cell embeddings as below.
 
 ```python
-from helical.models.state import stateFineTuningModel
+from helical.models.state import stateModularFineTuningModel, stateConfig
+import scanpy as sc
 
-state_fine_tune = stateFineTuningModel(configurer = state_config, fine_tuning_head = "classification", output_size = 2) 
-data = state_fine_tune.process_data("input_dict")
-state_fine_tune.train()
+# Load the desired dataset
+adata = sc.read_h5ad("example.h5ad")
+
+# Get the desired label class
+cell_types = list(adata.obs.cell_type)
+
+# Get unique labels
+label_set = set(cell_types)
+
+# Create the fine-tuning model with the relevant configs
+config = stateConfig()
+model = stateModularFineTuningModel(
+    configurer=config, 
+    fine_tuning_head="classification", 
+    output_size=len(label_set),
+    freeze_backbone=False,
+)
+
+# Process the data for training 
+data = model.process_data(adata)
+
+# Create a dictionary mapping the classes to unique integers for training
+class_id_dict = dict(zip(label_set, [i for i in range(len(label_set))]))
+
+for i in range(len(cell_types)):
+    cell_types[i] = class_id_dict[cell_types[i]]
+
+print(f"Converted {len(cell_types)} labels to integers")
+
+# Fine-tune
+model.train(train_input_data=data, train_labels=cell_types)
 ```
 
 **Creating a Virtual Cell Challenge Submission:**

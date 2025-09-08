@@ -4,6 +4,7 @@ import torch
 import anndata
 import h5py as h5
 import numpy as np
+from typing import Optional
 
 from pathlib import Path
 from tqdm import tqdm
@@ -52,6 +53,25 @@ class Inference:
                     raise ValueError("Cannot determine matrix format - no encoding-type and unrecognized structure")
 
         return {Path(adata_path).stem: (num_cells, num_genes)}
+
+    def __load_dataset_meta_from_adata(self, adata, dataset_name=None):
+        """
+        Extract dataset metadata directly from an AnnData object.
+        
+        Args:
+            adata: AnnData object
+            dataset_name: Optional name for the dataset. If None, uses 'inference'
+            
+        Returns:
+            dict: Dictionary with dataset name as key and (num_cells, num_genes) as value
+        """
+        num_cells = adata.n_obs
+        num_genes = adata.n_vars
+        
+        if dataset_name is None:
+            dataset_name = "inference"
+            
+        return {dataset_name: (num_cells, num_genes)}
 
     def _save_data(self, input_adata_path, output_adata_path, obsm_key, data):
         """
@@ -144,14 +164,18 @@ class Inference:
                     yield embeddings, ds_embeddings
 
 
-    ########### added by Rasched ##################
+    ##################### wrapper functions ######################################
     def process_data(
         self,
-        input_adata_path: str,
+        # input_adata_path: str,
+        adata: anndata.AnnData,
     ):
-        shape_dict = self.__load_dataset_meta(input_adata_path)
-        adata = anndata.read_h5ad(input_adata_path)
-        dataset_name = Path(input_adata_path).stem
+
+        # shape_dict1 = self.__load_dataset_meta(input_adata_path)
+        shape_dict = self.__load_dataset_meta_from_adata(adata)
+        # adata = anndata.read_h5ad(input_adata_path)
+        # dataset_name = Path(input_adata_path).stem
+        # dataset_name = shape_dict.keys()[0]
 
         # Convert to CSR format if needed
         adata = self._convert_to_csr(adata)
@@ -164,9 +188,11 @@ class Inference:
         dataloader = create_dataloader(
             self._vci_conf,
             adata=adata,
-            adata_name=dataset_name or "inference",
+            # adata_name=dataset_name or "inference",
+            adata_name="inference",
             shape_dict=shape_dict,
-            data_dir=os.path.dirname(input_adata_path),
+            # data_dir=os.path.dirname(input_adata_path),
+            data_dir=None,
             shuffle=False,
             protein_embeds=self.protein_embeds,
             precision=precision,
@@ -199,7 +225,7 @@ class Inference:
 
         return all_embeddings
 
-    ########### ends here ##################
+    ###########################################################
 
     def encode_adata(
         self,
