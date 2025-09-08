@@ -168,9 +168,8 @@ class stateTransitionTrainModel:
         )
         trainer = pl.Trainer(**trainer_kwargs)
         print("Trainer built successfully")
-
         # Load checkpoint if exists
-        checkpoint_path = join(ckpt_callbacks[0].dirpath, "last.ckpt")
+        checkpoint_path = os.path.join(self.run_output_dir, self.cfg["checkpoint_filename"])
         if not exists(checkpoint_path):
             checkpoint_path = None
         else:
@@ -185,7 +184,7 @@ class stateTransitionTrainModel:
 
         print("Training completed, saving final checkpoint...")
 
-        checkpoint_path = join(ckpt_callbacks[0].dirpath, "final.ckpt")
+        checkpoint_path = join(self.run_output_dir, self.cfg["checkpoint_filename"])
         if not exists(checkpoint_path):
             trainer.save_checkpoint(checkpoint_path)
 
@@ -194,9 +193,8 @@ class stateTransitionTrainModel:
         self.data_module.setup(stage="test")
         test_loader = self.data_module.test_dataloader()
 
-        checkpoint_dir = os.path.join(self.run_output_dir, "checkpoints")
         checkpoint_path = os.path.join(
-            checkpoint_dir, self.cfg["checkpoint_filename"]
+            self.run_output_dir, self.cfg["checkpoint_filename"]
         )
 
         if not os.path.exists(checkpoint_path):

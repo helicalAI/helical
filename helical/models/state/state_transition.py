@@ -30,27 +30,17 @@ class stateTransitionModel(HelicalBaseFoundationModel):
         if configurer is None:
             configurer = stateConfig()
         
-        # ckpt_path = hf_hub_download(
-        #     repo_id=self.config["repo_id"],
-        #     filename=self.config["filename"],
-        #     local_dir=self.config["model_dir"],  # your target folder
-        #     local_dir_use_symlinks=False,  # ensures an actual copy, not a symlink
-        # )
         self.config = configurer.config["perturb"]
 
-        # local_dir = snapshot_download(
+        # snapshot_download(
         #     repo_id=self.config["repo_id"],
-        #     local_dir=self.config["model_dir"],
+        #     local_dir=self.config["hf_model_dir"],
         #     local_dir_use_symlinks=False,
         # )
 
-        with open(self.config["model_config"], "r") as f:
+        with open(os.path.join(self.config["model_config"]), "r") as f:
             self.model_config = yaml.safe_load(f)
         
-        # with open(os.path.join(self.config["model_dir"], "config.yaml"), "r") as f:
-        #     self.model_config = yaml.safe_load(f)
-
-        # self.config, control_pert = cfg_setup_inference(self.config)
         with open(os.path.join(self.config["model_dir"], "var_dims.pkl"), "rb") as f:
             var_dims = pickle.load(f)
 
@@ -64,7 +54,7 @@ class stateTransitionModel(HelicalBaseFoundationModel):
             self.config["model_dir"], "batch_onehot_map.pkl"
         )
 
-        self.checkpoint_path = self.config["checkpoint"]
+        self.checkpoint_path = os.path.join(self.config["model_dir"], "final.ckpt")
         print(f"Using checkpoint: {self.checkpoint_path}")
 
         self.model = StateTransitionPerturbationModel.load_from_checkpoint(

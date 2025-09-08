@@ -7,10 +7,8 @@ class stateConfig:
     def __init__(
         self,
         output: str = "competition/prediction.h5ad",
-        model_dir: str = "competition/first_run",
-        checkpoint: str = "competition/first_run/checkpoints/final.ckpt",
+        checkpoint: str = "checkpoints/final.ckpt",
         pert_col: str = "drugname_drugconc",
-        model_config: str = "/home/rasched/home/pr_repo/helical/helical/models/state/model_configs.yaml",
         embed_key: str = None,
         celltype_col: str = None,
         celltypes: str = None,
@@ -19,37 +17,36 @@ class stateConfig:
         seed: int = 42,
         max_set_len: int = None,
         tsv: str = None,
-        batch_size: int = 16,
-        hf_model_dir: Path = Path(CACHE_DIR_HELICAL, "state"),
+        batch_size: int = 16, 
+        hf_model_dir: Path = Path(CACHE_DIR_HELICAL, "state/embed_files"),
+        model_dir: Path = Path(CACHE_DIR_HELICAL, "state/transition_files"),
         embed_repo_id: str = "arcinstitute/SE-600M",
         embed_checkpoint: str = "se600m_epoch16.ckpt",
         perturb_repo_id: str = "arcinstitute/ST-Tahoe",
-        head: Literal["classification"] = "classification",
         model_name: str = "best_model",
+        model_config: str = Path(CACHE_DIR_HELICAL, "state/transition_files", "config.yaml"),
     ):
 
-        model_path = Path(CACHE_DIR_HELICAL, "state/state_CP", f"{model_name}.pt")
-        os.makedirs(os.path.join(CACHE_DIR_HELICAL, "state/state_CP"), exist_ok=True)
+        model_path = Path(CACHE_DIR_HELICAL, "state/state_finetune", f"{model_name}.pt")
+        os.makedirs(os.path.join(CACHE_DIR_HELICAL, "state/state_finetune"), exist_ok=True)
+
         self.config = {      
-            "list_of_files_to_download": ["https://huggingface.co/arcinstitute/ST-Tahoe"],
-            "finetune": {
-                "batch_size": batch_size,
-                "head": head,
-                "checkpoint": checkpoint,
-                "model_path": model_path,
-            },
             "embed": {
                 "repo_id": embed_repo_id,
                 "filename": embed_checkpoint,
                 "model_dir": hf_model_dir,
-                "output_path": os.path.join(hf_model_dir, "SE-600M_MODEL"),
+            },
+
+            "list_of_files_to_download": ["https://huggingface.co/arcinstitute/ST-Tahoe"],
+            "finetune": {
+                "batch_size": batch_size,
+                "model_dir": model_dir,
+                "model_path": model_path,
             },
             "perturb": {
                 "output": output,
-                "model_config": model_config,
                 "repo_id": perturb_repo_id,
                 "model_dir": model_dir,
-                "checkpoint": checkpoint,
                 "control_pert": control_pert,
                 "embed_key": embed_key,
                 "pert_col": pert_col,
@@ -60,6 +57,6 @@ class stateConfig:
                 "max_set_len": max_set_len,
                 "tsv": tsv,
                 "save": True,
-                "hf_model_dir": os.path.join(hf_model_dir, "ST-Tahoe_MODEL"),
+                "model_config": model_config,
             },
         }

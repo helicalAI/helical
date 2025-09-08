@@ -15,55 +15,45 @@ import logging
 import numpy as np
 import scanpy as sc
 import anndata as ad
+import os
 
 logger = logging.getLogger(__name__)
 
 
 class EmbeddingDataset:
-    """Dataset class for embedding-based fine-tuning."""
+    """Dataset class for embedding-based fine-tuning (labels handled separately like scGPT)."""
     
-    def __init__(self, embeddings, labels=None):
+    def __init__(self, embeddings):
         """
         Parameters
         ----------
         embeddings : array-like
             Cell embeddings from the state model
-        labels : array-like, optional
-            Labels for each cell. If None, used for inference only.
         """
         self.embeddings = torch.tensor(embeddings, dtype=torch.float32)
-        self.labels = labels
     
     def __len__(self):
         return len(self.embeddings)
     
     def __getitem__(self, idx):
-        item = {"embedding": self.embeddings[idx]}
-        if self.labels is not None:
-            item["label"] = self.labels[idx]
-        return item
+        return {"embedding": self.embeddings[idx]}
 
 
 def embedding_collator(batch):
-    """Collate function for embedding batches."""
-    if "label" in batch[0]:
-        return {
-            "embeddings": torch.stack([item["embedding"] for item in batch]),
-            "labels": torch.tensor([item["label"] for item in batch])
-        }
-    else:
-        return {
-            "embeddings": torch.stack([item["embedding"] for item in batch])
-        }
+    """Collate function for embedding batches (labels handled separately like scGPT)."""
+    return {
+        "embeddings": torch.stack([item["embedding"] for item in batch])
+    }
 
 
 class stateFineTuningModel(HelicalBaseFineTuningModel):
-    """Fine-tuning model for the state model.
+    """Modular fine-tuning model for the state model.
 
     Example
     ----------
     ```python
-    from helical.models.state import stateFineTuningModel, stateConfig
+    from helical.models.state import stateModularFineTuningModel, stateConfig
+    import scanpy as sc
 
     # Load the desired dataset
     adata = sc.read_h5ad("competition_val_template.h5ad")
@@ -76,17 +66,26 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
 
     # Create the fine-tuning model with the relevant configs
     config = stateConfig()
-    model = stateFineTuningModel(
+    model = stateModularFineTuningModel(
         configurer=config, 
         fine_tuning_head="classification", 
         output_size=len(label_set),
         freeze_backbone=True,
-        use_perturbation_embeddings=True,  # Use proper perturbation embeddings
-        default_perturbation_type="non-targeting"  # Default for unknown perturbations
+        use_perturbation_embeddings=True,
+        default_perturbation_type="non-targeting"
     )
 
-    # Fine-tune
-    model.train(train_input_data=adata, train_labels=cell_types)
+    # Process the data for training (similar to scGPT)
+    data = model.process_data(adata)
+
+    # Create a dictionary mapping the classes to unique integers for training
+    class_id_dict = dict(zip(label_set, [i for i in range(len(label_set))]))
+
+    for i in range(len(cell_types)):
+        cell_types[i] = class_id_dict[cell_types[i]]
+
+    # Fine-tune (similar to scGPT)
+    model.train(train_input_data=data, train_labels=cell_types)
     ```
     """
 
@@ -113,7 +112,7 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         
         # Load the pre-trained state model
         self.model = StateTransitionPerturbationModel.load_from_checkpoint(
-            self.config["checkpoint"]
+            os.path.join(self.config["model_dir"], "final.ckpt")
         )
 
         # Get the actual output dimension from the loaded model
@@ -130,8 +129,6 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             logger.info("Backbone model frozen - only fine-tuning head will be trained")
         else:
             logger.info("Full model fine-tuning - both backbone and head will be trained")
-        
-        # We'll process data directly using the model, no need for inference wrapper
 
     def _forward(self, embeddings: torch.Tensor) -> torch.Tensor:
         """
@@ -140,27 +137,21 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         output = self.fine_tuning_head(embeddings)
         return output
 
-    def process_data(self, adata: ad.AnnData, label_column: str = "cell_type"):
+    def process_data(self, adata: ad.AnnData) -> EmbeddingDataset:
         """
-        Process AnnData through the state model to get embeddings.
+        Process AnnData through the state model to get embeddings, similar to scGPT's process_data.
         
         Parameters
         ----------
         adata : AnnData
             Input AnnData with perturbation data
-        label_column : str
-            Column name in adata.obs containing the labels for classification
             
         Returns
         -------
-        tuple
-            (embeddings, labels) where embeddings are numpy arrays
+        EmbeddingDataset
+            Processed dataset containing embeddings (no labels - user provides them separately)
         """
-        # Extract labels first
-        if label_column not in adata.obs.columns:
-            raise ValueError(f"Label column '{label_column}' not found in adata.obs")
-        
-        labels = adata.obs[label_column].values
+        logger.info("Processing data for state model fine-tuning.")
         
         # Convert AnnData to the format expected by the model
         # We need to create a batch dict similar to what the model expects
@@ -198,7 +189,8 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         with torch.no_grad():
             embeddings = self.model.forward(batch, padded=False)
         
-        return embeddings.cpu().numpy(), labels
+        logger.info("Successfully processed the data for state model fine-tuning.")
+        return EmbeddingDataset(embeddings.cpu().numpy())
 
     def _create_perturbation_embeddings(self, pert_names, batch_size):
         """
@@ -222,8 +214,7 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             return torch.zeros(batch_size, self.model.pert_dim, dtype=torch.float32)
         
         # Try to load the actual perturbation one-hot mapping from the model directory
-        import os
-        model_dir = os.path.dirname(self.config["checkpoint"])
+        model_dir = os.path.dirname(self.config["model_dir"])
         pert_onehot_map_path = os.path.join(model_dir, "pert_onehot_map.pt")
         
         if os.path.exists(pert_onehot_map_path):
@@ -262,99 +253,57 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         
         return default_pert_vec.unsqueeze(0).repeat(batch_size, 1)
 
-    def create_label_mapping(self, labels):
-        """
-        Create integer mapping for string labels, similar to scGPT example.
-        
-        Parameters
-        ----------
-        labels : array-like
-            String labels to convert to integers
-            
-        Returns
-        -------
-        tuple
-            (integer_labels, label_to_int_dict)
-        """
-        unique_labels = list(set(labels))
-        label_to_int_dict = dict(zip(unique_labels, range(len(unique_labels))))
-        integer_labels = [label_to_int_dict[label] for label in labels]
-        
-        logger.info(f"Created label mapping: {label_to_int_dict}")
-        return np.array(integer_labels), label_to_int_dict
-
     def train(
         self,
-        train_input_data,
-        train_labels,
-        validation_input_data=None,
-        validation_labels=None,
+        train_input_data: EmbeddingDataset,
+        train_labels: np.ndarray,
+        validation_input_data: Optional[EmbeddingDataset] = None,
+        validation_labels: Optional[np.ndarray] = None,
         optimizer: optim = optim.AdamW,
         optimizer_params: dict = {"lr": 0.0001},
         loss_function: loss = loss.CrossEntropyLoss(),
         epochs: int = 1,
         lr_scheduler_params: Optional[dict] = None,
     ):
-        """Fine-tunes the state model with different head modules.
+        """Fine-tunes the state model with different head modules, similar to scGPT pattern.
 
         Parameters
         ----------
-        train_input_data : AnnData
-            AnnData object for fine-tuning
+        train_input_data : EmbeddingDataset
+            Processed dataset for fine-tuning (from process_data method)
         train_labels : array-like
-            The labels for the training data. Can be string labels (will be converted to integers) or integer labels.
-        validation_input_data : AnnData, default = None
-            AnnData object for per epoch validation. If this is not specified, no validation will be performed.
+            The labels for the training data. Should be integer labels.
+        validation_input_data : EmbeddingDataset, default = None
+            Processed dataset for per epoch validation. If this is not specified, no validation will be performed.
         validation_labels : array-like, default = None
-            The labels for the validation data. Can be string labels (will be converted to integers) or integer labels.
+            The labels for the validation data. Should be integer labels.
         optimizer : torch.optim, default = torch.optim.AdamW
             The optimizer to be used for training.
         optimizer_params : dict
             The optimizer parameters to be used for the optimizer specified.
         loss_function : torch.nn.modules.loss, default = torch.nn.modules.loss.CrossEntropyLoss()
             The loss function to be used.
-        epochs : int, optional, default = 10
+        epochs : int, optional, default = 1
             The number of epochs to train the model
         lr_scheduler_params : dict, default = None
             The learning rate scheduler parameters for the transformers get_scheduler method.
         """
 
-        # Convert string labels to integers if needed
-        if isinstance(train_labels[0], str):
-            train_labels, self.label_mapping = self.create_label_mapping(train_labels)
-            logger.info(f"Converted string labels to integers: {len(self.label_mapping)} classes")
-        
-        if validation_labels is not None and isinstance(validation_labels[0], str):
-            # Use the same mapping for validation labels
-            if hasattr(self, 'label_mapping'):
-                validation_labels = np.array([self.label_mapping[label] for label in validation_labels])
-            else:
-                validation_labels, _ = self.create_label_mapping(validation_labels)
-
-        # Process training data
-        train_embeddings, _ = self.process_data(train_input_data)
-        train_dataset = EmbeddingDataset(train_embeddings, train_labels)
-        
-        # Handle validation data if provided
-        val_dataset = None
-        if validation_input_data is not None:
-            val_embeddings, _ = self.process_data(validation_input_data)
-            val_dataset = EmbeddingDataset(val_embeddings, validation_labels)
-
+        # Create data loaders
         data_loader = DataLoader(
-            train_dataset,
+            train_input_data,
             batch_size=self.config["batch_size"],
-            sampler=SequentialSampler(train_dataset),
+            sampler=SequentialSampler(train_input_data),
             collate_fn=embedding_collator,
             drop_last=False,
             pin_memory=True,
         )
 
-        if val_dataset is not None:
+        if validation_input_data is not None:
             validation_data_loader = DataLoader(
-                val_dataset,
+                validation_input_data,
                 batch_size=self.config["batch_size"],
-                sampler=SequentialSampler(val_dataset),
+                sampler=SequentialSampler(validation_input_data),
                 collate_fn=embedding_collator,
                 drop_last=False,
                 pin_memory=True,
@@ -380,6 +329,7 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
 
         logger.info("Starting Fine-Tuning")
         for j in range(epochs):
+            batch_count = 0
             batch_loss = 0.0
             batches_processed = 0
             training_loop = tqdm(data_loader)
@@ -387,7 +337,14 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             for data_dict in training_loop:
                 # Forward pass
                 embeddings = data_dict["embeddings"].to(self.device)
-                labels = data_dict["labels"].to(self.device)
+                
+                # Get labels by batch index (like scGPT)
+                labels = torch.tensor(
+                    train_labels[batch_count : batch_count + self.config["batch_size"]],
+                    device=self.device,
+                )
+                batch_count += self.config["batch_size"]
+                
                 output = self._forward(embeddings)
 
                 # Compute loss
@@ -404,17 +361,25 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             if lr_scheduler is not None:
                 lr_scheduler.step()
 
-            if val_dataset is not None:
+            if validation_input_data is not None:
                 testing_loop = tqdm(
                     validation_data_loader, desc="Fine-Tuning Validation"
                 )
                 val_loss = 0.0
                 count = 0.0
+                validation_batch_count = 0
 
                 for validation_data_dict in testing_loop:
                     # Forward pass
                     embeddings = validation_data_dict["embeddings"].to(self.device)
-                    val_labels = validation_data_dict["labels"].to(self.device)
+                    
+                    # Get validation labels by batch index (like scGPT)
+                    val_labels = torch.tensor(
+                        validation_labels[validation_batch_count : validation_batch_count + self.config["batch_size"]],
+                        device=self.device,
+                    )
+                    validation_batch_count += self.config["batch_size"]
+                    
                     output = self._forward(embeddings)
 
                     # Compute validation loss
@@ -423,16 +388,13 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
                     testing_loop.set_postfix({"val_loss": val_loss / count})
         logger.info(f"Fine-Tuning Complete. Epochs: {epochs}")
 
-    def get_outputs(
-        self,
-        dataset,
-    ) -> np.ndarray:
+    def get_outputs(self, dataset: EmbeddingDataset) -> np.ndarray:
         """Get the outputs of the fine-tuned model.
 
         Parameters
         ----------
-        dataset : AnnData
-            AnnData object to get the outputs from.
+        dataset : EmbeddingDataset
+            Processed dataset to get the outputs from.
 
         Returns
         -------
@@ -442,10 +404,6 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         self.to(self.device)
         self.model.eval()
         self.fine_tuning_head.eval()
-
-        # Process data to get embeddings
-        embeddings, _ = self.process_data(dataset)
-        dataset = EmbeddingDataset(embeddings)
 
         data_loader = DataLoader(
             dataset,

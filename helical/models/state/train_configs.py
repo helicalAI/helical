@@ -1,3 +1,6 @@
+import os
+from helical.constants.paths import CACHE_DIR_HELICAL
+
 class trainingConfig:
     def __init__(
         self,
@@ -27,7 +30,6 @@ class trainingConfig:
         name: str = "first_run",
         checkpoint_filename: str = "final.ckpt",
         predict_only: bool = False,
-        results_dir: str = "competition/eval_final",
         profile: str = "full",
         device: str = "cuda",
     ):
