@@ -19,6 +19,44 @@ import anndata as ad
 logger = logging.getLogger(__name__)
 
 
+class EmbeddingDataset:
+    """Dataset class for embedding-based fine-tuning."""
+    
+    def __init__(self, embeddings, labels=None):
+        """
+        Parameters
+        ----------
+        embeddings : array-like
+            Cell embeddings from the state model
+        labels : array-like, optional
+            Labels for each cell. If None, used for inference only.
+        """
+        self.embeddings = torch.tensor(embeddings, dtype=torch.float32)
+        self.labels = labels
+    
+    def __len__(self):
+        return len(self.embeddings)
+    
+    def __getitem__(self, idx):
+        item = {"embedding": self.embeddings[idx]}
+        if self.labels is not None:
+            item["label"] = self.labels[idx]
+        return item
+
+
+def embedding_collator(batch):
+    """Collate function for embedding batches."""
+    if "label" in batch[0]:
+        return {
+            "embeddings": torch.stack([item["embedding"] for item in batch]),
+            "labels": torch.tensor([item["label"] for item in batch])
+        }
+    else:
+        return {
+            "embeddings": torch.stack([item["embedding"] for item in batch])
+        }
+
+
 class stateFineTuningModel(HelicalBaseFineTuningModel):
     """Fine-tuning model for the state model.
 
@@ -42,7 +80,9 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         configurer=config, 
         fine_tuning_head="classification", 
         output_size=len(label_set),
-        freeze_backbone=True
+        freeze_backbone=True,
+        use_perturbation_embeddings=True,  # Use proper perturbation embeddings
+        default_perturbation_type="non-targeting"  # Default for unknown perturbations
     )
 
     # Fine-tune
@@ -56,6 +96,8 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         fine_tuning_head: Literal["classification"] | HelicalBaseFineTuningHead = "classification",
         output_size: Optional[int] = None,
         freeze_backbone: bool = True,
+        use_perturbation_embeddings: bool = True,
+        default_perturbation_type: str = "non-targeting",
     ):
 
         if configurer is None:
@@ -64,6 +106,10 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             self.config = configurer.config["finetune"]
 
         HelicalBaseFineTuningModel.__init__(self, fine_tuning_head, output_size)
+        
+        # Store perturbation embedding configuration
+        self.use_perturbation_embeddings = use_perturbation_embeddings
+        self.default_perturbation_type = default_perturbation_type
         
         # Load the pre-trained state model
         self.model = StateTransitionPerturbationModel.load_from_checkpoint(
@@ -127,8 +173,8 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             # Default to non-targeting if no perturbation column
             pert_names = ["non-targeting"] * batch_size
         
-        # Create dummy perturbation embeddings (zeros) - the model will handle this
-        pert_emb = torch.zeros(batch_size, self.model.pert_dim, dtype=torch.float32)
+        # Create proper perturbation embeddings
+        pert_emb = self._create_perturbation_embeddings(pert_names, batch_size)
         
         # Use the expression data as control cell embeddings
         if hasattr(adata.X, 'toarray'):
@@ -153,6 +199,68 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             embeddings = self.model.forward(batch, padded=False)
         
         return embeddings.cpu().numpy(), labels
+
+    def _create_perturbation_embeddings(self, pert_names, batch_size):
+        """
+        Create perturbation embeddings for each cell based on perturbation names.
+        
+        Parameters
+        ----------
+        pert_names : list
+            List of perturbation names for each cell
+        batch_size : int
+            Number of cells
+            
+        Returns
+        -------
+        torch.Tensor
+            Perturbation embeddings of shape (batch_size, pert_dim)
+        """
+        if not self.use_perturbation_embeddings:
+            # Use zeros if perturbation embeddings are disabled
+            logger.info("Perturbation embeddings disabled, using zeros")
+            return torch.zeros(batch_size, self.model.pert_dim, dtype=torch.float32)
+        
+        # Try to load the actual perturbation one-hot mapping from the model directory
+        import os
+        model_dir = os.path.dirname(self.config["checkpoint"])
+        pert_onehot_map_path = os.path.join(model_dir, "pert_onehot_map.pt")
+        
+        if os.path.exists(pert_onehot_map_path):
+            try:
+                # Load the actual perturbation mapping
+                pert_onehot_map = torch.load(pert_onehot_map_path, weights_only=False)
+                logger.info(f"Loaded perturbation mapping with {len(pert_onehot_map)} perturbations")
+                
+                # Create embeddings for each cell
+                pert_embeddings = []
+                for pert_name in pert_names:
+                    if pert_name in pert_onehot_map:
+                        pert_embeddings.append(pert_onehot_map[pert_name].float())
+                    else:
+                        # Use default perturbation vector for unknown perturbations
+                        if self.default_perturbation_type in pert_onehot_map:
+                            default_vec = pert_onehot_map[self.default_perturbation_type].float()
+                        else:
+                            # Fallback to control vector
+                            default_vec = torch.zeros(self.model.pert_dim, dtype=torch.float32)
+                            if self.model.pert_dim > 0:
+                                default_vec[0] = 1.0
+                        pert_embeddings.append(default_vec)
+                        logger.warning(f"Unknown perturbation '{pert_name}', using {self.default_perturbation_type} vector")
+                
+                return torch.stack(pert_embeddings)
+                
+            except Exception as e:
+                logger.warning(f"Failed to load perturbation mapping: {e}")
+        
+        # Fallback: create default control embeddings for all cells
+        logger.info(f"Using default {self.default_perturbation_type} perturbation embeddings for all cells")
+        default_pert_vec = torch.zeros(self.model.pert_dim, dtype=torch.float32)
+        if self.model.pert_dim > 0:
+            default_pert_vec[0] = 1.0  # Control perturbation
+        
+        return default_pert_vec.unsqueeze(0).repeat(batch_size, 1)
 
     def create_label_mapping(self, labels):
         """
@@ -225,22 +333,6 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
 
         # Process training data
         train_embeddings, _ = self.process_data(train_input_data)
-        
-        # Create simple dataset from embeddings
-        class EmbeddingDataset:
-            def __init__(self, embeddings, labels):
-                self.embeddings = torch.tensor(embeddings, dtype=torch.float32)
-                self.labels = labels
-            
-            def __len__(self):
-                return len(self.embeddings)
-            
-            def __getitem__(self, idx):
-                return {
-                    "embedding": self.embeddings[idx],
-                    "label": self.labels[idx]
-                }
-        
         train_dataset = EmbeddingDataset(train_embeddings, train_labels)
         
         # Handle validation data if provided
@@ -248,14 +340,6 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         if validation_input_data is not None:
             val_embeddings, _ = self.process_data(validation_input_data)
             val_dataset = EmbeddingDataset(val_embeddings, validation_labels)
-
-        # Simple collator for embedding dataset
-        def embedding_collator(batch):
-            """Collate function for embedding batches"""
-            return {
-                "embeddings": torch.stack([item["embedding"] for item in batch]),
-                "labels": torch.tensor([item["label"] for item in batch])
-            }
 
         data_loader = DataLoader(
             train_dataset,
@@ -361,26 +445,7 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
 
         # Process data to get embeddings
         embeddings, _ = self.process_data(dataset)
-        
-        # Create simple dataset from embeddings
-        class EmbeddingDataset:
-            def __init__(self, embeddings):
-                self.embeddings = torch.tensor(embeddings, dtype=torch.float32)
-            
-            def __len__(self):
-                return len(self.embeddings)
-            
-            def __getitem__(self, idx):
-                return {"embedding": self.embeddings[idx]}
-        
         dataset = EmbeddingDataset(embeddings)
-
-        # Simple collator for embedding dataset
-        def embedding_collator(batch):
-            """Collate function for embedding batches"""
-            return {
-                "embeddings": torch.stack([item["embedding"] for item in batch])
-            }
 
         data_loader = DataLoader(
             dataset,
