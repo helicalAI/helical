@@ -147,6 +147,13 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             self.cell_sentence_len = None
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
+        # Check for .pt weight files and load them if available
+        self.backbone_weights_path = os.path.join(self.model_dir, 'model_weights.pt') if os.path.exists(os.path.join(self.model_dir, 'model_weights.pt')) else None
+        self.head_weights_path = os.path.join(self.model_dir, 'head_weights.pt') if os.path.exists(os.path.join(self.model_dir, 'head_weights.pt')) else None
+        
+        if self.has_var_dims:
+            self.load_pt_weights(self.backbone_weights_path, self.head_weights_path)
+        
         self.freeze_backbone = self.config["freeze_backbone"]
         if self.has_var_dims:
             if self.freeze_backbone:
@@ -157,7 +164,7 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
                 logger.info("Full model fine-tuning - both backbone and head will be trained")
         else:
             logger.info(f"Freeze backbone setting: {self.freeze_backbone} (will be applied when model is initialized)")
-
+        
     def _create_var_dims_from_adata(self, adata):
         """Create var_dims.pkl from adata following the same logic as state_train.py."""
         logger.info("Creating var_dims from adata")
@@ -309,7 +316,19 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         """
         output = self.fine_tuning_head(embeddings)
         return output
-
+    
+    def load_pt_weights(self):
+        """
+        Load the model and head weights from .pt files.
+        """
+        if self.backbone_weights_path is not None:
+            self.model.load_state_dict(torch.load(self.backbone_weights_path, weights_only=True))
+            logger.info(f"Loaded model weights from {self.backbone_weights_path}")
+        if self.head_weights_path is not None:
+            self.fine_tuning_head.load_state_dict(torch.load(self.head_weights_path, weights_only=True))
+            logger.info(f"Loaded head weights from {self.head_weights_path}")
+        return
+    
     def process_data(self, adata: ad.AnnData) -> EmbeddingDataset:
         """
         Process AnnData through the state model to get embeddings, similar to scGPT's process_data.
@@ -592,6 +611,14 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
                     val_loss += loss_function(output, val_labels).item()
                     count += 1.0
                     testing_loop.set_postfix({"val_loss": val_loss / count})
+        
+        if self.freeze_backbone is True:
+            # we only need to save the head weights
+            torch.save(self.fine_tuning_head.state_dict(), os.path.join(self.model_dir, 'head_weights.pt'))
+        else:
+            # we need to save the model and head weights
+            torch.save(self.model.state_dict(), os.path.join(self.model_dir, 'model_weights.pt'))
+            torch.save(self.fine_tuning_head.state_dict(), os.path.join(self.model_dir, 'head_weights.pt'))
         logger.info(f"Fine-Tuning Complete. Epochs: {epochs}")
 
     def get_outputs(self, dataset: EmbeddingDataset) -> np.ndarray:
