@@ -31,6 +31,7 @@ class stateConfig:
         model_path = Path(CACHE_DIR_HELICAL, "state/state_CP", f"{model_name}.pt")
         os.makedirs(os.path.join(CACHE_DIR_HELICAL, "state/state_CP"), exist_ok=True)
         self.config = {      
+            "list_of_files_to_download": ["https://huggingface.co/arcinstitute/ST-Tahoe"],
             "finetune": {
                 "batch_size": batch_size,
                 "head": head,
