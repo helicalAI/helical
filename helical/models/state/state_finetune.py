@@ -15,6 +15,9 @@ import logging
 import numpy as np
 import os
 import anndata as ad
+import scanpy as sc
+import pickle
+import yaml
 
 logger = logging.getLogger(__name__)
 
@@ -46,35 +49,39 @@ def embedding_collator(batch):
 
 
 class stateFineTuningModel(HelicalBaseFineTuningModel):
-    """Modular fine-tuning model for the state model.
+    """Enhanced fine-tuning model for the state model that can generate var_dims from adata.
+
+    This version automatically generates var_dims.pkl and config.yaml from the input data,
+    following the same logic as state_train.py, so you don't need to specify file locations.
 
     Example
     ----------
     ```python
-    from helical.models.state import stateModularFineTuningModel, stateConfig
+    from helical.models.state import stateFineTuningModelV2, stateConfig
     import scanpy as sc
 
     # Load the desired dataset
-    adata = sc.read_h5ad("competition_val_template.h5ad")
+    adata = sc.read_h5ad("competition_support_set/competition_val_template.h5ad")
 
     # Get the desired label class
     cell_types = list(adata.obs.cell_type)
-
-    # Get unique labels
     label_set = set(cell_types)
 
-    # Create the fine-tuning model with the relevant configs
-    config = stateConfig()
-    model = stateModularFineTuningModel(
+    # Create the fine-tuning model (no need to specify var_dims location)
+    config = stateConfig(
+        batch_size=8,
+        model_dir="competition/first_run",
+        freeze_backbone=False
+    )
+    
+    model = stateFineTuningModelV2(
         configurer=config, 
         fine_tuning_head="classification", 
         output_size=len(label_set),
-        freeze_backbone=True,
-        use_perturbation_embeddings=True,
-        default_perturbation_type="non-targeting"
+        freeze_backbone=False
     )
 
-    # Process the data for training (similar to scGPT)
+    # Process the data for training
     data = model.process_data(adata)
 
     # Create a dictionary mapping the classes to unique integers for training
@@ -83,7 +90,7 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
     for i in range(len(cell_types)):
         cell_types[i] = class_id_dict[cell_types[i]]
 
-    # Fine-tune (similar to scGPT)
+    # Fine-tune
     model.train(train_input_data=data, train_labels=cell_types)
     ```
     """
@@ -93,9 +100,6 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         configurer: stateConfig = None,
         fine_tuning_head: Literal["classification"] | HelicalBaseFineTuningHead = "classification",
         output_size: Optional[int] = None,
-        freeze_backbone: bool = True,
-        use_perturbation_embeddings: bool = True,
-        default_perturbation_type: str = "non-targeting",
     ):
 
         if configurer is None:
@@ -105,79 +109,184 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
 
         HelicalBaseFineTuningModel.__init__(self, fine_tuning_head, output_size)
         
-        # Store perturbation embedding configuration
-        self.use_perturbation_embeddings = use_perturbation_embeddings
-        self.default_perturbation_type = default_perturbation_type
+        if not os.path.exists(self.config["model_config"]):
+            raise FileNotFoundError(f"config.yaml not found at {self.config['model_config']}. Please ensure it exists.")
+        
+        logger.info(f"Loading existing config.yaml from: {self.config['model_config']}")
+        with open(self.config["model_config"], "r") as f:
+            self._model_config = yaml.safe_load(f)
+
+        # Initialize attributes that might be used later
+        self._var_dims = None
+        self._gene_dim = None
+        self.has_var_dims = True
+        self.use_perturbation_embeddings = self.config["use_perturbation_embeddings"]
+        self.default_perturbation_type = self.config["control_pert"]
         
         # Load the pre-trained state model or initialize fresh
-        checkpoint_path = os.path.join(self.config["model_dir"], "final.ckpt")
-        
+        checkpoint_path = os.path.join(self.config["model_dir"], self.config["checkpoint_name"])
+        self.model_dir = self.config["model_dir"]
+
         if os.path.exists(checkpoint_path):
             logger.info(f"Loading pre-trained model from: {checkpoint_path}")
             self.model = StateTransitionPerturbationModel.load_from_checkpoint(checkpoint_path)
         else:
             logger.info(f"No checkpoint found at {checkpoint_path}, initializing fresh model from config")
-            # Initialize fresh model using config.yaml and var_dims.pkl (same as training)
             self._initialize_fresh_model()
-
-        # Get the actual output dimension from the loaded model
-        self.embed_dim = self.model.output_dim
-        self.cell_sentence_len = self.model.cell_sentence_len
-        self.device = next(self.model.parameters()).device
-        self.fine_tuning_head.set_dim_size(self.embed_dim)
         
-        # Freeze backbone if requested
-        self.freeze_backbone = freeze_backbone
-        if freeze_backbone:
-            for param in self.model.parameters():
-                param.requires_grad = False
-            logger.info("Backbone model frozen - only fine-tuning head will be trained")
+        # Check if model was successfully initialized
+        if self.has_var_dims:
+            # Get the actual output dimension from the loaded model
+            self.embed_dim = self.model.output_dim
+            self.cell_sentence_len = self.model.cell_sentence_len
+            self.device = next(self.model.parameters()).device
+            self.fine_tuning_head.set_dim_size(self.embed_dim)
         else:
-            logger.info("Full model fine-tuning - both backbone and head will be trained")
+            logger.info("Model will be initialized when data is inputted via process_data()")
+            self.embed_dim = None
+            self.cell_sentence_len = None
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
+        self.freeze_backbone = self.config["freeze_backbone"]
+        if self.has_var_dims:
+            if self.freeze_backbone:
+                for param in self.model.parameters():
+                    param.requires_grad = False
+                logger.info("Backbone model frozen - only fine-tuning head will be trained")
+            else:
+                logger.info("Full model fine-tuning - both backbone and head will be trained")
+        else:
+            logger.info(f"Freeze backbone setting: {self.freeze_backbone} (will be applied when model is initialized)")
+
+    def _create_var_dims_from_adata(self, adata):
+        """Create var_dims.pkl from adata following the same logic as state_train.py."""
+        logger.info("Creating var_dims from adata")
+
+        os.makedirs(self.model_dir, exist_ok=True)
+        
+        # Analyze the data to create var_dims (following state_train.py logic)
+        n_genes = adata.n_vars
+        n_cells = adata.n_obs
+        
+        logger.info(f"Data shape: {adata.shape}")
+        logger.info(f"Available columns: {list(adata.obs.columns)}")
+        
+        # Get perturbation info
+        if self.config["pert_col"] in adata.obs.columns:
+            unique_perts = adata.obs[self.config["pert_col"]].unique()
+            n_perts = len(unique_perts)
+            pert_names = list(unique_perts)
+            logger.info(f"Found {n_perts} unique perturbations: {pert_names[:5]}...")
+        else:
+            unique_perts = [self.config["control_pert"]]
+            n_perts = 1
+            pert_names = [self.config["control_pert"]]
+            logger.info(f"No target_gene column found, using default '{self.config['control_pert']}'")
+        
+        # Get batch info
+        if self.config["batch_col"] in adata.obs.columns:
+            unique_batches = adata.obs[self.config["batch_col"]].unique()
+            n_batches = len(unique_batches)
+            batch_names = list(unique_batches)
+            logger.info(f"Found {n_batches} unique batches: {batch_names}")
+        else:
+            unique_batches = [self.config["batch_col"]]
+            n_batches = 1
+            batch_names = [self.config["batch_col"]]
+            logger.info(f"No {self.config['batch_col']} column found, using default '{self.config['batch_col']}'")
+        
+        # Get cell type info
+        if "cell_type" in adata.obs.columns:
+            unique_cell_types = adata.obs["cell_type"].unique()
+            cell_type_names = list(unique_cell_types)
+            logger.info(f"Found {len(cell_type_names)} unique cell types: {cell_type_names}")
+        else:
+            cell_type_names = ["unknown"]
+            logger.info("No cell_type column found, using default 'unknown'")
+        
+        # Create var_dims dictionary (following state_train.py structure)
+        var_dims = {
+            "input_dim": n_genes,           # Number of input genes
+            "output_dim": n_genes,          # Number of output genes (same as input for most cases)
+            "hvg_dim": n_genes,             # Number of highly variable genes (using all genes for simplicity)
+            "gene_dim": n_genes,            # Total number of genes
+            "pert_dim": n_perts,            # Number of different perturbations
+            "batch_dim": n_batches,         # Number of different batches
+            "gene_names": list(adata.var_names),  # List of gene names
+            "pert_names": pert_names,       # List of perturbation names
+            "batch_names": batch_names,     # List of batch names
+            "cell_type_names": cell_type_names  # List of cell type names
+        }
+        
+        logger.info(f"Created var_dims:")
+        for key, value in var_dims.items():
+            if isinstance(value, (list, np.ndarray)):
+                logger.info(f"  {key}: {len(value)} items")
+            else:
+                logger.info(f"  {key}: {value}")
+        
+        # Save var_dims
+        var_dims_path = os.path.join(self.model_dir, "var_dims.pkl")
+        with open(var_dims_path, "wb") as f:
+            pickle.dump(var_dims, f)
+        
+        logger.info(f"Saved var_dims to: {var_dims_path}")
+        return var_dims
+
+    def _create_gene_dim_from_var_dims(self, var_dims, output_space="gene"):
+        """Calculate gene_dim following the same logic as state_train.py."""
+        logger.info(f"Creating gene_dim (output_space: {output_space})")
+        
+        if output_space == "gene":
+            gene_dim = var_dims.get("hvg_dim", 2000)
+            logger.info(f"Using hvg_dim for gene_dim: {gene_dim}")
+        else:
+            gene_dim = var_dims.get("gene_dim", 2000)
+            logger.info(f"Using gene_dim: {gene_dim}")
+        
+        return gene_dim
 
     def _initialize_fresh_model(self):
         """Initialize a fresh model using config.yaml and var_dims.pkl (same as training model)."""
-        import yaml
-        import pickle
-        from omegaconf import OmegaConf
+        var_dims_path = os.path.join(self.model_dir, "var_dims.pkl")
         
-        model_dir = self.config["model_dir"]
-        
-        # Load config.yaml
-        config_yaml_path = self.config["model_config"]
-        if not os.path.exists(config_yaml_path):
-            raise FileNotFoundError(f"config.yaml not found at {config_yaml_path}")
-        
-        with open(config_yaml_path, "r") as f:
-            self.model_config = yaml.safe_load(f)
-        
-        # Load var_dims.pkl
-        var_dims_path = os.path.join(model_dir, "var_dims.pkl")
         if not os.path.exists(var_dims_path):
-            raise FileNotFoundError(f"var_dims.pkl not found at {var_dims_path}")
-        
+            logger.info("var_dims.pkl not found, will be created when process_data is called")
+            self.has_var_dims = False
+            return
+
+        # Load var_dims.pkl
         with open(var_dims_path, "rb") as f:
             var_dims = pickle.load(f)
         
         # Calculate gene_dim (same logic as training)
-        output_space = self.model_config["data"]["kwargs"].get("output_space", "gene")
-        if output_space == "gene":
-            gene_dim = var_dims.get("hvg_dim", 2000)
-        else:
-            gene_dim = var_dims.get("gene_dim", 2000)
+        output_space = self._model_config["data"]["kwargs"].get("output_space", "gene")
+        self._gene_dim = self._create_gene_dim_from_var_dims(var_dims, output_space)
         
-        # Prepare module config (same as training)
-        training_config = self.model_config["training"]
-        data_config = self.model_config["data"]["kwargs"]
-        module_config = {**self.model_config["model"]["kwargs"], **training_config}
+        # Initialize model with same parameters as training
+        self._initialize_model_from_config(var_dims, self._gene_dim)
         
+        # Store var_dims for future use
+        self._var_dims = var_dims
+        
+        logger.info("Successfully initialized fresh model from existing config.yaml and var_dims.pkl")
+
+    def _initialize_model_from_config(self, var_dims, gene_dim):
+        """Initialize model following the exact same logic as state_train.py."""
+        logger.info("Initializing model")
+        
+        training_config = self._model_config["training"]
+        data_config = self._model_config["data"]["kwargs"]
+        model_kwargs = self._model_config["model"]["kwargs"]
+        
+        module_config = {**model_kwargs, **training_config}
         module_config["embed_key"] = data_config["embed_key"]
         module_config["output_space"] = data_config["output_space"]
         module_config["gene_names"] = var_dims["gene_names"]
         module_config["batch_size"] = training_config["batch_size"]
         module_config["control_pert"] = data_config.get("control_pert", "non-targeting")
-        
-        # Initialize model with same parameters as training
+                
+        # Initialize model with same parameters as state_train.py
         self.model = StateTransitionPerturbationModel(
             input_dim=var_dims["input_dim"],
             gene_dim=gene_dim,
@@ -188,7 +297,11 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             **module_config,
         )
         
-        logger.info("Successfully initialized fresh model from config.yaml and var_dims.pkl")
+        logger.info("Successfully initialized model")
+        logger.info(f"Model input_dim: {self.model.input_dim}")
+        logger.info(f"Model output_dim: {self.model.output_dim}")
+        logger.info(f"Model pert_dim: {self.model.pert_dim}")
+        logger.info(f"Model gene_dim: {gene_dim}")
 
     def _forward(self, embeddings: torch.Tensor) -> torch.Tensor:
         """
@@ -200,6 +313,7 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
     def process_data(self, adata: ad.AnnData) -> EmbeddingDataset:
         """
         Process AnnData through the state model to get embeddings, similar to scGPT's process_data.
+        If var_dims.pkl and config.yaml don't exist, they will be created from the data.
         
         Parameters
         ----------
@@ -212,6 +326,38 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             Processed dataset containing embeddings (no labels - user provides them separately)
         """
         logger.info("Processing data for state model fine-tuning.")
+        
+        # If we don't have var_dims yet, create them from the data
+        if self.has_var_dims is False:
+            logger.info("Creating var_dims from adata")
+            
+            # Create var_dims from adata
+            var_dims = self._create_var_dims_from_adata(adata)
+            
+            # Calculate gene_dim
+            output_space = self._model_config["data"]["kwargs"].get("output_space", "gene")
+            gene_dim = self._create_gene_dim_from_var_dims(var_dims, output_space)
+            
+            # Initialize the model
+            self._initialize_model_from_config(var_dims, gene_dim)
+            
+            # Update embed_dim and device after model initialization
+            self.embed_dim = self.model.output_dim
+            self.cell_sentence_len = self.model.cell_sentence_len
+            self.device = next(self.model.parameters()).device
+            self.fine_tuning_head.set_dim_size(self.embed_dim)
+            
+            # Apply freeze_backbone setting now that model is initialized
+            if self.freeze_backbone:
+                for param in self.model.parameters():
+                    param.requires_grad = False
+                logger.info("Backbone model frozen - only fine-tuning head will be trained")
+            else:
+                logger.info("Full model fine-tuning - both backbone and head will be trained")
+            
+            # Store for future use
+            self._var_dims = var_dims
+            self._gene_dim = gene_dim
         
         # Convert AnnData to the format expected by the model
         # We need to create a batch dict similar to what the model expects
@@ -274,7 +420,7 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             return torch.zeros(batch_size, self.model.pert_dim, dtype=torch.float32)
         
         # Try to load the actual perturbation one-hot mapping from the model directory
-        model_dir = os.path.dirname(self.config["model_dir"])
+        model_dir = self.model_dir
         pert_onehot_map_path = os.path.join(model_dir, "pert_onehot_map.pt")
         
         if os.path.exists(pert_onehot_map_path):

@@ -12,7 +12,7 @@ class stateConfig:
         embed_key: str = None,
         celltype_col: str = None,
         celltypes: str = None,
-        batch_col: str = None,
+        batch_col: str = "batch_var",
         control_pert: str = "non-targeting",
         seed: int = 42,
         max_set_len: int = None,
@@ -27,6 +27,7 @@ class stateConfig:
         model_name: str = "best_model",
         freeze_backbone: bool = True,
         checkpoint_name: str = "final.ckpt",
+        use_perturbation_embeddings: bool = True,
     ):
 
         model_path = Path(CACHE_DIR_HELICAL, "state/state_finetune", f"{model_name}.pt")
@@ -45,6 +46,11 @@ class stateConfig:
                 "model_path": model_path,
                 "model_config": model_config,
                 "freeze_backbone": freeze_backbone,
+                "checkpoint_name": checkpoint_name,
+                "control_pert": control_pert,
+                "pert_col": pert_col,
+                "batch_col": batch_col,
+                "use_perturbation_embeddings": use_perturbation_embeddings,
             },
             "perturb": {
                 "output": output,
