@@ -31,14 +31,6 @@ class stateConfig:
         model_path = Path(CACHE_DIR_HELICAL, "state/state_CP", f"{model_name}.pt")
         os.makedirs(os.path.join(CACHE_DIR_HELICAL, "state/state_CP"), exist_ok=True)
         self.config = {      
-
-            # "batch_size": batch_size,
-            # "checkpoint": checkpoint,
-            # "model_path": model_path,
-            # "list_of_files_to_download": [
-
-            # ],
-
             "finetune": {
                 "batch_size": batch_size,
                 "head": head,

@@ -307,14 +307,6 @@ configs = {
 vcc_eval(configs)
 ```
 
-
-
-
-
-
-
-
-
 ## Citation
 
 To cite the STATE model, please use the following reference:
