@@ -1,10 +1,10 @@
-from helical.models.scgpt import stateConfig, stateFineTuningModel
+from helical.models.state import stateConfig, stateFineTuningModel
 from omegaconf import DictConfig
 import hydra
 import scanpy as sc
 
 
-@hydra.main(version_base=None, config_path="../run_models/configs", config_name="state_train_configs")
+@hydra.main(version_base=None, config_path="../run_models/configs", config_name="state_config")
 def run_fine_tuning(cfg: DictConfig):
 
     # Load the desired dataset
@@ -18,7 +18,7 @@ def run_fine_tuning(cfg: DictConfig):
     config = stateConfig(
         batch_size=8,
         model_dir="competition/first_run",
-        model_config="../run_models/configs/state_config.yaml",
+        model_config="examples/run_models/configs/state_config.yaml",
         freeze_backbone=True
     )
 

@@ -1,4 +1,4 @@
-from helical.models.scgpt import (
+from helical.models.state import (
     stateConfig, 
     stateEmbeddingsModel, 
     trainingConfig, 
@@ -48,7 +48,7 @@ def run_state(cfg: DictConfig):
     state_config = stateConfig(
         output = "competition/prediction.h5ad",
         model_dir = "competition/first_run",
-        model_config = "configs/state_config.yaml",
+        model_config = "examples/run_models/configs/state_config.yaml",
         pert_col = "target_gene",
     )
 
