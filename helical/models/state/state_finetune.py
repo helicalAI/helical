@@ -152,7 +152,7 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         self.head_weights_path = os.path.join(self.model_dir, 'head_weights.pt') if os.path.exists(os.path.join(self.model_dir, 'head_weights.pt')) else None
         
         if self.has_var_dims:
-            self.load_pt_weights(self.backbone_weights_path, self.head_weights_path)
+            self.load_pt_weights()
         
         self.freeze_backbone = self.config["freeze_backbone"]
         if self.has_var_dims:
