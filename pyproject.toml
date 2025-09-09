@@ -39,11 +39,11 @@ dependencies = [
     'louvain==0.8.2',
     'pyensembl',
     'datasets==3.6.0',
-    # added dependencies for state 
+    
+    # for state
     'lightning==2.5.5',
     'geomloss==0.2.6',
-    'cell-load==0.7.11',
-    'cell-eval==0.5.43'
+    'cell-load',
 ]
 
 
