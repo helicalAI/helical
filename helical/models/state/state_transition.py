@@ -31,7 +31,9 @@ class stateTransitionModel(HelicalBaseFoundationModel):
         
         self.config = configurer.config["perturb"]
 
-        Downloader().download_via_name(self.config["list_of_files_to_download"])
+        downloader = Downloader()
+        for file in self.config["list_of_files_to_download"]:
+            downloader.download_via_name(file)
 
         with open(os.path.join(self.config["model_config"]), "r") as f:
             self.model_config = yaml.safe_load(f)

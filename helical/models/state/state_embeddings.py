@@ -24,7 +24,9 @@ class stateEmbeddingsModel(HelicalBaseFoundationModel):
 
         self.config = configurer.config["embed"]
 
-        Downloader().download_via_name(self.config["list_of_files_to_download"])
+        downloader = Downloader()
+        for file in self.config["list_of_files_to_download"]:
+            downloader.download_via_name(file)
 
         self.model_dir = self.config["cache_dir"]
         ckpt_path = os.path.join(self.model_dir, self.config["embed_checkpoint"])

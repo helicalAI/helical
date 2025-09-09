@@ -14,12 +14,12 @@ import scanpy as sc
 def run_state(cfg: DictConfig):
 
     original_data = sc.read_h5ad("./competition_support_set/competition_val_template.h5ad")
-    state_config = stateConfig()
 
     # embedding model
+    state_config = stateConfig()
     state_model = stateEmbeddingsModel(configurer=state_config)
+    
     ann_data = original_data[:10].copy()
-
     ann_data = state_model.process_data(ann_data)
     embeddings = state_model.get_embeddings(ann_data)
 
@@ -48,7 +48,7 @@ def run_state(cfg: DictConfig):
     state_config = stateConfig(
         output = "competition/prediction.h5ad",
         model_dir = "competition/first_run",
-        model_config = "configs/config.yaml",
+        model_config = "configs/state_config.yaml",
         pert_col = "target_gene",
     )
 
