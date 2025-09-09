@@ -133,7 +133,6 @@ def main():
         Path("yolksac_human.h5ad"),
         "https://huggingface.co/datasets/helical-ai/yolksac_human/resolve/main/data/17_04_24_YolkSacRaw_F158_WE_annots.h5ad?download=true",)
     
-    ########### state dataset download ###########
     downloader.download_via_link(
         Path("competition_support_set.zip"),
         "https://storage.googleapis.com/vcc_data_prod/datasets/state/competition_support_set.zip",
@@ -146,19 +145,17 @@ def main():
         z.extractall("competition_support_set")
     toml.dump({**toml.load(open("competition_support_set/starter.toml")), **{"datasets": {"replogle_h1": str(Path("competition_support_set").absolute() / "{competition_train,k562_gwps,rpe1,jurkat,k562,hepg2}.h5")}}}, open("competition_support_set/starter.toml", "w"))
     
-    downloader.download_via_name("state_embeddings/se600m_epoch16.ckpt")
-    downloader.download_via_name("state_embeddings/protein_embeddings.pt")
-    downloader.download_via_name("state_embeddings/config.yaml")
+    downloader.download_via_name("state/state_embed/se600m_epoch16.ckpt")
+    downloader.download_via_name("state/state_embed/protein_embeddings.pt")
+    downloader.download_via_name("state/state_embed/config.yaml")
 
-    downloader.download_via_name("state_transition/config.yaml")
-    downloader.download_via_name("state_transition/final.ckpt")
-    downloader.download_via_name("state_transition/pert_onehot_map.pt")
-    downloader.download_via_name("state_transition/batch_onehot_map.pkl")
-    downloader.download_via_name("state_transition/var_dims.pkl")
-    downloader.download_via_name("state_transition/cell_type_onehot_map.pkl")
-    downloader.download_via_name("state_transition/data_module.torch")
-
-    ########### state dataset ends here ###########
+    downloader.download_via_name("state/state_transition/config.yaml")
+    downloader.download_via_name("state/state_transition/final.ckpt")
+    downloader.download_via_name("state/state_transition/pert_onehot_map.pt")
+    downloader.download_via_name("state/state_transition/batch_onehot_map.pkl")
+    downloader.download_via_name("state/state_transition/var_dims.pkl")
+    downloader.download_via_name("state/state_transition/cell_type_onehot_map.pkl")
+    downloader.download_via_name("state/state_transition/data_module.torch")
 
     return True
 
