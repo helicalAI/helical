@@ -30,24 +30,25 @@
 **Technical usage:**
 
 - Tokenizing transcriptomes
-- Tokenizing conditions (i.e. meta-information associated with individual genes, like perturbation experiment alterations, which are indicated by perturbation tokens)
-- Pretraining
+- Tokenizing conditions (i.e. perturbation experiment alterations, which are indicated by perturbation tokens)
+- Pretraining 
 - Finetuning 
 - Pre- and post-perturbation cell embeddings
 
 **Broader research applications:**  
 
 - Perturbation response prediction
+- Embedding single-cell expression data for downstream tasks 
 
 ## Training Data
 
-**Data Sources:** 
+**Data Sources:**
 
 - Publicly available datasets and code are described in the preprint's code and model availability section.
 
-**Data Volume:**  
+**Data Volume:**
 
-- Pre-trained on data from 167 million human cells for the embedding model and over 100 million cells for the transition model. The perturbed cells are chemically or genetically perturbed cells from large scale single-cell screens.
+- Pre-trained on data from 167 million human cells for the embedding model and over 100 million cells for the perturbation model. The perturbed cells are chemically or genetically perturbed cells from large scale single-cell screens.
 
 **Preprocessing:**  
 
@@ -57,9 +58,9 @@
 
 **Evaluation Metrics:**  
 
-- Classification metrics: 
-- Biological conservation metrics: 
-- Batch correction metrics: 
+- Classification metrics: Accuracy, Precision, Recall
+- Biological conservation metrics: Cell-Eval (incl. p-values, fold change, ranking, correlation)
+- Batch correction metrics: Batch Embeddings added to input
 
 **Testing Data:**  
 
@@ -71,7 +72,7 @@
 
 - Single-cell RNA sequencing data requires the destruction of cells during measurement. This prevents observations of their non-perturbed states. Some perturbations such as gene knockout may also not occur experimentally and incorrectly flagged as a pertubed datapoint. 
 
-- STATE evaluation metrics are more sensitive on an individual gene basis but stronger on an ensemble level. As pointed out by the authors metrics such as accuracy of individual DE genes depends on dataset size/quality.
+- STATE evaluation metrics are more sensitive on an individual gene basis but stronger on an ensemble/batch level. As pointed out by the authors metrics such as accuracy of individual DE genes depends on dataset size/quality.
 
 - Attention maps are sensitive to cell set heterogeneity.
 
@@ -134,7 +135,8 @@ adata = state_transition.get_embeddings(adata)
 We can add a classification or regression head to the perturbed cell embeddings as below.
 
 ```python
-from helical.models.state import stateModularFineTuningModel, stateConfig
+from helical.models.state import stateModularFineTuningModel
+from helical.models.state import stateConfig
 import scanpy as sc
 
 # Load the desired dataset
@@ -152,7 +154,6 @@ model = stateModularFineTuningModel(
     configurer=config, 
     fine_tuning_head="classification", 
     output_size=len(label_set),
-    freeze_backbone=False,
 )
 
 # Process the data for training 
