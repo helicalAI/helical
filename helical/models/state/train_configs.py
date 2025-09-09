@@ -36,7 +36,6 @@ class trainingConfig:
 
         self.config = {
             "name": name,
-            # we have to put checkpint last.cpkt in join(output_dir, name)
             "output_dir": output_dir,
             "checkpoint_name": checkpoint_name,
             "predict_only": predict_only,
@@ -116,7 +115,6 @@ class trainingConfig:
                 },
             },
             "training": {
-                # "wandb_track": True,
                 "weight_decay": weight_decay,
                 "batch_size": batch_size,
                 "lr": lr_rate,

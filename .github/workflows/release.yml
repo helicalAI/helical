@@ -147,6 +147,14 @@ jobs:
         run: |
           python examples/fine_tune_models/fine_tune_caduceus.py
 
+      - name: Execute State
+        run: |
+          python examples/run_models/run_state.py
+      
+      - name: Fine-tune State
+        run: |
+          python examples/fine_tune_models/fine_tune_state.py
+
   notebooks:
     needs: tests
     runs-on: self-hosted

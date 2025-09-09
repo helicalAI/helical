@@ -8,7 +8,8 @@ from omegaconf import OmegaConf
 import numpy as np
 from helical.models.base_models import HelicalBaseFoundationModel
 from helical.models.state.state_config import stateConfig
-from huggingface_hub import snapshot_download
+from helical.utils.downloader import Downloader
+
 
 LOGGER = logging.getLogger(__name__)
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
@@ -23,22 +24,10 @@ class stateEmbeddingsModel(HelicalBaseFoundationModel):
 
         self.config = configurer.config["embed"]
 
-        # downloader = Downloader()
-        # # we need to download the model weights for SE
-        # downloader.download_via_name(self.config["list_of_files_to_download"])
-        self.model_dir = self.config["cache_dir"]
+        Downloader().download_via_name(self.config["list_of_files_to_download"])
 
-        snapshot_download(
-            repo_id=self.config["repo_id"],
-            local_dir=self.model_dir,
-            local_dir_use_symlinks=False,
-            allow_patterns=[
-                self.config["filename"],
-                "config.yaml",
-                "protein_embeddings.pt",
-            ]
-        )
-        ckpt_path = os.path.join(self.model_dir, self.config["filename"])
+        self.model_dir = self.config["cache_dir"]
+        ckpt_path = os.path.join(self.model_dir, self.config["embed_checkpoint"])
 
         LOGGER.info(f"Using model checkpoint: {ckpt_path}")
 

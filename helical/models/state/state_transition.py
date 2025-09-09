@@ -17,11 +17,10 @@ from .model_dir._perturb_utils.utils import (
     argmax_index_from_any,
     pad_adata_with_tsv,
     prepare_batch,
-    cfg_setup_inference,
 )
-from huggingface_hub import hf_hub_download, snapshot_download
 from helical.models.base_models import HelicalBaseFoundationModel
 import yaml
+from helical.utils.downloader import Downloader
 
 # this code to do inference on new data using the transition model
 class stateTransitionModel(HelicalBaseFoundationModel):
@@ -32,11 +31,7 @@ class stateTransitionModel(HelicalBaseFoundationModel):
         
         self.config = configurer.config["perturb"]
 
-        # snapshot_download(
-        #     repo_id=self.config["repo_id"],
-        #     local_dir=self.config["hf_model_dir"],
-        #     local_dir_use_symlinks=False,
-        # )
+        Downloader().download_via_name(self.config["list_of_files_to_download"])
 
         with open(os.path.join(self.config["model_config"]), "r") as f:
             self.model_config = yaml.safe_load(f)
@@ -476,8 +471,7 @@ class stateTransitionModel(HelicalBaseFoundationModel):
             ".h5ad", "_simulated.h5ad"
         )
 
-        if self.config["save"]:
-            adata.write_h5ad(output_path)
+        adata.write_h5ad(output_path)
 
         print("\n=== Inference complete ===")
         print(f"Input cells:         {n_total}")
