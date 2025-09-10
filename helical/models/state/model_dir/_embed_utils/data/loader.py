@@ -11,7 +11,7 @@ from typing import Dict, Optional
 from torch.utils.data import DataLoader
 from .. import utils
 
-log = logging.getLogger(__file__)
+LOGGER = logging.getLogger(__file__)
 
 # Threshold for flagging implausibly high UMIs when we undo a log1p
 EXPONENTIATED_UMIS_LIMIT = 5_000_000
@@ -168,11 +168,11 @@ class H5adSentenceDataset(data.Dataset):
                 )
                 counts = counts.to_dense()
             else:
-                log.info(ds_idx)
+                LOGGER.info(ds_idx)
                 counts = torch.tensor(h5f["X"][ds_idx]).unsqueeze(0)
 
         except Exception as iex:
-            log.exception(f"Error in dataset {dataset} at index {ds_idx}")
+            LOGGER.exception(f"Error in dataset {dataset} at index {ds_idx}")
             raise iex
 
         dataset_num = self.datasets_to_num[dataset]
@@ -233,10 +233,10 @@ class FilteredGenesCounts(H5adSentenceDataset):
                 gene_names = adata.var[self.gene_column].values
                 new_mapping = np.array([global_pos.get(g, -1) for g in gene_names])
 
-            log.info(f"{(new_mapping != -1).sum()} genes mapped to embedding file (out of {len(new_mapping)})")
+            LOGGER.info(f"{(new_mapping != -1).sum()} genes mapped to embedding file (out of {len(new_mapping)})")
             self.ds_emb_map[adata_name] = new_mapping
 
-        print(
+        LOGGER.info(
             f"!!! {(self.ds_emb_map[adata_name] != -1).sum()} genes mapped to embedding file (out of {len(self.ds_emb_map[adata_name])})"
         )
 
@@ -457,7 +457,7 @@ class VCIDatasetSentenceCollator(object):
     # counts_raw is a view of a cell
     def sample_cell_sentences(self, counts_raw, dataset, shared_genes=None, valid_gene_mask=None, downsample_frac=None):
         if torch.isnan(counts_raw).any():
-            log.error(f"NaN values in counts for dataset {dataset}")
+            LOGGER.error(f"NaN values in counts for dataset {dataset}")
 
         if torch.any(counts_raw < 0):
             counts_raw = F.relu(counts_raw)

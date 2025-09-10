@@ -297,7 +297,7 @@ class stateEmbed(HelicalBaseFoundationModel):
         """Convert the adata.X matrix to CSR format if it's not already."""
 
         if issparse(adata.X) and not isinstance(adata.X, csr_matrix):
-            print(f"Converting {type(adata.X).__name__} to csr_matrix format")
+            LOGGER.info(f"Converting {type(adata.X).__name__} to csr_matrix format")
             adata.X = csr_matrix(adata.X)
         return adata
 

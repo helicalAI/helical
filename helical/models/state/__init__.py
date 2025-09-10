@@ -18,7 +18,7 @@ from .state_config import stateConfig
 from .train_configs import trainingConfig
 
 # from .state_embeddings import stateEmbeddingsModel
-from .state_embeddings import stateEmbeddingsModel
+from .state_embeddings import stateEmbed
 from .state_transition import stateTransitionModel
 from .state_finetune import stateFineTuningModel 
 from .state_train import stateTransitionTrainModel
