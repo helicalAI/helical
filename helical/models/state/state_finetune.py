@@ -19,7 +19,7 @@ import scanpy as sc
 import pickle
 import yaml
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class EmbeddingDataset:
@@ -108,14 +108,13 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             self.config = configurer.config["finetune"]
 
         HelicalBaseFineTuningModel.__init__(self, fine_tuning_head, output_size)
-        
 
         if not os.path.exists(self.config["model_config"]):
             raise FileNotFoundError(
                 f"config.yaml not found at {self.config['model_config']}. Please ensure it exists."
             )
 
-        logger.info(f"Loading existing config.yaml from: {self.config['model_config']}")
+        LOGGER.info(f"Loading existing config.yaml from: {self.config['model_config']}")
         with open(self.config["model_config"], "r") as f:
             self._model_config = yaml.safe_load(f)
 
@@ -133,12 +132,12 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         self.model_dir = self.config["model_dir"]
 
         if os.path.exists(checkpoint_path):
-            logger.info(f"Loading pre-trained model from: {checkpoint_path}")
+            LOGGER.info(f"Loading pre-trained model from: {checkpoint_path}")
             self.model = StateTransitionPerturbationModel.load_from_checkpoint(
                 checkpoint_path
             )
         else:
-            logger.info(
+            LOGGER.info(
                 f"No checkpoint found at {checkpoint_path}, initializing fresh model from config"
             )
             self._initialize_fresh_model()
@@ -151,7 +150,7 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             self.device = next(self.model.parameters()).device
             self.fine_tuning_head.set_dim_size(self.embed_dim)
         else:
-            logger.info(
+            LOGGER.info(
                 "Model will be initialized when data is inputted via process_data()"
             )
             self.embed_dim = None
@@ -178,21 +177,21 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             if self.freeze_backbone:
                 for param in self.model.parameters():
                     param.requires_grad = False
-                logger.info(
+                LOGGER.info(
                     "Backbone model frozen - only fine-tuning head will be trained"
                 )
             else:
-                logger.info(
+                LOGGER.info(
                     "Full model fine-tuning - both backbone and head will be trained"
                 )
         else:
-            logger.info(
+            LOGGER.info(
                 f"Freeze backbone setting: {self.freeze_backbone} (will be applied when model is initialized)"
             )
 
     def _create_var_dims_from_adata(self, adata):
         """Create var_dims.pkl from adata following the same logic as state_train.py."""
-        logger.info("Creating var_dims from adata")
+        LOGGER.info("Creating var_dims from adata")
 
         os.makedirs(self.model_dir, exist_ok=True)
 
@@ -200,20 +199,20 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         n_genes = adata.n_vars
         n_cells = adata.n_obs
 
-        logger.info(f"Data shape: {adata.shape}")
-        logger.info(f"Available columns: {list(adata.obs.columns)}")
+        LOGGER.info(f"Data shape: {adata.shape}")
+        LOGGER.info(f"Available columns: {list(adata.obs.columns)}")
 
         # Get perturbation info
         if self.config["pert_col"] in adata.obs.columns:
             unique_perts = adata.obs[self.config["pert_col"]].unique()
             n_perts = len(unique_perts)
             pert_names = list(unique_perts)
-            logger.info(f"Found {n_perts} unique perturbations: {pert_names[:5]}...")
+            LOGGER.info(f"Found {n_perts} unique perturbations: {pert_names[:5]}...")
         else:
             unique_perts = [self.config["control_pert"]]
             n_perts = 1
             pert_names = [self.config["control_pert"]]
-            logger.info(
+            LOGGER.info(
                 f"No target_gene column found, using default '{self.config['control_pert']}'"
             )
 
@@ -222,12 +221,12 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             unique_batches = adata.obs[self.config["batch_col"]].unique()
             n_batches = len(unique_batches)
             batch_names = list(unique_batches)
-            logger.info(f"Found {n_batches} unique batches: {batch_names}")
+            LOGGER.info(f"Found {n_batches} unique batches: {batch_names}")
         else:
             unique_batches = [self.config["batch_col"]]
             n_batches = 1
             batch_names = [self.config["batch_col"]]
-            logger.info(
+            LOGGER.info(
                 f"No {self.config['batch_col']} column found, using default '{self.config['batch_col']}'"
             )
 
@@ -235,12 +234,12 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         if "cell_type" in adata.obs.columns:
             unique_cell_types = adata.obs["cell_type"].unique()
             cell_type_names = list(unique_cell_types)
-            logger.info(
+            LOGGER.info(
                 f"Found {len(cell_type_names)} unique cell types: {cell_type_names}"
             )
         else:
             cell_type_names = ["unknown"]
-            logger.info("No cell_type column found, using default 'unknown'")
+            LOGGER.info("No cell_type column found, using default 'unknown'")
 
         # Create var_dims dictionary (following state_train.py structure)
         var_dims = {
@@ -256,31 +255,31 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             "cell_type_names": cell_type_names,  # List of cell type names
         }
 
-        logger.info(f"Created var_dims:")
+        LOGGER.info(f"Created var_dims:")
         for key, value in var_dims.items():
             if isinstance(value, (list, np.ndarray)):
-                logger.info(f"  {key}: {len(value)} items")
+                LOGGER.info(f"  {key}: {len(value)} items")
             else:
-                logger.info(f"  {key}: {value}")
+                LOGGER.info(f"  {key}: {value}")
 
         # Save var_dims
         var_dims_path = os.path.join(self.model_dir, "var_dims.pkl")
         with open(var_dims_path, "wb") as f:
             pickle.dump(var_dims, f)
 
-        logger.info(f"Saved var_dims to: {var_dims_path}")
+        LOGGER.info(f"Saved var_dims to: {var_dims_path}")
         return var_dims
 
     def _create_gene_dim_from_var_dims(self, var_dims, output_space="gene"):
         """Calculate gene_dim following the same logic as state_train.py."""
-        logger.info(f"Creating gene_dim (output_space: {output_space})")
+        LOGGER.info(f"Creating gene_dim (output_space: {output_space})")
 
         if output_space == "gene":
             gene_dim = var_dims.get("hvg_dim", 2000)
-            logger.info(f"Using hvg_dim for gene_dim: {gene_dim}")
+            LOGGER.info(f"Using hvg_dim for gene_dim: {gene_dim}")
         else:
             gene_dim = var_dims.get("gene_dim", 2000)
-            logger.info(f"Using gene_dim: {gene_dim}")
+            LOGGER.info(f"Using gene_dim: {gene_dim}")
 
         return gene_dim
 
@@ -289,7 +288,7 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         var_dims_path = os.path.join(self.model_dir, "var_dims.pkl")
 
         if not os.path.exists(var_dims_path):
-            logger.info(
+            LOGGER.info(
                 "var_dims.pkl not found, will be created when process_data is called"
             )
             self.has_var_dims = False
@@ -309,13 +308,13 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         # Store var_dims for future use
         self._var_dims = var_dims
 
-        logger.info(
+        LOGGER.info(
             "Successfully initialized fresh model from existing config.yaml and var_dims.pkl"
         )
 
     def _initialize_model_from_config(self, var_dims, gene_dim):
         """Initialize model following the exact same logic as state_train.py."""
-        logger.info("Initializing model")
+        LOGGER.info("Initializing model")
 
         training_config = self._model_config["training"]
         data_config = self._model_config["data"]["kwargs"]
@@ -339,11 +338,11 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             **module_config,
         )
 
-        logger.info("Successfully initialized model")
-        logger.info(f"Model input_dim: {self.model.input_dim}")
-        logger.info(f"Model output_dim: {self.model.output_dim}")
-        logger.info(f"Model pert_dim: {self.model.pert_dim}")
-        logger.info(f"Model gene_dim: {gene_dim}")
+        LOGGER.info("Successfully initialized model")
+        LOGGER.info(f"Model input_dim: {self.model.input_dim}")
+        LOGGER.info(f"Model output_dim: {self.model.output_dim}")
+        LOGGER.info(f"Model pert_dim: {self.model.pert_dim}")
+        LOGGER.info(f"Model gene_dim: {gene_dim}")
 
     def _forward(self, embeddings: torch.Tensor) -> torch.Tensor:
         """
@@ -360,12 +359,12 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             self.model.load_state_dict(
                 torch.load(self.backbone_weights_path, weights_only=True)
             )
-            logger.info(f"Loaded model weights from {self.backbone_weights_path}")
+            LOGGER.info(f"Loaded model weights from {self.backbone_weights_path}")
         if self.head_weights_path is not None:
             self.fine_tuning_head.load_state_dict(
                 torch.load(self.head_weights_path, weights_only=True)
             )
-            logger.info(f"Loaded head weights from {self.head_weights_path}")
+            LOGGER.info(f"Loaded head weights from {self.head_weights_path}")
         return
 
     def process_data(self, adata: ad.AnnData) -> EmbeddingDataset:
@@ -383,11 +382,11 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         EmbeddingDataset
             Processed dataset containing embeddings (no labels - user provides them separately)
         """
-        logger.info("Processing data for state model fine-tuning.")
+        LOGGER.info("Processing data for state model fine-tuning.")
 
         # If we don't have var_dims yet, create them from the data
         if self.has_var_dims is False:
-            logger.info("Creating var_dims from adata")
+            LOGGER.info("Creating var_dims from adata")
 
             # Create var_dims from adata
             var_dims = self._create_var_dims_from_adata(adata)
@@ -411,11 +410,11 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             if self.freeze_backbone:
                 for param in self.model.parameters():
                     param.requires_grad = False
-                logger.info(
+                LOGGER.info(
                     "Backbone model frozen - only fine-tuning head will be trained"
                 )
             else:
-                logger.info(
+                LOGGER.info(
                     "Full model fine-tuning - both backbone and head will be trained"
                 )
 
@@ -461,7 +460,7 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         with torch.no_grad():
             embeddings = self.model.forward(batch, padded=False)
 
-        logger.info("Successfully processed the data for state model fine-tuning.")
+        LOGGER.info("Successfully processed the data for state model fine-tuning.")
         return EmbeddingDataset(embeddings.cpu().numpy())
 
     def _create_perturbation_embeddings(self, pert_names, batch_size):
@@ -482,7 +481,7 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         """
         if not self.use_perturbation_embeddings:
             # Use zeros if perturbation embeddings are disabled
-            logger.info("Perturbation embeddings disabled, using zeros")
+            LOGGER.info("Perturbation embeddings disabled, using zeros")
             return torch.zeros(batch_size, self.model.pert_dim, dtype=torch.float32)
 
         # Try to load the actual perturbation one-hot mapping from the model directory
@@ -493,7 +492,7 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             try:
                 # Load the actual perturbation mapping
                 pert_onehot_map = torch.load(pert_onehot_map_path, weights_only=False)
-                logger.info(
+                LOGGER.info(
                     f"Loaded perturbation mapping with {len(pert_onehot_map)} perturbations"
                 )
 
@@ -516,17 +515,17 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
                             if self.model.pert_dim > 0:
                                 default_vec[0] = 1.0
                         pert_embeddings.append(default_vec)
-                        logger.warning(
+                        LOGGER.warning(
                             f"Unknown perturbation '{pert_name}', using {self.default_perturbation_type} vector"
                         )
 
                 return torch.stack(pert_embeddings)
 
             except Exception as e:
-                logger.warning(f"Failed to load perturbation mapping: {e}")
+                LOGGER.warning(f"Failed to load perturbation mapping: {e}")
 
         # Fallback: create default control embeddings for all cells
-        logger.info(
+        LOGGER.info(
             f"Using default {self.default_perturbation_type} perturbation embeddings for all cells"
         )
         default_pert_vec = torch.zeros(self.model.pert_dim, dtype=torch.float32)
@@ -601,17 +600,17 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             optimizer = optimizer(
                 self.fine_tuning_head.parameters(), **optimizer_params
             )
-            logger.info("Optimizer set up for fine-tuning head only")
+            LOGGER.info("Optimizer set up for fine-tuning head only")
         else:
             # Train the entire model
             optimizer = optimizer(self.parameters(), **optimizer_params)
-            logger.info("Optimizer set up for full model fine-tuning")
+            LOGGER.info("Optimizer set up for full model fine-tuning")
 
         lr_scheduler = None
         if lr_scheduler_params is not None:
             lr_scheduler = get_scheduler(optimizer=optimizer, **lr_scheduler_params)
 
-        logger.info("Starting Fine-Tuning")
+        LOGGER.info("Starting Fine-Tuning")
         for j in range(epochs):
             batch_count = 0
             batch_loss = 0.0
@@ -690,7 +689,7 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
                 self.fine_tuning_head.state_dict(),
                 os.path.join(self.model_dir, "head_weights.pt"),
             )
-        logger.info(f"Fine-Tuning Complete. Epochs: {epochs}")
+        LOGGER.info(f"Fine-Tuning Complete. Epochs: {epochs}")
 
     def get_outputs(self, dataset: EmbeddingDataset) -> np.ndarray:
         """Get the outputs of the fine-tuned model.

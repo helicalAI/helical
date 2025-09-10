@@ -1,7 +1,6 @@
 import time
 import logging
 from contextlib import contextmanager
-from lightning.pytorch.loggers import CSVLogger, WandbLogger
 from lightning.pytorch.loggers.csv_logs import CSVLogger as BaseCSVLogger
 import csv
 import os
@@ -87,49 +86,11 @@ def time_it(timer_name: str):
 def get_loggers(
     output_dir: str,
     name: str,
-    wandb_project: str,
-    wandb_entity: str,
-    local_wandb_dir: str,
-    use_wandb: bool = False,
-    use_csv: bool = True,  # Enable CSV by default with robust logger
-    cfg: dict = None,
 ):
-    """Set up logging to local CSV and optionally WandB."""
+
     loggers = []
-
-    # Use robust CSV logger that handles dynamic metrics
-    if use_csv:
-        csv_logger = RobustCSVLogger(save_dir=output_dir, name=name, version=0)
-        loggers.append(csv_logger)
-
-    # Add WandB if requested
-    if use_wandb:
-        try:
-            # Check if wandb is available
-            import wandb
-
-            wandb_logger = WandbLogger(
-                name=name,
-                project=wandb_project,
-                entity=wandb_entity,
-                dir=local_wandb_dir,
-                tags=cfg["wandb"].get("tags", []) if cfg else [],
-            )
-            if cfg is not None:
-                wandb_logger.experiment.config.update(cfg)
-            loggers.append(wandb_logger)
-        except ImportError:
-            print("Warning: wandb is not installed. Skipping wandb logging.")
-            print("To enable wandb logging, install it with: pip install wandb")
-        except Exception as e:
-            print(f"Warning: Failed to initialize wandb logger: {e}")
-            print("Continuing without wandb logging.")
-
-    # Ensure at least one logger is present
-    if not loggers:
-        print("Warning: No loggers configured. Adding robust CSV logger as fallback.")
-        csv_logger = RobustCSVLogger(save_dir=output_dir, name=name, version=0)
-        loggers.append(csv_logger)
+    csv_logger = RobustCSVLogger(save_dir=output_dir, name=name, version=0)
+    loggers.append(csv_logger)
 
     return loggers
 

@@ -20,13 +20,10 @@ from .model_dir.perturb_utils.utils import (
 from .model_dir.perturb_utils.state_transition_model import (
     StateTransitionPerturbationModel,
 )
-from .model_dir.perturb_utils.callbacks import (
-    BatchSpeedMonitorCallback,
-)
 
 from helical.models.state import trainingConfig
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 torch.set_float32_matmul_precision("medium")
 torch.multiprocessing.set_sharing_strategy("file_system")
@@ -141,16 +138,14 @@ class stateTransitionTrainModel:
         loggers.append(csv_logger)
 
         # Set up callbacks
-        ckpt_callbacks = get_checkpoint_callbacks(
+        callbacks = get_checkpoint_callbacks(
             self.cfg["output_dir"],
             self.cfg["name"],
             self.cfg["training"]["val_freq"],
             self.cfg["training"].get("ckpt_every_n_steps", 4000),
         )
-        # Add BatchSpeedMonitorCallback to log batches per second to wandb
-        batch_speed_monitor = BatchSpeedMonitorCallback()
-        callbacks = ckpt_callbacks + [batch_speed_monitor]
-        logger.info("Loggers and callbacks set up.")
+
+        LOGGER.info("Loggers and callbacks set up.")
 
         trainer_kwargs = dict(
             accelerator="gpu" if torch.cuda.is_available() else "cpu",
@@ -172,7 +167,7 @@ class stateTransitionTrainModel:
             checkpoint_path = None
         else:
             logging.info(f"!! Resuming training from {checkpoint_path} !!")
-        logger.info("Starting trainer fit.")
+        LOGGER.info("Starting trainer fit.")
 
         trainer.fit(
             self.model,
@@ -197,7 +192,7 @@ class stateTransitionTrainModel:
             raise FileNotFoundError(
                 f"Could not find checkpoint at {checkpoint_path}.\nSpecify a correct checkpoint filename."
             )
-        logger.info("Loading model from %s", checkpoint_path)
+        LOGGER.info("Loading model from %s", checkpoint_path)
 
         model_init_kwargs = {
             "input_dim": self.var_dims["input_dim"],
@@ -213,10 +208,10 @@ class stateTransitionTrainModel:
             checkpoint_path, **model_init_kwargs
         )
         self.model.eval()
-        logger.info("Model loaded successfully.")
+        LOGGER.info("Model loaded successfully.")
         num_cells = test_loader.batch_sampler.tot_num
         output_dim = self.var_dims["output_dim"]
-        logger.info("Generating predictions on test set using manual loop...")
+        LOGGER.info("Generating predictions on test set using manual loop...")
 
         final_preds = np.empty((num_cells, output_dim), dtype=np.float32)
         final_reals = np.empty((num_cells, output_dim), dtype=np.float32)
@@ -329,7 +324,7 @@ class stateTransitionTrainModel:
                         current_idx - batch_size : current_idx, :
                     ] = batch_gene_pred_np
 
-        logger.info("Creating anndatas from predictions from manual loop...")
+        LOGGER.info("Creating anndatas from predictions from manual loop...")
 
         # Build pandas DataFrame for obs and var
         df_dict = {
@@ -365,7 +360,7 @@ class stateTransitionTrainModel:
             # add the embedding predictions
             adata_pred.obsm[self.data_module.embed_key] = final_preds
             adata_real.obsm[self.data_module.embed_key] = final_reals
-            logger.info(
+            LOGGER.info(
                 f"Added predicted embeddings to adata.obsm['{self.data_module.embed_key}']"
             )
         else:
@@ -392,12 +387,12 @@ class stateTransitionTrainModel:
         adata_pred.write_h5ad(adata_pred_path)
         adata_real.write_h5ad(adata_real_path)
 
-        logger.info(f"Saved adata_pred to {adata_pred_path}")
-        logger.info(f"Saved adata_real to {adata_real_path}")
+        LOGGER.info(f"Saved adata_pred to {adata_pred_path}")
+        LOGGER.info(f"Saved adata_real to {adata_real_path}")
 
         if not self.cfg["predict_only"]:
             # 6. Compute metrics using cell-eval
-            logger.info("Computing metrics using cell-eval...")
+            LOGGER.info("Computing metrics using cell-eval...")
 
             control_pert = self.data_module.get_control_pert()
 

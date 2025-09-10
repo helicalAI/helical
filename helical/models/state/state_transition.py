@@ -21,6 +21,9 @@ from .model_dir.perturb_utils.utils import (
 from helical.models.base_models import HelicalBaseFoundationModel
 import yaml
 from helical.utils.downloader import Downloader
+import logging
+
+LOGGER = logging.getLogger(__name__)
 
 
 # this code to do inference on new data using the transition model
@@ -55,7 +58,7 @@ class stateTransitionModel(HelicalBaseFoundationModel):
         self.checkpoint_path = os.path.join(
             self.config["model_dir"], self.config["checkpoint_name"]
         )
-        print(f"Using checkpoint: {self.checkpoint_path}")
+        LOGGER.info(f"Using checkpoint: {self.checkpoint_path}")
 
         self.model = StateTransitionPerturbationModel.load_from_checkpoint(
             self.checkpoint_path,
@@ -78,10 +81,10 @@ class stateTransitionModel(HelicalBaseFoundationModel):
             .get("output_space", "gene"),
         )
 
-        print(f"Model device: {self.device}")
-        print(f"Model cell_set_len (max sequence length): {self.cell_set_len}")
-        print(f"Model uses batch encoder: {bool(self.uses_batch_encoder)}")
-        print(f"Model output space: {self.output_space}")
+        LOGGER.info(f"Model device: {self.device}")
+        LOGGER.info(f"Model cell_set_len (max sequence length): {self.cell_set_len}")
+        LOGGER.info(f"Model uses batch encoder: {bool(self.uses_batch_encoder)}")
+        LOGGER.info(f"Model output space: {self.output_space}")
 
     def process_data(self, adata: sc.AnnData):
 
@@ -129,9 +132,9 @@ class stateTransitionModel(HelicalBaseFoundationModel):
 
             celltype_col = self.config["celltype_col"]
             if celltype_col:
-                print(f"Grouping by cell type column: {celltype_col}")
+                LOGGER.info(f"Grouping by cell type column: {celltype_col}")
             else:
-                print("Grouping by cell type column: not found; no grouping")
+                LOGGER.info("Grouping by cell type column: not found; no grouping")
 
         # choose batch column
         if self.config["batch_col"] is None:
@@ -143,7 +146,7 @@ class stateTransitionModel(HelicalBaseFoundationModel):
                 self.config["batch_col"] = None
 
         if self.config["tsv"]:
-            print(f"==> TSV padding mode: loading {self.config['tsv']}")
+            LOGGER.info(f"==> TSV padding mode: loading {self.config['tsv']}")
             pad_rng = np.random.RandomState(self.config["seed"])
 
             adata = pad_adata_with_tsv(
@@ -166,7 +169,7 @@ class stateTransitionModel(HelicalBaseFoundationModel):
             n0 = adata.n_obs
             adata = adata[adata.obs[self.config["celltype_col"]].isin(keep_cts)].copy()
 
-            print(
+            LOGGER.info(
                 f"Filtered to {adata.n_obs} cells (from {n0}) "
                 f"for cell types: {keep_cts}"
             )
@@ -188,9 +191,9 @@ class stateTransitionModel(HelicalBaseFoundationModel):
             self.writes_to = (".obsm", self.config["embed_key"])
 
         if self.config["embed_key"] is None:
-            print("Using adata.X as input features")
+            LOGGER.info("Using adata.X as input features")
         else:
-            print(
+            LOGGER.info(
                 f"Using adata.obsm[{self.config['embed_key']}] "
                 f"as input features: shape {self.X_in.shape}"
             )
@@ -256,14 +259,14 @@ class stateTransitionModel(HelicalBaseFoundationModel):
                             misses += 1
                             idxs[i] = 0  # fallback to zero
                     if misses:
-                        print(
+                        LOGGER.info(
                             f"Warning: {misses} / {len(raw_labels)} "
                             f"batch labels not found in saved mapping;"
                             f"using index 0 as fallback."
                         )
                     self.batch_indices_all = idxs
             else:
-                print(
+                LOGGER.info(
                     """Batch encoder present, but no batch column found;
                         proceeding without batch indices."""
                 )
@@ -280,7 +283,7 @@ class stateTransitionModel(HelicalBaseFoundationModel):
         n_controls = int(ctl_mask.sum())
         n_total = adata.n_obs
         n_nonctl = n_total - n_controls
-        print(
+        LOGGER.info(
             f"Cells: total={n_total}, control={n_controls}, " f"non-control={n_nonctl}"
         )
 
@@ -325,7 +328,7 @@ class stateTransitionModel(HelicalBaseFoundationModel):
             if self.pert_dim and self.pert_dim > 0:
                 default_pert_vec[0] = 1.0
 
-        print(
+        LOGGER.info(
             "Running virtual experiment (homogeneous per-perturbation "
             "forward passes; controls included)..."
         )
@@ -339,7 +342,7 @@ class stateTransitionModel(HelicalBaseFoundationModel):
                 # control pool for this group (fallback to global if empty)
                 grp_ctrl_pool = group_control_indices(g)
                 if len(grp_ctrl_pool) == 0:
-                    print(
+                    LOGGER.info(
                         f"Group '{g}': no control cells available anywhere; "
                         f"leaving rows unchanged."
                     )
@@ -373,7 +376,7 @@ class stateTransitionModel(HelicalBaseFoundationModel):
                     vec = pert_onehot_map.get(p, None)
                     if vec is None:
                         vec = default_pert_vec
-                        print(
+                        LOGGER.info(
                             f"  (group {g}) pert '{p}' not in mapping; "
                             f"using control fallback one-hot."
                         )
@@ -446,7 +449,7 @@ class stateTransitionModel(HelicalBaseFoundationModel):
                             if preds.shape[1] == sim_X.shape[1]:
                                 sim_X[idx_window, :] = preds
                             else:
-                                print(
+                                LOGGER.info(
                                     f"Dimension mismatch for X (got {preds.shape[1]} vs {sim_X.shape[1]}). "
                                     f"Falling back to adata.obsm['X_state_pred']."
                                 )
@@ -461,7 +464,7 @@ class stateTransitionModel(HelicalBaseFoundationModel):
                                 sim_obsm[idx_window, :] = preds
                             else:
                                 side_key = f"{self.writes_to[1]}_pred"
-                                print(
+                                LOGGER.info(
                                     f"Dimension mismatch for obsm['{self.writes_to[1]}'] "
                                     f"(got {preds.shape[1]} vs {sim_obsm.shape[1]}). "
                                     f"Writing to adata.obsm['{side_key}'] instead."
@@ -488,12 +491,12 @@ class stateTransitionModel(HelicalBaseFoundationModel):
 
         adata.write_h5ad(output_path)
 
-        print("\n=== Inference complete ===")
-        print(f"Input cells:         {n_total}")
-        print(f"Controls simulated:  {n_controls}")
-        print(f"Treated simulated:   {n_nonctl}")
-        print(f"Wrote predictions to adata.{out_target}")
-        print(f"Saved:               {output_path}")
+        LOGGER.info("\n=== Inference complete ===")
+        LOGGER.info(f"Input cells:         {n_total}")
+        LOGGER.info(f"Controls simulated:  {n_controls}")
+        LOGGER.info(f"Treated simulated:   {n_nonctl}")
+        LOGGER.info(f"Wrote predictions to adata.{out_target}")
+        LOGGER.info(f"Saved:               {output_path}")
 
         return adata
 
