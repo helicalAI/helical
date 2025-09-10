@@ -27,17 +27,16 @@ class stateEmbeddingsModel(HelicalBaseFoundationModel):
     def __init__(self, configurer: stateConfig = None) -> None:
         super().__init__()
 
-        downloader = Downloader()
-        for file in self.config["list_of_files_to_download"]:
-            downloader.download_via_name(file)
-
-
         self.model = None
         self.collator = None
         if configurer is None:
             configurer = stateConfig()
 
         self.config = configurer.config["embed"]
+        downloader = Downloader()
+        for file in self.config["list_of_files_to_download"]:
+            downloader.download_via_name(file)
+
         self.model_dir = self.config["cache_dir"]
         self.ckpt_path = os.path.join(self.model_dir, self.config["embed_checkpoint"])
         logging.info(f"Using model checkpoint: {self.ckpt_path}")
