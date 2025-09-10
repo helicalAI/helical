@@ -20,7 +20,7 @@ from .model_utils import (
 )
 
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class CombinedLoss(nn.Module):

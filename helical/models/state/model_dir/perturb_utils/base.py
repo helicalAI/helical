@@ -9,7 +9,7 @@ import typing as tp
 
 from .model_utils import get_loss_fn
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class LatentToGeneDecoder(nn.Module):
@@ -229,19 +229,19 @@ class PerturbationModel(ABC, LightningModule):
         ):
             self.decoder_cfg = checkpoint["hyper_parameters"]["decoder_cfg"]
             self.gene_decoder = LatentToGeneDecoder(**self.decoder_cfg)
-            logger.info(
+            LOGGER.info(
                 f"Loaded decoder from checkpoint decoder_cfg: {self.decoder_cfg}"
             )
         elif not decoder_already_configured:
             # Only fall back to old logic if no decoder_cfg was saved and not externally configured
             self.decoder_cfg = None
             self._build_decoder()
-            logger.info(f"DEBUG: output_space: {self.output_space}")
+            LOGGER.info(f"DEBUG: output_space: {self.output_space}")
             if self.gene_decoder is None:
                 gene_dim = (
                     self.hvg_dim if self.output_space == "gene" else self.gene_dim
                 )
-                logger.info(f"DEBUG: gene_dim: {gene_dim}")
+                LOGGER.info(f"DEBUG: gene_dim: {gene_dim}")
                 if (
                     self.embed_key
                     and self.embed_key != "X_hvg"
@@ -249,7 +249,7 @@ class PerturbationModel(ABC, LightningModule):
                 ) or (
                     self.embed_key and self.output_space == "all"
                 ):  # we should be able to decode from hvg to all
-                    logger.info(f"DEBUG: Creating gene_decoder, checking conditions...")
+                    LOGGER.info(f"DEBUG: Creating gene_decoder, checking conditions...")
                     if gene_dim > 10000:
                         hidden_dims = [1024, 512, 256]
                     else:
@@ -270,11 +270,11 @@ class PerturbationModel(ABC, LightningModule):
                         dropout=self.dropout,
                         residual_decoder=self.residual_decoder,
                     )
-                    logger.info(
+                    LOGGER.info(
                         f"Initialized gene decoder for embedding {self.embed_key} to gene space"
                     )
         else:
-            logger.info(
+            LOGGER.info(
                 "Decoder was already configured externally, skipping checkpoint decoder configuration"
             )
 

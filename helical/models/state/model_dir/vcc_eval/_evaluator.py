@@ -13,7 +13,7 @@ from .utils import guess_is_lognorm
 from ._pipeline import MetricPipeline
 from ._types import PerturbationAnndataPair, initialize_de_comparison
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class MetricsEvaluator:
@@ -74,7 +74,7 @@ class MetricsEvaluator:
         pl.enable_string_cache()
 
         if os.path.exists(outdir):
-            logger.warning(
+            LOGGER.warning(
                 f"Output directory {outdir} already exists, potential overwrite occurring"
             )
         os.makedirs(outdir, exist_ok=True)
@@ -133,10 +133,10 @@ class MetricsEvaluator:
                 f"{self.prefix}_agg_{basename}" if self.prefix else f"agg_{basename}",
             )
 
-            logger.info(f"Writing perturbation level metrics to {outpath}")
+            LOGGER.info(f"Writing perturbation level metrics to {outpath}")
             results.write_csv(outpath)
 
-            logger.info(f"Writing aggregate metrics to {agg_outpath}")
+            LOGGER.info(f"Writing aggregate metrics to {agg_outpath}")
             agg_results.write_csv(agg_outpath)
 
         return results, agg_results
@@ -151,10 +151,10 @@ def _build_anndata_pair(
     n_cells: int = 100,
 ):
     if isinstance(real, str):
-        logger.info(f"Reading real anndata from {real}")
+        LOGGER.info(f"Reading real anndata from {real}")
         real = ad.read_h5ad(real)
     if isinstance(pred, str):
-        logger.info(f"Reading pred anndata from {pred}")
+        LOGGER.info(f"Reading pred anndata from {pred}")
         pred = ad.read_h5ad(pred)
 
     # Validate that the input is normalized and log-transformed
@@ -182,7 +182,7 @@ def _convert_to_normlog(
     Will skip if the input is not integer data.
     """
     if guess_is_lognorm(adata=adata, n_cells=n_cells):
-        logger.info(
+        LOGGER.info(
             "Input is found to be log-normalized already - skipping transformation."
         )
         return  # Input is already log-normalized
@@ -190,12 +190,12 @@ def _convert_to_normlog(
     # User specified that they want to allow discrete data
     if allow_discrete:
         if which:
-            logger.info(
+            LOGGER.info(
                 f"Discovered integer data for {which}. Configuration set to allow discrete. "
                 "Make sure this is intentional."
             )
         else:
-            logger.info(
+            LOGGER.info(
                 "Discovered integer data. Configuration set to allow discrete. "
                 "Make sure this is intentional."
             )
@@ -203,7 +203,7 @@ def _convert_to_normlog(
 
     # Convert the data to norm-log
     if which:
-        logger.info(f"Discovered integer data for {which}. Converting to norm-log.")
+        LOGGER.info(f"Discovered integer data for {which}. Converting to norm-log.")
     sc.pp.normalize_total(adata=adata, inplace=True)  # normalize to median
     sc.pp.log1p(adata)  # log-transform (log1p)
 
@@ -283,7 +283,7 @@ def _load_or_build_de(
     if de_path is None:
         if anndata_pair is None:
             raise ValueError("anndata_pair must be provided if de_path is not provided")
-        logger.info(f"Computing DE for {mode} data")
+        LOGGER.info(f"Computing DE for {mode} data")
         pdex_kwargs = _build_pdex_kwargs(
             reference=anndata_pair.control_pert,
             groupby_key=anndata_pair.pert_col,
@@ -298,14 +298,14 @@ def _load_or_build_de(
         )
         if outdir is not None:
             pathname = f"{mode}_de.csv" if not prefix else f"{prefix}_{mode}_de.csv"
-            logger.info(f"Writing {mode} DE results to: {pathname}")
+            LOGGER.info(f"Writing {mode} DE results to: {pathname}")
             frame.write_csv(os.path.join(outdir, pathname))
 
         return frame  # type: ignore
     elif isinstance(de_path, str):
-        logger.info(f"Reading {mode} DE results from {de_path}")
+        LOGGER.info(f"Reading {mode} DE results from {de_path}")
         if pdex_kwargs:
-            logger.warning("pdex_kwargs are ignored when reading from a CSV file")
+            LOGGER.warning("pdex_kwargs are ignored when reading from a CSV file")
         return pl.read_csv(
             de_path,
             schema_overrides={
@@ -315,11 +315,11 @@ def _load_or_build_de(
         )
     elif isinstance(de_path, pl.DataFrame):
         if pdex_kwargs:
-            logger.warning("pdex_kwargs are ignored when reading from a CSV file")
+            LOGGER.warning("pdex_kwargs are ignored when reading from a CSV file")
         return de_path
     elif isinstance(de_path, pd.DataFrame):
         if pdex_kwargs:
-            logger.warning("pdex_kwargs are ignored when reading from a CSV file")
+            LOGGER.warning("pdex_kwargs are ignored when reading from a CSV file")
         return pl.from_pandas(de_path)
     else:
         raise TypeError(f"Unexpected type for de_path: {type(de_path)}")

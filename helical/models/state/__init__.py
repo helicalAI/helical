@@ -1,18 +1,18 @@
 import logging
 import sys
 
-logger = logging.getLogger("state")
+LOGGER = logging.getLogger("state")
 
-if not logger.hasHandlers() or len(logger.handlers) == 0:
-    logger.propagate = False
-    logger.setLevel(logging.INFO)
+if not LOGGER.hasHandlers() or len(LOGGER.handlers) == 0:
+    LOGGER.propagate = False
+    LOGGER.setLevel(logging.INFO)
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.INFO)
     formatter = logging.Formatter(
         "%(name)s - %(levelname)s - %(message)s", datefmt="%H:%M:%S"
     )
     handler.setFormatter(formatter)
-    logger.addHandler(handler)
+    LOGGER.addHandler(handler)
 
 from .state_config import stateConfig
 from .train_configs import trainingConfig

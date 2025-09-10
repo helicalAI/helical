@@ -12,7 +12,7 @@ from scipy.sparse import csr_matrix, issparse
 
 from ._evaluator import _convert_to_normlog
 
-logger = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 VALID_ENCODINGS = [64, 32]
 
@@ -51,20 +51,20 @@ def strip_anndata(
 
     # Check if expected dimension is provided and matches the length of the genelist
     if exp_gene_dim and len(genelist) != exp_gene_dim:
-        logger.warning(
+        LOGGER.warning(
             f"Provided gene dimension: {len(genelist)} does not match expected gene dimension: {exp_gene_dim}."
         )
-        logger.info(f"Setting expected gene dimension to {len(genelist)}")
+        LOGGER.info(f"Setting expected gene dimension to {len(genelist)}")
         exp_gene_dim = len(genelist)
 
     if adata.var_names.tolist() != genelist:
         missing_genes = set(genelist) - set(adata.var_names.tolist())
         extra_genes = set(adata.var_names.tolist()) - set(genelist)
         if len(missing_genes) == 0 and len(extra_genes) == 0:
-            logger.warning(
+            LOGGER.warning(
                 "Provided anndata contains all expected genes but they are out of order."
             )
-            logger.info("Reordering genes...")
+            LOGGER.info("Reordering genes...")
             adata = adata[:, np.array(genelist)]
         else:
             raise ValueError(
@@ -89,20 +89,20 @@ def strip_anndata(
     dtype = np.dtype(np.float64)  # force bound
     match encoding:
         case 64:
-            logger.info("Using 64-bit float encoding")
+            LOGGER.info("Using 64-bit float encoding")
             dtype = np.dtype(np.float64)
         case 32:
-            logger.info("Using 32-bit float encoding")
+            LOGGER.info("Using 32-bit float encoding")
             dtype = np.dtype(np.float32)
 
-    logger.info("Setting data to sparse if not already")
+    LOGGER.info("Setting data to sparse if not already")
     new_x = (
         adata.X.astype(dtype)  # type: ignore
         if issparse(adata.X)
         else csr_matrix(adata.X.astype(dtype))  # type: ignore
     )
 
-    logger.info("Simplifying obs dataframe")
+    LOGGER.info("Simplifying obs dataframe")
     new_obs = pd.DataFrame(
         {output_pert_col: adata.obs[pert_col].values},
         index=np.arange(adata.shape[0]).astype(str),
@@ -110,19 +110,19 @@ def strip_anndata(
     if celltype_col:
         new_obs[output_celltype_col] = adata.obs[celltype_col].values
 
-    logger.info("Simplifying var dataframe")
+    LOGGER.info("Simplifying var dataframe")
     new_var = pd.DataFrame(
         index=adata.var.index.values,
     )
 
-    logger.info("Creating final minimal AnnData object")
+    LOGGER.info("Creating final minimal AnnData object")
     minimal = ad.AnnData(
         X=new_x,
         obs=new_obs,
         var=new_var,
     )
 
-    logger.info("Applying normlog transformation if required")
+    LOGGER.info("Applying normlog transformation if required")
     _convert_to_normlog(minimal, allow_discrete=allow_discrete)
 
     # Create a temporary directory to work in
@@ -132,11 +132,11 @@ def strip_anndata(
         tmp_watermark = os.path.join(temp_dir, "watermark.txt")
 
         # Write the h5ad file
-        logger.info(f"Writing h5ad output to {tmp_h5ad}")
+        LOGGER.info(f"Writing h5ad output to {tmp_h5ad}")
         minimal.write_h5ad(tmp_h5ad)
 
         # Zstd compress the h5ad file (will create pred.h5ad.zst)
-        logger.info(f"Zstd compressing {tmp_h5ad}")
+        LOGGER.info(f"Zstd compressing {tmp_h5ad}")
         subprocess.run(["zstd", "-T0", "-f", "--rm", tmp_h5ad])
 
         # Write the watermark file
@@ -144,7 +144,7 @@ def strip_anndata(
             f.write("vcc-prep")
 
         # Pack the files into a tarball
-        logger.info(f"Packing files into {output_path}")
+        LOGGER.info(f"Packing files into {output_path}")
         subprocess.run(
             [
                 "tar",
@@ -157,7 +157,7 @@ def strip_anndata(
             ]
         )
 
-        logger.info("Done")
+        LOGGER.info("Done")
 
 
 def _validate_tools_in_path():
@@ -172,15 +172,15 @@ def vcc_eval(configs: dict):
 
     _validate_tools_in_path()
 
-    logger.info("Reading input anndata")
+    LOGGER.info("Reading input anndata")
     adata = ad.read_h5ad(configs["input"])
 
-    logger.info("Reading gene list")
+    LOGGER.info("Reading gene list")
     genelist = (
         pl.read_csv(configs["genes"], has_header=False).to_series(0).cast(str).to_list()
     )
 
-    logger.info("Preparing anndata")
+    LOGGER.info("Preparing anndata")
     strip_anndata(
         adata,
         genelist=genelist,
