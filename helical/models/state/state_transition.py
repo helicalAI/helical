@@ -7,12 +7,12 @@ import scanpy as sc
 import torch
 from tqdm import tqdm
 
-from .model_dir._perturb_utils.state_transition_model import (
+from .model_dir.perturb_utils.state_transition_model import (
     StateTransitionPerturbationModel,
 )
 
 from .state_config import stateConfig
-from .model_dir._perturb_utils.utils import (
+from .model_dir.perturb_utils.utils import (
     to_dense,
     argmax_index_from_any,
     pad_adata_with_tsv,

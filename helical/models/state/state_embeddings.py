@@ -10,9 +10,9 @@ from pathlib import Path
 from tqdm import tqdm
 from torch import nn
 
-from model_dir._embed_utils.nn.model import StateEmbeddingModel
-from model_dir._embed_utils.data import create_dataloader
-from model_dir._embed_utils.utils import get_embedding_cfg, get_precision_config
+from model_dir.embed_utils.nn.model import StateEmbeddingModel
+from model_dir.embed_utils.data import create_dataloader
+from model_dir.embed_utils.utils import get_embedding_cfg, get_precision_config
 
 from helical.models.base_models import HelicalBaseFoundationModel
 from helical.models.state.state_config import stateConfig

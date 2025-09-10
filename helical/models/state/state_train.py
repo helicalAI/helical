@@ -6,21 +6,21 @@ import lightning.pytorch as pl
 import torch
 from cell_load.data_modules import PerturbationDataModule
 from cell_load.utils.modules import get_datamodule
-from .model_dir._vcc_eval._evaluator import MetricsEvaluator
-from .model_dir._vcc_eval.utils import split_anndata_on_celltype
+from .model_dir.vcc_eval._evaluator import MetricsEvaluator
+from .model_dir.vcc_eval.utils import split_anndata_on_celltype
 import anndata
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from .model_dir._perturb_utils.utils import (
+from .model_dir.perturb_utils.utils import (
     get_checkpoint_callbacks,
     RobustCSVLogger,
 )
-from .model_dir._perturb_utils.state_transition_model import (
+from .model_dir.perturb_utils.state_transition_model import (
     StateTransitionPerturbationModel,
 )
-from .model_dir._perturb_utils.callbacks import (
+from .model_dir.perturb_utils.callbacks import (
     BatchSpeedMonitorCallback,
 )
 

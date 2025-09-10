@@ -23,4 +23,4 @@ from .state_transition import stateTransitionModel
 from .state_finetune import stateFineTuningModel 
 from .state_train import stateTransitionTrainModel
 
-from .model_dir._vcc_eval import vcc_eval
+from .model_dir.vcc_eval import vcc_eval

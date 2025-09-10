@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader, SequentialSampler
 from tqdm import tqdm
 from transformers import get_scheduler
 from helical.models.base_models import HelicalBaseFineTuningHead
-from .model_dir._perturb_utils.state_transition_model import (
+from .model_dir.perturb_utils.state_transition_model import (
     StateTransitionPerturbationModel,
 )
 from helical.models.base_models import HelicalBaseFineTuningModel
