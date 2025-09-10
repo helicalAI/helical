@@ -17,11 +17,10 @@ from model_dir._embed_utils.utils import get_embedding_cfg, get_precision_config
 from helical.models.base_models import HelicalBaseFoundationModel
 from helical.models.state.state_config import stateConfig
 from helical.utils.downloader import Downloader
-
 from omegaconf import OmegaConf
 
-log = logging.getLogger(__name__)
-
+LOGGER = logging.getLogger(__name__)
+os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
 class stateEmbeddingsModel(HelicalBaseFoundationModel):
     def __init__(self, configurer: stateConfig = None) -> None:
@@ -39,7 +38,7 @@ class stateEmbeddingsModel(HelicalBaseFoundationModel):
 
         self.model_dir = self.config["cache_dir"]
         self.ckpt_path = os.path.join(self.model_dir, self.config["embed_checkpoint"])
-        logging.info(f"Using model checkpoint: {self.ckpt_path}")
+        LOGGER.info(f"Using model checkpoint: {self.ckpt_path}")
 
         embedding_file = os.path.join(
             self.model_dir, "protein_embeddings.pt"
@@ -197,7 +196,7 @@ class stateEmbeddingsModel(HelicalBaseFoundationModel):
         precision = get_precision_config(device_type=device_type)
         self.model = self.model.to(precision)
 
-        all_pe = self.protein_embeds or StateEmbeddings.load_esm2_embeddings(self.model_conf)
+        all_pe = self.protein_embeds or stateEmbeddingsModel.load_esm2_embeddings(self.model_conf)
         if isinstance(all_pe, dict):
             all_pe = torch.vstack(list(all_pe.values()))
         self.model.pe_embedding = nn.Embedding.from_pretrained(all_pe)
@@ -299,7 +298,7 @@ class stateEmbeddingsModel(HelicalBaseFoundationModel):
         if lancedb_path is not None:
             from .vectordb import StateVectorDB
 
-            log.info(f"Saving embeddings to LanceDB at {lancedb_path}")
+            LOGGER.info(f"Saving embeddings to LanceDB at {lancedb_path}")
             vector_db = StateVectorDB(lancedb_path)
 
             # Extract relevant metadata
@@ -314,7 +313,7 @@ class stateEmbeddingsModel(HelicalBaseFoundationModel):
                 batch_size=lancedb_batch_size,
             )
 
-            log.info(f"Successfully saved {len(all_embeddings)} embeddings to LanceDB")
+            LOGGER.info(f"Successfully saved {len(all_embeddings)} embeddings to LanceDB")
 
     def _convert_to_csr(self, adata):
         """Convert the adata.X matrix to CSR format if it's not already."""
@@ -328,7 +327,7 @@ class stateEmbeddingsModel(HelicalBaseFoundationModel):
     def _auto_detect_gene_column(self, adata):
         """Auto-detect the gene column with highest overlap with protein embeddings."""
         if self.protein_embeds is None:
-            log.warning("No protein embeddings available for auto-detection, using index")
+            LOGGER.warning("No protein embeddings available for auto-detection, using index")
             return None
 
         protein_genes = set(self.protein_embeds.keys())
@@ -358,11 +357,11 @@ class stateEmbeddingsModel(HelicalBaseFoundationModel):
                     best_column = col
 
         if best_column is None:
-            log.info(
+            LOGGER.info(
                 f"Auto-detected gene column: var.index (overlap: {best_overlap}/{len(protein_genes)} protein embeddings, {best_overlap_pct:.1%} of genes)"
             )
         else:
-            log.info(
+            LOGGER.info(
                 f"Auto-detected gene column: var.{best_column} (overlap: {best_overlap}/{len(protein_genes)} protein embeddings, {best_overlap_pct:.1%} of genes)"
             )
 
