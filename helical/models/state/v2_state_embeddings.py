@@ -10,28 +10,97 @@ from pathlib import Path
 from tqdm import tqdm
 from torch import nn
 
-from .nn.model import StateEmbeddingModel
-from .data import create_dataloader
-from .utils import get_embedding_cfg, get_precision_config
+from model_dir._embed_utils.nn.model import StateEmbeddingModel
+from model_dir._embed_utils.data import create_dataloader
+from model_dir._embed_utils.utils import get_embedding_cfg, get_precision_config
 
-def get_embeddings(cfg):
-    # Load in ESM2 embeddings and special tokens
-    all_pe = torch.load(get_embedding_cfg(cfg).all_embeddings, weights_only=False)
-    if isinstance(all_pe, dict):
-        all_pe = torch.vstack(list(all_pe.values()))
+from helical.models.base_models import HelicalBaseFoundationModel
+from helical.models.state.state_config import stateConfig
+from helical.utils.downloader import Downloader
 
-    all_pe = all_pe.cuda()
-    return all_pe
+from omegaconf import OmegaConf
 
 log = logging.getLogger(__name__)
 
 
-class Inference:
-    def __init__(self, cfg=None, protein_embeds=None):
+class stateEmbeddingsModel(HelicalBaseFoundationModel):
+    def __init__(self, configurer: stateConfig = None) -> None:
+        super().__init__()
+
+        downloader = Downloader()
+        for file in self.config["list_of_files_to_download"]:
+            downloader.download_via_name(file)
+
+
         self.model = None
         self.collator = None
-        self.protein_embeds = protein_embeds
-        self._vci_conf = cfg
+        if configurer is None:
+            configurer = stateConfig()
+
+        self.config = configurer.config["embed"]
+        self.model_dir = self.config["cache_dir"]
+        self.ckpt_path = os.path.join(self.model_dir, self.config["embed_checkpoint"])
+        logging.info(f"Using model checkpoint: {self.ckpt_path}")
+
+        embedding_file = os.path.join(
+            self.model_dir, "protein_embeddings.pt"
+        )
+
+        self.protein_embeds = torch.load(
+            embedding_file, weights_only=False, map_location="cpu"
+        ) if os.path.exists(embedding_file) else None
+
+        self.model_conf = OmegaConf.load(
+            os.path.join(self.model_dir, "config.yaml")
+        )
+        self.load_model(self.ckpt_path)
+
+    def process_data(
+        self,
+        adata: anndata.AnnData,
+    ):
+
+        shape_dict = self.__load_dataset_meta_from_adata(adata)
+        adata = self._convert_to_csr(adata)
+        gene_column: Optional[str] = self._auto_detect_gene_column(adata)
+
+        device_type = "cuda" if torch.cuda.is_available() else "cpu"
+        precision = get_precision_config(device_type=device_type)
+        dataloader = create_dataloader(
+            self.model_conf,
+            adata=adata,
+            adata_name="inference",
+            shape_dict=shape_dict,
+            data_dir=None,
+            shuffle=False,
+            protein_embeds=self.protein_embeds,
+            precision=precision,
+            gene_column=gene_column,
+        )
+
+        return dataloader
+
+    def get_embeddings(self, dataloader):
+        all_embeddings = []
+        all_ds_embeddings = []
+        for embeddings, ds_embeddings in tqdm(
+            self.encode(dataloader), total=len(dataloader), desc="Encoding"
+        ):
+            all_embeddings.append(embeddings)
+            if ds_embeddings is not None:
+                all_ds_embeddings.append(ds_embeddings)
+
+        all_embeddings = np.concatenate(all_embeddings, axis=0).astype(np.float32)
+        if len(all_ds_embeddings) > 0:
+            all_ds_embeddings = np.concatenate(all_ds_embeddings, axis=0).astype(
+                np.float32
+            )
+
+            all_embeddings = np.concatenate(
+                [all_embeddings, all_ds_embeddings], axis=-1
+            )
+
+        return np.concatenate(all_embeddings)
 
     def __load_dataset_meta(self, adata_path):
         with h5.File(adata_path) as h5f:
@@ -122,14 +191,14 @@ class Inference:
             raise ValueError("Model already initialized")
 
         # Load and initialize model for eval
-        self.model = StateEmbeddingModel.load_from_checkpoint(checkpoint, dropout=0.0, strict=False, cfg=self._vci_conf)
+        self.model = StateEmbeddingModel.load_from_checkpoint(checkpoint, dropout=0.0, strict=False, cfg=self.model_conf)
 
         # Convert model to appropriate precision for faster inference
         device_type = "cuda" if torch.cuda.is_available() else "cpu"
         precision = get_precision_config(device_type=device_type)
         self.model = self.model.to(precision)
 
-        all_pe = self.protein_embeds or get_embeddings(self._vci_conf)
+        all_pe = self.protein_embeds or StateEmbeddings.load_esm2_embeddings(self.model_conf)
         if isinstance(all_pe, dict):
             all_pe = torch.vstack(list(all_pe.values()))
         self.model.pe_embedding = nn.Embedding.from_pretrained(all_pe)
@@ -138,7 +207,7 @@ class Inference:
         self.model.eval()
 
         if self.protein_embeds is None:
-            self.protein_embeds = torch.load(get_embedding_cfg(self._vci_conf).all_embeddings, weights_only=False)
+            self.protein_embeds = torch.load(get_embedding_cfg(self.model_conf).all_embeddings, weights_only=False)
 
     def init_from_model(self, model, protein_embeds=None):
         """
@@ -148,7 +217,7 @@ class Inference:
         if protein_embeds:
             self.protein_embeds = protein_embeds
         else:
-            self.protein_embeds = torch.load(get_embedding_cfg(self._vci_conf), weights_only=False)
+            self.protein_embeds = torch.load(get_embedding_cfg(self.model_conf), weights_only=False)
 
     def get_gene_embedding(self, genes):
         protein_embeds = [self.protein_embeds[x] if x in self.protein_embeds else torch.zeros(5120) for x in genes]
@@ -170,70 +239,6 @@ class Inference:
                     ds_embeddings = ds_emb.detach().cpu().float().numpy()
 
                     yield embeddings, ds_embeddings
-
-
-    ##################### wrapper functions ######################################
-    def process_data(
-        self,
-        # input_adata_path: str,
-        adata: anndata.AnnData,
-    ):
-
-        # shape_dict1 = self.__load_dataset_meta(input_adata_path)
-        shape_dict = self.__load_dataset_meta_from_adata(adata)
-        # adata = anndata.read_h5ad(input_adata_path)
-        # dataset_name = Path(input_adata_path).stem
-        # dataset_name = shape_dict.keys()[0]
-
-        # Convert to CSR format if needed
-        adata = self._convert_to_csr(adata)
-
-        # Auto-detect the best gene column
-        gene_column: Optional[str] = self._auto_detect_gene_column(adata)
-
-        device_type = "cuda" if torch.cuda.is_available() else "cpu"
-        precision = get_precision_config(device_type=device_type)
-        dataloader = create_dataloader(
-            self._vci_conf,
-            adata=adata,
-            # adata_name=dataset_name or "inference",
-            adata_name="inference",
-            shape_dict=shape_dict,
-            # data_dir=os.path.dirname(input_adata_path),
-            data_dir=None,
-            shuffle=False,
-            protein_embeds=self.protein_embeds,
-            precision=precision,
-            gene_column=gene_column,
-        )
-
-        return dataloader
-
-    def embed_data(self, dataloader):
-        all_embeddings = []
-        all_ds_embeddings = []
-        for embeddings, ds_embeddings in tqdm(
-            self.encode(dataloader), total=len(dataloader), desc="Encoding"
-        ):
-            all_embeddings.append(embeddings)
-            if ds_embeddings is not None:
-                all_ds_embeddings.append(ds_embeddings)
-
-        # attach this as a numpy array to the adata and write it out
-        all_embeddings = np.concatenate(all_embeddings, axis=0).astype(np.float32)
-        if len(all_ds_embeddings) > 0:
-            all_ds_embeddings = np.concatenate(all_ds_embeddings, axis=0).astype(
-                np.float32
-            )
-
-            # concatenate along axis -1 with all embeddings
-            all_embeddings = np.concatenate(
-                [all_embeddings, all_ds_embeddings], axis=-1
-            )
-
-        return all_embeddings
-
-    ###########################################################
 
     def encode_adata(
         self,
@@ -260,7 +265,7 @@ class Inference:
         device_type = "cuda" if torch.cuda.is_available() else "cpu"
         precision = get_precision_config(device_type=device_type)
         dataloader = create_dataloader(
-            self._vci_conf,
+            self.model_conf,
             adata=adata,
             adata_name=dataset_name or "inference",
             shape_dict=shape_dict,
@@ -399,3 +404,13 @@ class Inference:
                 logprobs_batch = self.model.binary_decoder(merged_embs)
                 logprobs_batch = logprobs_batch.detach().cpu().float().numpy()
                 yield logprobs_batch.squeeze()
+
+    @staticmethod
+    def load_esm2_embeddings(cfg):
+        # Load in ESM2 embeddings and special tokens
+        all_pe = torch.load(get_embedding_cfg(cfg).all_embeddings, weights_only=False)
+        if isinstance(all_pe, dict):
+            all_pe = torch.vstack(list(all_pe.values()))
+
+        all_pe = all_pe.cuda()
+        return all_pe

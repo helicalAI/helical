@@ -3,9 +3,8 @@ import numpy as np
 import pandas as pd
 import torch
 from tqdm import tqdm
-from vci.data import create_dataloader
-from vci.eval.emb import cluster_embedding
-from vci.utils import compute_gene_overlap_cross_pert
+from ..data import create_dataloader
+from ..utils import compute_gene_overlap_cross_pert
 from torch import nn, optim
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.metrics import roc_auc_score, accuracy_score
@@ -41,7 +40,6 @@ def evaluate_intrinsic(model, cfg, device=None, logger=print, adata=None):
         all_embs = np.concatenate(all_embs, axis=0)
         adata.obsm["X_emb"] = all_embs
 
-    cluster_embedding(adata, 0, emb_key="X_emb", use_pca=True, job_name=cfg["experiment"]["name"])
 
     # Run the intrinsic benchmark evaluation
     intrinsic_results = run_intrinsic_benchmark(adata, device, logger)
