@@ -108,6 +108,7 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             self.config = configurer.config["finetune"]
 
         HelicalBaseFineTuningModel.__init__(self, fine_tuning_head, output_size)
+        
 
         if not os.path.exists(self.config["model_config"]):
             raise FileNotFoundError(
