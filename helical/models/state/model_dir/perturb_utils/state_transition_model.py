@@ -241,7 +241,7 @@ class StateTransitionPerturbationModel(PerturbationModel):
                 dropout=self.dropout,
             )
 
-        control_pert = kwargs.get("control_pert", "non-targeting")
+        # control_pert = kwargs.get("control_pert", "non-targeting")
         # if kwargs.get("finetune_vci_decoder", False):  # TODO: This will go very soon
         #     gene_names = []
 

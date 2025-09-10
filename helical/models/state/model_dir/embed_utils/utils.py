@@ -1,105 +1,8 @@
-import os
 import pandas as pd
 import numpy as np
 import torch
-
 from scipy.stats import pearsonr
 from sklearn.metrics.pairwise import cosine_similarity
-
-from pathlib import Path
-import uuid
-
-import logging
-import requests
-import time
-
-# Constants for gene mapping
-GENE_NAME_ENSEMPLE_MAP = {"GATD3A": "ENSMUSG00000053329", "GATD3B": "ENSG00000160221"}
-
-
-def convert_gene_symbols_to_ensembl_rest(gene_symbols, species="human"):
-    server = "https://grch37.rest.ensembl.org"
-
-    # Map species to its scientific name
-    species_map = {
-        "human": "homo_sapiens",
-        "mouse": "mus_musculus",
-        "rat": "rattus_norvegicus",
-    }
-
-    species_name = species_map.get(species.lower(), species)
-    gene_to_ensembl = {}
-
-    for symbol in gene_symbols:
-        # Construct the URL for the API request
-        ext = f"/lookup/symbol/{species_name}/{symbol}?"
-
-        # Make the request
-        r = requests.get(server + ext, headers={"Content-Type": "application/json"})
-
-        # Check if the request was successful
-        if r.status_code != 200:
-            print(f"Failed to retrieve data for {symbol}: {r.status_code}")
-            continue
-
-        # Parse the JSON response
-        decoded = r.json()
-
-        # Extract the Ensembl ID
-        if "id" in decoded:
-            gene_to_ensembl[symbol] = decoded["id"]
-
-        # Sleep briefly to avoid overloading the server
-        time.sleep(0.1)
-
-    return gene_to_ensembl
-
-
-def convert_symbols_to_ensembl(adata):
-    import mygene
-
-    gene_symbols = adata.var_names.tolist()
-
-    mg = mygene.MyGeneInfo()
-    results = mg.querymany(
-        gene_symbols, scopes="symbol", fields="ensembl.gene", species="human"
-    )
-
-    symbol_to_ensembl = {}
-    for result in results:
-        if "ensembl" in result and not result.get("notfound", False):
-            if isinstance(result["ensembl"], list):
-                symbol_to_ensembl[result["query"]] = result["ensembl"][0]["gene"]
-            else:
-                symbol_to_ensembl[result["query"]] = result["ensembl"]["gene"]
-
-    for symbol in gene_symbols:
-        if symbol_to_ensembl.get(symbol) is None:
-            sym_results = convert_gene_symbols_to_ensembl_rest([symbol])
-            if len(sym_results) > 0:
-                symbol_to_ensembl[symbol] = sym_results[symbol]
-                logging.info(
-                    f"Converted {symbol} to {symbol_to_ensembl[symbol]} using REST API"
-                )
-
-    logging.info("Done...")
-    for symbol in gene_symbols:
-        if symbol_to_ensembl.get(symbol) is None:
-            logging.info(f"{symbol} -> {symbol_to_ensembl.get(symbol, np.nan)}")
-            if symbol in GENE_NAME_ENSEMPLE_MAP:
-                symbol_to_ensembl[symbol] = GENE_NAME_ENSEMPLE_MAP[symbol]
-
-    # Add the remaining or errored ones manually
-    symbol_to_ensembl["PBK"] = "ENSG00000168078"
-    return [symbol_to_ensembl.get(symbol, np.nan) for symbol in gene_symbols]
-
-
-def is_valid_uuid(val):
-    try:
-        uuid.UUID(str(val))
-        return True
-    except ValueError:
-        return False
 
 
 def get_embedding_cfg(cfg):
@@ -195,27 +98,6 @@ def _compute_mean_perturbation_effect(
     return np.abs(mean_df - mean_df.loc[ctrl_pert])
 
 
-def get_latest_checkpoint(cfg):
-    run_name = "exp_{0}_layers_{1}_dmodel_{2}_samples_{3}_max_lr_{4}_op_dim_{5}".format(
-        cfg.experiment.name,
-        cfg.model.nlayers,
-        cfg.model.emsize,
-        cfg.dataset.pad_length,
-        cfg.optimizer.max_lr,
-        cfg.model.output_dim,
-    )
-
-    if cfg.experiment.checkpoint.path is None:
-        return run_name, None
-    chk_dir = os.path.join(cfg.experiment.checkpoint.path, cfg.experiment.name)
-    chk = os.path.join(chk_dir, "last.ckpt")
-    # chk = os.path.join(chk_dir, 'exp_rda_mmd_counts_1024_layers_4_dmodel_512_samples_1024_max_lr_0.00024_op_dim_512-epoch=1-step=581000.ckpt')
-    if not os.path.exists(chk) or len(chk) == 0:
-        chk = None
-
-    return run_name, chk
-
-
 def compute_gene_overlap_cross_pert(
     DE_pred, DE_true, control_pert="non-targeting", k=50
 ):
@@ -233,14 +115,6 @@ def compute_gene_overlap_cross_pert(
         )
 
     return all_overlaps
-
-
-def parse_chk_info(chk):
-    chk_filename = Path(chk)
-    epoch = chk_filename.stem.split("_")[-1].split("-")[1].split("=")[1]
-    steps = chk_filename.stem.split("_")[-1].split("-")[2].split("=")[1]
-
-    return int(epoch), int(steps)
 
 
 def get_shapes_dict(dataset_path, filter_by_species=None):
