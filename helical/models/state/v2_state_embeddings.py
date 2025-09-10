@@ -18,6 +18,7 @@ from helical.models.base_models import HelicalBaseFoundationModel
 from helical.models.state.state_config import stateConfig
 from helical.utils.downloader import Downloader
 from omegaconf import OmegaConf
+from scipy.sparse import csr_matrix, issparse
 
 LOGGER = logging.getLogger(__name__)
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
@@ -74,6 +75,7 @@ class stateEmbeddingsModel(HelicalBaseFoundationModel):
             protein_embeds=self.protein_embeds,
             precision=precision,
             gene_column=gene_column,
+            batch_size=self.config["batch_size"],
         )
 
         return dataloader
@@ -245,9 +247,6 @@ class stateEmbeddingsModel(HelicalBaseFoundationModel):
         emb_key: str = "X_emb",
         dataset_name: str | None = None,
         batch_size: int = 32,
-        lancedb_path: str | None = None,
-        update_lancedb: bool = False,
-        lancedb_batch_size: int = 1000,
     ):
         shape_dict = self.__load_dataset_meta(input_adata_path)
         adata = anndata.read_h5ad(input_adata_path)
@@ -294,30 +293,8 @@ class stateEmbeddingsModel(HelicalBaseFoundationModel):
             adata.obsm[emb_key] = all_embeddings
             adata.write_h5ad(output_adata_path)
 
-        # Save to lancedb, if requested
-        if lancedb_path is not None:
-            from .vectordb import StateVectorDB
-
-            LOGGER.info(f"Saving embeddings to LanceDB at {lancedb_path}")
-            vector_db = StateVectorDB(lancedb_path)
-
-            # Extract relevant metadata
-            metadata = adata.obs.copy()
-
-            # Create or update the database
-            vector_db.create_or_update_table(
-                embeddings=all_embeddings,
-                metadata=metadata,
-                embedding_key=emb_key,
-                dataset_name=dataset_name or Path(input_adata_path).stem,
-                batch_size=lancedb_batch_size,
-            )
-
-            LOGGER.info(f"Successfully saved {len(all_embeddings)} embeddings to LanceDB")
-
     def _convert_to_csr(self, adata):
         """Convert the adata.X matrix to CSR format if it's not already."""
-        from scipy.sparse import csr_matrix, issparse
 
         if issparse(adata.X) and not isinstance(adata.X, csr_matrix):
             print(f"Converting {type(adata.X).__name__} to csr_matrix format")

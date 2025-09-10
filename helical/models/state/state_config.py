@@ -36,6 +36,7 @@ class stateConfig:
                     "state/state_embed/protein_embeddings.pt",
                     "state/state_embed/se600m_epoch16.ckpt",
                     ],
+                "batch_size": batch_size,
                 "cache_dir": Path(CACHE_DIR_HELICAL, "state/state_embed"),
             },
 

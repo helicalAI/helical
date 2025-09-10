@@ -30,6 +30,7 @@ def create_dataloader(
     adata_name=None,
     shuffle=False,
     sentence_collator=None,
+    batch_size=32,
     protein_embeds=None,
     precision=None,
     gene_column: Optional[str] = "gene_name",
@@ -70,7 +71,7 @@ def create_dataloader(
 
     dataloader = DataLoader(
         dataset,
-        batch_size=cfg.model.batch_size,
+        batch_size=batch_size,
         shuffle=shuffle,
         collate_fn=sentence_collator,
         num_workers=workers,
