@@ -2,13 +2,16 @@ from helical.constants.paths import CACHE_DIR_HELICAL
 from pathlib import Path
 import os
 
+
 class stateConfig:
     def __init__(
         self,
         output: str = "competition/prediction.h5ad",
         checkpoint_name: str = "final.ckpt",
         model_dir: Path = Path(CACHE_DIR_HELICAL, "state/state_transition"),
-        model_config: str = Path(CACHE_DIR_HELICAL, "state/state_transition/config.yaml"),
+        model_config: str = Path(
+            CACHE_DIR_HELICAL, "state/state_transition/config.yaml"
+        ),
         embed_checkpoint: str = "se600m_epoch16.ckpt",
         model_name: str = "best_model",
         pert_col: str = "target_gene",
@@ -21,25 +24,26 @@ class stateConfig:
         use_perturbation_embeddings: bool = True,
         max_set_len: int = None,
         tsv: str = None,
-        batch_size: int = 16, 
+        batch_size: int = 16,
         freeze_backbone: bool = True,
     ):
 
         model_path = Path(CACHE_DIR_HELICAL, "state/state_finetune", f"{model_name}.pt")
-        os.makedirs(os.path.join(CACHE_DIR_HELICAL, "state/state_finetune"), exist_ok=True)
+        os.makedirs(
+            os.path.join(CACHE_DIR_HELICAL, "state/state_finetune"), exist_ok=True
+        )
 
-        self.config = {      
+        self.config = {
             "embed": {
                 "embed_checkpoint": embed_checkpoint,
                 "list_of_files_to_download": [
                     "state/state_embed/config.yaml",
                     "state/state_embed/protein_embeddings.pt",
                     "state/state_embed/se600m_epoch16.ckpt",
-                    ],
+                ],
                 "batch_size": batch_size,
                 "cache_dir": Path(CACHE_DIR_HELICAL, "state/state_embed"),
             },
-
             "finetune": {
                 "batch_size": batch_size,
                 "model_dir": model_dir,

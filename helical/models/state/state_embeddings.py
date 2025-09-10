@@ -23,6 +23,7 @@ from scipy.sparse import csr_matrix, issparse
 LOGGER = logging.getLogger(__name__)
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
+
 class stateEmbed(HelicalBaseFoundationModel):
     def __init__(self, configurer: stateConfig = None) -> None:
         super().__init__()
@@ -41,17 +42,15 @@ class stateEmbed(HelicalBaseFoundationModel):
         self.ckpt_path = os.path.join(self.model_dir, self.config["embed_checkpoint"])
         LOGGER.info(f"Using model checkpoint: {self.ckpt_path}")
 
-        embedding_file = os.path.join(
-            self.model_dir, "protein_embeddings.pt"
+        embedding_file = os.path.join(self.model_dir, "protein_embeddings.pt")
+
+        self.protein_embeds = (
+            torch.load(embedding_file, weights_only=False, map_location="cpu")
+            if os.path.exists(embedding_file)
+            else None
         )
 
-        self.protein_embeds = torch.load(
-            embedding_file, weights_only=False, map_location="cpu"
-        ) if os.path.exists(embedding_file) else None
-
-        self.model_conf = OmegaConf.load(
-            os.path.join(self.model_dir, "config.yaml")
-        )
+        self.model_conf = OmegaConf.load(os.path.join(self.model_dir, "config.yaml"))
         self.load_model(self.ckpt_path)
 
     def process_data(
@@ -124,30 +123,40 @@ class stateEmbed(HelicalBaseFoundationModel):
                     # Looks like sparse CSR format
                     num_cells = len(h5f["X"]["indptr"]) - 1
                     num_genes = attrs.get(
-                        "shape", [0, h5f["X"]["indices"][:].max() + 1 if len(h5f["X"]["indices"]) > 0 else 0]
+                        "shape",
+                        [
+                            0,
+                            (
+                                h5f["X"]["indices"][:].max() + 1
+                                if len(h5f["X"]["indices"]) > 0
+                                else 0
+                            ),
+                        ],
                     )[1]
                 else:
-                    raise ValueError("Cannot determine matrix format - no encoding-type and unrecognized structure")
+                    raise ValueError(
+                        "Cannot determine matrix format - no encoding-type and unrecognized structure"
+                    )
 
         return {Path(adata_path).stem: (num_cells, num_genes)}
 
     def __load_dataset_meta_from_adata(self, adata, dataset_name=None):
         """
         Extract dataset metadata directly from an AnnData object.
-        
+
         Args:
             adata: AnnData object
             dataset_name: Optional name for the dataset. If None, uses 'inference'
-            
+
         Returns:
             dict: Dictionary with dataset name as key and (num_cells, num_genes) as value
         """
         num_cells = adata.n_obs
         num_genes = adata.n_vars
-        
+
         if dataset_name is None:
             dataset_name = "inference"
-            
+
         return {dataset_name: (num_cells, num_genes)}
 
     def _save_data(self, input_adata_path, output_adata_path, obsm_key, data):
@@ -171,18 +180,25 @@ class stateEmbed(HelicalBaseFoundationModel):
                     for _, obj in input_h5f.items():
                         input_h5f.copy(obj, output_h5f)
                     output_h5f.create_dataset(
-                        f"/obsm/{obsm_key}", chunks=True, data=data, maxshape=(None, data.shape[1])
+                        f"/obsm/{obsm_key}",
+                        chunks=True,
+                        data=data,
+                        maxshape=(None, data.shape[1]),
                     )
         else:
             with h5.File(output_adata_path, "a") as output_h5f:
                 # If the dataset is added to an existing file that does not have the dataset
                 if f"/obsm/{obsm_key}" not in output_h5f:
                     output_h5f.create_dataset(
-                        f"/obsm/{obsm_key}", chunks=True, data=data, maxshape=(None, data.shape[1])
+                        f"/obsm/{obsm_key}",
+                        chunks=True,
+                        data=data,
+                        maxshape=(None, data.shape[1]),
                     )
                 else:
                     output_h5f[f"/obsm/{obsm_key}"].resize(
-                        (output_h5f[f"/obsm/{obsm_key}"].shape[0] + data.shape[0]), axis=0
+                        (output_h5f[f"/obsm/{obsm_key}"].shape[0] + data.shape[0]),
+                        axis=0,
                     )
                     output_h5f[f"/obsm/{obsm_key}"][-data.shape[0] :] = data
 
@@ -191,14 +207,16 @@ class stateEmbed(HelicalBaseFoundationModel):
             raise ValueError("Model already initialized")
 
         # Load and initialize model for eval
-        self.model = StateEmbeddingModel.load_from_checkpoint(checkpoint, dropout=0.0, strict=False, cfg=self.model_conf)
+        self.model = StateEmbeddingModel.load_from_checkpoint(
+            checkpoint, dropout=0.0, strict=False, cfg=self.model_conf
+        )
 
         # Convert model to appropriate precision for faster inference
         device_type = "cuda" if torch.cuda.is_available() else "cpu"
         precision = get_precision_config(device_type=device_type)
         self.model = self.model.to(precision)
 
-        all_pe = self.protein_embeds or stateEmbeddingsModel.load_esm2_embeddings(self.model_conf)
+        all_pe = self.protein_embeds or stateEmbed.load_esm2_embeddings(self.model_conf)
         if isinstance(all_pe, dict):
             all_pe = torch.vstack(list(all_pe.values()))
         self.model.pe_embedding = nn.Embedding.from_pretrained(all_pe)
@@ -207,7 +225,9 @@ class stateEmbed(HelicalBaseFoundationModel):
         self.model.eval()
 
         if self.protein_embeds is None:
-            self.protein_embeds = torch.load(get_embedding_cfg(self.model_conf).all_embeddings, weights_only=False)
+            self.protein_embeds = torch.load(
+                get_embedding_cfg(self.model_conf).all_embeddings, weights_only=False
+            )
 
     def init_from_model(self, model, protein_embeds=None):
         """
@@ -217,13 +237,20 @@ class stateEmbed(HelicalBaseFoundationModel):
         if protein_embeds:
             self.protein_embeds = protein_embeds
         else:
-            self.protein_embeds = torch.load(get_embedding_cfg(self.model_conf), weights_only=False)
+            self.protein_embeds = torch.load(
+                get_embedding_cfg(self.model_conf), weights_only=False
+            )
 
     def get_gene_embedding(self, genes):
-        protein_embeds = [self.protein_embeds[x] if x in self.protein_embeds else torch.zeros(5120) for x in genes]
+        protein_embeds = [
+            self.protein_embeds[x] if x in self.protein_embeds else torch.zeros(5120)
+            for x in genes
+        ]
         device_type = "cuda" if torch.cuda.is_available() else "cpu"
         precision = get_precision_config(device_type=device_type)
-        protein_embeds = torch.stack(protein_embeds).to(self.model.device, dtype=precision)
+        protein_embeds = torch.stack(protein_embeds).to(
+            self.model.device, dtype=precision
+        )
         return self.model.gene_embedding_layer(protein_embeds)
 
     def encode(self, dataloader, rda=None):
@@ -232,7 +259,9 @@ class stateEmbed(HelicalBaseFoundationModel):
             precision = get_precision_config(device_type=device_type)
             with torch.autocast(device_type=device_type, dtype=precision):
                 for i, batch in enumerate(dataloader):
-                    _, _, _, emb, ds_emb = self.model._compute_embedding_for_batch(batch)
+                    _, _, _, emb, ds_emb = self.model._compute_embedding_for_batch(
+                        batch
+                    )
                     embeddings = emb.detach().cpu().float().numpy()
 
                     ds_emb = self.model.dataset_embedder(ds_emb)
@@ -275,7 +304,9 @@ class stateEmbed(HelicalBaseFoundationModel):
 
         all_embeddings = []
         all_ds_embeddings = []
-        for embeddings, ds_embeddings in tqdm(self.encode(dataloader), total=len(dataloader), desc="Encoding"):
+        for embeddings, ds_embeddings in tqdm(
+            self.encode(dataloader), total=len(dataloader), desc="Encoding"
+        ):
             all_embeddings.append(embeddings)
             if ds_embeddings is not None:
                 all_ds_embeddings.append(ds_embeddings)
@@ -283,10 +314,14 @@ class stateEmbed(HelicalBaseFoundationModel):
         # attach this as a numpy array to the adata and write it out
         all_embeddings = np.concatenate(all_embeddings, axis=0).astype(np.float32)
         if len(all_ds_embeddings) > 0:
-            all_ds_embeddings = np.concatenate(all_ds_embeddings, axis=0).astype(np.float32)
+            all_ds_embeddings = np.concatenate(all_ds_embeddings, axis=0).astype(
+                np.float32
+            )
 
             # concatenate along axis -1 with all embeddings
-            all_embeddings = np.concatenate([all_embeddings, all_ds_embeddings], axis=-1)
+            all_embeddings = np.concatenate(
+                [all_embeddings, all_ds_embeddings], axis=-1
+            )
 
         # if output_adata_path is provided, write the adata to the file
         if output_adata_path is not None:
@@ -304,7 +339,9 @@ class stateEmbed(HelicalBaseFoundationModel):
     def _auto_detect_gene_column(self, adata):
         """Auto-detect the gene column with highest overlap with protein embeddings."""
         if self.protein_embeds is None:
-            LOGGER.warning("No protein embeddings available for auto-detection, using index")
+            LOGGER.warning(
+                "No protein embeddings available for auto-detection, using index"
+            )
             return None
 
         protein_genes = set(self.protein_embeds.keys())
@@ -324,7 +361,9 @@ class stateEmbed(HelicalBaseFoundationModel):
 
         # Check all columns in var
         for col in adata.var.columns:
-            if adata.var[col].dtype == "object" or adata.var[col].dtype.name.startswith("str"):
+            if adata.var[col].dtype == "object" or adata.var[col].dtype.name.startswith(
+                "str"
+            ):
                 col_genes = set(adata.var[col].dropna().astype(str))
                 overlap = len(protein_genes.intersection(col_genes))
                 overlap_pct = overlap / len(col_genes) if len(col_genes) > 0 else 0
@@ -344,13 +383,17 @@ class stateEmbed(HelicalBaseFoundationModel):
 
         return best_column
 
-    def decode_from_file(self, adata_path, emb_key: str, read_depth=None, batch_size=64):
+    def decode_from_file(
+        self, adata_path, emb_key: str, read_depth=None, batch_size=64
+    ):
         adata = anndata.read_h5ad(adata_path)
         genes = adata.var.index
         yield from self.decode_from_adata(adata, genes, emb_key, read_depth, batch_size)
 
     @torch.no_grad()
-    def decode_from_adata(self, adata, genes, emb_key: str, read_depth=None, batch_size=64):
+    def decode_from_adata(
+        self, adata, genes, emb_key: str, read_depth=None, batch_size=64
+    ):
         try:
             cell_embs = adata.obsm[emb_key]
         except:
@@ -366,15 +409,26 @@ class stateEmbed(HelicalBaseFoundationModel):
 
         gene_embeds = self.get_gene_embedding(genes)
         with torch.autocast(device_type=device_type, dtype=precision):
-            for i in tqdm(range(0, cell_embs.size(0), batch_size), total=int(cell_embs.size(0) // batch_size)):
+            for i in tqdm(
+                range(0, cell_embs.size(0), batch_size),
+                total=int(cell_embs.size(0) // batch_size),
+            ):
                 cell_embeds_batch = cell_embs[i : i + batch_size]
                 task_counts = torch.full(
-                    (cell_embeds_batch.shape[0],), read_depth, device=self.model.device, dtype=precision
+                    (cell_embeds_batch.shape[0],),
+                    read_depth,
+                    device=self.model.device,
+                    dtype=precision,
                 )
 
-                ds_emb = cell_embeds_batch[:, -self.model.z_dim_ds :]  # last ten columns are the dataset embeddings
+                ds_emb = cell_embeds_batch[
+                    :, -self.model.z_dim_ds :
+                ]  # last ten columns are the dataset embeddings
                 merged_embs = StateEmbeddingModel.resize_batch(
-                    cell_embeds_batch, gene_embeds, task_counts=task_counts, ds_emb=ds_emb
+                    cell_embeds_batch,
+                    gene_embeds,
+                    task_counts=task_counts,
+                    ds_emb=ds_emb,
                 )
                 logprobs_batch = self.model.binary_decoder(merged_embs)
                 logprobs_batch = logprobs_batch.detach().cpu().float().numpy()

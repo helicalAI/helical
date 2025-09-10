@@ -1,4 +1,5 @@
 import warnings
+
 warnings.filterwarnings("ignore")
 import math
 import logging
@@ -7,7 +8,12 @@ import torch
 import lightning as L
 from torch import nn, Tensor
 from torch.nn import BCEWithLogitsLoss
-from torch.optim.lr_scheduler import ChainedScheduler, LinearLR, CosineAnnealingLR, ReduceLROnPlateau
+from torch.optim.lr_scheduler import (
+    ChainedScheduler,
+    LinearLR,
+    CosineAnnealingLR,
+    ReduceLROnPlateau,
+)
 from ..utils import (
     get_embedding_cfg,
     get_dataset_cfg,
@@ -41,7 +47,9 @@ class SkipBlock(nn.Module):
 
 
 def nanstd(x):
-    return torch.sqrt(torch.nanmean(torch.pow(x - torch.nanmean(x, dim=-1).unsqueeze(-1), 2), dim=-1))
+    return torch.sqrt(
+        torch.nanmean(torch.pow(x - torch.nanmean(x, dim=-1).unsqueeze(-1), 2), dim=-1)
+    )
 
 
 class StateEmbeddingModel(L.LightningModule):
@@ -83,7 +91,10 @@ class StateEmbeddingModel(L.LightningModule):
         )
 
         # Create a list of FlashTransformerEncoderLayer instances
-        layers = [FlashTransformerEncoderLayer(d_model, nhead, d_hid, dropout=dropout) for _ in range(nlayers)]
+        layers = [
+            FlashTransformerEncoderLayer(d_model, nhead, d_hid, dropout=dropout)
+            for _ in range(nlayers)
+        ]
         self.transformer_encoder = FlashTransformerEncoder(layers)
 
         if compiled:
@@ -127,9 +138,7 @@ class StateEmbeddingModel(L.LightningModule):
         if compiled:
             self.gene_embedding_layer = torch.compile(self.gene_embedding_layer)
 
-        self.pe_embedding = (
-            None  # TODO: make this cleaner for the type checker, right now it gets set externally after model init
-        )
+        self.pe_embedding = None  # TODO: make this cleaner for the type checker, right now it gets set externally after model init
         self.step_ctr = 0
 
         self.true_top_genes = None
@@ -183,14 +192,21 @@ class StateEmbeddingModel(L.LightningModule):
 
         # Optionally add a learnable dataset token to the end of the sentence
         if self.dataset_token is not None:
-            dataset_token = self.dataset_token.expand(batch_sentences.size(0), -1).unsqueeze(1)
+            dataset_token = self.dataset_token.expand(
+                batch_sentences.size(0), -1
+            ).unsqueeze(1)
             batch_sentences = torch.cat((batch_sentences, dataset_token), dim=1)
             # concatenate a False to the mask on dim 1
-            mask = torch.cat((mask, torch.zeros(mask.size(0), 1, device=mask.device).bool()), dim=1)
+            mask = torch.cat(
+                (mask, torch.zeros(mask.size(0), 1, device=mask.device).bool()), dim=1
+            )
 
         # mask out the genes embeddings that appear in the task sentence
         _, embedding, dataset_emb = self.forward(
-            batch_sentences, mask=mask, counts=batch_sentences_counts, dataset_nums=dataset_nums
+            batch_sentences,
+            mask=mask,
+            counts=batch_sentences_counts,
+            dataset_nums=dataset_nums,
         )
 
         X = self.gene_embedding_layer(X)
@@ -198,10 +214,16 @@ class StateEmbeddingModel(L.LightningModule):
 
     def get_gene_embedding(self, genes):
         if self.protein_embeds is None:
-            self.protein_embeds = torch.load(get_embedding_cfg(self.cfg).all_embeddings, weights_only=False)
+            self.protein_embeds = torch.load(
+                get_embedding_cfg(self.cfg).all_embeddings, weights_only=False
+            )
 
         protein_embeds = [
-            self.protein_embeds[x] if x in self.protein_embeds else torch.zeros(get_embedding_cfg(self.cfg).size)
+            (
+                self.protein_embeds[x]
+                if x in self.protein_embeds
+                else torch.zeros(get_embedding_cfg(self.cfg).size)
+            )
             for x in genes
         ]
         protein_embeds = torch.stack(protein_embeds).to(self.device)
@@ -211,7 +233,9 @@ class StateEmbeddingModel(L.LightningModule):
         return self.gene_embedding_layer(protein_embeds)
 
     @staticmethod
-    def resize_batch(cell_embeds, task_embeds, task_counts=None, sampled_rda=None, ds_emb=None):
+    def resize_batch(
+        cell_embeds, task_embeds, task_counts=None, sampled_rda=None, ds_emb=None
+    ):
         A = task_embeds.unsqueeze(0).repeat(cell_embeds.size(0), 1, 1)
         B = cell_embeds.unsqueeze(1).repeat(1, task_embeds.size(0), 1)
         if sampled_rda is not None:
@@ -250,7 +274,9 @@ class StateEmbeddingModel(L.LightningModule):
 
             # Step 1: Transform count values into bin distribution
             bin_weights = self.count_encoder(counts)  # B x H x 10
-            bin_weights = F.softmax(bin_weights, dim=-1)  # Convert to probabilities over bins
+            bin_weights = F.softmax(
+                bin_weights, dim=-1
+            )  # Convert to probabilities over bins
 
             # Step 2: Get bin embeddings
             bin_indices = torch.arange(10, device=self.device)  # 10 bins
@@ -261,8 +287,12 @@ class StateEmbeddingModel(L.LightningModule):
 
             if self.dataset_token is not None:
                 # append B x 1 x d_model to count_emb of all zeros
-                dataset_count_emb = torch.zeros(count_emb.size(0), 1, count_emb.size(2), device=self.device)
-                count_emb = torch.cat((count_emb, dataset_count_emb), dim=1)  # B x H x d_model
+                dataset_count_emb = torch.zeros(
+                    count_emb.size(0), 1, count_emb.size(2), device=self.device
+                )
+                count_emb = torch.cat(
+                    (count_emb, dataset_count_emb), dim=1
+                )  # B x H x d_model
 
             # Add count embeddings to token embeddings
             src = (
@@ -284,7 +314,9 @@ class StateEmbeddingModel(L.LightningModule):
 
     def shared_step(self, batch, batch_idx):
         logging.info(f"Step {self.global_step} - Batch {batch_idx}")
-        X, Y, batch_weights, embs, dataset_embs = self._compute_embedding_for_batch(batch)
+        X, Y, batch_weights, embs, dataset_embs = self._compute_embedding_for_batch(
+            batch
+        )
 
         z = embs.unsqueeze(1).repeat(1, X.shape[1], 1)  # CLS token
 
@@ -328,15 +360,21 @@ class StateEmbeddingModel(L.LightningModule):
             criterion = WassersteinLoss()
             target = Y
         elif self.cfg.loss.name == "kl_divergence":
-            criterion = KLDivergenceLoss(apply_normalization=self.cfg.loss.normalization)
+            criterion = KLDivergenceLoss(
+                apply_normalization=self.cfg.loss.normalization
+            )
             target = batch_weights
         elif self.cfg.loss.name == "mmd":
             kernel = self.cfg.loss.get("kernel", "energy")
-            criterion = MMDLoss(kernel=kernel, downsample=self.cfg.model.num_downsample if self.training else 1)
+            criterion = MMDLoss(
+                kernel=kernel,
+                downsample=self.cfg.model.num_downsample if self.training else 1,
+            )
             target = Y
         elif self.cfg.loss.name == "tabular":
             criterion = TabularLoss(
-                shared=self.cfg.dataset.S, downsample=self.cfg.model.num_downsample if self.training else 1
+                shared=self.cfg.dataset.S,
+                downsample=self.cfg.model.num_downsample if self.training else 1,
             )
             target = Y
         else:
@@ -363,7 +401,9 @@ class StateEmbeddingModel(L.LightningModule):
                 scheduler.step(loss)
             else:
                 scheduler.step()
-        sch._last_lr = [group["lr"] for group in sch._schedulers[-1].optimizer.param_groups]
+        sch._last_lr = [
+            group["lr"] for group in sch._schedulers[-1].optimizer.param_groups
+        ]
         return loss
 
     @torch.compile(disable=True)
@@ -380,8 +420,12 @@ class StateEmbeddingModel(L.LightningModule):
 
     def configure_optimizers(self):
         max_lr = self.max_lr
-        optimizer = torch.optim.AdamW(self.parameters(), lr=max_lr, weight_decay=self.cfg.optimizer.weight_decay)
-        total_steps = self.trainer.estimated_stepping_batches * 2  # not sure why need to do this
+        optimizer = torch.optim.AdamW(
+            self.parameters(), lr=max_lr, weight_decay=self.cfg.optimizer.weight_decay
+        )
+        total_steps = (
+            self.trainer.estimated_stepping_batches * 2
+        )  # not sure why need to do this
 
         lr_schedulers = [
             LinearLR(
@@ -391,12 +435,19 @@ class StateEmbeddingModel(L.LightningModule):
                 total_iters=int(0.03 * total_steps),
             )
         ]
-        lr_schedulers.append(CosineAnnealingLR(optimizer, eta_min=max_lr * 0.3, T_max=total_steps))
+        lr_schedulers.append(
+            CosineAnnealingLR(optimizer, eta_min=max_lr * 0.3, T_max=total_steps)
+        )
         scheduler = ChainedScheduler(lr_schedulers)
 
         return {
             "optimizer": optimizer,
-            "lr_scheduler": {"scheduler": scheduler, "monitor": "train_loss", "interval": "step", "frequency": 1},
+            "lr_scheduler": {
+                "scheduler": scheduler,
+                "monitor": "train_loss",
+                "interval": "step",
+                "frequency": 1,
+            },
         }
 
     def update_config(self, new_cfg):

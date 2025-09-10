@@ -40,7 +40,9 @@ def create_dataloader(
     Either datasets and shape_dict or adata and adata_name should be provided
     """
     if datasets is None and adata is None:
-        raise ValueError("Either datasets and shape_dict or adata and adata_name should be provided")
+        raise ValueError(
+            "Either datasets and shape_dict or adata and adata_name should be provided"
+        )
 
     if adata is not None:
         shuffle = False
@@ -81,7 +83,15 @@ def create_dataloader(
 
 
 class H5adSentenceDataset(data.Dataset):
-    def __init__(self, cfg, test=False, datasets=None, shape_dict=None, adata=None, adata_name=None) -> None:
+    def __init__(
+        self,
+        cfg,
+        test=False,
+        datasets=None,
+        shape_dict=None,
+        adata=None,
+        adata_name=None,
+    ) -> None:
         super(H5adSentenceDataset, self).__init__()
 
         self.adata = None
@@ -95,7 +105,13 @@ class H5adSentenceDataset(data.Dataset):
             ds_path = utils.get_dataset_cfg(cfg).train
             if test:
                 ds_path = utils.get_dataset_cfg(cfg).val
-            _, self.datasets, self.shapes_dict, self.dataset_path_map, self.dataset_group_map = utils.get_shapes_dict(
+            (
+                _,
+                self.datasets,
+                self.shapes_dict,
+                self.dataset_path_map,
+                self.dataset_group_map,
+            ) = utils.get_shapes_dict(
                 ds_path, utils.get_dataset_cfg(cfg).get("filter_by_species")
             )
         else:
@@ -119,7 +135,9 @@ class H5adSentenceDataset(data.Dataset):
 
             self.total_num_cells += num_cells
 
-        self.datasets_to_num = {k: v for k, v in zip(self.datasets, range(len(self.datasets)))}
+        self.datasets_to_num = {
+            k: v for k, v in zip(self.datasets, range(len(self.datasets)))
+        }
 
     def _compute_index(self, idx):
         for dataset in self.datasets:
@@ -155,8 +173,12 @@ class H5adSentenceDataset(data.Dataset):
                 indptrs = h5f["/X/indptr"]
                 start_ptr = indptrs[ds_idx]
                 end_ptr = indptrs[ds_idx + 1]
-                sub_data = torch.tensor(h5f["/X/data"][start_ptr:end_ptr], dtype=torch.float)
-                sub_indices = torch.tensor(h5f["/X/indices"][start_ptr:end_ptr], dtype=torch.int32)
+                sub_data = torch.tensor(
+                    h5f["/X/data"][start_ptr:end_ptr], dtype=torch.float
+                )
+                sub_indices = torch.tensor(
+                    h5f["/X/indices"][start_ptr:end_ptr], dtype=torch.int32
+                )
 
                 counts = torch.sparse_csr_tensor(
                     [
@@ -197,7 +219,9 @@ class FilteredGenesCounts(H5adSentenceDataset):
         protein_embeds=None,
         gene_column: Optional[str] = "gene_name",
     ) -> None:
-        super(FilteredGenesCounts, self).__init__(cfg, test, datasets, shape_dict, adata, adata_name)
+        super(FilteredGenesCounts, self).__init__(
+            cfg, test, datasets, shape_dict, adata, adata_name
+        )
         self.valid_gene_index = {}
         self.protein_embeds = protein_embeds
         self.gene_column = gene_column
@@ -215,7 +239,9 @@ class FilteredGenesCounts(H5adSentenceDataset):
             self.shapes_dict[adata_name] = adata.shape
 
             # compute its embedding‐index vector
-            esm_data = self.protein_embeds or torch.load(emb_cfg["all_embeddings"], weights_only=False)
+            esm_data = self.protein_embeds or torch.load(
+                emb_cfg["all_embeddings"], weights_only=False
+            )
             valid_genes_list = list(esm_data.keys())
             # make a gene→global‐index lookup
             global_pos = {g: i for i, g in enumerate(valid_genes_list)}
@@ -227,20 +253,24 @@ class FilteredGenesCounts(H5adSentenceDataset):
             new_mapping = np.array([global_pos.get(g, -1) for g in gene_names])
             if (new_mapping == -1).all():
                 # probably it contains ensembl id's instead
-                assert self.gene_column in adata.var.keys(), (
-                    f"Column '{self.gene_column}' not found in adata.var. Available columns: {list(adata.var.keys())}"
-                )
+                assert (
+                    self.gene_column in adata.var.keys()
+                ), f"Column '{self.gene_column}' not found in adata.var. Available columns: {list(adata.var.keys())}"
                 gene_names = adata.var[self.gene_column].values
                 new_mapping = np.array([global_pos.get(g, -1) for g in gene_names])
 
-            LOGGER.info(f"{(new_mapping != -1).sum()} genes mapped to embedding file (out of {len(new_mapping)})")
+            LOGGER.info(
+                f"{(new_mapping != -1).sum()} genes mapped to embedding file (out of {len(new_mapping)})"
+            )
             self.ds_emb_map[adata_name] = new_mapping
 
         LOGGER.info(
             f"!!! {(self.ds_emb_map[adata_name] != -1).sum()} genes mapped to embedding file (out of {len(self.ds_emb_map[adata_name])})"
         )
 
-        esm_data = self.protein_embeds or torch.load(emb_cfg["all_embeddings"], weights_only=False)
+        esm_data = self.protein_embeds or torch.load(
+            emb_cfg["all_embeddings"], weights_only=False
+        )
         valid_genes_list = list(esm_data.keys())
         for name in self.datasets:
             if adata is None:
@@ -252,7 +282,9 @@ class FilteredGenesCounts(H5adSentenceDataset):
                 except:
                     gene_categories = a[f"/var/{self.gene_column}/categories"][:]
                     gene_codes = np.array(a[f"/var/{self.gene_column}/codes"][:])
-                    gene_names = np.array([g.decode("utf-8") for g in gene_categories[gene_codes]])
+                    gene_names = np.array(
+                        [g.decode("utf-8") for g in gene_categories[gene_codes]]
+                    )
                 valid_mask = np.isin(gene_names, valid_genes_list)
                 self.valid_gene_index[name] = valid_mask
             else:
@@ -272,7 +304,14 @@ class FilteredGenesCounts(H5adSentenceDataset):
 
 
 class VCIDatasetSentenceCollator(object):
-    def __init__(self, cfg, valid_gene_mask=None, ds_emb_mapping_inference=None, is_train=True, precision=None):
+    def __init__(
+        self,
+        cfg,
+        valid_gene_mask=None,
+        ds_emb_mapping_inference=None,
+        is_train=True,
+        precision=None,
+    ):
         self.pad_length = cfg.dataset.pad_length
         self.P = cfg.dataset.P
         self.N = cfg.dataset.N
@@ -300,7 +339,9 @@ class VCIDatasetSentenceCollator(object):
                 self.valid_gene_mask = None
 
             self.dataset_to_protein_embeddings = torch.load(
-                utils.get_embedding_cfg(self.cfg).ds_emb_mapping.format(utils.get_embedding_cfg(self.cfg).size),
+                utils.get_embedding_cfg(self.cfg).ds_emb_mapping.format(
+                    utils.get_embedding_cfg(self.cfg).size
+                ),
                 weights_only=False,
             )
 
@@ -359,7 +400,11 @@ class VCIDatasetSentenceCollator(object):
             if "global_size" not in self.__dict__:
                 self.global_size = utils.get_embedding_cfg(self.cfg).num
             shared_genes = torch.randint(
-                low=0, high=self.global_size, size=(self.S,), device=masks.device, dtype=torch.long
+                low=0,
+                high=self.global_size,
+                size=(self.S,),
+                device=masks.device,
+                dtype=torch.long,
             )
         else:
             shared_genes = None
@@ -379,8 +424,18 @@ class VCIDatasetSentenceCollator(object):
 
             # compute downsample fraction. this is the first sample of the augmentation then
             # use no downsampling
-            downsample_fraction = 1.0 if (num_aug > 1 and i % num_aug == 0 and self.training) else None
-            (bs, xx, yy, batch_weight, mask, cell_total_counts, cell_sentence_counts) = self.sample_cell_sentences(
+            downsample_fraction = (
+                1.0 if (num_aug > 1 and i % num_aug == 0 and self.training) else None
+            )
+            (
+                bs,
+                xx,
+                yy,
+                batch_weight,
+                mask,
+                cell_total_counts,
+                cell_sentence_counts,
+            ) = self.sample_cell_sentences(
                 counts, dataset, shared_genes, valid_mask, downsample_fraction
             )
 
@@ -455,7 +510,14 @@ class VCIDatasetSentenceCollator(object):
 
     # sampling a single cell sentence
     # counts_raw is a view of a cell
-    def sample_cell_sentences(self, counts_raw, dataset, shared_genes=None, valid_gene_mask=None, downsample_frac=None):
+    def sample_cell_sentences(
+        self,
+        counts_raw,
+        dataset,
+        shared_genes=None,
+        valid_gene_mask=None,
+        downsample_frac=None,
+    ):
         if torch.isnan(counts_raw).any():
             LOGGER.error(f"NaN values in counts for dataset {dataset}")
 
@@ -477,7 +539,9 @@ class VCIDatasetSentenceCollator(object):
         original_counts_raw = counts_raw.clone()
 
         # logic to sample a single cell sentence and task sentence here
-        ds_emb_idxs = torch.tensor(self.dataset_to_protein_embeddings[dataset], dtype=torch.long)
+        ds_emb_idxs = torch.tensor(
+            self.dataset_to_protein_embeddings[dataset], dtype=torch.long
+        )
 
         original_counts = original_counts_raw
         counts = counts_raw
@@ -488,9 +552,9 @@ class VCIDatasetSentenceCollator(object):
             else:
                 # Our preprocessing is such that sometimes the ds emb idxs are already filtered
                 # in this case we do nothing to (no subsetting) but assert that the mask matches
-                assert valid_gene_mask.sum() == ds_emb_idxs.shape[0], (
-                    f"Something wrong with filtering or mask for dataset {dataset}"
-                )
+                assert (
+                    valid_gene_mask.sum() == ds_emb_idxs.shape[0]
+                ), f"Something wrong with filtering or mask for dataset {dataset}"
 
             # Counts are never filtered in our preprocessing step, so we always need to apply the valid genes mask
             if counts_raw.shape[1] == valid_gene_mask.shape[0]:
@@ -504,8 +568,12 @@ class VCIDatasetSentenceCollator(object):
             expression_weights = counts / torch.sum(counts, dim=1, keepdim=True)
 
         cell_sentences = torch.zeros((counts.shape[0], self.cfg.dataset.pad_length))
-        cell_sentence_counts = torch.zeros((counts.shape[0], self.cfg.dataset.pad_length))
-        mask = torch.zeros((counts.shape[0], self.cfg.dataset.pad_length), dtype=torch.bool)
+        cell_sentence_counts = torch.zeros(
+            (counts.shape[0], self.cfg.dataset.pad_length)
+        )
+        mask = torch.zeros(
+            (counts.shape[0], self.cfg.dataset.pad_length), dtype=torch.bool
+        )
 
         if self.cfg.loss.name == "tabular":
             # include capacity for shared genes
@@ -534,7 +602,9 @@ class VCIDatasetSentenceCollator(object):
             genes_ranked_exp = indices[shuffled_genes_ranked_exp]
             cell_sentences[c, 0] = self.cfg.dataset.cls_token_idx
             if len(genes_ranked_exp) >= self.cfg.dataset.pad_length - 1:
-                cell_sentences[c, 1:] = genes_ranked_exp[: self.cfg.dataset.pad_length - 1]
+                cell_sentences[c, 1:] = genes_ranked_exp[
+                    : self.cfg.dataset.pad_length - 1
+                ]
             else:
                 # take the nonzero genes first
                 num_nonzero = min(num_pos_genes, self.cfg.dataset.pad_length - 1)
@@ -547,7 +617,9 @@ class VCIDatasetSentenceCollator(object):
                     torch.randint(len(unexpressed_genes), (remaining_slots,))
                 ]
 
-            cell_sentence_counts[c, :] = 100 * expression_weights[c, cell_sentences[c, :].to(torch.long)]
+            cell_sentence_counts[c, :] = (
+                100 * expression_weights[c, cell_sentences[c, :].to(torch.long)]
+            )
 
             # Convert tokens to Embeddings - local to global
             # this also includes the cls token, but we will override it later with a learnable torch vector
@@ -560,7 +632,9 @@ class VCIDatasetSentenceCollator(object):
                     torch.randperm(len(exp_genes))[0 : self.cfg.dataset.P]
                 ]
             elif len(exp_genes) > 0:
-                task_sentence[c, : self.cfg.dataset.P] = exp_genes[torch.randint(len(exp_genes), (self.cfg.dataset.P,))]
+                task_sentence[c, : self.cfg.dataset.P] = exp_genes[
+                    torch.randint(len(exp_genes), (self.cfg.dataset.P,))
+                ]
 
             # get the total number of genes unique to this cell; everything
             # past this are shared genes across all cells in a batch, used for tabular loss
@@ -582,13 +656,17 @@ class VCIDatasetSentenceCollator(object):
 
             # convert from dataset specific gene indices to global gene indices
             # only do this for everything up to shared genes, which are already global indices
-            task_sentence[c, :unshared_num] = ds_emb_idxs[task_sentence[c, :unshared_num].to(torch.int32)]
+            task_sentence[c, :unshared_num] = ds_emb_idxs[
+                task_sentence[c, :unshared_num].to(torch.int32)
+            ]
 
             # now take care of shared genes across all cells in the batch
             if shared_genes is not None:
                 # Overwrite the final positions of task_sentence
 
-                task_sentence[c, unshared_num:] = shared_genes  # in the old impl these are global gene indices
+                task_sentence[c, unshared_num:] = (
+                    shared_genes  # in the old impl these are global gene indices
+                )
                 # task_sentence[c, unshared_num:] = ds_emb_idxs[shared_genes.to(torch.int32)] # in the new impl these are local gene indices
 
                 # convert the shared_genes, which are global indices, to the dataset specific indices
@@ -597,10 +675,14 @@ class VCIDatasetSentenceCollator(object):
                 )  # in the old impl these are global gene indices
                 # local_indices = shared_genes # in the new impl these are local gene indices
 
-                shared_counts = torch.zeros(local_indices.shape, dtype=cell.dtype, device=cell.device)
+                shared_counts = torch.zeros(
+                    local_indices.shape, dtype=cell.dtype, device=cell.device
+                )
                 valid_mask = local_indices != -1
                 if valid_mask.any():
-                    shared_counts[valid_mask] = original_counts_raw[c, local_indices[valid_mask]]
+                    shared_counts[valid_mask] = original_counts_raw[
+                        c, local_indices[valid_mask]
+                    ]
 
                 # for indices which are -1, count is 0, else index into cell
                 task_counts[c, unshared_num:] = shared_counts

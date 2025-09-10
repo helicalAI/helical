@@ -1,6 +1,7 @@
 import os
 from helical.constants.paths import CACHE_DIR_HELICAL
 
+
 class trainingConfig:
     def __init__(
         self,
@@ -126,7 +127,7 @@ class trainingConfig:
                 "gradient_clip_val": gradient_clip_val,
                 "loss_fn": loss_fn,
                 "devices": devices,
-                "strategy": strategy, 
+                "strategy": strategy,
                 "use_mfu": use_mfu,
                 "mfu_kwargs": {
                     "available_flops": 60000000000000.0,

@@ -38,7 +38,7 @@ class stateTransitionTrainModel:
         self,
         configurer: trainingConfig = trainingConfig(),
     ):
- 
+
         self.cfg = configurer.config
         self.run_output_dir = join(self.cfg["output_dir"], self.cfg["name"])
         os.makedirs(self.run_output_dir, exist_ok=True)
@@ -95,7 +95,7 @@ class stateTransitionTrainModel:
         module_config["gene_names"] = var_dims["gene_names"]
         module_config["batch_size"] = training_config["batch_size"]
         module_config["control_pert"] = data_config.get("control_pert", "non-targeting")
-        
+
         self.model = StateTransitionPerturbationModel(
             input_dim=self.var_dims["input_dim"],
             gene_dim=self.gene_dim,
@@ -112,7 +112,6 @@ class stateTransitionTrainModel:
         print(
             f"Model created. Estimated params size: {params_count/ 1024**3:.2f} GB and {params_count} parameters"
         )
-
 
     def train(self):
         self.data_module.setup(stage="fit")
@@ -192,9 +191,7 @@ class stateTransitionTrainModel:
         self.data_module.setup(stage="test")
         test_loader = self.data_module.test_dataloader()
 
-        checkpoint_path = os.path.join(
-            self.run_output_dir, self.cfg["checkpoint_name"]
-        )
+        checkpoint_path = os.path.join(self.run_output_dir, self.cfg["checkpoint_name"])
 
         if not os.path.exists(checkpoint_path):
             raise FileNotFoundError(

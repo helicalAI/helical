@@ -22,13 +22,14 @@ from helical.models.base_models import HelicalBaseFoundationModel
 import yaml
 from helical.utils.downloader import Downloader
 
+
 # this code to do inference on new data using the transition model
 class stateTransitionModel(HelicalBaseFoundationModel):
     def __init__(self, configurer: stateConfig = None) -> None:
         super().__init__()
         if configurer is None:
             configurer = stateConfig()
-        
+
         self.config = configurer.config["perturb"]
 
         downloader = Downloader()
@@ -37,7 +38,7 @@ class stateTransitionModel(HelicalBaseFoundationModel):
 
         with open(os.path.join(self.config["model_config"]), "r") as f:
             self.model_config = yaml.safe_load(f)
-        
+
         with open(os.path.join(self.config["model_dir"], "var_dims.pkl"), "rb") as f:
             var_dims = pickle.load(f)
 
@@ -51,13 +52,15 @@ class stateTransitionModel(HelicalBaseFoundationModel):
             self.config["model_dir"], "batch_onehot_map.pkl"
         )
 
-        self.checkpoint_path = os.path.join(self.config["model_dir"], self.config["checkpoint_name"])
+        self.checkpoint_path = os.path.join(
+            self.config["model_dir"], self.config["checkpoint_name"]
+        )
         print(f"Using checkpoint: {self.checkpoint_path}")
 
         self.model = StateTransitionPerturbationModel.load_from_checkpoint(
-            self.checkpoint_path, 
+            self.checkpoint_path,
         )
-        
+
         self.model.eval()
         self.device = next(self.model.parameters()).device
 
@@ -67,14 +70,20 @@ class stateTransitionModel(HelicalBaseFoundationModel):
             else getattr(self.model, "cell_sentence_len", 256)
         )
         self.uses_batch_encoder = getattr(self.model, "batch_encoder", None) is not None
-        self.output_space = getattr(self.model, "output_space", self.model_config.get("data", {}).get("kwargs", {}).get("output_space", "gene"))
+        self.output_space = getattr(
+            self.model,
+            "output_space",
+            self.model_config.get("data", {})
+            .get("kwargs", {})
+            .get("output_space", "gene"),
+        )
 
         print(f"Model device: {self.device}")
         print(f"Model cell_set_len (max sequence length): {self.cell_set_len}")
         print(f"Model uses batch encoder: {bool(self.uses_batch_encoder)}")
         print(f"Model output space: {self.output_space}")
 
-    def process_data(self, adata: sc.AnnData):        
+    def process_data(self, adata: sc.AnnData):
 
         control_pert = self.config["control_pert"]
         if control_pert is None:
@@ -88,14 +97,16 @@ class stateTransitionModel(HelicalBaseFoundationModel):
 
         if control_pert is None:
             control_pert = "non-targeting"
-        
+
         self.config["control_pert"] = control_pert
 
         # choose cell type column
         if self.config["celltype_col"] is None:
             ct_from_cfg = None
             try:
-                ct_from_cfg = self.model_config["data"]["kwargs"].get("cell_type_key", None)
+                ct_from_cfg = self.model_config["data"]["kwargs"].get(
+                    "cell_type_key", None
+                )
             except Exception:
                 pass
 
@@ -195,7 +206,7 @@ class stateTransitionModel(HelicalBaseFoundationModel):
 
         # derive batch indices (per-token integers) if needed
         self.batch_indices_all: Optional[np.ndarray] = None
-        
+
         batch_onehot_map = None
         if os.path.exists(self.batch_onehot_map_path):
             with open(self.batch_onehot_map_path, "rb") as f:
@@ -306,7 +317,9 @@ class stateTransitionModel(HelicalBaseFoundationModel):
 
         # default pert vector when unmapped label shows up
         if self.config["control_pert"] in pert_onehot_map:
-            default_pert_vec = pert_onehot_map[self.config["control_pert"]].float().clone()
+            default_pert_vec = (
+                pert_onehot_map[self.config["control_pert"]].float().clone()
+            )
         else:
             default_pert_vec = torch.zeros(self.pert_dim, dtype=torch.float32)
             if self.pert_dim and self.pert_dim > 0:

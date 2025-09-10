@@ -21,7 +21,11 @@ def convert_gene_symbols_to_ensembl_rest(gene_symbols, species="human"):
     server = "https://grch37.rest.ensembl.org"
 
     # Map species to its scientific name
-    species_map = {"human": "homo_sapiens", "mouse": "mus_musculus", "rat": "rattus_norvegicus"}
+    species_map = {
+        "human": "homo_sapiens",
+        "mouse": "mus_musculus",
+        "rat": "rattus_norvegicus",
+    }
 
     species_name = species_map.get(species.lower(), species)
     gene_to_ensembl = {}
@@ -57,7 +61,9 @@ def convert_symbols_to_ensembl(adata):
     gene_symbols = adata.var_names.tolist()
 
     mg = mygene.MyGeneInfo()
-    results = mg.querymany(gene_symbols, scopes="symbol", fields="ensembl.gene", species="human")
+    results = mg.querymany(
+        gene_symbols, scopes="symbol", fields="ensembl.gene", species="human"
+    )
 
     symbol_to_ensembl = {}
     for result in results:
@@ -72,7 +78,9 @@ def convert_symbols_to_ensembl(adata):
             sym_results = convert_gene_symbols_to_ensembl_rest([symbol])
             if len(sym_results) > 0:
                 symbol_to_ensembl[symbol] = sym_results[symbol]
-                logging.info(f"Converted {symbol} to {symbol_to_ensembl[symbol]} using REST API")
+                logging.info(
+                    f"Converted {symbol} to {symbol_to_ensembl[symbol]} using REST API"
+                )
 
     logging.info("Done...")
     for symbol in gene_symbols:
@@ -126,18 +134,27 @@ def compute_pearson_delta(pred, true, ctrl, ctrl_true):
 
     We'll compute the correlation of (pred.mean - ctrl.mean) with (true.mean - ctrl_true.mean).
     """
-    return pearsonr(pred.mean(axis=0) - ctrl.mean(axis=0), true.mean(axis=0) - ctrl_true.mean(axis=0))[0]
+    return pearsonr(
+        pred.mean(axis=0) - ctrl.mean(axis=0),
+        true.mean(axis=0) - ctrl_true.mean(axis=0),
+    )[0]
 
 
-def compute_perturbation_ranking_score(adata_pred, adata_real, pert_col="gene", ctrl_pert="non-targeting"):
+def compute_perturbation_ranking_score(
+    adata_pred, adata_real, pert_col="gene", ctrl_pert="non-targeting"
+):
     """
     1) compute mean perturbation effect for each perturbation in pred and real
     2) measure how well the real perturbation matches the predicted one by rank
     returns the mean normalized rank of the true perturbation
     """
     # Step 1: compute mean effects
-    mean_real_effect = _compute_mean_perturbation_effect(adata_real, pert_col, ctrl_pert)
-    mean_pred_effect = _compute_mean_perturbation_effect(adata_pred, pert_col, ctrl_pert)
+    mean_real_effect = _compute_mean_perturbation_effect(
+        adata_real, pert_col, ctrl_pert
+    )
+    mean_pred_effect = _compute_mean_perturbation_effect(
+        adata_pred, pert_col, ctrl_pert
+    )
     all_perts = mean_real_effect.index.values
 
     ranks = []
@@ -160,7 +177,9 @@ def compute_perturbation_ranking_score(adata_pred, adata_real, pert_col="gene", 
     return mean_rank
 
 
-def _compute_mean_perturbation_effect(adata, pert_col="gene", ctrl_pert="non-targeting"):
+def _compute_mean_perturbation_effect(
+    adata, pert_col="gene", ctrl_pert="non-targeting"
+):
     """
     Helper to compute the mean effect (abs difference from control) for each perturbation.
     Actually we do the absolute difference from control row.
@@ -197,12 +216,21 @@ def get_latest_checkpoint(cfg):
     return run_name, chk
 
 
-def compute_gene_overlap_cross_pert(DE_pred, DE_true, control_pert="non-targeting", k=50):
+def compute_gene_overlap_cross_pert(
+    DE_pred, DE_true, control_pert="non-targeting", k=50
+):
     all_overlaps = {}
     for c_gene in DE_pred.index:
         if c_gene == control_pert:
             continue
-        all_overlaps[c_gene] = len(set(DE_true.loc[c_gene].values).intersection(set(DE_pred.loc[c_gene].values))) / k
+        all_overlaps[c_gene] = (
+            len(
+                set(DE_true.loc[c_gene].values).intersection(
+                    set(DE_pred.loc[c_gene].values)
+                )
+            )
+            / k
+        )
 
     return all_overlaps
 
@@ -276,7 +304,9 @@ def get_shapes_dict(dataset_path, filter_by_species=None):
         name = row[1].names
         dataset_path_map[name] = row[1].path
         if de_data_available:
-            dataset_group_map[name] = datasets_df.set_index("names").loc[name]["groupid_for_de"]
+            dataset_group_map[name] = datasets_df.set_index("names").loc[name][
+                "groupid_for_de"
+            ]
         else:
             # This is for backward compatibility with old datasets CSV
             dataset_group_map[name] = "leiden"
@@ -286,4 +316,10 @@ def get_shapes_dict(dataset_path, filter_by_species=None):
         else:
             shapes_dict[name] = (int(ncells), 8000)
 
-    return datasets_df, sorted_dataset_names, shapes_dict, dataset_path_map, dataset_group_map
+    return (
+        datasets_df,
+        sorted_dataset_names,
+        shapes_dict,
+        dataset_path_map,
+        dataset_group_map,
+    )

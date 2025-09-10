@@ -217,7 +217,6 @@ def argmax_index_from_any(v, expected_dim: Optional[int]) -> Optional[int]:
     return None
 
 
-
 def prepare_batch(
     ctrl_basal_np: np.ndarray,
     pert_onehots: torch.Tensor,

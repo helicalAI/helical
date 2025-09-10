@@ -32,14 +32,14 @@ def evaluate_intrinsic(model, cfg, device=None, logger=print, adata=None):
         )
         all_embs = []
         for batch in tqdm(
-            dataloader, desc=f"Perturbation Embeddings: {cfg['validations']['perturbation']['dataset_name']}"
+            dataloader,
+            desc=f"Perturbation Embeddings: {cfg['validations']['perturbation']['dataset_name']}",
         ):
             with torch.no_grad():
                 _, _, _, emb, _ = model._compute_embedding_for_batch(batch)
                 all_embs.append(emb.cpu().detach().numpy())
         all_embs = np.concatenate(all_embs, axis=0)
         adata.obsm["X_emb"] = all_embs
-
 
     # Run the intrinsic benchmark evaluation
     intrinsic_results = run_intrinsic_benchmark(adata, device, logger)
@@ -72,7 +72,9 @@ def evaluate_de(model, cfg, device=None, logger=print):
     # now for the model
     tmp_adata = sc.read_h5ad(cfg["validations"]["diff_exp"]["dataset"])
     pred_exp = model._predict_exp_for_adata(
-        tmp_adata, cfg["validations"]["diff_exp"]["dataset_name"], cfg["validations"]["diff_exp"]["obs_pert_col"]
+        tmp_adata,
+        cfg["validations"]["diff_exp"]["dataset_name"],
+        cfg["validations"]["diff_exp"]["obs_pert_col"],
     )
     torch.cuda.synchronize()
     de_metrics = compute_gene_overlap_cross_pert(
@@ -110,7 +112,9 @@ class MLPClassifier(nn.Module):
         return self.out(x)
 
 
-def split_indices_fraction(labels: np.ndarray, val_frac: float, n_groups: int, seed: int):
+def split_indices_fraction(
+    labels: np.ndarray, val_frac: float, n_groups: int, seed: int
+):
     """
     For each label in 0..n_groups-1:
       - holdout_count = floor(val_frac * group_size)
@@ -129,7 +133,9 @@ def split_indices_fraction(labels: np.ndarray, val_frac: float, n_groups: int, s
         n = len(inds)
         holdout = int(np.floor(val_frac * n))
         if holdout >= n:
-            warnings.warn(f"val-split too large for group {g} (size={n}), using minimal split")
+            warnings.warn(
+                f"val-split too large for group {g} (size={n}), using minimal split"
+            )
             holdout = max(0, n - 1)
 
         n_train = n - holdout
@@ -163,9 +169,15 @@ def make_loaders(features, labels, train_idx, val_idx, test_idx, batch_size):
     val_ds = mk(val_idx)
     test_ds = mk(test_idx)
 
-    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True) if train_ds else None
-    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False) if val_ds else None
-    test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=False) if test_ds else None
+    train_loader = (
+        DataLoader(train_ds, batch_size=batch_size, shuffle=True) if train_ds else None
+    )
+    val_loader = (
+        DataLoader(val_ds, batch_size=batch_size, shuffle=False) if val_ds else None
+    )
+    test_loader = (
+        DataLoader(test_ds, batch_size=batch_size, shuffle=False) if test_ds else None
+    )
 
     return train_loader, val_loader, test_loader
 
@@ -186,7 +198,9 @@ def train_and_select(model, loaders, epochs, lr, device):
         # Training
         model.train()
         total_train = 0.0
-        with tqdm(train_loader, desc=f"Epoch {ep}/{epochs} [train]", leave=False) as pbar:
+        with tqdm(
+            train_loader, desc=f"Epoch {ep}/{epochs} [train]", leave=False
+        ) as pbar:
             for X, y in pbar:
                 X, y = X.to(device), y.to(device)
                 opt.zero_grad()
@@ -306,7 +320,9 @@ def filter_and_split_by_celltype(
         print(f"  {ct}: {count} cells")
 
     # Filter cell types with sufficient cells
-    valid_cell_types = cell_type_counts[cell_type_counts >= min_cells_per_celltype].index.tolist()
+    valid_cell_types = cell_type_counts[
+        cell_type_counts >= min_cells_per_celltype
+    ].index.tolist()
     print(f"\nCell types with >= {min_cells_per_celltype} cells: {valid_cell_types}")
 
     if not valid_cell_types:
@@ -328,7 +344,9 @@ def filter_and_split_by_celltype(
         # Keep perturbations with enough cells
         keep_perturbs = set(uniq_perturbs[counts >= min_cells_per_perturb])
         if not keep_perturbs:
-            print(f"  Skipping {cell_type}: no perturbations with >= {min_cells_per_perturb} cells")
+            print(
+                f"  Skipping {cell_type}: no perturbations with >= {min_cells_per_perturb} cells"
+            )
             continue
 
         # Filter to keep only valid perturbations
@@ -370,7 +388,9 @@ def benchmark_single_celltype(
     print(f"\nBenchmarking cell type: {cell_type}")
 
     # Split data
-    tr_idx, va_idx, te_idx = split_indices_fraction(labels, val_split, len(label_names), seed)
+    tr_idx, va_idx, te_idx = split_indices_fraction(
+        labels, val_split, len(label_names), seed
+    )
 
     print(f"  Data splits: {len(tr_idx)} train, {len(va_idx)} val, {len(te_idx)} test")
 
@@ -383,11 +403,16 @@ def benchmark_single_celltype(
         return None
 
     # Create and train model
-    model = MLPClassifier(in_dim=features.shape[1], hidden_dim=1024, n_classes=len(label_names), n_layers=n_layers).to(
-        device
-    )
+    model = MLPClassifier(
+        in_dim=features.shape[1],
+        hidden_dim=1024,
+        n_classes=len(label_names),
+        n_layers=n_layers,
+    ).to(device)
 
-    print(f"  Training model with {sum(p.numel() for p in model.parameters())} parameters...")
+    print(
+        f"  Training model with {sum(p.numel() for p in model.parameters())} parameters..."
+    )
     model = train_and_select(model, loaders, epochs, lr, device)
 
     # Evaluate
@@ -403,7 +428,9 @@ def benchmark_single_celltype(
         "n_test": len(te_idx),
     }
 
-    print(f"  Results: Loss={test_loss:.4f}, Accuracy={test_acc:.4f}, AUROC={test_auroc:.4f}")
+    print(
+        f"  Results: Loss={test_loss:.4f}, Accuracy={test_acc:.4f}, AUROC={test_auroc:.4f}"
+    )
 
     return results
 
@@ -435,11 +462,19 @@ def run_intrinsic_benchmark(adata, device, logger=print):
     # Split by cell type and filter
     try:
         celltype_data = filter_and_split_by_celltype(
-            adata, embed_key, perturb_key, cell_type_key, min_cells_per_perturb, min_cells_per_celltype
+            adata,
+            embed_key,
+            perturb_key,
+            cell_type_key,
+            min_cells_per_perturb,
+            min_cells_per_celltype,
         )
     except Exception as e:
         logger(f"Error in data filtering: {e}")
-        return {"intrinsic_auroc_mean": float("nan"), "intrinsic_accuracy_mean": float("nan")}
+        return {
+            "intrinsic_auroc_mean": float("nan"),
+            "intrinsic_accuracy_mean": float("nan"),
+        }
 
     logger(f"Benchmarking {len(celltype_data)} cell types")
 
@@ -447,7 +482,17 @@ def run_intrinsic_benchmark(adata, device, logger=print):
     all_results = []
     for cell_type, (features, labels, label_names) in celltype_data.items():
         result = benchmark_single_celltype(
-            cell_type, features, labels, label_names, device, val_split, epochs, batch_size, lr, n_layers, seed
+            cell_type,
+            features,
+            labels,
+            label_names,
+            device,
+            val_split,
+            epochs,
+            batch_size,
+            lr,
+            n_layers,
+            seed,
         )
         if result is not None:
             all_results.append(result)
@@ -455,7 +500,10 @@ def run_intrinsic_benchmark(adata, device, logger=print):
     # Calculate and report averaged metrics
     if not all_results:
         logger("No valid results obtained from intrinsic benchmark!")
-        return {"intrinsic_auroc_mean": float("nan"), "intrinsic_accuracy_mean": float("nan")}
+        return {
+            "intrinsic_auroc_mean": float("nan"),
+            "intrinsic_accuracy_mean": float("nan"),
+        }
 
     # Calculate averages (excluding NaN values)
     accuracies = [r["accuracy"] for r in all_results if not np.isnan(r["accuracy"])]
@@ -474,7 +522,9 @@ def run_intrinsic_benchmark(adata, device, logger=print):
             f"({result['n_perturbations']} perturbations, {result['n_test']} test cells)"
         )
 
-    logger(f"\nIntrinsic benchmark averaged metrics (across {len(all_results)} cell types):")
+    logger(
+        f"\nIntrinsic benchmark averaged metrics (across {len(all_results)} cell types):"
+    )
     logger(f"  Average Accuracy: {avg_accuracy:.4f}")
     logger(f"  Average AUROC: {avg_auroc:.4f}")
 

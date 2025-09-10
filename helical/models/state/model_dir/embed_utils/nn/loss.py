@@ -46,7 +46,9 @@ class WassersteinLoss(nn.Module):
         if pred_cdf.size(1) < max_len:
             pred_cdf = F.pad(pred_cdf, (0, max_len - pred_cdf.size(1)), "constant", 0)
         if target_cdf.size(1) < max_len:
-            target_cdf = F.pad(target_cdf, (0, max_len - target_cdf.size(1)), "constant", 0)
+            target_cdf = F.pad(
+                target_cdf, (0, max_len - target_cdf.size(1)), "constant", 0
+            )
 
         # Compute Wasserstein distance
         wasserstein_dist = torch.abs(pred_cdf - target_cdf).pow(self.p)

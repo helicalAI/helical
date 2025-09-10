@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 class EmbeddingDataset:
     """Dataset class for embedding-based fine-tuning (labels handled separately like scGPT)."""
-    
+
     def __init__(self, embeddings):
         """
         Parameters
@@ -33,19 +33,17 @@ class EmbeddingDataset:
             Cell embeddings from the state model
         """
         self.embeddings = torch.tensor(embeddings, dtype=torch.float32)
-    
+
     def __len__(self):
         return len(self.embeddings)
-    
+
     def __getitem__(self, idx):
         return {"embedding": self.embeddings[idx]}
 
 
 def embedding_collator(batch):
     """Collate function for embedding batches (labels handled separately like scGPT)."""
-    return {
-        "embeddings": torch.stack([item["embedding"] for item in batch])
-    }
+    return {"embeddings": torch.stack([item["embedding"] for item in batch])}
 
 
 class stateFineTuningModel(HelicalBaseFineTuningModel):
@@ -73,10 +71,10 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         model_dir="competition/first_run",
         freeze_backbone=False
     )
-    
+
     model = stateFineTuningModelV2(
-        configurer=config, 
-        fine_tuning_head="classification", 
+        configurer=config,
+        fine_tuning_head="classification",
         output_size=len(label_set),
         freeze_backbone=False
     )
@@ -98,7 +96,9 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
     def __init__(
         self,
         configurer: stateConfig = None,
-        fine_tuning_head: Literal["classification"] | HelicalBaseFineTuningHead = "classification",
+        fine_tuning_head: (
+            Literal["classification"] | HelicalBaseFineTuningHead
+        ) = "classification",
         output_size: Optional[int] = None,
     ):
 
@@ -108,10 +108,12 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             self.config = configurer.config["finetune"]
 
         HelicalBaseFineTuningModel.__init__(self, fine_tuning_head, output_size)
-        
+
         if not os.path.exists(self.config["model_config"]):
-            raise FileNotFoundError(f"config.yaml not found at {self.config['model_config']}. Please ensure it exists.")
-        
+            raise FileNotFoundError(
+                f"config.yaml not found at {self.config['model_config']}. Please ensure it exists."
+            )
+
         logger.info(f"Loading existing config.yaml from: {self.config['model_config']}")
         with open(self.config["model_config"], "r") as f:
             self._model_config = yaml.safe_load(f)
@@ -122,18 +124,24 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         self.has_var_dims = True
         self.use_perturbation_embeddings = self.config["use_perturbation_embeddings"]
         self.default_perturbation_type = self.config["control_pert"]
-        
+
         # Load the pre-trained state model or initialize fresh
-        checkpoint_path = os.path.join(self.config["model_dir"], self.config["checkpoint_name"])
+        checkpoint_path = os.path.join(
+            self.config["model_dir"], self.config["checkpoint_name"]
+        )
         self.model_dir = self.config["model_dir"]
 
         if os.path.exists(checkpoint_path):
             logger.info(f"Loading pre-trained model from: {checkpoint_path}")
-            self.model = StateTransitionPerturbationModel.load_from_checkpoint(checkpoint_path)
+            self.model = StateTransitionPerturbationModel.load_from_checkpoint(
+                checkpoint_path
+            )
         else:
-            logger.info(f"No checkpoint found at {checkpoint_path}, initializing fresh model from config")
+            logger.info(
+                f"No checkpoint found at {checkpoint_path}, initializing fresh model from config"
+            )
             self._initialize_fresh_model()
-        
+
         # Check if model was successfully initialized
         if self.has_var_dims:
             # Get the actual output dimension from the loaded model
@@ -142,42 +150,58 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             self.device = next(self.model.parameters()).device
             self.fine_tuning_head.set_dim_size(self.embed_dim)
         else:
-            logger.info("Model will be initialized when data is inputted via process_data()")
+            logger.info(
+                "Model will be initialized when data is inputted via process_data()"
+            )
             self.embed_dim = None
             self.cell_sentence_len = None
             self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        
+
         # Check for .pt weight files and load them if available
-        self.backbone_weights_path = os.path.join(self.model_dir, 'model_weights.pt') if os.path.exists(os.path.join(self.model_dir, 'model_weights.pt')) else None
-        self.head_weights_path = os.path.join(self.model_dir, 'head_weights.pt') if os.path.exists(os.path.join(self.model_dir, 'head_weights.pt')) else None
-        
+        self.backbone_weights_path = (
+            os.path.join(self.model_dir, "model_weights.pt")
+            if os.path.exists(os.path.join(self.model_dir, "model_weights.pt"))
+            else None
+        )
+        self.head_weights_path = (
+            os.path.join(self.model_dir, "head_weights.pt")
+            if os.path.exists(os.path.join(self.model_dir, "head_weights.pt"))
+            else None
+        )
+
         if self.has_var_dims:
             self.load_pt_weights()
-        
+
         self.freeze_backbone = self.config["freeze_backbone"]
         if self.has_var_dims:
             if self.freeze_backbone:
                 for param in self.model.parameters():
                     param.requires_grad = False
-                logger.info("Backbone model frozen - only fine-tuning head will be trained")
+                logger.info(
+                    "Backbone model frozen - only fine-tuning head will be trained"
+                )
             else:
-                logger.info("Full model fine-tuning - both backbone and head will be trained")
+                logger.info(
+                    "Full model fine-tuning - both backbone and head will be trained"
+                )
         else:
-            logger.info(f"Freeze backbone setting: {self.freeze_backbone} (will be applied when model is initialized)")
-        
+            logger.info(
+                f"Freeze backbone setting: {self.freeze_backbone} (will be applied when model is initialized)"
+            )
+
     def _create_var_dims_from_adata(self, adata):
         """Create var_dims.pkl from adata following the same logic as state_train.py."""
         logger.info("Creating var_dims from adata")
 
         os.makedirs(self.model_dir, exist_ok=True)
-        
+
         # Analyze the data to create var_dims (following state_train.py logic)
         n_genes = adata.n_vars
         n_cells = adata.n_obs
-        
+
         logger.info(f"Data shape: {adata.shape}")
         logger.info(f"Available columns: {list(adata.obs.columns)}")
-        
+
         # Get perturbation info
         if self.config["pert_col"] in adata.obs.columns:
             unique_perts = adata.obs[self.config["pert_col"]].unique()
@@ -188,8 +212,10 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             unique_perts = [self.config["control_pert"]]
             n_perts = 1
             pert_names = [self.config["control_pert"]]
-            logger.info(f"No target_gene column found, using default '{self.config['control_pert']}'")
-        
+            logger.info(
+                f"No target_gene column found, using default '{self.config['control_pert']}'"
+            )
+
         # Get batch info
         if self.config["batch_col"] in adata.obs.columns:
             unique_batches = adata.obs[self.config["batch_col"]].unique()
@@ -200,99 +226,107 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             unique_batches = [self.config["batch_col"]]
             n_batches = 1
             batch_names = [self.config["batch_col"]]
-            logger.info(f"No {self.config['batch_col']} column found, using default '{self.config['batch_col']}'")
-        
+            logger.info(
+                f"No {self.config['batch_col']} column found, using default '{self.config['batch_col']}'"
+            )
+
         # Get cell type info
         if "cell_type" in adata.obs.columns:
             unique_cell_types = adata.obs["cell_type"].unique()
             cell_type_names = list(unique_cell_types)
-            logger.info(f"Found {len(cell_type_names)} unique cell types: {cell_type_names}")
+            logger.info(
+                f"Found {len(cell_type_names)} unique cell types: {cell_type_names}"
+            )
         else:
             cell_type_names = ["unknown"]
             logger.info("No cell_type column found, using default 'unknown'")
-        
+
         # Create var_dims dictionary (following state_train.py structure)
         var_dims = {
-            "input_dim": n_genes,           # Number of input genes
-            "output_dim": n_genes,          # Number of output genes (same as input for most cases)
-            "hvg_dim": n_genes,             # Number of highly variable genes (using all genes for simplicity)
-            "gene_dim": n_genes,            # Total number of genes
-            "pert_dim": n_perts,            # Number of different perturbations
-            "batch_dim": n_batches,         # Number of different batches
+            "input_dim": n_genes,  # Number of input genes
+            "output_dim": n_genes,  # Number of output genes (same as input for most cases)
+            "hvg_dim": n_genes,  # Number of highly variable genes (using all genes for simplicity)
+            "gene_dim": n_genes,  # Total number of genes
+            "pert_dim": n_perts,  # Number of different perturbations
+            "batch_dim": n_batches,  # Number of different batches
             "gene_names": list(adata.var_names),  # List of gene names
-            "pert_names": pert_names,       # List of perturbation names
-            "batch_names": batch_names,     # List of batch names
-            "cell_type_names": cell_type_names  # List of cell type names
+            "pert_names": pert_names,  # List of perturbation names
+            "batch_names": batch_names,  # List of batch names
+            "cell_type_names": cell_type_names,  # List of cell type names
         }
-        
+
         logger.info(f"Created var_dims:")
         for key, value in var_dims.items():
             if isinstance(value, (list, np.ndarray)):
                 logger.info(f"  {key}: {len(value)} items")
             else:
                 logger.info(f"  {key}: {value}")
-        
+
         # Save var_dims
         var_dims_path = os.path.join(self.model_dir, "var_dims.pkl")
         with open(var_dims_path, "wb") as f:
             pickle.dump(var_dims, f)
-        
+
         logger.info(f"Saved var_dims to: {var_dims_path}")
         return var_dims
 
     def _create_gene_dim_from_var_dims(self, var_dims, output_space="gene"):
         """Calculate gene_dim following the same logic as state_train.py."""
         logger.info(f"Creating gene_dim (output_space: {output_space})")
-        
+
         if output_space == "gene":
             gene_dim = var_dims.get("hvg_dim", 2000)
             logger.info(f"Using hvg_dim for gene_dim: {gene_dim}")
         else:
             gene_dim = var_dims.get("gene_dim", 2000)
             logger.info(f"Using gene_dim: {gene_dim}")
-        
+
         return gene_dim
 
     def _initialize_fresh_model(self):
         """Initialize a fresh model using config.yaml and var_dims.pkl (same as training model)."""
         var_dims_path = os.path.join(self.model_dir, "var_dims.pkl")
-        
+
         if not os.path.exists(var_dims_path):
-            logger.info("var_dims.pkl not found, will be created when process_data is called")
+            logger.info(
+                "var_dims.pkl not found, will be created when process_data is called"
+            )
             self.has_var_dims = False
             return
 
         # Load var_dims.pkl
         with open(var_dims_path, "rb") as f:
             var_dims = pickle.load(f)
-        
+
         # Calculate gene_dim (same logic as training)
         output_space = self._model_config["data"]["kwargs"].get("output_space", "gene")
         self._gene_dim = self._create_gene_dim_from_var_dims(var_dims, output_space)
-        
+
         # Initialize model with same parameters as training
         self._initialize_model_from_config(var_dims, self._gene_dim)
-        
+
         # Store var_dims for future use
         self._var_dims = var_dims
-        
-        logger.info("Successfully initialized fresh model from existing config.yaml and var_dims.pkl")
+
+        logger.info(
+            "Successfully initialized fresh model from existing config.yaml and var_dims.pkl"
+        )
 
     def _initialize_model_from_config(self, var_dims, gene_dim):
         """Initialize model following the exact same logic as state_train.py."""
         logger.info("Initializing model")
-        
+
         training_config = self._model_config["training"]
         data_config = self._model_config["data"]["kwargs"]
         model_kwargs = self._model_config["model"]["kwargs"]
-        
+
         module_config = {**model_kwargs, **training_config}
         module_config["embed_key"] = data_config["embed_key"]
         module_config["output_space"] = data_config["output_space"]
         module_config["gene_names"] = var_dims["gene_names"]
         module_config["batch_size"] = training_config["batch_size"]
         module_config["control_pert"] = data_config.get("control_pert", "non-targeting")
-                
+
         # Initialize model with same parameters as state_train.py
         self.model = StateTransitionPerturbationModel(
             input_dim=var_dims["input_dim"],
@@ -303,7 +337,7 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             batch_dim=var_dims["batch_dim"],
             **module_config,
         )
-        
+
         logger.info("Successfully initialized model")
         logger.info(f"Model input_dim: {self.model.input_dim}")
         logger.info(f"Model output_dim: {self.model.output_dim}")
@@ -316,118 +350,130 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         """
         output = self.fine_tuning_head(embeddings)
         return output
-    
+
     def load_pt_weights(self):
         """
         Load the model and head weights from .pt files.
         """
         if self.backbone_weights_path is not None:
-            self.model.load_state_dict(torch.load(self.backbone_weights_path, weights_only=True))
+            self.model.load_state_dict(
+                torch.load(self.backbone_weights_path, weights_only=True)
+            )
             logger.info(f"Loaded model weights from {self.backbone_weights_path}")
         if self.head_weights_path is not None:
-            self.fine_tuning_head.load_state_dict(torch.load(self.head_weights_path, weights_only=True))
+            self.fine_tuning_head.load_state_dict(
+                torch.load(self.head_weights_path, weights_only=True)
+            )
             logger.info(f"Loaded head weights from {self.head_weights_path}")
         return
-    
+
     def process_data(self, adata: ad.AnnData) -> EmbeddingDataset:
         """
         Process AnnData through the state model to get embeddings, similar to scGPT's process_data.
         If var_dims.pkl and config.yaml don't exist, they will be created from the data.
-        
+
         Parameters
         ----------
         adata : AnnData
             Input AnnData with perturbation data
-            
+
         Returns
         -------
         EmbeddingDataset
             Processed dataset containing embeddings (no labels - user provides them separately)
         """
         logger.info("Processing data for state model fine-tuning.")
-        
+
         # If we don't have var_dims yet, create them from the data
         if self.has_var_dims is False:
             logger.info("Creating var_dims from adata")
-            
+
             # Create var_dims from adata
             var_dims = self._create_var_dims_from_adata(adata)
-            
+
             # Calculate gene_dim
-            output_space = self._model_config["data"]["kwargs"].get("output_space", "gene")
+            output_space = self._model_config["data"]["kwargs"].get(
+                "output_space", "gene"
+            )
             gene_dim = self._create_gene_dim_from_var_dims(var_dims, output_space)
-            
+
             # Initialize the model
             self._initialize_model_from_config(var_dims, gene_dim)
-            
+
             # Update embed_dim and device after model initialization
             self.embed_dim = self.model.output_dim
             self.cell_sentence_len = self.model.cell_sentence_len
             self.device = next(self.model.parameters()).device
             self.fine_tuning_head.set_dim_size(self.embed_dim)
-            
+
             # Apply freeze_backbone setting now that model is initialized
             if self.freeze_backbone:
                 for param in self.model.parameters():
                     param.requires_grad = False
-                logger.info("Backbone model frozen - only fine-tuning head will be trained")
+                logger.info(
+                    "Backbone model frozen - only fine-tuning head will be trained"
+                )
             else:
-                logger.info("Full model fine-tuning - both backbone and head will be trained")
-            
+                logger.info(
+                    "Full model fine-tuning - both backbone and head will be trained"
+                )
+
             # Store for future use
             self._var_dims = var_dims
             self._gene_dim = gene_dim
-        
+
         # Convert AnnData to the format expected by the model
         # We need to create a batch dict similar to what the model expects
         batch_size = len(adata)
-        
+
         # Get perturbation info
         if "target_gene" in adata.obs.columns:
             pert_names = adata.obs["target_gene"].values
         else:
             # Default to non-targeting if no perturbation column
             pert_names = ["non-targeting"] * batch_size
-        
+
         # Create proper perturbation embeddings
         pert_emb = self._create_perturbation_embeddings(pert_names, batch_size)
-        
+
         # Use the expression data as control cell embeddings
-        if hasattr(adata.X, 'toarray'):
+        if hasattr(adata.X, "toarray"):
             ctrl_cell_emb = torch.tensor(adata.X.toarray(), dtype=torch.float32)
         else:
             ctrl_cell_emb = torch.tensor(adata.X, dtype=torch.float32)
-        
+
         # Create batch dict
         batch = {
             "pert_emb": pert_emb,
             "ctrl_cell_emb": ctrl_cell_emb,
             "pert_name": pert_names,
         }
-        
+
         # Add batch info if available
         if "batch_var" in adata.obs.columns:
-            batch["batch"] = torch.zeros(batch_size, dtype=torch.long)  # Dummy batch indices
-        
+            batch["batch"] = torch.zeros(
+                batch_size, dtype=torch.long
+            )  # Dummy batch indices
+
         # Get embeddings using the model's forward method
         self.model.eval()
         with torch.no_grad():
             embeddings = self.model.forward(batch, padded=False)
-        
+
         logger.info("Successfully processed the data for state model fine-tuning.")
         return EmbeddingDataset(embeddings.cpu().numpy())
 
     def _create_perturbation_embeddings(self, pert_names, batch_size):
         """
         Create perturbation embeddings for each cell based on perturbation names.
-        
+
         Parameters
         ----------
         pert_names : list
             List of perturbation names for each cell
         batch_size : int
             Number of cells
-            
+
         Returns
         -------
         torch.Tensor
@@ -437,17 +483,19 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             # Use zeros if perturbation embeddings are disabled
             logger.info("Perturbation embeddings disabled, using zeros")
             return torch.zeros(batch_size, self.model.pert_dim, dtype=torch.float32)
-        
+
         # Try to load the actual perturbation one-hot mapping from the model directory
         model_dir = self.model_dir
         pert_onehot_map_path = os.path.join(model_dir, "pert_onehot_map.pt")
-        
+
         if os.path.exists(pert_onehot_map_path):
             try:
                 # Load the actual perturbation mapping
                 pert_onehot_map = torch.load(pert_onehot_map_path, weights_only=False)
-                logger.info(f"Loaded perturbation mapping with {len(pert_onehot_map)} perturbations")
-                
+                logger.info(
+                    f"Loaded perturbation mapping with {len(pert_onehot_map)} perturbations"
+                )
+
                 # Create embeddings for each cell
                 pert_embeddings = []
                 for pert_name in pert_names:
@@ -456,26 +504,34 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
                     else:
                         # Use default perturbation vector for unknown perturbations
                         if self.default_perturbation_type in pert_onehot_map:
-                            default_vec = pert_onehot_map[self.default_perturbation_type].float()
+                            default_vec = pert_onehot_map[
+                                self.default_perturbation_type
+                            ].float()
                         else:
                             # Fallback to control vector
-                            default_vec = torch.zeros(self.model.pert_dim, dtype=torch.float32)
+                            default_vec = torch.zeros(
+                                self.model.pert_dim, dtype=torch.float32
+                            )
                             if self.model.pert_dim > 0:
                                 default_vec[0] = 1.0
                         pert_embeddings.append(default_vec)
-                        logger.warning(f"Unknown perturbation '{pert_name}', using {self.default_perturbation_type} vector")
-                
+                        logger.warning(
+                            f"Unknown perturbation '{pert_name}', using {self.default_perturbation_type} vector"
+                        )
+
                 return torch.stack(pert_embeddings)
-                
+
             except Exception as e:
                 logger.warning(f"Failed to load perturbation mapping: {e}")
-        
+
         # Fallback: create default control embeddings for all cells
-        logger.info(f"Using default {self.default_perturbation_type} perturbation embeddings for all cells")
+        logger.info(
+            f"Using default {self.default_perturbation_type} perturbation embeddings for all cells"
+        )
         default_pert_vec = torch.zeros(self.model.pert_dim, dtype=torch.float32)
         if self.model.pert_dim > 0:
             default_pert_vec[0] = 1.0  # Control perturbation
-        
+
         return default_pert_vec.unsqueeze(0).repeat(batch_size, 1)
 
     def train(
@@ -537,11 +593,13 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         self.to(self.device)
         self.model.train()
         self.fine_tuning_head.train()
-        
+
         # Set up optimizer based on freeze_backbone setting
         if self.freeze_backbone:
             # Only train the fine-tuning head
-            optimizer = optimizer(self.fine_tuning_head.parameters(), **optimizer_params)
+            optimizer = optimizer(
+                self.fine_tuning_head.parameters(), **optimizer_params
+            )
             logger.info("Optimizer set up for fine-tuning head only")
         else:
             # Train the entire model
@@ -562,14 +620,14 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             for data_dict in training_loop:
                 # Forward pass
                 embeddings = data_dict["embeddings"].to(self.device)
-                
+
                 # Get labels by batch index (like scGPT)
                 labels = torch.tensor(
                     train_labels[batch_count : batch_count + self.config["batch_size"]],
                     device=self.device,
                 )
                 batch_count += self.config["batch_size"]
-                
+
                 output = self._forward(embeddings)
 
                 # Compute loss
@@ -597,28 +655,40 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
                 for validation_data_dict in testing_loop:
                     # Forward pass
                     embeddings = validation_data_dict["embeddings"].to(self.device)
-                    
+
                     # Get validation labels by batch index (like scGPT)
                     val_labels = torch.tensor(
-                        validation_labels[validation_batch_count : validation_batch_count + self.config["batch_size"]],
+                        validation_labels[
+                            validation_batch_count : validation_batch_count
+                            + self.config["batch_size"]
+                        ],
                         device=self.device,
                     )
                     validation_batch_count += self.config["batch_size"]
-                    
+
                     output = self._forward(embeddings)
 
                     # Compute validation loss
                     val_loss += loss_function(output, val_labels).item()
                     count += 1.0
                     testing_loop.set_postfix({"val_loss": val_loss / count})
-        
+
         if self.freeze_backbone is True:
             # we only need to save the head weights
-            torch.save(self.fine_tuning_head.state_dict(), os.path.join(self.model_dir, 'head_weights.pt'))
+            torch.save(
+                self.fine_tuning_head.state_dict(),
+                os.path.join(self.model_dir, "head_weights.pt"),
+            )
         else:
             # we need to save the model and head weights
-            torch.save(self.model.state_dict(), os.path.join(self.model_dir, 'model_weights.pt'))
-            torch.save(self.fine_tuning_head.state_dict(), os.path.join(self.model_dir, 'head_weights.pt'))
+            torch.save(
+                self.model.state_dict(),
+                os.path.join(self.model_dir, "model_weights.pt"),
+            )
+            torch.save(
+                self.fine_tuning_head.state_dict(),
+                os.path.join(self.model_dir, "head_weights.pt"),
+            )
         logger.info(f"Fine-Tuning Complete. Epochs: {epochs}")
 
     def get_outputs(self, dataset: EmbeddingDataset) -> np.ndarray:
