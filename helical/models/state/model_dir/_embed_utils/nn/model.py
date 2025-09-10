@@ -1,40 +1,18 @@
 import warnings
-
 warnings.filterwarnings("ignore")
-
 import math
 import logging
-import numpy as np
-import pandas as pd
-import scanpy as sc
 import torch.nn.functional as F
 import torch
 import lightning as L
-
-import sys
-
-sys.path.append("../../")
-sys.path.append("../")
-
 from torch import nn, Tensor
-from torch.nn import TransformerEncoder, TransformerEncoderLayer, BCEWithLogitsLoss
-
-
-from tqdm.auto import tqdm
+from torch.nn import BCEWithLogitsLoss
 from torch.optim.lr_scheduler import ChainedScheduler, LinearLR, CosineAnnealingLR, ReduceLROnPlateau
-
-from ..data import create_dataloader
 from ..utils import (
-    compute_gene_overlap_cross_pert,
     get_embedding_cfg,
     get_dataset_cfg,
-    compute_pearson_delta,
-    compute_perturbation_ranking_score,
 )
-
 from .loss import WassersteinLoss, KLDivergenceLoss, MMDLoss, TabularLoss
-
-
 from .flash_transformer import FlashTransformerEncoderLayer
 from .flash_transformer import FlashTransformerEncoder
 

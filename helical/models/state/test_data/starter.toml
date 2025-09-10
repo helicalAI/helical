@@ -1,0 +1,16 @@
+# Dataset paths - maps dataset names to their directories
+[datasets]
+replogle_h1 = "/home/rasched/final_helical_with_state/helical/helical/models/state/competition_support_set/{competition_train,k562_gwps,rpe1,jurkat,k562,hepg2}.h5"
+
+# Training specifications
+# All cell types in a dataset automatically go into training (excluding zeroshot/fewshot overrides)
+[training]
+replogle_h1 = "train"
+
+# Zeroshot specifications - entire cell types go to val or test
+[zeroshot]
+"replogle_h1.hepg2" = "test"
+
+
+# Fewshot specifications - explicit perturbation lists
+[fewshot]

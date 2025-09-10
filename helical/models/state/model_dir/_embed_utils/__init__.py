@@ -6,4 +6,5 @@ def _setup_vci_aliases():
     sys.modules["vci"] = current_module  # Only creates top-level vci
 
 _setup_vci_aliases()
+
 __all__ = ["Inference"]
