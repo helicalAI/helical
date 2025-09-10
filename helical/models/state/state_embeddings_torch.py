@@ -10,7 +10,10 @@ from pathlib import Path
 from tqdm import tqdm
 from torch import nn
 
-from model_dir.embed_utils.nn.model import StateEmbeddingModel
+from model_dir.embed_utils.nn.model import StateEmbeddingInferenceOnly
+
+
+
 from model_dir.embed_utils.data import create_dataloader
 from model_dir.embed_utils.utils import get_embedding_cfg, get_precision_config
 
@@ -24,26 +27,27 @@ LOGGER = logging.getLogger(__name__)
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
 
-class stateEmbed(HelicalBaseFoundationModel):
+class stateEmbedTorch(HelicalBaseFoundationModel):
     def __init__(self, configurer: stateConfig = None) -> None:
         super().__init__()
 
         self.model = None
         self.collator = None
+
         if configurer is None:
             configurer = stateConfig()
 
         self.config = configurer.config["embed"]
+
         downloader = Downloader()
         for file in self.config["list_of_files_to_download"]:
             downloader.download_via_name(file)
 
         self.model_dir = self.config["cache_dir"]
-        self.ckpt_path = os.path.join(self.model_dir, self.config["embed_checkpoint"])
+        self.ckpt_path = os.path.join(self.model_dir, "se600m_model_weights.pt")
         LOGGER.info(f"Using model checkpoint: {self.ckpt_path}")
 
         embedding_file = os.path.join(self.model_dir, "protein_embeddings.pt")
-
         self.protein_embeds = (
             torch.load(embedding_file, weights_only=False, map_location="cpu")
             if os.path.exists(embedding_file)
@@ -52,6 +56,50 @@ class stateEmbed(HelicalBaseFoundationModel):
 
         self.model_conf = OmegaConf.load(os.path.join(self.model_dir, "config.yaml"))
         self.load_model()
+        if self.model is None:
+            raise ValueError("Model did not load correctly")
+        self.device_type = "cuda" if torch.cuda.is_available() else "cpu"
+
+    def load_model(self):
+        if self.model:
+            raise ValueError("Model already initialized")
+
+        # First, initialize the model with the config
+        self.model = StateEmbeddingInferenceOnly(
+            token_dim=self.model_conf.tokenizer.token_dim,  
+            d_model=self.model_conf.model.emsize,
+            nhead=self.model_conf.model.nhead,
+            d_hid=self.model_conf.model.d_hid,
+            nlayers=self.model_conf.model.nlayers,
+            output_dim=self.model_conf.model.output_dim,
+            compiled=self.model_conf.experiment.compiled,
+            cfg=self.model_conf,
+        )
+        LOGGER.info("number of free parameters: ", sum(p.numel() for p in self.model.parameters() if p.requires_grad))
+
+        loaded_weights = torch.load(self.ckpt_path, weights_only=True)
+
+        # missing_keys are keys that are in the model but NOT in the loaded weights, so they would not be initialized for inference properly.
+        missing_keys, _ = self.model.load_state_dict(loaded_weights, strict=False)
+        LOGGER.info(f"Missing keys: {missing_keys}")
+
+        precision = get_precision_config(device_type=self.device_type)
+        self.model = self.model.to(precision)
+
+        all_pe = self.protein_embeds or stateEmbedTorch.load_esm2_embeddings(self.model_conf)
+        if isinstance(all_pe, dict):
+            all_pe = torch.vstack(list(all_pe.values()))
+
+        self.model.pe_embedding = nn.Embedding.from_pretrained(all_pe)
+        self.model.pe_embedding.to(self.device_type, dtype=precision)
+        self.model.binary_decoder.requires_grad = False
+        self.model.eval()
+
+        if self.protein_embeds is None:
+            self.protein_embeds = torch.load(
+                get_embedding_cfg(self.model_conf).all_embeddings, weights_only=False
+            )
+        LOGGER.info("Successfully loaded model")
 
     def process_data(
         self,
@@ -201,46 +249,6 @@ class stateEmbed(HelicalBaseFoundationModel):
                         axis=0,
                     )
                     output_h5f[f"/obsm/{obsm_key}"][-data.shape[0] :] = data
-
-    def load_model(self):
-        if self.model:
-            raise ValueError("Model already initialized")
-
-
-        # Load and initialize model for eval
-        self.model = StateEmbeddingModel.load_from_checkpoint(
-            self.ckpt_path, dropout=0.0, strict=False, cfg=self.model_conf
-        )
-
-        # Convert model to appropriate precision for faster inference
-        device_type = "cuda" if torch.cuda.is_available() else "cpu"
-        precision = get_precision_config(device_type=device_type)
-        self.model = self.model.to(precision)
-
-        all_pe = self.protein_embeds or stateEmbed.load_esm2_embeddings(self.model_conf)
-        if isinstance(all_pe, dict):
-            all_pe = torch.vstack(list(all_pe.values()))
-        self.model.pe_embedding = nn.Embedding.from_pretrained(all_pe)
-        self.model.pe_embedding.to(self.model.device, dtype=precision)
-        self.model.binary_decoder.requires_grad = False
-        self.model.eval()
-
-        if self.protein_embeds is None:
-            self.protein_embeds = torch.load(
-                get_embedding_cfg(self.model_conf).all_embeddings, weights_only=False
-            )
-
-    def init_from_model(self, model, protein_embeds=None):
-        """
-        Intended for use during training
-        """
-        self.model = model
-        if protein_embeds:
-            self.protein_embeds = protein_embeds
-        else:
-            self.protein_embeds = torch.load(
-                get_embedding_cfg(self.model_conf), weights_only=False
-            )
 
     def get_gene_embedding(self, genes):
         protein_embeds = [
