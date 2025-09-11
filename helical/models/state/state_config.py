@@ -8,11 +8,10 @@ class stateConfig:
         self,
         output: str = "competition/prediction.h5ad",
         checkpoint_name: str = "final.ckpt",
-        model_dir: Path = Path(CACHE_DIR_HELICAL, "state/state_transition"),
-        model_config: str = Path(
-            CACHE_DIR_HELICAL, "state/state_transition/config.yaml"
+        model_dir: str = os.path.join(CACHE_DIR_HELICAL, "state", "state_transition"),
+        model_config: str = os.path.join(
+            CACHE_DIR_HELICAL, "state", "state_transition", "config.yaml"
         ),
-        embed_checkpoint: str = "se600m_epoch16.ckpt",
         model_name: str = "best_model",
         pert_col: str = "target_gene",
         embed_key: str = None,
@@ -26,23 +25,27 @@ class stateConfig:
         tsv: str = None,
         batch_size: int = 16,
         freeze_backbone: bool = True,
+        embed_model_weights: str = os.path.join("state", "state_embed", "se600m_model_weights.pt"),
+        embed_config: str = os.path.join("state", "state_embed", "config.yaml"),
+        embed_protein_embeddings: str = os.path.join("state", "state_embed", "protein_embeddings.pt"),
+
     ):
 
-        model_path = Path(CACHE_DIR_HELICAL, "state/state_finetune", f"{model_name}.pt")
+        model_path = Path(CACHE_DIR_HELICAL, "state", "state_finetune", f"{model_name}.pt")
         os.makedirs(
-            os.path.join(CACHE_DIR_HELICAL, "state/state_finetune"), exist_ok=True
+            os.path.join(CACHE_DIR_HELICAL, "state", "state_finetune"), exist_ok=True
         )
 
         self.config = {
             "embed": {
-                "embed_checkpoint": embed_checkpoint,
-                "list_of_files_to_download": [
-                    "state/state_embed/config.yaml",
-                    "state/state_embed/protein_embeddings.pt",
-                    "state/state_embed/se600m_epoch16.ckpt",
-                ],
                 "batch_size": batch_size,
-                "cache_dir": Path(CACHE_DIR_HELICAL, "state/state_embed"),
+                "cache_dir": Path(CACHE_DIR_HELICAL, "state", "state_embed"),
+                # files downloaded from remote server - do NOT edit unless you have your own configurations/weights
+                "list_of_files_to_download": [
+                    embed_protein_embeddings,
+                    embed_config,
+                    embed_model_weights
+                ],
             },
             "finetune": {
                 "batch_size": batch_size,

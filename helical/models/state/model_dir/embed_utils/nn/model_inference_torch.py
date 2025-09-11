@@ -2,25 +2,17 @@ import warnings
 
 warnings.filterwarnings("ignore")
 import math
-import logging
 import torch.nn.functional as F
 import torch
-import lightning as L
 from torch import nn, Tensor
-from torch.nn import BCEWithLogitsLoss
-from torch.optim.lr_scheduler import (
-    ChainedScheduler,
-    LinearLR,
-    CosineAnnealingLR,
-    ReduceLROnPlateau,
-)
-from ..utils import (
-    get_embedding_cfg,
-    get_dataset_cfg,
-)
-from .loss import WassersteinLoss, KLDivergenceLoss, MMDLoss, TabularLoss
 from .flash_transformer import FlashTransformerEncoderLayer
 from .flash_transformer import FlashTransformerEncoder
+
+def get_embedding_cfg(cfg):
+    return cfg["embeddings"][cfg["embeddings"]["current"]]
+
+def get_dataset_cfg(cfg):
+    return cfg["dataset"][cfg["dataset"]["current"]]
 
 
 class SkipBlock(nn.Module):
@@ -52,7 +44,7 @@ def nanstd(x):
     )
 
 
-class StateEmbeddingModel(L.LightningModule):
+class StateEmbeddingModel(nn.Module):
     def __init__(
         self,
         token_dim: int,
@@ -61,28 +53,19 @@ class StateEmbeddingModel(L.LightningModule):
         d_hid: int,
         nlayers: int,
         output_dim: int,
-        dropout: float = 0.0,
-        warmup_steps: int = 0,
         compiled: bool = False,
-        max_lr=4e-4,
-        emb_cnt=145469,
-        emb_size=5120,
+        # emb_cnt=145469,
+        # emb_size=5120,
         cfg=None,
-        collater=None,
     ):
         super().__init__()
         self.cfg = cfg
-        self.save_hyperparameters()
         self.compiled = compiled
         self.model_type = "Transformer"
         self.cls_token = nn.Parameter(torch.randn(1, token_dim))
 
         # self.pos_encoder = PositionalEncoding(d_model, dropout)
         self.d_model = d_model
-        self.warmup_steps = warmup_steps
-        self.dropout = dropout
-        self.max_lr = max_lr
-        self.collater = collater
         # Encodes Tokens
         self.encoder = nn.Sequential(
             nn.Linear(token_dim, d_model, bias=True),
@@ -92,7 +75,7 @@ class StateEmbeddingModel(L.LightningModule):
 
         # Create a list of FlashTransformerEncoderLayer instances
         layers = [
-            FlashTransformerEncoderLayer(d_model, nhead, d_hid, dropout=dropout)
+            FlashTransformerEncoderLayer(d_model, nhead, d_hid, dropout=0.0)
             for _ in range(nlayers)
         ]
         self.transformer_encoder = FlashTransformerEncoder(layers)
@@ -101,7 +84,6 @@ class StateEmbeddingModel(L.LightningModule):
             self.transformer_encoder = torch.compile(self.transformer_encoder)
 
         self.d_model = d_model
-        self.dropout = dropout
 
         self.decoder = nn.Sequential(
             SkipBlock(d_model),
@@ -139,13 +121,8 @@ class StateEmbeddingModel(L.LightningModule):
             self.gene_embedding_layer = torch.compile(self.gene_embedding_layer)
 
         self.pe_embedding = None  # TODO: make this cleaner for the type checker, right now it gets set externally after model init
-        self.step_ctr = 0
-
         self.true_top_genes = None
         self.protein_embeds = None
-
-        self._last_val_de_check = 0
-        self._last_val_perturbation_check = 0
 
         if getattr(self.cfg.model, "dataset_correction", False):
             self.dataset_token = nn.Parameter(torch.randn(1, token_dim))
@@ -161,10 +138,12 @@ class StateEmbeddingModel(L.LightningModule):
                 nn.Linear(d_model, num_dataset),
             )
 
-            # this should be a classification label loss
-            self.dataset_loss = nn.CrossEntropyLoss()
         else:
             self.dataset_token = None
+
+    @property 
+    def device(self) -> torch.device:
+        return next(self.parameters()).device
 
     def _compute_embedding_for_batch(self, batch):
         batch_sentences = batch[0].to(self.device)
@@ -195,11 +174,14 @@ class StateEmbeddingModel(L.LightningModule):
             dataset_token = self.dataset_token.expand(
                 batch_sentences.size(0), -1
             ).unsqueeze(1)
+
             batch_sentences = torch.cat((batch_sentences, dataset_token), dim=1)
             # concatenate a False to the mask on dim 1
+
             mask = torch.cat(
                 (mask, torch.zeros(mask.size(0), 1, device=mask.device).bool()), dim=1
             )
+
 
         # mask out the genes embeddings that appear in the task sentence
         _, embedding, dataset_emb = self.forward(
@@ -277,14 +259,12 @@ class StateEmbeddingModel(L.LightningModule):
             bin_weights = F.softmax(
                 bin_weights, dim=-1
             )  # Convert to probabilities over bins
-
             # Step 2: Get bin embeddings
             bin_indices = torch.arange(10, device=self.device)  # 10 bins
             bin_embeddings = self.bin_encoder(bin_indices)  # 10 x d_model
 
             # Step 3: Compute weighted sum of bin embeddings
             count_emb = torch.matmul(bin_weights, bin_embeddings)
-
             if self.dataset_token is not None:
                 # append B x 1 x d_model to count_emb of all zeros
                 dataset_count_emb = torch.zeros(
@@ -293,7 +273,6 @@ class StateEmbeddingModel(L.LightningModule):
                 count_emb = torch.cat(
                     (count_emb, dataset_count_emb), dim=1
                 )  # B x H x d_model
-
             # Add count embeddings to token embeddings
             src = (
                 src + count_emb
@@ -312,144 +291,93 @@ class StateEmbeddingModel(L.LightningModule):
 
         return gene_output, embedding, dataset_emb
 
-    def shared_step(self, batch, batch_idx):
-        logging.info(f"Step {self.global_step} - Batch {batch_idx}")
-        X, Y, batch_weights, embs, dataset_embs = self._compute_embedding_for_batch(
-            batch
-        )
 
-        z = embs.unsqueeze(1).repeat(1, X.shape[1], 1)  # CLS token
+# if __name__ == "__main__":
+#     # test model.safetensors and checkpoint.pt
+#     import os
+#     from omegaconf import OmegaConf
 
-        if self.z_dim_rd == 1:
-            mu = (
-                torch.nan_to_num(
-                    torch.nanmean(
-                        Y.float().masked_fill(Y == 0, float("nan")),  # ignore zeros
-                        dim=1,
-                    ),
-                    nan=0.0,  # if all were 0→NaN, make it 0
-                )
-                if self.cfg.model.rda
-                else None
-            )
-            reshaped_counts = mu.unsqueeze(1).unsqueeze(2)
-            reshaped_counts = reshaped_counts.repeat(1, X.shape[1], 1)
+#     def load_esm2_embeddings(cfg):
+#         # Load in ESM2 embeddings and special tokens
+#         all_pe = torch.load(get_embedding_cfg(cfg).all_embeddings, weights_only=False)
+#         if isinstance(all_pe, dict):
+#             all_pe = torch.vstack(list(all_pe.values()))
 
-            # Concatenate all three tensors along the third dimension
-            combine = torch.cat((X, z, reshaped_counts), dim=2)
-        else:
-            assert self.z_dim_rd == 0
-            # Original behavior if total_counts is None
-            combine = torch.cat((X, z), dim=2)
+#         all_pe = all_pe.cuda()
+#         return all_pe
 
-        if self.dataset_token is not None and dataset_embs is not None:
-            ds_emb = self.dataset_embedder(dataset_embs)
-            ds_emb = ds_emb.unsqueeze(1).repeat(1, X.shape[1], 1)
-            combine = torch.cat((combine, ds_emb), dim=2)
 
-        # concatenate the counts
-        decs = self.binary_decoder(combine)
+#     def get_precision_config(device_type="cuda"):
+#         """
+#         Single source of truth for precision configuration.
 
-        if self.cfg.loss.name == "cross_entropy":
-            criterion = BCEWithLogitsLoss()
-            target = Y
-        elif self.cfg.loss.name == "mse":
-            criterion = nn.MSELoss()
-            target = Y
-        elif self.cfg.loss.name == "wasserstein":
-            criterion = WassersteinLoss()
-            target = Y
-        elif self.cfg.loss.name == "kl_divergence":
-            criterion = KLDivergenceLoss(
-                apply_normalization=self.cfg.loss.normalization
-            )
-            target = batch_weights
-        elif self.cfg.loss.name == "mmd":
-            kernel = self.cfg.loss.get("kernel", "energy")
-            criterion = MMDLoss(
-                kernel=kernel,
-                downsample=self.cfg.model.num_downsample if self.training else 1,
-            )
-            target = Y
-        elif self.cfg.loss.name == "tabular":
-            criterion = TabularLoss(
-                shared=self.cfg.dataset.S,
-                downsample=self.cfg.model.num_downsample if self.training else 1,
-            )
-            target = Y
-        else:
-            raise ValueError(f"Loss {self.cfg.loss.name} not supported")
+#         Args:
+#             device_type: Device type ('cuda' or 'cpu')
 
-        loss = criterion(decs.squeeze(), target)
-        if dataset_embs is not None:
-            # use the dataset loss
-            dataset_pred = self.dataset_encoder(dataset_embs)  # B x # datasets
-            dataset_labels = batch[8].to(self.device).long()
+#         Returns:
+#             torch.dtype: The precision to use for autocast and model operations.
+#                         Returns torch.bfloat16 for CUDA, torch.float32 for CPU.
+#         """
+#         if device_type == "cuda":
+#             return torch.bfloat16
+#         else:
+#             return torch.float32
 
-            # self.dataset_loss is a nn.CrossEntropyLoss
-            dataset_loss = self.dataset_loss(dataset_pred, dataset_labels)
-            if self.training:
-                self.log("trainer/dataset_loss", dataset_loss)
-                loss = loss + dataset_loss
-            else:
-                self.log("validation/dataset_loss", dataset_loss)
+#     model_conf = OmegaConf.load(os.path.join("/home/rasched/.cache/helical/models/state/state_embed/config.yaml"))
 
-        sch = self.lr_schedulers()
+#     model = StateEmbeddingModel(
+#         token_dim=model_conf.tokenizer.token_dim,  # Changed from model_conf.model.token_dim
+#         d_model=model_conf.model.emsize,  # Changed from model_conf.model.d_model
+#         nhead=model_conf.model.nhead,
+#         d_hid=model_conf.model.d_hid,
+#         nlayers=model_conf.model.nlayers,
+#         output_dim=model_conf.model.output_dim,
+#         compiled=model_conf.experiment.compiled,
+#         cfg=model_conf,
+#     )
 
-        for scheduler in sch._schedulers:
-            if isinstance(scheduler, ReduceLROnPlateau):
-                scheduler.step(loss)
-            else:
-                scheduler.step()
-        sch._last_lr = [
-            group["lr"] for group in sch._schedulers[-1].optimizer.param_groups
-        ]
-        return loss
+#     print("number of free parameters: ", sum(p.numel() for p in model.parameters() if p.requires_grad))
 
-    @torch.compile(disable=True)
-    def training_step(self, batch, batch_idx):
-        loss = self.shared_step(batch, batch_idx)
-        self.log("trainer/train_loss", loss)
-        return loss
+#     print("token_dim: ", model_conf.tokenizer.token_dim)
+#     print("d_model: ", model_conf.model.emsize)
+#     print("nhead: ", model_conf.model.nhead)
+#     print("d_hid: ", model_conf.model.d_hid)
+#     print("nlayers: ", model_conf.model.nlayers)
+#     print("output_dim: ", model_conf.model.output_dim)
+#     print("compiled: ", model_conf.experiment.compiled)
 
-    @torch.compile(disable=True)
-    def validation_step(self, batch, batch_idx):
-        loss = self.shared_step(batch, batch_idx)
-        self.log("validation/val_loss", loss)
-        return loss
+#     # Load the weights
+#     loaded_weights = torch.load("/home/rasched/final_helical_with_state/helical/helical/models/state/model_dir/embed_utils/nn/embed_model_epoch16_weights.pt", weights_only=True)
 
-    def configure_optimizers(self):
-        max_lr = self.max_lr
-        optimizer = torch.optim.AdamW(
-            self.parameters(), lr=max_lr, weight_decay=self.cfg.optimizer.weight_decay
-        )
-        total_steps = (
-            self.trainer.estimated_stepping_batches * 2
-        )  # not sure why need to do this
+#     # missing_keys are keys that are in the model but NOT in the loaded weights.
+#     missing_keys, unexpected_keys = model.load_state_dict(loaded_weights, strict=False)
+#     print(f"Missing keys: {missing_keys}")
 
-        lr_schedulers = [
-            LinearLR(
-                optimizer,
-                start_factor=self.cfg.optimizer.start,
-                end_factor=self.cfg.optimizer.end,
-                total_iters=int(0.03 * total_steps),
-            )
-        ]
-        lr_schedulers.append(
-            CosineAnnealingLR(optimizer, eta_min=max_lr * 0.3, T_max=total_steps)
-        )
-        scheduler = ChainedScheduler(lr_schedulers)
+#     protein_embeds = (
+#                 torch.load(os.path.join("/home/rasched/.cache/helical/models/state/state_embed/protein_embeddings.pt"), weights_only=False, map_location="cpu")
+#                 if os.path.exists(os.path.join("/home/rasched/.cache/helical/models/state/state_embed/protein_embeddings.pt"))
+#                 else None
+#             )
 
-        return {
-            "optimizer": optimizer,
-            "lr_scheduler": {
-                "scheduler": scheduler,
-                "monitor": "train_loss",
-                "interval": "step",
-                "frequency": 1,
-            },
-        }
+#     # Convert model to appropriate precision for faster inference
+#     device_type = "cuda" if torch.cuda.is_available() else "cpu"
+#     precision = get_precision_config(device_type=device_type)
+#     model = model.to(precision)
 
-    def update_config(self, new_cfg):
-        """Update the model's config after loading from checkpoint."""
-        self.cfg = new_cfg
+#     all_pe = protein_embeds or load_esm2_embeddings(model_conf)
+#     if isinstance(all_pe, dict):
+#         all_pe = torch.vstack(list(all_pe.values()))
+
+#     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+#     model.pe_embedding = nn.Embedding.from_pretrained(all_pe)
+#     model.pe_embedding.to(device, dtype=precision)
+#     model.binary_decoder.requires_grad = False
+#     model.eval()
+
+#     if protein_embeds is None:
+#         protein_embeds = torch.load(
+#             get_embedding_cfg(model_conf).all_embeddings, weights_only=False
+#         )
+    
+#     print("Done loading model")

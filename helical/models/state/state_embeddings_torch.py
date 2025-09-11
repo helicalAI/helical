@@ -10,7 +10,7 @@ from pathlib import Path
 from tqdm import tqdm
 from torch import nn
 
-from model_dir.embed_utils.nn.model_inference_only import StateEmbeddingInferenceOnly
+from model_dir.embed_utils.nn.model_inference_torch import StateEmbeddingModel
 
 from model_dir.embed_utils.data import create_dataloader
 from model_dir.embed_utils.utils import get_embedding_cfg, get_precision_config
@@ -25,7 +25,7 @@ LOGGER = logging.getLogger(__name__)
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 
 
-class stateEmbedTorch(HelicalBaseFoundationModel):
+class stateEmbed(HelicalBaseFoundationModel):
     def __init__(self, configurer: stateConfig = None) -> None:
         super().__init__()
 
@@ -46,6 +46,7 @@ class stateEmbedTorch(HelicalBaseFoundationModel):
         LOGGER.info(f"Using model checkpoint: {self.ckpt_path}")
 
         embedding_file = os.path.join(self.model_dir, "protein_embeddings.pt")
+        
         self.protein_embeds = (
             torch.load(embedding_file, weights_only=False, map_location="cpu")
             if os.path.exists(embedding_file)
@@ -53,17 +54,15 @@ class stateEmbedTorch(HelicalBaseFoundationModel):
         )
 
         self.model_conf = OmegaConf.load(os.path.join(self.model_dir, "config.yaml"))
-        self.device_type = "cuda" if torch.cuda.is_available() else "cpu"
         self.load_model()
-        if self.model is None:
-            raise ValueError("Model did not load correctly")
+
 
     def load_model(self):
         if self.model:
             raise ValueError("Model already initialized")
 
         # First, initialize the model with the config
-        self.model = StateEmbeddingInferenceOnly(
+        self.model = StateEmbeddingModel(
             token_dim=self.model_conf.tokenizer.token_dim,  
             d_model=self.model_conf.model.emsize,
             nhead=self.model_conf.model.nhead,
@@ -75,25 +74,24 @@ class stateEmbedTorch(HelicalBaseFoundationModel):
         )
 
         LOGGER.info("number of free parameters: %s", sum(p.numel() for p in self.model.parameters() if p.requires_grad))
-        loaded_weights = torch.load(self.ckpt_path, weights_only=True)
+        loaded_weights = torch.load(self.ckpt_path, weights_only=False)
 
         # missing_keys are keys that are in the model but NOT in the loaded weights, so they would not be initialized for inference properly.
         missing_keys, _ = self.model.load_state_dict(loaded_weights, strict=False)
         LOGGER.info(f"Missing keys: {missing_keys}")
 
-        precision = get_precision_config(device_type=self.device_type)
+        device_type = "cuda" if torch.cuda.is_available() else "cpu"
+        precision = get_precision_config(device_type=device_type)
         self.model = self.model.to(precision)
-        LOGGER.info(f"model precision {precision}")
-
 
         all_pe = self.protein_embeds or stateEmbedTorch.load_esm2_embeddings(self.model_conf)
         if isinstance(all_pe, dict):
             all_pe = torch.vstack(list(all_pe.values()))
 
         self.model.pe_embedding = nn.Embedding.from_pretrained(all_pe)
-        self.model.pe_embedding.to(self.device_type, dtype=precision)
+        self.model.pe_embedding.to(self.model.device, dtype=precision)
+        self.model.to(device_type)
         self.model.binary_decoder.requires_grad = False
-        self.model.to(self.device_type)
         self.model.eval()
 
         if self.protein_embeds is None:
@@ -111,7 +109,9 @@ class stateEmbedTorch(HelicalBaseFoundationModel):
         adata = self._convert_to_csr(adata)
         gene_column: Optional[str] = self._auto_detect_gene_column(adata)
 
-        precision = get_precision_config(device_type=self.device_type)
+        device_type = "cuda" if torch.cuda.is_available() else "cpu"
+        precision = get_precision_config(device_type=device_type)
+
         dataloader = create_dataloader(
             self.model_conf,
             adata=adata,
@@ -264,14 +264,16 @@ class stateEmbedTorch(HelicalBaseFoundationModel):
 
     def encode(self, dataloader, rda=None):
         with torch.no_grad():
-            precision = get_precision_config(device_type=self.device_type)
-            with torch.autocast(device_type=self.device_type, dtype=precision):
+            device_type = "cuda" if torch.cuda.is_available() else "cpu"
+            precision = get_precision_config(device_type=device_type)
+            with torch.autocast(device_type=device_type, dtype=precision):
                 for i, batch in enumerate(dataloader):
+
                     _, _, _, emb, ds_emb = self.model._compute_embedding_for_batch(
                         batch
                     )
-
                     embeddings = emb.detach().cpu().float().numpy()
+
                     ds_emb = self.model.dataset_embedder(ds_emb)
                     ds_embeddings = ds_emb.detach().cpu().float().numpy()
 
