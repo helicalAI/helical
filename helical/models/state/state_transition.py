@@ -25,38 +25,38 @@ import logging
 
 LOGGER = logging.getLogger(__name__)
 
-
-# this code to do inference on new data using the transition model
+# this class is used to do inference on new data using the transition model
 class stateTransitionModel(HelicalBaseFoundationModel):
     def __init__(self, configurer: stateConfig = None) -> None:
         super().__init__()
         if configurer is None:
             configurer = stateConfig()
 
-        self.config = configurer.config["perturb"]
+        self.config = configurer.config
+        self.model_dir = self.config["perturb_dir"]
 
         downloader = Downloader()
-        for file in self.config["list_of_files_to_download"]:
+        for file in self.config["perturbation_files_to_download"]:
             downloader.download_via_name(file)
 
-        with open(os.path.join(self.config["model_config"]), "r") as f:
+        with open(os.path.join(self.model_dir, "config.yaml"), "r") as f:
             self.model_config = yaml.safe_load(f)
 
-        with open(os.path.join(self.config["model_dir"], "var_dims.pkl"), "rb") as f:
+        with open(os.path.join(self.model_dir, "var_dims.pkl"), "rb") as f:
             var_dims = pickle.load(f)
 
         self.pert_dim = var_dims.get("pert_dim")
         self.batch_dim = var_dims.get("batch_dim", None)
         # mappings
         self.pert_onehot_map_path = os.path.join(
-            self.config["model_dir"], "pert_onehot_map.pt"
+            self.model_dir, "pert_onehot_map.pt"
         )
         self.batch_onehot_map_path = os.path.join(
-            self.config["model_dir"], "batch_onehot_map.pkl"
+            self.model_dir, "batch_onehot_map.pkl"
         )
 
         self.checkpoint_path = os.path.join(
-            self.config["model_dir"], self.config["checkpoint_name"]
+            self.model_dir, self.config["checkpoint_name"]
         )
         LOGGER.info(f"Using checkpoint: {self.checkpoint_path}")
 
@@ -80,7 +80,6 @@ class stateTransitionModel(HelicalBaseFoundationModel):
             .get("kwargs", {})
             .get("output_space", "gene"),
         )
-
         LOGGER.info(f"Model device: {self.device}")
         LOGGER.info(f"Model cell_set_len (max sequence length): {self.cell_set_len}")
         LOGGER.info(f"Model uses batch encoder: {bool(self.uses_batch_encoder)}")
@@ -176,23 +175,17 @@ class stateTransitionModel(HelicalBaseFoundationModel):
 
         # select features: embeddings or genes
         if self.config["embed_key"] is None:
+            # using raw X as input features --> G dims
             self.X_in = to_dense(adata.X)  # [N, E_in]
-            self.writes_to = (".X", None)  # write predictions to .X
+            LOGGER.info("Using adata.X as input features")
         else:
             if self.config["embed_key"] not in adata.obsm:
                 raise KeyError(
                     f"Embedding key '{self.config['embed_key']}' "
                     f"not found in adata.obsm"
                 )
-
-            # [N, E_in]
+            # using embeddings as input features --> D dims
             self.X_in = np.asarray(adata.obsm[self.config["embed_key"]])
-            # write predictions to obsm[embed_key]
-            self.writes_to = (".obsm", self.config["embed_key"])
-
-        if self.config["embed_key"] is None:
-            LOGGER.info("Using adata.X as input features")
-        else:
             LOGGER.info(
                 f"Using adata.obsm[{self.config['embed_key']}] "
                 f"as input features: shape {self.X_in.shape}"
@@ -286,15 +279,6 @@ class stateTransitionModel(HelicalBaseFoundationModel):
         LOGGER.info(
             f"Cells: total={n_total}, control={n_controls}, " f"non-control={n_nonctl}"
         )
-
-        # Where we will write predictions (initialize with originals;
-        # we overwrite all rows, including controls)
-        if self.writes_to[0] == ".X":
-            sim_X = self.X_in.copy()
-            out_target = "X"
-        else:
-            sim_obsm = self.X_in.copy()
-            out_target = f"obsm['{self.writes_to[1]}']"
 
         # Group labels for set-to-set behavior
         if self.config["celltype_col"] and self.config["celltype_col"] in adata.obs:
@@ -425,7 +409,8 @@ class stateTransitionModel(HelicalBaseFoundationModel):
 
                         # 5) Choose output to write
                         if (
-                            self.writes_to[0] == ".X"
+                            # self.writes_to[0] == ".X"
+                            self.config["embed_key"] is None
                             and ("pert_cell_counts_preds" in batch_out)
                             and (batch_out["pert_cell_counts_preds"] is not None)
                         ):
@@ -448,63 +433,16 @@ class stateTransitionModel(HelicalBaseFoundationModel):
                         if embeddings is None:
                             embeddings = np.zeros((n_total, preds.shape[1]), dtype=np.float32)
                         embeddings[idx_window, :] = preds
-
-                        # 6) Write predictions for these rows (controls included)
-                        if self.writes_to[0] == ".X":
-                            if preds.shape[1] == sim_X.shape[1]:
-                                sim_X[idx_window, :] = preds
-                            else:
-                                LOGGER.info(
-                                    f"Dimension mismatch for X (got {preds.shape[1]} vs {sim_X.shape[1]}). "
-                                    f"Falling back to adata.obsm['X_state_pred']."
-                                )
-                                if "X_state_pred" not in adata.obsm:
-                                    adata.obsm["X_state_pred"] = np.zeros(
-                                        (n_total, preds.shape[1]), dtype=np.float32
-                                    )
-                                adata.obsm["X_state_pred"][idx_window, :] = preds
-                                out_target = "obsm['X_state_pred']"
-                        else:
-                            if preds.shape[1] == sim_obsm.shape[1]:
-                                sim_obsm[idx_window, :] = preds
-                            else:
-                                side_key = f"{self.writes_to[1]}_pred"
-                                LOGGER.info(
-                                    f"Dimension mismatch for obsm['{self.writes_to[1]}'] "
-                                    f"(got {preds.shape[1]} vs {sim_obsm.shape[1]}). "
-                                    f"Writing to adata.obsm['{side_key}'] instead."
-                                )
-                                if side_key not in adata.obsm:
-                                    adata.obsm[side_key] = np.zeros(
-                                        (n_total, preds.shape[1]), dtype=np.float32
-                                    )
-                                adata.obsm[side_key][idx_window, :] = preds
-                                out_target = f"obsm['{side_key}']"
-
                         start = end  # next window
 
-        if self.writes_to[0] == ".X":
-            if out_target == "X":
-                adata.X = sim_X
-        else:
-            if out_target == f"obsm['{self.writes_to[1]}']":
-                adata.obsm[self.writes_to[1]] = sim_obsm
-
-        output_path = self.config["output"] or self.config["adata"].replace(
-            ".h5ad", "_simulated.h5ad"
-        )
-
-        adata.write_h5ad(output_path)
-
-        LOGGER.info("\n=== Inference complete ===")
-        LOGGER.info(f"Input cells:         {n_total}")
-        LOGGER.info(f"Controls simulated:  {n_controls}")
-        LOGGER.info(f"Treated simulated:   {n_nonctl}")
-        LOGGER.info(f"Wrote predictions to adata.{out_target}")
-        LOGGER.info(f"Saved:               {output_path}")
+        key = "perturbed_embeds" if self.config["embed_key"] is None else f"{self.config['embed_key']}_perturbed_embeds"
+        adata.obsm[key] = embeddings
+        adata.write_h5ad(self.config["output_path"])
+        
+        LOGGER.info(f"--Complete--\nInput cells: {n_total}, Control simulated: {n_controls}, Treated simulated: {n_nonctl}")
+        LOGGER.info(f"Wrote predictions to adata.obsm.{key} in output file")
 
         return embeddings
-
 
 
     def pick_first_present(

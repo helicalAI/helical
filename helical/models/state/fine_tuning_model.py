@@ -16,40 +16,28 @@ LOGGER = logging.getLogger(__name__)
 
 
 class EmbeddingDataset:
-    """Dataset class for embedding-based fine-tuning (labels handled separately like scGPT)."""
-
     def __init__(self, embeddings):
-        """
-        Parameters
-        ----------
-        embeddings : array-like
-            Cell embeddings from the state model
-        """
         self.embeddings = torch.tensor(embeddings, dtype=torch.float32)
-
     def __len__(self):
         return len(self.embeddings)
-
     def __getitem__(self, idx):
         return {"embedding": self.embeddings[idx]}
 
-
 def embedding_collator(batch):
-    """Collate function for embedding batches (labels handled separately like scGPT)."""
     return {"embeddings": torch.stack([item["embedding"] for item in batch])}
 
 
-class stateFineTuningModelMinimal(HelicalBaseFineTuningModel, stateTransitionModel):
+class stateFineTuningModel(HelicalBaseFineTuningModel, stateTransitionModel):
     """Minimal fine-tuning model for the state model.
 
-    This version inherits from both HelicalBaseFineTuningModel and stateTransitionModel,
-    following the scGPT pattern. It loads the model as done in stateTransition and places
+    This version inherits from both HelicalBaseFineTuningModel and stateTransitionModel. 
+    It loads the model as done in stateTransitionModel and places
     it into train mode with a fine-tuning head on top.
 
     Example
     ----------
     ```python
-    from helical.models.state import stateFineTuningModelMinimal, stateConfig
+    from helical.models.state import stateFineTuningModel, stateConfig
     import scanpy as sc
 
     # Load the desired dataset
@@ -65,7 +53,7 @@ class stateFineTuningModelMinimal(HelicalBaseFineTuningModel, stateTransitionMod
         freeze_backbone=True
     )
 
-    model = stateFineTuningModelMinimal(
+    model = stateFineTuningModel(
         configurer=config,
         fine_tuning_head="classification",
         output_size=len(label_set),
@@ -90,31 +78,20 @@ class stateFineTuningModelMinimal(HelicalBaseFineTuningModel, stateTransitionMod
             Literal["classification"] | HelicalBaseFineTuningHead
         ) = "classification",
         output_size: Optional[int] = None,
-        freeze_backbone: bool = True,
     ):
-        # Initialize the base fine-tuning model first
+
         HelicalBaseFineTuningModel.__init__(self, fine_tuning_head, output_size)
-        
-        # Initialize the state transition model
         stateTransitionModel.__init__(self, configurer)
-        
-        # Set the model to training mode
+        self.batch_size = configurer.config["batch_size"]
+        self.freeze_backbone = configurer.config["freeze_backbone"]
+
         self.model.train()
+        self.fine_tuning_head.set_dim_size(self.model.output_dim)
         
-        # Set up the fine-tuning head dimensions
-        self.embed_dim = self.model.output_dim
-        self.fine_tuning_head.set_dim_size(self.embed_dim)
-        
-        # Store config for training
-        self.config = configurer.config["perturb"]
-        self.freeze_backbone = freeze_backbone
-        
+        LOGGER.info(f"Backbone frozen: {self.freeze_backbone}")
         if self.freeze_backbone:
-            for param in self.model.parameters():
+            for param in self.model.parameters(): 
                 param.requires_grad = False
-            LOGGER.info("Backbone model frozen - only fine-tuning head will be trained")
-        else:
-            LOGGER.info("Full model fine-tuning - both backbone and head will be trained")
 
     def _forward(self, embeddings: torch.Tensor) -> torch.Tensor:
         """
@@ -125,7 +102,7 @@ class stateFineTuningModelMinimal(HelicalBaseFineTuningModel, stateTransitionMod
 
     def process_data(self, adata: ad.AnnData) -> EmbeddingDataset:
         """
-        Process AnnData through the state model to get embeddings.
+        Process AnnData through the model to get embeddings.
 
         Parameters
         ----------
@@ -138,11 +115,8 @@ class stateFineTuningModelMinimal(HelicalBaseFineTuningModel, stateTransitionMod
             Processed dataset containing embeddings (no labels - user provides them separately)
         """
         LOGGER.info("Processing data for state model fine-tuning.")
-        
-        # Process data using the parent stateTransitionModel
+
         adata_processed = stateTransitionModel.process_data(self, adata)
-        
-        # Get embeddings using the get_embeddings method from stateTransitionModel
         embeddings = self.get_embeddings(adata_processed)
         
         LOGGER.info("Successfully processed the data for state model fine-tuning.")
@@ -187,7 +161,7 @@ class stateFineTuningModelMinimal(HelicalBaseFineTuningModel, stateTransitionMod
         # Create data loaders
         data_loader = DataLoader(
             train_input_data,
-            batch_size=self.config["batch_size"],
+            batch_size=self.batch_size,
             sampler=SequentialSampler(train_input_data),
             collate_fn=embedding_collator,
             drop_last=False,
@@ -197,7 +171,7 @@ class stateFineTuningModelMinimal(HelicalBaseFineTuningModel, stateTransitionMod
         if validation_input_data is not None:
             validation_data_loader = DataLoader(
                 validation_input_data,
-                batch_size=self.config["batch_size"],
+                batch_size=self.batch_size,
                 sampler=SequentialSampler(validation_input_data),
                 collate_fn=embedding_collator,
                 drop_last=False,
@@ -208,23 +182,17 @@ class stateFineTuningModelMinimal(HelicalBaseFineTuningModel, stateTransitionMod
         self.model.train()
         self.fine_tuning_head.train()
 
-        # Set up optimizer based on freeze_backbone setting
         if self.freeze_backbone:
-            # Only train the fine-tuning head
             optimizer = optimizer(
                 self.fine_tuning_head.parameters(), **optimizer_params
             )
-            LOGGER.info("Optimizer set up for fine-tuning head only")
         else:
-            # Train the entire model
             optimizer = optimizer(self.parameters(), **optimizer_params)
-            LOGGER.info("Optimizer set up for full model fine-tuning")
 
         lr_scheduler = None
         if lr_scheduler_params is not None:
             lr_scheduler = get_scheduler(optimizer=optimizer, **lr_scheduler_params)
 
-        LOGGER.info("Starting Fine-Tuning")
         for j in range(epochs):
             batch_count = 0
             batch_loss = 0.0
@@ -232,19 +200,17 @@ class stateFineTuningModelMinimal(HelicalBaseFineTuningModel, stateTransitionMod
             training_loop = tqdm(data_loader)
 
             for data_dict in training_loop:
-                # Forward pass
+
                 embeddings = data_dict["embeddings"].to(self.device)
 
-                # Get labels by batch index (like scGPT)
                 labels = torch.tensor(
-                    train_labels[batch_count : batch_count + self.config["batch_size"]],
+                    train_labels[batch_count : batch_count + self.batch_size],
                     device=self.device,
                 )
-                batch_count += self.config["batch_size"]
+                batch_count += self.batch_size
 
                 output = self._forward(embeddings)
 
-                # Compute loss
                 loss = loss_function(output, labels)
                 loss.backward()
                 batch_loss += loss.item()
@@ -274,11 +240,11 @@ class stateFineTuningModelMinimal(HelicalBaseFineTuningModel, stateTransitionMod
                     val_labels = torch.tensor(
                         validation_labels[
                             validation_batch_count : validation_batch_count
-                            + self.config["batch_size"]
+                            + self.batch_size
                         ],
                         device=self.device,
                     )
-                    validation_batch_count += self.config["batch_size"]
+                    validation_batch_count += self.batch_size
 
                     output = self._forward(embeddings)
 
@@ -308,7 +274,7 @@ class stateFineTuningModelMinimal(HelicalBaseFineTuningModel, stateTransitionMod
 
         data_loader = DataLoader(
             dataset,
-            batch_size=self.config["batch_size"],
+            batch_size=self.batch_size,
             sampler=SequentialSampler(dataset),
             collate_fn=embedding_collator,
             drop_last=False,

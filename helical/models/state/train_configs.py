@@ -1,8 +1,4 @@
-import os
-from helical.constants.paths import CACHE_DIR_HELICAL
-
-
-class trainingConfig:
+class trainConfig:
     def __init__(
         self,
         toml_config_path: str = "competition_support_set/starter.toml",

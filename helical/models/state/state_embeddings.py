@@ -33,13 +33,13 @@ class stateEmbed(HelicalBaseFoundationModel):
 
         if configurer is None:
             configurer = stateConfig()
-        self.config = configurer.config["embed"]
+        self.config = configurer.config
 
         downloader = Downloader()
-        for file in self.config["list_of_files_to_download"]:
+        for file in self.config["embed_files_to_download"]:
             downloader.download_via_name(file)
 
-        self.model_dir = self.config["cache_dir"]
+        self.model_dir = self.config["embed_dir"]
         self.ckpt_path = os.path.join(self.model_dir, "se600m_model_weights.pt")
         
         if not os.path.exists(self.ckpt_path):
@@ -56,6 +56,7 @@ class stateEmbed(HelicalBaseFoundationModel):
         )
 
         self.model_conf = OmegaConf.load(os.path.join(self.model_dir, "config.yaml"))
+        self.batch_size = self.config["batch_size"]
         self.load_model()
 
     def load_model(self):
@@ -123,7 +124,7 @@ class stateEmbed(HelicalBaseFoundationModel):
             protein_embeds=self.protein_embeds,
             precision=precision,
             gene_column=gene_column,
-            batch_size=self.config["batch_size"],
+            batch_size=self.batch_size,
         )
 
         return dataloader
