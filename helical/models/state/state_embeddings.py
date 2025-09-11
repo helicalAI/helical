@@ -153,7 +153,7 @@ class stateEmbed(HelicalBaseFoundationModel):
         #     adata.obsm[emb_key] = all_embeddings
         #     adata.write_h5ad(output_adata_path)
 
-        return np.concatenate(all_embeddings)
+        return all_embeddings
 
     # def __load_dataset_meta(self, adata_path):
     #     with h5.File(adata_path) as h5f:
@@ -295,6 +295,13 @@ class stateEmbed(HelicalBaseFoundationModel):
     # ):
     #     shape_dict = self.__load_dataset_meta(input_adata_path)
     #     adata = anndata.read_h5ad(input_adata_path)
+
+    #     # # # # # # # # # # 
+    #     adata = adata[:10].copy()
+    #     # # # # # # # # # # # # 
+
+
+        
     #     if dataset_name is None:
     #         dataset_name = Path(input_adata_path).stem
 
@@ -343,6 +350,8 @@ class stateEmbed(HelicalBaseFoundationModel):
     #     if output_adata_path is not None:
     #         adata.obsm[emb_key] = all_embeddings
     #         adata.write_h5ad(output_adata_path)
+        
+    #     return all_embeddings, adata
 
     def _convert_to_csr(self, adata):
         """Convert the adata.X matrix to CSR format if it's not already."""
