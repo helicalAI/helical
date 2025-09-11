@@ -34,7 +34,6 @@ class stateEmbed(HelicalBaseFoundationModel):
 
         if configurer is None:
             configurer = stateConfig()
-
         self.config = configurer.config["embed"]
 
         downloader = Downloader()
@@ -43,6 +42,9 @@ class stateEmbed(HelicalBaseFoundationModel):
 
         self.model_dir = self.config["cache_dir"]
         self.ckpt_path = os.path.join(self.model_dir, "se600m_model_weights.pt")
+        if not os.path.exists(self.ckpt_path):
+            raise FileNotFoundError(f"Model checkpoint not found at {self.ckpt_path}")
+
         LOGGER.info(f"Using model checkpoint: {self.ckpt_path}")
 
         embedding_file = os.path.join(self.model_dir, "protein_embeddings.pt")
@@ -55,7 +57,6 @@ class stateEmbed(HelicalBaseFoundationModel):
 
         self.model_conf = OmegaConf.load(os.path.join(self.model_dir, "config.yaml"))
         self.load_model()
-
 
     def load_model(self):
         if self.model:
@@ -84,7 +85,7 @@ class stateEmbed(HelicalBaseFoundationModel):
         precision = get_precision_config(device_type=device_type)
         self.model = self.model.to(precision)
 
-        all_pe = self.protein_embeds or stateEmbedTorch.load_esm2_embeddings(self.model_conf)
+        all_pe = self.protein_embeds or stateEmbed.load_esm2_embeddings(self.model_conf)
         if isinstance(all_pe, dict):
             all_pe = torch.vstack(list(all_pe.values()))
 

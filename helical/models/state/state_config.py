@@ -25,32 +25,23 @@ class stateConfig:
         tsv: str = None,
         batch_size: int = 16,
         freeze_backbone: bool = True,
-        embed_model_weights: str = os.path.join("state", "state_embed", "se600m_model_weights.pt"),
-        embed_config: str = os.path.join("state", "state_embed", "config.yaml"),
-        embed_protein_embeddings: str = os.path.join("state", "state_embed", "protein_embeddings.pt"),
-
     ):
-
-        model_path = Path(CACHE_DIR_HELICAL, "state", "state_finetune", f"{model_name}.pt")
-        os.makedirs(
-            os.path.join(CACHE_DIR_HELICAL, "state", "state_finetune"), exist_ok=True
-        )
 
         self.config = {
             "embed": {
                 "batch_size": batch_size,
-                "cache_dir": Path(CACHE_DIR_HELICAL, "state", "state_embed"),
+                "cache_dir": os.path.join(CACHE_DIR_HELICAL, "state", "state_embed"),
                 # files downloaded from remote server - do NOT edit unless you have your own configurations/weights
                 "list_of_files_to_download": [
-                    embed_protein_embeddings,
-                    embed_config,
-                    embed_model_weights
+                    "state/state_embed/protein_embeddings.pt",
+                    "state/state_embed/config.yaml",
+                    "state/state_embed/se600m_model_weights.pt",
                 ],
             },
             "finetune": {
                 "batch_size": batch_size,
                 "model_dir": model_dir,
-                "model_path": model_path,
+                # "model_path": model_path,
                 "model_config": model_config,
                 "freeze_backbone": freeze_backbone,
                 "checkpoint_name": checkpoint_name,
