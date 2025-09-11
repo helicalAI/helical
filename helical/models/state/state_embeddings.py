@@ -415,6 +415,7 @@ class stateEmbed(HelicalBaseFoundationModel):
         genes = adata.var.index
         yield from self.decode_from_adata(adata, genes, emb_key, read_depth, batch_size)
 
+    #  reverse engineering - it takes pre-computed cell embeddings and reconstructs the original gene expression from them. 
     @torch.no_grad()
     def decode_from_adata(
         self, adata, genes, emb_key: str, read_depth=None, batch_size=64
