@@ -448,8 +448,9 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             "pert_name": pert_names,
         }
 
+        # To DO: - add batch info - remove dummy batch indices
         # Add batch info if available
-        if "batch_var" in adata.obs.columns:
+        if self.config["batch_col"] in adata.obs.columns:
             batch["batch"] = torch.zeros(
                 batch_size, dtype=torch.long
             )  # Dummy batch indices
