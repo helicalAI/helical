@@ -265,7 +265,7 @@ class FilteredGenesCounts(H5adSentenceDataset):
             self.ds_emb_map[adata_name] = new_mapping
 
         LOGGER.info(
-            f"!!! {(self.ds_emb_map[adata_name] != -1).sum()} genes mapped to embedding file (out of {len(self.ds_emb_map[adata_name])})"
+            f"{(self.ds_emb_map[adata_name] != -1).sum()} genes mapped to embedding file (out of {len(self.ds_emb_map[adata_name])})"
         )
 
         esm_data = self.protein_embeds or torch.load(

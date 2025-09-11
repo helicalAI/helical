@@ -7,6 +7,7 @@ import torch
 from torch import nn, Tensor
 from .flash_transformer import FlashTransformerEncoderLayer
 from .flash_transformer import FlashTransformerEncoder
+import logging
 
 def get_embedding_cfg(cfg):
     return cfg["embeddings"][cfg["embeddings"]["current"]]
@@ -63,6 +64,7 @@ class StateEmbeddingInferenceOnly(nn.Module):
         self.compiled = compiled
         self.model_type = "Transformer"
         self.cls_token = nn.Parameter(torch.randn(1, token_dim))
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # self.pos_encoder = PositionalEncoding(d_model, dropout)
         self.d_model = d_model
@@ -147,7 +149,7 @@ class StateEmbeddingInferenceOnly(nn.Module):
         Y = batch[2]
         batch_weights = batch[4]
         mask = batch[5]
-        mask = mask.to(torch.bool)
+        mask = mask.to(torch.bool).to(self.device)
         batch_sentences_counts = batch[7]
         if batch_sentences_counts is not None:
             batch_sentences_counts = batch_sentences_counts.to(self.device)
@@ -169,13 +171,15 @@ class StateEmbeddingInferenceOnly(nn.Module):
         if self.dataset_token is not None:
             dataset_token = self.dataset_token.expand(
                 batch_sentences.size(0), -1
-            ).unsqueeze(1)
+            ).unsqueeze(1).to(self.device)
+
             batch_sentences = torch.cat((batch_sentences, dataset_token), dim=1)
             # concatenate a False to the mask on dim 1
-            mask = torch.cat(
-                (mask, torch.zeros(mask.size(0), 1, device=mask.device).bool()), dim=1
-            )
 
+            mask = torch.cat(
+                (mask, torch.zeros(mask.size(0), 1, device=self.device).bool()), dim=1
+            )
+        
         # mask out the genes embeddings that appear in the task sentence
         _, embedding, dataset_emb = self.forward(
             batch_sentences,
@@ -252,14 +256,12 @@ class StateEmbeddingInferenceOnly(nn.Module):
             bin_weights = F.softmax(
                 bin_weights, dim=-1
             )  # Convert to probabilities over bins
-
             # Step 2: Get bin embeddings
             bin_indices = torch.arange(10, device=self.device)  # 10 bins
             bin_embeddings = self.bin_encoder(bin_indices)  # 10 x d_model
 
             # Step 3: Compute weighted sum of bin embeddings
             count_emb = torch.matmul(bin_weights, bin_embeddings)
-
             if self.dataset_token is not None:
                 # append B x 1 x d_model to count_emb of all zeros
                 dataset_count_emb = torch.zeros(
@@ -268,7 +270,6 @@ class StateEmbeddingInferenceOnly(nn.Module):
                 count_emb = torch.cat(
                     (count_emb, dataset_count_emb), dim=1
                 )  # B x H x d_model
-
             # Add count embeddings to token embeddings
             src = (
                 src + count_emb
@@ -288,92 +289,92 @@ class StateEmbeddingInferenceOnly(nn.Module):
         return gene_output, embedding, dataset_emb
 
 
-if __name__ == "__main__":
-    # test model.safetensors and checkpoint.pt
-    import os
-    from omegaconf import OmegaConf
+# if __name__ == "__main__":
+#     # test model.safetensors and checkpoint.pt
+#     import os
+#     from omegaconf import OmegaConf
 
-    def load_esm2_embeddings(cfg):
-        # Load in ESM2 embeddings and special tokens
-        all_pe = torch.load(get_embedding_cfg(cfg).all_embeddings, weights_only=False)
-        if isinstance(all_pe, dict):
-            all_pe = torch.vstack(list(all_pe.values()))
+#     def load_esm2_embeddings(cfg):
+#         # Load in ESM2 embeddings and special tokens
+#         all_pe = torch.load(get_embedding_cfg(cfg).all_embeddings, weights_only=False)
+#         if isinstance(all_pe, dict):
+#             all_pe = torch.vstack(list(all_pe.values()))
 
-        all_pe = all_pe.cuda()
-        return all_pe
+#         all_pe = all_pe.cuda()
+#         return all_pe
 
 
-    def get_precision_config(device_type="cuda"):
-        """
-        Single source of truth for precision configuration.
+#     def get_precision_config(device_type="cuda"):
+#         """
+#         Single source of truth for precision configuration.
 
-        Args:
-            device_type: Device type ('cuda' or 'cpu')
+#         Args:
+#             device_type: Device type ('cuda' or 'cpu')
 
-        Returns:
-            torch.dtype: The precision to use for autocast and model operations.
-                        Returns torch.bfloat16 for CUDA, torch.float32 for CPU.
-        """
-        if device_type == "cuda":
-            return torch.bfloat16
-        else:
-            return torch.float32
+#         Returns:
+#             torch.dtype: The precision to use for autocast and model operations.
+#                         Returns torch.bfloat16 for CUDA, torch.float32 for CPU.
+#         """
+#         if device_type == "cuda":
+#             return torch.bfloat16
+#         else:
+#             return torch.float32
 
-    model_conf = OmegaConf.load(os.path.join("/home/rasched/.cache/helical/models/state/state_embed/config.yaml"))
+#     model_conf = OmegaConf.load(os.path.join("/home/rasched/.cache/helical/models/state/state_embed/config.yaml"))
 
-    model = StateEmbeddingInferenceOnly(
-        token_dim=model_conf.tokenizer.token_dim,  # Changed from model_conf.model.token_dim
-        d_model=model_conf.model.emsize,  # Changed from model_conf.model.d_model
-        nhead=model_conf.model.nhead,
-        d_hid=model_conf.model.d_hid,
-        nlayers=model_conf.model.nlayers,
-        output_dim=model_conf.model.output_dim,
-        compiled=model_conf.experiment.compiled,
-        cfg=model_conf,
-    )
+#     model = StateEmbeddingInferenceOnly(
+#         token_dim=model_conf.tokenizer.token_dim,  # Changed from model_conf.model.token_dim
+#         d_model=model_conf.model.emsize,  # Changed from model_conf.model.d_model
+#         nhead=model_conf.model.nhead,
+#         d_hid=model_conf.model.d_hid,
+#         nlayers=model_conf.model.nlayers,
+#         output_dim=model_conf.model.output_dim,
+#         compiled=model_conf.experiment.compiled,
+#         cfg=model_conf,
+#     )
 
-    print("number of free parameters: ", sum(p.numel() for p in model.parameters() if p.requires_grad))
+#     print("number of free parameters: ", sum(p.numel() for p in model.parameters() if p.requires_grad))
 
-    print("token_dim: ", model_conf.tokenizer.token_dim)
-    print("d_model: ", model_conf.model.emsize)
-    print("nhead: ", model_conf.model.nhead)
-    print("d_hid: ", model_conf.model.d_hid)
-    print("nlayers: ", model_conf.model.nlayers)
-    print("output_dim: ", model_conf.model.output_dim)
-    print("compiled: ", model_conf.experiment.compiled)
+#     print("token_dim: ", model_conf.tokenizer.token_dim)
+#     print("d_model: ", model_conf.model.emsize)
+#     print("nhead: ", model_conf.model.nhead)
+#     print("d_hid: ", model_conf.model.d_hid)
+#     print("nlayers: ", model_conf.model.nlayers)
+#     print("output_dim: ", model_conf.model.output_dim)
+#     print("compiled: ", model_conf.experiment.compiled)
 
-    # Load the weights
-    loaded_weights = torch.load("/home/rasched/final_helical_with_state/helical/helical/models/state/model_dir/embed_utils/nn/embed_model_epoch16_weights.pt", weights_only=True)
+#     # Load the weights
+#     loaded_weights = torch.load("/home/rasched/final_helical_with_state/helical/helical/models/state/model_dir/embed_utils/nn/embed_model_epoch16_weights.pt", weights_only=True)
 
-    # missing_keys are keys that are in the model but NOT in the loaded weights.
-    missing_keys, unexpected_keys = model.load_state_dict(loaded_weights, strict=False)
-    print(f"Missing keys: {missing_keys}")
+#     # missing_keys are keys that are in the model but NOT in the loaded weights.
+#     missing_keys, unexpected_keys = model.load_state_dict(loaded_weights, strict=False)
+#     print(f"Missing keys: {missing_keys}")
 
-    protein_embeds = (
-                torch.load(os.path.join("/home/rasched/.cache/helical/models/state/state_embed/protein_embeddings.pt"), weights_only=False, map_location="cpu")
-                if os.path.exists(os.path.join("/home/rasched/.cache/helical/models/state/state_embed/protein_embeddings.pt"))
-                else None
-            )
+#     protein_embeds = (
+#                 torch.load(os.path.join("/home/rasched/.cache/helical/models/state/state_embed/protein_embeddings.pt"), weights_only=False, map_location="cpu")
+#                 if os.path.exists(os.path.join("/home/rasched/.cache/helical/models/state/state_embed/protein_embeddings.pt"))
+#                 else None
+#             )
 
-    # Convert model to appropriate precision for faster inference
-    device_type = "cuda" if torch.cuda.is_available() else "cpu"
-    precision = get_precision_config(device_type=device_type)
-    model = model.to(precision)
+#     # Convert model to appropriate precision for faster inference
+#     device_type = "cuda" if torch.cuda.is_available() else "cpu"
+#     precision = get_precision_config(device_type=device_type)
+#     model = model.to(precision)
 
-    all_pe = protein_embeds or load_esm2_embeddings(model_conf)
-    if isinstance(all_pe, dict):
-        all_pe = torch.vstack(list(all_pe.values()))
+#     all_pe = protein_embeds or load_esm2_embeddings(model_conf)
+#     if isinstance(all_pe, dict):
+#         all_pe = torch.vstack(list(all_pe.values()))
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model.pe_embedding = nn.Embedding.from_pretrained(all_pe)
-    model.pe_embedding.to(device, dtype=precision)
-    model.binary_decoder.requires_grad = False
-    model.eval()
+#     model.pe_embedding = nn.Embedding.from_pretrained(all_pe)
+#     model.pe_embedding.to(device, dtype=precision)
+#     model.binary_decoder.requires_grad = False
+#     model.eval()
 
-    if protein_embeds is None:
-        protein_embeds = torch.load(
-            get_embedding_cfg(model_conf).all_embeddings, weights_only=False
-        )
+#     if protein_embeds is None:
+#         protein_embeds = torch.load(
+#             get_embedding_cfg(model_conf).all_embeddings, weights_only=False
+#         )
     
-    print("Done loading model")
+#     print("Done loading model")

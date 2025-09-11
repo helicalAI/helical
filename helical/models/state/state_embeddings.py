@@ -64,6 +64,7 @@ class stateEmbed(HelicalBaseFoundationModel):
 
         device_type = "cuda" if torch.cuda.is_available() else "cpu"
         precision = get_precision_config(device_type=device_type)
+        
         dataloader = create_dataloader(
             self.model_conf,
             adata=adata,
@@ -216,6 +217,8 @@ class stateEmbed(HelicalBaseFoundationModel):
         device_type = "cuda" if torch.cuda.is_available() else "cpu"
         precision = get_precision_config(device_type=device_type)
         self.model = self.model.to(precision)
+        LOGGER.info(f"model precision {precision}")
+
 
         all_pe = self.protein_embeds or stateEmbed.load_esm2_embeddings(self.model_conf)
         if isinstance(all_pe, dict):
