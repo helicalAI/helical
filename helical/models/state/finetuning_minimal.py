@@ -90,6 +90,7 @@ class stateFineTuningModelMinimal(HelicalBaseFineTuningModel, stateTransitionMod
             Literal["classification"] | HelicalBaseFineTuningHead
         ) = "classification",
         output_size: Optional[int] = None,
+        freeze_backbone: bool = True,
     ):
         # Initialize the base fine-tuning model first
         HelicalBaseFineTuningModel.__init__(self, fine_tuning_head, output_size)
@@ -105,8 +106,8 @@ class stateFineTuningModelMinimal(HelicalBaseFineTuningModel, stateTransitionMod
         self.fine_tuning_head.set_dim_size(self.embed_dim)
         
         # Store config for training
-        self.config = configurer.config["finetune"]
-        self.freeze_backbone = self.config["freeze_backbone"]
+        self.config = configurer.config["perturb"]
+        self.freeze_backbone = freeze_backbone
         
         if self.freeze_backbone:
             for param in self.model.parameters():
@@ -141,39 +142,11 @@ class stateFineTuningModelMinimal(HelicalBaseFineTuningModel, stateTransitionMod
         # Process data using the parent stateTransitionModel
         adata_processed = stateTransitionModel.process_data(self, adata)
         
-        # Get embeddings using the model's forward method
-        self.model.eval()
-        with torch.no_grad():
-            # Create a simple batch for getting embeddings
-            batch_size = len(adata_processed)
-            
-            # Use the expression data as control cell embeddings
-            if hasattr(adata_processed.X, "toarray"):
-                ctrl_cell_emb = torch.tensor(adata_processed.X.toarray(), dtype=torch.float32)
-            else:
-                ctrl_cell_emb = torch.tensor(adata_processed.X, dtype=torch.float32)
-            
-            # Create dummy perturbation embeddings (all zeros for control)
-            pert_emb = torch.zeros(batch_size, self.model.pert_dim, dtype=torch.float32)
-            if self.model.pert_dim > 0:
-                pert_emb[:, 0] = 1.0  # Set first dimension to 1 for control
-            
-            # Create batch dict
-            batch = {
-                "pert_emb": pert_emb,
-                "ctrl_cell_emb": ctrl_cell_emb,
-                "pert_name": ["non-targeting"] * batch_size,
-            }
-            
-            # Add batch info if available
-            if hasattr(self, 'batch_indices_all') and self.batch_indices_all is not None:
-                batch["batch"] = torch.tensor(self.batch_indices_all, dtype=torch.long)
-            
-            # Get embeddings using the model's forward method
-            embeddings = self.model.forward(batch, padded=False)
+        # Get embeddings using the get_embeddings method from stateTransitionModel
+        embeddings = self.get_embeddings(adata_processed)
         
         LOGGER.info("Successfully processed the data for state model fine-tuning.")
-        return EmbeddingDataset(embeddings.cpu().numpy())
+        return EmbeddingDataset(embeddings)
 
     def train(
         self,

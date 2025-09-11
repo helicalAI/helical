@@ -47,10 +47,11 @@ class stateConfig:
                 "control_pert": control_pert,
                 "pert_col": pert_col,
                 "batch_col": batch_col,
-                "use_perturbation_embeddings": use_perturbation_embeddings,
+                # "use_perturbation_embeddings": use_perturbation_embeddings,
                 "celltype_col": celltype_col,
             },
             "perturb": {
+                "batch_size": batch_size,
                 "list_of_files_to_download": [
                     "state/state_transition/config.yaml",
                     "state/state_transition/pert_onehot_map.pt",
