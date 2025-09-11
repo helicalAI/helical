@@ -498,7 +498,20 @@ class stateTransitionModel(HelicalBaseFoundationModel):
         LOGGER.info(f"Wrote predictions to adata.{out_target}")
         LOGGER.info(f"Saved:               {output_path}")
 
-        return adata
+        # return adata
+        # Return the embeddings based on where they were written
+        if self.writes_to[0] == ".X":
+            if out_target == "X":
+                return sim_X  # Return the gene expression predictions
+            else:
+                return adata.obsm["X_state_pred"]  # Return the fallback predictions
+        else:
+            if out_target == f"obsm['{self.writes_to[1]}']":
+                return sim_obsm  # Return the embedding predictions
+            else:
+                side_key = f"{self.writes_to[1]}_pred"
+                return adata.obsm[side_key]  # Return the fallback predictions
+
 
     def pick_first_present(
         self, d: "sc.AnnData", candidates: List[str]

@@ -112,49 +112,39 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             raise FileNotFoundError(
                 f"config.yaml not found at {self.config['model_config']}. Please ensure it exists."
             )
-
+        
         LOGGER.info(f"Loading existing config.yaml from: {self.config['model_config']}")
         with open(self.config["model_config"], "r") as f:
             self._model_config = yaml.safe_load(f)
 
-        # Initialize attributes that might be used later
-        self._var_dims = None
-        self._gene_dim = None
-        self.has_var_dims = True
         self.use_perturbation_embeddings = self.config["use_perturbation_embeddings"]
         self.default_perturbation_type = self.config["control_pert"]
 
-        # Load the pre-trained state model or initialize fresh
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model_dir = self.config["model_dir"]  
+
         checkpoint_path = os.path.join(
-            self.config["model_dir"], self.config["checkpoint_name"]
+            self.model_dir, self.config["checkpoint_name"]
         )
-        self.model_dir = self.config["model_dir"]
+        
+        with open(os.path.join(self.model_dir, "var_dims.pkl"), "rb") as f:
+            self.var_dims = pickle.load(f)
 
         if os.path.exists(checkpoint_path):
             LOGGER.info(f"Loading pre-trained model from: {checkpoint_path}")
             self.model = StateTransitionPerturbationModel.load_from_checkpoint(
                 checkpoint_path
             )
+            self.model.to(self.device)
         else:
             LOGGER.info(
                 f"No checkpoint found at {checkpoint_path}, initializing fresh model from config"
             )
             self._initialize_fresh_model()
 
-        # Check if model was successfully initialized
-        if self.has_var_dims:
-            # Get the actual output dimension from the loaded model
-            self.embed_dim = self.model.output_dim
-            self.cell_sentence_len = self.model.cell_sentence_len
-            self.device = next(self.model.parameters()).device
-            self.fine_tuning_head.set_dim_size(self.embed_dim)
-        else:
-            LOGGER.info(
-                "Model will be initialized when data is inputted via process_data()"
-            )
-            self.embed_dim = None
-            self.cell_sentence_len = None
-            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.embed_dim = self.model.output_dim
+        self.cell_sentence_len = self.model.cell_sentence_len
+        self.fine_tuning_head.set_dim_size(self.embed_dim)
 
         # Check for .pt weight files and load them if available
         self.backbone_weights_path = (
@@ -167,25 +157,18 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             if os.path.exists(os.path.join(self.model_dir, "head_weights.pt"))
             else None
         )
-
-        if self.has_var_dims:
-            self.load_pt_weights()
+        self.load_pt_weights()
 
         self.freeze_backbone = self.config["freeze_backbone"]
-        if self.has_var_dims:
-            if self.freeze_backbone:
-                for param in self.model.parameters():
-                    param.requires_grad = False
-                LOGGER.info(
-                    "Backbone model frozen - only fine-tuning head will be trained"
-                )
-            else:
-                LOGGER.info(
-                    "Full model fine-tuning - both backbone and head will be trained"
-                )
+        if self.freeze_backbone:
+            for param in self.model.parameters():
+                param.requires_grad = False
+            LOGGER.info(
+                "Backbone model frozen - only fine-tuning head will be trained"
+            )
         else:
             LOGGER.info(
-                f"Freeze backbone setting: {self.freeze_backbone} (will be applied when model is initialized)"
+                "Full model fine-tuning - both backbone and head will be trained"
             )
 
     def _create_var_dims_from_adata(self, adata):
@@ -230,8 +213,8 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             )
 
         # Get cell type info
-        if "cell_type" in adata.obs.columns:
-            unique_cell_types = adata.obs["cell_type"].unique()
+        if self.config["celltype_col"] in adata.obs.columns:
+            unique_cell_types = adata.obs[self.config["celltype_col"]].unique()
             cell_type_names = list(unique_cell_types)
             LOGGER.info(
                 f"Found {len(cell_type_names)} unique cell types: {cell_type_names}"
@@ -284,18 +267,7 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
 
     def _initialize_fresh_model(self):
         """Initialize a fresh model using config.yaml and var_dims.pkl (same as training model)."""
-        var_dims_path = os.path.join(self.model_dir, "var_dims.pkl")
 
-        if not os.path.exists(var_dims_path):
-            LOGGER.info(
-                "var_dims.pkl not found, will be created when process_data is called"
-            )
-            self.has_var_dims = False
-            return
-
-        # Load var_dims.pkl
-        with open(var_dims_path, "rb") as f:
-            var_dims = pickle.load(f)
 
         # Calculate gene_dim (same logic as training)
         output_space = self._model_config["data"]["kwargs"].get("output_space", "gene")
@@ -402,7 +374,6 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
             # Update embed_dim and device after model initialization
             self.embed_dim = self.model.output_dim
             self.cell_sentence_len = self.model.cell_sentence_len
-            self.device = next(self.model.parameters()).device
             self.fine_tuning_head.set_dim_size(self.embed_dim)
 
             # Apply freeze_backbone setting now that model is initialized
@@ -426,11 +397,11 @@ class stateFineTuningModel(HelicalBaseFineTuningModel):
         batch_size = len(adata)
 
         # Get perturbation info
-        if "target_gene" in adata.obs.columns:
-            pert_names = adata.obs["target_gene"].values
+        if self.config["pert_col"] in adata.obs.columns:
+            pert_names = adata.obs[self.config["pert_col"]].values
         else:
             # Default to non-targeting if no perturbation column
-            pert_names = ["non-targeting"] * batch_size
+            pert_names = [self.config["control_pert"]] * batch_size
 
         # Create proper perturbation embeddings
         pert_emb = self._create_perturbation_embeddings(pert_names, batch_size)

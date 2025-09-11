@@ -48,6 +48,7 @@ class stateConfig:
                 "pert_col": pert_col,
                 "batch_col": batch_col,
                 "use_perturbation_embeddings": use_perturbation_embeddings,
+                "celltype_col": celltype_col,
             },
             "perturb": {
                 "list_of_files_to_download": [
