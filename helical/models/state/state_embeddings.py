@@ -35,14 +35,13 @@ class stateEmbed(HelicalBaseFoundationModel):
             configurer = stateConfig()
         self.config = configurer.config["embed"]
 
-        # downloader = Downloader()
-        # for file in self.config["list_of_files_to_download"]:
-        #     downloader.download_via_name(file)
+        downloader = Downloader()
+        for file in self.config["list_of_files_to_download"]:
+            downloader.download_via_name(file)
 
         self.model_dir = self.config["cache_dir"]
-        # self.ckpt_path = os.path.join(self.model_dir, "se600m_model_weights.pt")
-        self.ckpt_path = os.path.join("/home/rasched/.cache/helical/models/state/state_embed", "se600m_model_weights.pt")
-
+        self.ckpt_path = os.path.join(self.model_dir, "se600m_model_weights.pt")
+        
         if not os.path.exists(self.ckpt_path):
             raise FileNotFoundError(f"Model checkpoint not found at {self.ckpt_path}")
 
@@ -156,44 +155,44 @@ class stateEmbed(HelicalBaseFoundationModel):
 
         return np.concatenate(all_embeddings)
 
-    def __load_dataset_meta(self, adata_path):
-        with h5.File(adata_path) as h5f:
-            attrs = dict(h5f["X"].attrs)
-            if "encoding-type" in attrs:  # Fixed: was checking undefined 'adata'
-                if attrs["encoding-type"] in ["csr_matrix", "csc_matrix"]:
-                    num_cells = attrs["shape"][0]
-                    num_genes = attrs["shape"][1]
-                elif attrs["encoding-type"] == "array":
-                    num_cells = h5f["X"].shape[0]
-                    num_genes = h5f["X"].shape[1]
-                else:
-                    raise ValueError("Input file contains count mtx in non-csr matrix")
-            else:
-                # No encoding-type specified, try to infer from dataset structure
-                if hasattr(h5f["X"], "shape") and len(h5f["X"].shape) == 2:
-                    # Treat as dense array - get shape directly from dataset
-                    num_cells = h5f["X"].shape[0]
-                    num_genes = h5f["X"].shape[1]
-                elif all(key in h5f["X"] for key in ["indptr", "indices", "data"]):
-                    # Looks like sparse CSR format
-                    num_cells = len(h5f["X"]["indptr"]) - 1
-                    num_genes = attrs.get(
-                        "shape",
-                        [
-                            0,
-                            (
-                                h5f["X"]["indices"][:].max() + 1
-                                if len(h5f["X"]["indices"]) > 0
-                                else 0
-                            ),
-                        ],
-                    )[1]
-                else:
-                    raise ValueError(
-                        "Cannot determine matrix format - no encoding-type and unrecognized structure"
-                    )
+    # def __load_dataset_meta(self, adata_path):
+    #     with h5.File(adata_path) as h5f:
+    #         attrs = dict(h5f["X"].attrs)
+    #         if "encoding-type" in attrs:  # Fixed: was checking undefined 'adata'
+    #             if attrs["encoding-type"] in ["csr_matrix", "csc_matrix"]:
+    #                 num_cells = attrs["shape"][0]
+    #                 num_genes = attrs["shape"][1]
+    #             elif attrs["encoding-type"] == "array":
+    #                 num_cells = h5f["X"].shape[0]
+    #                 num_genes = h5f["X"].shape[1]
+    #             else:
+    #                 raise ValueError("Input file contains count mtx in non-csr matrix")
+    #         else:
+    #             # No encoding-type specified, try to infer from dataset structure
+    #             if hasattr(h5f["X"], "shape") and len(h5f["X"].shape) == 2:
+    #                 # Treat as dense array - get shape directly from dataset
+    #                 num_cells = h5f["X"].shape[0]
+    #                 num_genes = h5f["X"].shape[1]
+    #             elif all(key in h5f["X"] for key in ["indptr", "indices", "data"]):
+    #                 # Looks like sparse CSR format
+    #                 num_cells = len(h5f["X"]["indptr"]) - 1
+    #                 num_genes = attrs.get(
+    #                     "shape",
+    #                     [
+    #                         0,
+    #                         (
+    #                             h5f["X"]["indices"][:].max() + 1
+    #                             if len(h5f["X"]["indices"]) > 0
+    #                             else 0
+    #                         ),
+    #                     ],
+    #                 )[1]
+    #             else:
+    #                 raise ValueError(
+    #                     "Cannot determine matrix format - no encoding-type and unrecognized structure"
+    #                 )
 
-        return {Path(adata_path).stem: (num_cells, num_genes)}
+    #     return {Path(adata_path).stem: (num_cells, num_genes)}
 
     def __load_dataset_meta_from_adata(self, adata, dataset_name=None):
         """

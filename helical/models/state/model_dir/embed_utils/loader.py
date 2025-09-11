@@ -9,7 +9,7 @@ import numpy as np
 from typing import Dict, Optional
 
 from torch.utils.data import DataLoader
-import utils
+from . import utils
 
 LOGGER = logging.getLogger(__file__)
 
