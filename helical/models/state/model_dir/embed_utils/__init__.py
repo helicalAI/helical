@@ -1,9 +1,6 @@
-# import sys
+
+from .loader import H5adSentenceDataset, VCIDatasetSentenceCollator, create_dataloader
+from .model_embed_inference import StateEmbeddingModel
 
 
-# def _setup_vci_aliases():
-#     current_module = sys.modules[__name__]
-#     sys.modules["vci"] = current_module  # Only creates top-level vci
-
-
-# _setup_vci_aliases()
+__all__ = ["H5adSentenceDataset", "VCIDatasetSentenceCollator", "create_dataloader", "StateEmbeddingModel"]

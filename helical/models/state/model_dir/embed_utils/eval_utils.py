@@ -3,8 +3,8 @@ import numpy as np
 import pandas as pd
 import torch
 from tqdm import tqdm
-from ..data import create_dataloader
-from ..utils import compute_gene_overlap_cross_pert
+from .data import create_dataloader
+from .utils import compute_gene_overlap_cross_pert
 from torch import nn, optim
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.metrics import roc_auc_score, accuracy_score

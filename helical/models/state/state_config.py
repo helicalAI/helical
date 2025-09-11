@@ -1,5 +1,4 @@
 from helical.constants.paths import CACHE_DIR_HELICAL
-from pathlib import Path
 import os
 
 

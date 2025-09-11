@@ -10,9 +10,8 @@ from pathlib import Path
 from tqdm import tqdm
 from torch import nn
 
-from model_dir.embed_utils.nn.model_inference_torch import StateEmbeddingModel
-
-from model_dir.embed_utils.data import create_dataloader
+from model_dir.embed_utils import StateEmbeddingModel
+from model_dir.embed_utils import create_dataloader
 from model_dir.embed_utils.utils import get_embedding_cfg, get_precision_config
 
 from helical.models.base_models import HelicalBaseFoundationModel
@@ -36,12 +35,14 @@ class stateEmbed(HelicalBaseFoundationModel):
             configurer = stateConfig()
         self.config = configurer.config["embed"]
 
-        downloader = Downloader()
-        for file in self.config["list_of_files_to_download"]:
-            downloader.download_via_name(file)
+        # downloader = Downloader()
+        # for file in self.config["list_of_files_to_download"]:
+        #     downloader.download_via_name(file)
 
         self.model_dir = self.config["cache_dir"]
-        self.ckpt_path = os.path.join(self.model_dir, "se600m_model_weights.pt")
+        # self.ckpt_path = os.path.join(self.model_dir, "se600m_model_weights.pt")
+        self.ckpt_path = os.path.join("/home/rasched/.cache/helical/models/state/state_embed", "se600m_model_weights.pt")
+
         if not os.path.exists(self.ckpt_path):
             raise FileNotFoundError(f"Model checkpoint not found at {self.ckpt_path}")
 
@@ -147,6 +148,11 @@ class stateEmbed(HelicalBaseFoundationModel):
             all_embeddings = np.concatenate(
                 [all_embeddings, all_ds_embeddings], axis=-1
             )
+
+        # if output_adata_path is provided, write the adata to the file
+        # if output_adata_path is not None:
+        #     adata.obsm[emb_key] = all_embeddings
+        #     adata.write_h5ad(output_adata_path)
 
         return np.concatenate(all_embeddings)
 
@@ -280,64 +286,64 @@ class stateEmbed(HelicalBaseFoundationModel):
 
                     yield embeddings, ds_embeddings
 
-    def encode_adata(
-        self,
-        input_adata_path: str,
-        output_adata_path: str | None = None,
-        emb_key: str = "X_emb",
-        dataset_name: str | None = None,
-        batch_size: int = 32,
-    ):
-        shape_dict = self.__load_dataset_meta(input_adata_path)
-        adata = anndata.read_h5ad(input_adata_path)
-        if dataset_name is None:
-            dataset_name = Path(input_adata_path).stem
+    # def encode_adata(
+    #     self,
+    #     input_adata_path: str,
+    #     output_adata_path: str | None = None,
+    #     emb_key: str = "X_emb",
+    #     dataset_name: str | None = None,
+    #     batch_size: int = 32,
+    # ):
+    #     shape_dict = self.__load_dataset_meta(input_adata_path)
+    #     adata = anndata.read_h5ad(input_adata_path)
+    #     if dataset_name is None:
+    #         dataset_name = Path(input_adata_path).stem
 
-        # Convert to CSR format if needed
-        adata = self._convert_to_csr(adata)
+    #     # Convert to CSR format if needed
+    #     adata = self._convert_to_csr(adata)
 
-        # Auto-detect the best gene column
-        gene_column: Optional[str] = self._auto_detect_gene_column(adata)
+    #     # Auto-detect the best gene column
+    #     gene_column: Optional[str] = self._auto_detect_gene_column(adata)
 
-        device_type = "cuda" if torch.cuda.is_available() else "cpu"
-        precision = get_precision_config(device_type=device_type)
-        dataloader = create_dataloader(
-            self.model_conf,
-            adata=adata,
-            adata_name=dataset_name or "inference",
-            shape_dict=shape_dict,
-            data_dir=os.path.dirname(input_adata_path),
-            shuffle=False,
-            protein_embeds=self.protein_embeds,
-            precision=precision,
-            gene_column=gene_column,
-        )
+    #     device_type = "cuda" if torch.cuda.is_available() else "cpu"
+    #     precision = get_precision_config(device_type=device_type)
+    #     dataloader = create_dataloader(
+    #         self.model_conf,
+    #         adata=adata,
+    #         adata_name=dataset_name or "inference",
+    #         shape_dict=shape_dict,
+    #         data_dir=os.path.dirname(input_adata_path),
+    #         shuffle=False,
+    #         protein_embeds=self.protein_embeds,
+    #         precision=precision,
+    #         gene_column=gene_column,
+    #     )
 
-        all_embeddings = []
-        all_ds_embeddings = []
-        for embeddings, ds_embeddings in tqdm(
-            self.encode(dataloader), total=len(dataloader), desc="Encoding"
-        ):
-            all_embeddings.append(embeddings)
-            if ds_embeddings is not None:
-                all_ds_embeddings.append(ds_embeddings)
+    #     all_embeddings = []
+    #     all_ds_embeddings = []
+    #     for embeddings, ds_embeddings in tqdm(
+    #         self.encode(dataloader), total=len(dataloader), desc="Encoding"
+    #     ):
+    #         all_embeddings.append(embeddings)
+    #         if ds_embeddings is not None:
+    #             all_ds_embeddings.append(ds_embeddings)
 
-        # attach this as a numpy array to the adata and write it out
-        all_embeddings = np.concatenate(all_embeddings, axis=0).astype(np.float32)
-        if len(all_ds_embeddings) > 0:
-            all_ds_embeddings = np.concatenate(all_ds_embeddings, axis=0).astype(
-                np.float32
-            )
+    #     # attach this as a numpy array to the adata and write it out
+    #     all_embeddings = np.concatenate(all_embeddings, axis=0).astype(np.float32)
+    #     if len(all_ds_embeddings) > 0:
+    #         all_ds_embeddings = np.concatenate(all_ds_embeddings, axis=0).astype(
+    #             np.float32
+    #         )
 
-            # concatenate along axis -1 with all embeddings
-            all_embeddings = np.concatenate(
-                [all_embeddings, all_ds_embeddings], axis=-1
-            )
+    #         # concatenate along axis -1 with all embeddings
+    #         all_embeddings = np.concatenate(
+    #             [all_embeddings, all_ds_embeddings], axis=-1
+    #         )
 
-        # if output_adata_path is provided, write the adata to the file
-        if output_adata_path is not None:
-            adata.obsm[emb_key] = all_embeddings
-            adata.write_h5ad(output_adata_path)
+    #     # if output_adata_path is provided, write the adata to the file
+    #     if output_adata_path is not None:
+    #         adata.obsm[emb_key] = all_embeddings
+    #         adata.write_h5ad(output_adata_path)
 
     def _convert_to_csr(self, adata):
         """Convert the adata.X matrix to CSR format if it's not already."""
