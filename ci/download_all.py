@@ -138,13 +138,7 @@ def main():
         "https://storage.googleapis.com/vcc_data_prod/datasets/state/competition_support_set.zip",
     )
 
-    from zipfile import ZipFile
-    import toml    
-    with ZipFile("competition_support_set.zip", 'r') as z:
-        z.extractall("competition_support_set")
-    toml.dump({**toml.load(open("competition_support_set/starter.toml")), **{"datasets": {"replogle_h1": str(Path("competition_support_set").absolute() / "{competition_train,k562_gwps,rpe1,jurkat,k562,hepg2}.h5")}}}, open("competition_support_set/starter.toml", "w"))
-    
-    downloader.download_via_name("state/state_embed/se600m_epoch16.ckpt")
+    downloader.download_via_name("state/state_embed/se600m_model_weights.pt")
     downloader.download_via_name("state/state_embed/protein_embeddings.pt")
     downloader.download_via_name("state/state_embed/config.yaml")
 
