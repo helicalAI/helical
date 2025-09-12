@@ -20,7 +20,6 @@ from .train_configs import trainConfig
 from .state_embeddings import stateEmbed
 from .state_transition import stateTransitionModel
 from .fine_tuning_model import stateFineTuningModel
-
 from .state_train import stateTransitionTrainModel
 
 from .model_dir.vcc_eval import vcc_eval

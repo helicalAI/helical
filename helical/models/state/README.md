@@ -29,11 +29,11 @@
 
 **Technical usage:**
 
-- Tokenizing transcriptomes
-- Tokenizing conditions (i.e. perturbation experiment alterations, which are indicated by perturbation tokens)
+- Embedding transcriptomes
+- Embedding conditions (i.e. perturbation experiment alterations, which are indicated by perturbation tokens)
 - Pretraining 
 - Finetuning 
-- Pre- and post-perturbation cell embeddings
+- Pre- and post-perturbation single-cell embeddings
 
 **Broader research applications:**  
 
@@ -59,8 +59,8 @@
 **Evaluation Metrics:**  
 
 - Classification metrics: Accuracy, Precision, Recall
-- Biological conservation metrics: Cell-Eval (incl. p-values, fold change, ranking, correlation)
-- Batch correction metrics: Batch Embeddings added to input
+- Biological conservation metrics: Cell-Eval package (incl. p-values, fold change, ranking, correlation)
+- Batch correction metrics: Batch Correction Embeddings
 
 **Testing Data:**  
 
@@ -70,7 +70,7 @@
 
 **Known Limitations:**
 
-- Single-cell RNA sequencing data requires the destruction of cells during measurement. This prevents observations of their non-perturbed states. Some perturbations such as gene knockout may also not occur experimentally and incorrectly flagged as a pertubed datapoint. 
+- Single-cell RNA sequencing data requires the destruction of cells during measurement. This prevents observations of their non-perturbed states. Some perturbations such as gene knockout may also not occur experimentally and be incorrectly flagged as a pertubed datapoint. 
 
 - STATE evaluation metrics are more sensitive on an individual gene basis but stronger on an ensemble/batch level. As pointed out by the authors metrics such as accuracy of individual DE genes depends on dataset size/quality.
 
@@ -92,8 +92,7 @@
 
 **Output Format:**  
 
-- Cell embeddings
-
+- Cell embedding/transcriptome (.anndata, .npy)
 
 **Example State Embedding Usage:**
 ```python

@@ -75,12 +75,12 @@ class stateEmbed(HelicalBaseFoundationModel):
             cfg=self.model_conf,
         )
 
-        LOGGER.info("number of free parameters: %s", sum(p.numel() for p in self.model.parameters() if p.requires_grad))
+        # LOGGER.info("number of free parameters: %s", sum(p.numel() for p in self.model.parameters() if p.requires_grad))
         loaded_weights = torch.load(self.ckpt_path, weights_only=False)
 
         # missing_keys are keys that are in the model but NOT in the loaded weights, so they would not be initialized for inference properly.
         missing_keys, _ = self.model.load_state_dict(loaded_weights, strict=False)
-        LOGGER.info(f"Missing keys: {missing_keys}")
+        # LOGGER.info(f"Missing keys: {missing_keys}")
 
         device_type = "cuda" if torch.cuda.is_available() else "cpu"
         precision = get_precision_config(device_type=device_type)

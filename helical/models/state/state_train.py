@@ -21,7 +21,7 @@ from .model_dir.perturb_utils.state_transition_model import (
     StateTransitionPerturbationModel,
 )
 
-from helical.models.state import trainingConfig
+from helical.models.state import trainConfig
 
 LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -33,7 +33,7 @@ torch.multiprocessing.set_sharing_strategy("file_system")
 class stateTransitionTrainModel:
     def __init__(
         self,
-        configurer: trainingConfig = trainingConfig(),
+        configurer: trainConfig = trainConfig(),
     ):
 
         self.cfg = configurer.config
