@@ -21,6 +21,7 @@ from .model_dir.perturb_utils.state_transition_model import (
 )
 
 from helical.models.state import trainConfig
+from omegaconf import OmegaConf
 
 LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -36,24 +37,27 @@ class stateTransitionTrainModel:
     ):
 
         self.cfg = configurer.config
+        self.model_configs = OmegaConf.load(self.cfg["model_config_path"])
+
         self.run_output_dir = join(self.cfg["output_dir"], self.cfg["name"])
         os.makedirs(self.run_output_dir, exist_ok=True)
-        pl.seed_everything(self.cfg["training"]["train_seed"])
+        pl.seed_everything(self.model_configs["training"]["train_seed"])
 
-        if self.cfg["data"]["kwargs"]["pert_col"] == "drugname_drugconc":
-            self.cfg["data"]["kwargs"]["control_pert"] = "[('DMSO_TF', 0.0, 'uM')]"
+        if self.model_configs["data"]["kwargs"]["pert_col"] == "drugname_drugconc":
+            self.model_configs["data"]["kwargs"]["control_pert"] = "[('DMSO_TF', 0.0, 'uM')]"
 
-        sentence_len = self.cfg["model"]["kwargs"]["transformer_backbone_kwargs"][
+        sentence_len = self.model_configs["model"]["kwargs"]["transformer_backbone_kwargs"][
             "max_position_embeddings"
         ]
 
         self.data_module: PerturbationDataModule = get_datamodule(
-            self.cfg["data"]["name"],
-            self.cfg["data"]["kwargs"],
-            batch_size=self.cfg["training"]["batch_size"],
+            self.model_configs["data"]["name"],
+            self.model_configs["data"]["kwargs"],
+            batch_size=self.model_configs["training"]["batch_size"],
             cell_sentence_len=sentence_len,
         )
 
+        self.gene_names_path = self.cfg["gene_names_path"]
         # we setup with None for var dims to work and then call the correct setup later for each stage
         self.data_module.setup(stage="fit")
 
@@ -61,11 +65,11 @@ class stateTransitionTrainModel:
         self.var_dims = var_dims
         self.gene_dim = (
             var_dims.get("hvg_dim", 2000)
-            if self.cfg["data"]["kwargs"]["output_space"] == "gene"
+            if self.model_configs["data"]["kwargs"]["output_space"] == "gene"
             else var_dims.get("gene_dim", 2000)
         )
         latent_dim = var_dims["output_dim"]  # same as model.output_dim
-        self.hidden_dims = self.cfg["model"]["kwargs"].get(
+        self.hidden_dims = self.model_configs["model"]["kwargs"].get(
             "decoder_hidden_dims", [1024, 1024, 512]
         )
 
@@ -73,17 +77,17 @@ class stateTransitionTrainModel:
             latent_dim=latent_dim,
             gene_dim=self.gene_dim,
             hidden_dims=self.hidden_dims,
-            dropout=self.cfg["model"]["kwargs"].get("decoder_dropout", 0.1),
-            residual_decoder=self.cfg["model"]["kwargs"].get("residual_decoder", False),
+            dropout=self.model_configs["model"]["kwargs"].get("decoder_dropout", 0.1),
+            residual_decoder=self.model_configs["model"]["kwargs"].get("residual_decoder", False),
         )
 
         # tuck it into the kwargs that will reach the LightningModule
-        self.cfg["model"]["kwargs"]["decoder_cfg"] = decoder_cfg
+        self.model_configs["model"]["kwargs"]["decoder_cfg"] = decoder_cfg
 
         # create_model
-        self.model_config = self.cfg["model"]["kwargs"]
-        training_config = self.cfg["training"]
-        data_config = self.cfg["data"]["kwargs"]
+        self.model_config = self.model_configs["model"]["kwargs"]
+        training_config = self.model_configs["training"]
+        data_config = self.model_configs["data"]["kwargs"]
         module_config = {**self.model_config, **training_config}
 
         module_config["embed_key"] = data_config["embed_key"]
@@ -140,8 +144,8 @@ class stateTransitionTrainModel:
         callbacks = get_checkpoint_callbacks(
             self.cfg["output_dir"],
             self.cfg["name"],
-            self.cfg["training"]["val_freq"],
-            self.cfg["training"].get("ckpt_every_n_steps", 4000),
+            self.model_configs["training"]["val_freq"],
+            self.model_configs["training"].get("ckpt_every_n_steps", 4000),
         )
 
         LOGGER.info("Loggers and callbacks set up.")
@@ -149,10 +153,10 @@ class stateTransitionTrainModel:
         trainer_kwargs = dict(
             accelerator="gpu" if torch.cuda.is_available() else "cpu",
             devices=1,
-            max_steps=self.cfg["training"]["max_steps"],
-            max_epochs=self.cfg["training"]["max_epochs"],
+            max_steps=self.model_configs["training"]["max_steps"],
+            max_epochs=self.model_configs["training"]["max_epochs"],
             check_val_every_n_epoch=None,
-            val_check_interval=self.cfg["training"]["val_freq"],
+            val_check_interval=self.model_configs["training"]["val_freq"],
             logger=loggers,
             plugins=[],
             callbacks=callbacks,
@@ -165,7 +169,7 @@ class stateTransitionTrainModel:
         if not exists(checkpoint_path):
             checkpoint_path = None
         else:
-            logging.info(f"!! Resuming training from {checkpoint_path} !!")
+            LOGGER.info(f"Resuming training from {checkpoint_path}")
         LOGGER.info("Starting trainer fit.")
 
         trainer.fit(
@@ -218,22 +222,22 @@ class stateTransitionTrainModel:
         store_raw_expression = (
             self.data_module.embed_key is not None
             and self.data_module.embed_key != "X_hvg"
-            and self.cfg["data"]["kwargs"]["output_space"] == "gene"
+            and self.model_configs["data"]["kwargs"]["output_space"] == "gene"
         ) or (
             self.data_module.embed_key is not None
-            and self.cfg["data"]["kwargs"]["output_space"] == "all"
+            and self.model_configs["data"]["kwargs"]["output_space"] == "all"
         )
 
         final_X_hvg = None
         final_pert_cell_counts_preds = None
         if store_raw_expression:
             # Preallocate matrices of shape (num_cells, gene_dim) for decoded predictions.
-            if self.cfg["data"]["kwargs"]["output_space"] == "gene":
+            if self.model_configs["data"]["kwargs"]["output_space"] == "gene":
                 final_X_hvg = np.empty((num_cells, self.hvg_dim), dtype=np.float32)
                 final_pert_cell_counts_preds = np.empty(
                     (num_cells, self.hvg_dim), dtype=np.float32
                 )
-            if self.cfg["data"]["kwargs"]["output_space"] == "all":
+            if self.model_configs["data"]["kwargs"]["output_space"] == "all":
                 final_X_hvg = np.empty((num_cells, self.gene_dim), dtype=np.float32)
                 final_pert_cell_counts_preds = np.empty(
                     (num_cells, self.gene_dim), dtype=np.float32
@@ -344,7 +348,7 @@ class stateTransitionTrainModel:
         if final_X_hvg is not None:
             if len(gene_names) != final_pert_cell_counts_preds.shape[1]:
                 gene_names = np.load(
-                    "/large_storage/ctc/userspace/aadduri/datasets/tahoe_19k_to_2k_names.npy",
+                    self.gene_names_path,
                     allow_pickle=True,
                 )
                 var = pd.DataFrame({"gene_names": gene_names})
