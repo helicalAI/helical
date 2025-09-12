@@ -1,60 +1,55 @@
 from helical.models.state import (
     stateConfig, 
-    stateEmbeddingsModel, 
-    trainingConfig, 
-    stateTransitionTrainModel, 
+    stateEmbed, 
     stateTransitionModel
     )
 import hydra
 from omegaconf import DictConfig
 import anndata as ad
 import scanpy as sc
+import numpy as np
 
 @hydra.main(version_base=None, config_path="configs", config_name="state_config")
 def run_state(cfg: DictConfig):
 
-    original_data = sc.read_h5ad("./competition_support_set/competition_val_template.h5ad")
+    adata = sc.read_h5ad("yolksac_human.h5ad")
+    # for demonstration we subset to 10 cells and 2000 genes
+    adata = adata[:10, :2000].copy()
 
     # embedding model
-    state_config = stateConfig()
-    state_model = stateEmbeddingsModel(configurer=state_config)
+    state_config = stateConfig(batch_size=16)
+    state_embed = stateEmbed(configurer=state_config)
     
-    ann_data = original_data[:10].copy()
-    ann_data = state_model.process_data(ann_data)
-    embeddings = state_model.get_embeddings(ann_data)
+    processed_data = state_embed.process_data(adata=adata)
+    embeddings = state_embed.get_embeddings(processed_data)
 
-    # run training loop - intialises the model for competition data
-    train_config = trainingConfig(
-        output_dir="competition",
-        name="first_run",
-        toml_config_path="competition_support_set/starter.toml",
-        checkpoint_name="final.ckpt",
-        max_steps=40000,
-        max_epochs=1,
-        ckpt_every_n_steps=20000,
-        num_workers=4,
-        batch_col="batch_var",
+    perturbations = [
+        "[('DMSO_TF', 0.0, 'uM')]",  # Control
+        "[('Aspirin', 0.5, 'uM')]",
+        "[('Dexamethasone', 1.0, 'uM')]",
+    ]
+
+    n_cells = adata.n_obs
+    # we assign perturbations to cells randomly
+    adata.obs['target_gene'] = np.random.choice(perturbations, size=n_cells)
+    adata.obs['cell_type'] = adata.obs['LVL1']  # Use your cell type column
+    # we can also add a batch variable to take into account batch effects
+    batch_labels = np.random.choice(['batch_1', 'batch_2', 'batch_3', 'batch_4'], size=n_cells)
+    adata.obs['batch_var'] = batch_labels
+
+    config = stateConfig(
+        embed_key=None,
         pert_col="target_gene",
-        cell_type_key="cell_type",
-        control_pert="non-targeting",
-        perturbation_features_file="competition_support_set/ESM2_pert_features.pt"
-        )
-    
-    state_train = stateTransitionTrainModel(configurer=train_config)
-    state_train.train() 
-    state_train.predict() 
-
-    # run inference 
-    state_config = stateConfig(
-        output = "competition/prediction.h5ad",
-        model_dir = "competition/first_run",
-        model_config = "examples/run_models/configs/state_config.yaml",
-        pert_col = "target_gene",
+        celltype_col="cell_type",
+        control_pert="[('DMSO_TF', 0.0, 'uM')]",
+        output_path="yolksac_perturbed.h5ad",
     )
 
-    state_transition = stateTransitionModel(configurer=state_config)
-    adata = state_transition.process_data(original_data)
-    embeds = state_transition.get_embeddings(adata)
+    state_transition = stateTransitionModel(configurer=config)
+
+    # again we process the data and get the perturbed embeddings
+    processed_data = state_transition.process_data(adata)
+    perturbed_embeds = state_transition.get_embeddings(processed_data)
 
     return
 
