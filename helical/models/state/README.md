@@ -272,39 +272,7 @@ embeds = state_transition.get_embeddings(adata)
 This will generate a `.vcc` predictions file which can be evaluated using the `cell-eval` package for submission to the public Virtual Cell Challenge leaderboard.
 
 ```python
-# evaluate the model - underlying function uses cell-eval package 
-# (https://github.com/ArcInstitute/cell-eval)
-from helical.models.state import vcc_eval
 
-# default configs for competition dataset
-EXPECTED_GENE_DIM = 18080
-MAX_CELL_DIM = 100000
-DEFAULT_PERT_COL = "target_gene"
-DEFAULT_CTRL = "non-targeting"
-DEFAULT_COUNTS_COL = "n_cells"
-DEFAULT_CELLTYPE_COL = "celltype"
-DEFAULT_NTC_NAME = "non-targeting"
-
-configs = {
-    # path to the prediction file
-    "input": "competition/prediction.h5ad",
-    # path to the gene names file
-    "genes": "competition_support_set/gene_names.csv",
-    # path to the output file - if None will be created with default naming
-    "output": None,
-    "pert_col": DEFAULT_PERT_COL,
-    "celltype_col": None,
-    "ntc_name": DEFAULT_NTC_NAME,
-    "output_pert_col": DEFAULT_PERT_COL,
-    "output_celltype_col": DEFAULT_CELLTYPE_COL,
-    "encoding": 32,
-    "allow_discrete": False,
-    "expected_gene_dim": EXPECTED_GENE_DIM,
-    "max_cell_dim": MAX_CELL_DIM,
-}
-
-# this creates a submission file in the output directory which can be uploaded to the challenge leaderboard
-vcc_eval(configs)
 ```
 
 ## Citation
