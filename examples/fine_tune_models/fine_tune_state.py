@@ -53,8 +53,6 @@ def run_fine_tuning(cfg: DictConfig):
     # Convert cell type labels to integers
     cell_type_labels = [class_id_dict[ct] for ct in cell_types]
 
-    print(f"Class mapping: {class_id_dict}")
-
     # Fine-tune
     model.train(train_input_data=dataset, train_labels=cell_type_labels)
 
