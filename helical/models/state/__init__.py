@@ -15,7 +15,6 @@ if not LOGGER.hasHandlers() or len(LOGGER.handlers) == 0:
     LOGGER.addHandler(handler)
 
 from .state_config import stateConfig
-from .train_configs import trainConfig
 
 from .state_embeddings import stateEmbed
 from .state_transition import stateTransitionModel

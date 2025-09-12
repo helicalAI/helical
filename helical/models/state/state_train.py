@@ -20,7 +20,6 @@ from .model_dir.perturb_utils.state_transition_model import (
     StateTransitionPerturbationModel,
 )
 
-from helical.models.state import trainConfig
 from omegaconf import OmegaConf
 
 LOGGER = logging.getLogger(__name__)
@@ -33,14 +32,25 @@ torch.multiprocessing.set_sharing_strategy("file_system")
 class stateTransitionTrainModel:
     def __init__(
         self,
-        configurer: trainConfig = trainConfig(),
+        configurer: dict,
+        checkpoint_name: str = "final.ckpt",
+        profile: str = "full",
+        predict_only: bool = False,
+        gene_names_path: str = None,
     ):
 
-        self.cfg = configurer.config
-        self.model_configs = OmegaConf.load(self.cfg["model_config_path"])
+        self.checkpoint_name = checkpoint_name
+        self.profile = profile
+        self.predict_only = predict_only
+        self.gene_names_path = gene_names_path
+        self.model_configs = configurer
 
-        self.run_output_dir = join(self.cfg["output_dir"], self.cfg["name"])
+        self.run_output_dir = join(self.model_configs["output_dir"], self.model_configs["name"])
         os.makedirs(self.run_output_dir, exist_ok=True)
+        
+        # save the config.yaml file to the output directory
+        with open(join(self.run_output_dir, "config.yaml"), "w") as f:
+            OmegaConf.save(self.model_configs, f)
         pl.seed_everything(self.model_configs["training"]["train_seed"])
 
         if self.model_configs["data"]["kwargs"]["pert_col"] == "drugname_drugconc":
@@ -57,7 +67,6 @@ class stateTransitionTrainModel:
             cell_sentence_len=sentence_len,
         )
 
-        self.gene_names_path = self.cfg["gene_names_path"]
         # we setup with None for var dims to work and then call the correct setup later for each stage
         self.data_module.setup(stage="fit")
 
@@ -136,14 +145,14 @@ class stateTransitionTrainModel:
 
         loggers = []
         csv_logger = RobustCSVLogger(
-            save_dir=self.cfg["output_dir"], name=self.cfg["name"], version=0
+            save_dir=self.model_configs["output_dir"], name=self.model_configs["name"], version=0
         )
         loggers.append(csv_logger)
 
         # Set up callbacks
         callbacks = get_checkpoint_callbacks(
-            self.cfg["output_dir"],
-            self.cfg["name"],
+            self.model_configs["output_dir"],
+            self.model_configs["name"],
             self.model_configs["training"]["val_freq"],
             self.model_configs["training"].get("ckpt_every_n_steps", 4000),
         )
@@ -165,7 +174,7 @@ class stateTransitionTrainModel:
         trainer = pl.Trainer(**trainer_kwargs)
         print("Trainer built successfully")
         # Load checkpoint if exists
-        checkpoint_path = os.path.join(self.run_output_dir, self.cfg["checkpoint_name"])
+        checkpoint_path = os.path.join(self.run_output_dir, self.checkpoint_name)
         if not exists(checkpoint_path):
             checkpoint_path = None
         else:
@@ -180,7 +189,7 @@ class stateTransitionTrainModel:
 
         print("Training completed, saving final checkpoint...")
 
-        checkpoint_path = join(self.run_output_dir, self.cfg["checkpoint_name"])
+        checkpoint_path = join(self.run_output_dir, self.checkpoint_name)
         if not exists(checkpoint_path):
             trainer.save_checkpoint(checkpoint_path)
 
@@ -189,7 +198,7 @@ class stateTransitionTrainModel:
         self.data_module.setup(stage="test")
         test_loader = self.data_module.test_dataloader()
 
-        checkpoint_path = os.path.join(self.run_output_dir, self.cfg["checkpoint_name"])
+        checkpoint_path = os.path.join(self.run_output_dir, self.checkpoint_name)
 
         if not os.path.exists(checkpoint_path):
             raise FileNotFoundError(
@@ -381,7 +390,7 @@ class stateTransitionTrainModel:
             adata_real = anndata.AnnData(X=final_reals, obs=obs)
 
         # Save the AnnData objects
-        results_dir = os.path.join(self.cfg["output_dir"])
+        results_dir = os.path.join(self.model_configs["output_dir"])
 
         os.makedirs(results_dir, exist_ok=True)
         adata_pred_path = os.path.join(results_dir, "adata_pred.h5ad")
@@ -393,7 +402,7 @@ class stateTransitionTrainModel:
         LOGGER.info(f"Saved adata_pred to {adata_pred_path}")
         LOGGER.info(f"Saved adata_real to {adata_real_path}")
 
-        if not self.cfg["predict_only"]:
+        if not self.predict_only:
             # 6. Compute metrics using cell-eval
             LOGGER.info("Computing metrics using cell-eval...")
 
@@ -427,7 +436,7 @@ class stateTransitionTrainModel:
                 )
 
                 evaluator.compute(
-                    profile=self.cfg["profile"],
+                    profile=self.profile,
                     metric_configs=(
                         {
                             "discrimination_score": (
