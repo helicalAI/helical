@@ -6,7 +6,6 @@ import h5py as h5
 import numpy as np
 from typing import Optional
 
-from pathlib import Path
 from tqdm import tqdm
 from torch import nn
 
@@ -15,22 +14,22 @@ from .model_dir.embed_utils import create_dataloader
 from .model_dir.embed_utils.utils import get_embedding_cfg, get_precision_config
 
 from helical.models.base_models import HelicalBaseFoundationModel
-from helical.models.state.state_config import stateConfig
+from helical.models.state.state_config import StateConfig
 from helical.utils.downloader import Downloader
 from omegaconf import OmegaConf
 from scipy.sparse import csr_matrix, issparse
 
 LOGGER = logging.getLogger(__name__)
 
-class stateEmbed(HelicalBaseFoundationModel):
-    def __init__(self, configurer: stateConfig = None) -> None:
+class StateEmbed(HelicalBaseFoundationModel):
+    def __init__(self, configurer: StateConfig = None) -> None:
         super().__init__()
 
         self.model = None
         self.collator = None
 
         if configurer is None:
-            configurer = stateConfig()
+            configurer = StateConfig()
         self.config = configurer.config
 
         downloader = Downloader()
@@ -84,7 +83,7 @@ class stateEmbed(HelicalBaseFoundationModel):
         precision = get_precision_config(device_type=device_type)
         self.model = self.model.to(precision)
 
-        all_pe = self.protein_embeds or stateEmbed.load_esm2_embeddings(self.model_conf)
+        all_pe = self.protein_embeds or StateEmbed.load_esm2_embeddings(self.model_conf)
         if isinstance(all_pe, dict):
             all_pe = torch.vstack(list(all_pe.values()))
 

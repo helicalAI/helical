@@ -29,7 +29,7 @@ torch.multiprocessing.set_sharing_strategy("file_system")
 
 
 # this code to do full training for the VCC dataset
-class stateTransitionTrainModel:
+class StateTransitionTrainModel:
     def __init__(
         self,
         configurer: dict,

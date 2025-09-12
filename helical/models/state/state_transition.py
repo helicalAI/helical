@@ -11,7 +11,7 @@ from .model_dir.perturb_utils.state_transition_model import (
     StateTransitionPerturbationModel,
 )
 
-from .state_config import stateConfig
+from .state_config import StateConfig
 from .model_dir.perturb_utils.utils import (
     to_dense,
     argmax_index_from_any,
@@ -26,11 +26,11 @@ import logging
 LOGGER = logging.getLogger(__name__)
 
 # this class is used to do inference on new data using the transition model
-class stateTransitionModel(HelicalBaseFoundationModel):
-    def __init__(self, configurer: stateConfig = None) -> None:
+class StateTransitionModel(HelicalBaseFoundationModel):
+    def __init__(self, configurer: StateConfig = None) -> None:
         super().__init__()
         if configurer is None:
-            configurer = stateConfig()
+            configurer = StateConfig()
 
         self.config = configurer.config
         self.model_dir = self.config["perturb_dir"]

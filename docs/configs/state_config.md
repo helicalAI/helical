@@ -1,4 +1,4 @@
-::: helical.models.state.stateConfig
+::: helical.models.state.StateConfig
     handler: python
     options:
       show_root_heading: True

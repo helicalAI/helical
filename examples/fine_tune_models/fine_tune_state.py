@@ -1,6 +1,6 @@
-from helical.models.state import stateFineTuningModel
+from helical.models.state import StateFineTuningModel
 import scanpy as sc
-from helical.models.state import stateConfig
+from helical.models.state import StateConfig
 import numpy as np
 from omegaconf import DictConfig
 import hydra
@@ -29,7 +29,7 @@ def run_fine_tuning(cfg: DictConfig):
     label_set = set(cell_types)
     print(f"Found {len(label_set)} unique cell types:")
 
-    config = stateConfig(
+    config = StateConfig(
         embed_key=None,
         pert_col="target_gene",
         celltype_col="cell_type",
@@ -38,7 +38,7 @@ def run_fine_tuning(cfg: DictConfig):
     )
 
     # Create the fine-tuning model - we use a classification head for demonstration
-    model = stateFineTuningModel(
+    model = StateFineTuningModel(
         configurer=config, 
         fine_tuning_head="classification", 
         output_size=len(label_set),

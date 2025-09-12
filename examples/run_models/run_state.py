@@ -1,7 +1,7 @@
 from helical.models.state import (
-    stateConfig, 
-    stateEmbed, 
-    stateTransitionModel
+    StateConfig, 
+    StateEmbed, 
+    StateTransitionModel
     )
 import hydra
 from omegaconf import DictConfig
@@ -17,8 +17,8 @@ def run_state(cfg: DictConfig):
     adata = adata[:10, :2000].copy()
 
     # embedding model
-    state_config = stateConfig(batch_size=16)
-    state_embed = stateEmbed(configurer=state_config)
+    state_config = StateConfig(batch_size=16)
+    state_embed = StateEmbed(configurer=state_config)
     
     processed_data = state_embed.process_data(adata=adata)
     embeddings = state_embed.get_embeddings(processed_data)
@@ -37,7 +37,7 @@ def run_state(cfg: DictConfig):
     batch_labels = np.random.choice(['batch_1', 'batch_2', 'batch_3', 'batch_4'], size=n_cells)
     adata.obs['batch_var'] = batch_labels
 
-    config = stateConfig(
+    config = StateConfig(
         embed_key=None,
         pert_col="target_gene",
         celltype_col="cell_type",
@@ -45,7 +45,7 @@ def run_state(cfg: DictConfig):
         output_path="yolksac_perturbed.h5ad",
     )
 
-    state_transition = stateTransitionModel(configurer=config)
+    state_transition = StateTransitionModel(configurer=config)
 
     # again we process the data and get the perturbed embeddings
     processed_data = state_transition.process_data(adata)

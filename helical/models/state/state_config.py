@@ -2,7 +2,7 @@ from helical.constants.paths import CACHE_DIR_HELICAL
 import os
 
 
-class stateConfig:
+class StateConfig:
     def __init__(
         self,
         output_path: str = "prediction.h5ad",

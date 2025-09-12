@@ -1,4 +1,4 @@
-::: helical.models.state.stateEmbed
+::: helical.models.state.StateEmbed
     handler: python
     options:
       members:
@@ -7,7 +7,7 @@
       show_root_heading: True
       show_source: True
 
-::: helical.models.state.stateTransitionModel
+::: helical.models.state.StateTransitionModel
     handler: python
     options:
       members:

@@ -6,8 +6,8 @@ from torch.utils.data import DataLoader, SequentialSampler
 from tqdm import tqdm
 from transformers import get_scheduler
 from helical.models.base_models import HelicalBaseFineTuningHead, HelicalBaseFineTuningModel
-from .state_transition import stateTransitionModel
-from .state_config import stateConfig
+from .state_transition import StateTransitionModel
+from .state_config import StateConfig
 import logging
 import numpy as np
 import anndata as ad
@@ -27,7 +27,7 @@ def embedding_collator(batch):
     return {"embeddings": torch.stack([item["embedding"] for item in batch])}
 
 
-class stateFineTuningModel(HelicalBaseFineTuningModel, stateTransitionModel):
+class StateFineTuningModel(HelicalBaseFineTuningModel, StateTransitionModel):
     """Minimal fine-tuning model for the state model.
 
     This version inherits from both HelicalBaseFineTuningModel and stateTransitionModel. 
@@ -73,7 +73,7 @@ class stateFineTuningModel(HelicalBaseFineTuningModel, stateTransitionModel):
 
     def __init__(
         self,
-        configurer: stateConfig = None,
+        configurer: StateConfig = None,
         fine_tuning_head: (
             Literal["classification"] | HelicalBaseFineTuningHead
         ) = "classification",
@@ -81,7 +81,7 @@ class stateFineTuningModel(HelicalBaseFineTuningModel, stateTransitionModel):
     ):
 
         HelicalBaseFineTuningModel.__init__(self, fine_tuning_head, output_size)
-        stateTransitionModel.__init__(self, configurer)
+        StateTransitionModel.__init__(self, configurer)
         self.batch_size = configurer.config["batch_size"]
         self.freeze_backbone = configurer.config["freeze_backbone"]
 
@@ -116,7 +116,7 @@ class stateFineTuningModel(HelicalBaseFineTuningModel, stateTransitionModel):
         """
         LOGGER.info("Processing data for state model fine-tuning.")
 
-        adata_processed = stateTransitionModel.process_data(self, adata)
+        adata_processed = StateTransitionModel.process_data(self, adata)
         embeddings = self.get_embeddings(adata_processed)
         
         LOGGER.info("Successfully processed the data for state model fine-tuning.")
