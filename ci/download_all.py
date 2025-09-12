@@ -133,10 +133,6 @@ def main():
         Path("yolksac_human.h5ad"),
         "https://huggingface.co/datasets/helical-ai/yolksac_human/resolve/main/data/17_04_24_YolkSacRaw_F158_WE_annots.h5ad?download=true",)
     
-    downloader.download_via_link(
-        Path("competition_support_set.zip"),
-        "https://storage.googleapis.com/vcc_data_prod/datasets/state/competition_support_set.zip",
-    )
 
     downloader.download_via_name("state/state_embed/se600m_model_weights.pt")
     downloader.download_via_name("state/state_embed/protein_embeddings.pt")
@@ -154,5 +150,4 @@ def main():
 
 
 if __name__ == "__main__":
-    
     main()
