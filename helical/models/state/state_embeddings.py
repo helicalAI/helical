@@ -146,51 +146,7 @@ class StateEmbed(HelicalBaseFoundationModel):
                 [all_embeddings, all_ds_embeddings], axis=-1
             )
 
-        # if output_adata_path is provided, write the adata to the file
-        # if output_adata_path is not None:
-        #     adata.obsm[emb_key] = all_embeddings
-        #     adata.write_h5ad(output_adata_path)
-
         return all_embeddings
-
-    # def __load_dataset_meta(self, adata_path):
-    #     with h5.File(adata_path) as h5f:
-    #         attrs = dict(h5f["X"].attrs)
-    #         if "encoding-type" in attrs:  # Fixed: was checking undefined 'adata'
-    #             if attrs["encoding-type"] in ["csr_matrix", "csc_matrix"]:
-    #                 num_cells = attrs["shape"][0]
-    #                 num_genes = attrs["shape"][1]
-    #             elif attrs["encoding-type"] == "array":
-    #                 num_cells = h5f["X"].shape[0]
-    #                 num_genes = h5f["X"].shape[1]
-    #             else:
-    #                 raise ValueError("Input file contains count mtx in non-csr matrix")
-    #         else:
-    #             # No encoding-type specified, try to infer from dataset structure
-    #             if hasattr(h5f["X"], "shape") and len(h5f["X"].shape) == 2:
-    #                 # Treat as dense array - get shape directly from dataset
-    #                 num_cells = h5f["X"].shape[0]
-    #                 num_genes = h5f["X"].shape[1]
-    #             elif all(key in h5f["X"] for key in ["indptr", "indices", "data"]):
-    #                 # Looks like sparse CSR format
-    #                 num_cells = len(h5f["X"]["indptr"]) - 1
-    #                 num_genes = attrs.get(
-    #                     "shape",
-    #                     [
-    #                         0,
-    #                         (
-    #                             h5f["X"]["indices"][:].max() + 1
-    #                             if len(h5f["X"]["indices"]) > 0
-    #                             else 0
-    #                         ),
-    #                     ],
-    #                 )[1]
-    #             else:
-    #                 raise ValueError(
-    #                     "Cannot determine matrix format - no encoding-type and unrecognized structure"
-    #                 )
-
-    #     return {Path(adata_path).stem: (num_cells, num_genes)}
 
     def __load_dataset_meta_from_adata(self, adata, dataset_name=None):
         """
@@ -282,74 +238,6 @@ class StateEmbed(HelicalBaseFoundationModel):
                     ds_embeddings = ds_emb.detach().cpu().float().numpy()
 
                     yield embeddings, ds_embeddings
-
-    # def encode_adata(
-    #     self,
-    #     input_adata_path: str,
-    #     output_adata_path: str | None = None,
-    #     emb_key: str = "X_emb",
-    #     dataset_name: str | None = None,
-    #     batch_size: int = 32,
-    # ):
-    #     shape_dict = self.__load_dataset_meta(input_adata_path)
-    #     adata = anndata.read_h5ad(input_adata_path)
-
-    #     # # # # # # # # # # 
-    #     adata = adata[:10].copy()
-    #     # # # # # # # # # # # # 
-
-
-        
-    #     if dataset_name is None:
-    #         dataset_name = Path(input_adata_path).stem
-
-    #     # Convert to CSR format if needed
-    #     adata = self._convert_to_csr(adata)
-
-    #     # Auto-detect the best gene column
-    #     gene_column: Optional[str] = self._auto_detect_gene_column(adata)
-
-    #     device_type = "cuda" if torch.cuda.is_available() else "cpu"
-    #     precision = get_precision_config(device_type=device_type)
-    #     dataloader = create_dataloader(
-    #         self.model_conf,
-    #         adata=adata,
-    #         adata_name=dataset_name or "inference",
-    #         shape_dict=shape_dict,
-    #         data_dir=os.path.dirname(input_adata_path),
-    #         shuffle=False,
-    #         protein_embeds=self.protein_embeds,
-    #         precision=precision,
-    #         gene_column=gene_column,
-    #     )
-
-    #     all_embeddings = []
-    #     all_ds_embeddings = []
-    #     for embeddings, ds_embeddings in tqdm(
-    #         self.encode(dataloader), total=len(dataloader), desc="Encoding"
-    #     ):
-    #         all_embeddings.append(embeddings)
-    #         if ds_embeddings is not None:
-    #             all_ds_embeddings.append(ds_embeddings)
-
-    #     # attach this as a numpy array to the adata and write it out
-    #     all_embeddings = np.concatenate(all_embeddings, axis=0).astype(np.float32)
-    #     if len(all_ds_embeddings) > 0:
-    #         all_ds_embeddings = np.concatenate(all_ds_embeddings, axis=0).astype(
-    #             np.float32
-    #         )
-
-    #         # concatenate along axis -1 with all embeddings
-    #         all_embeddings = np.concatenate(
-    #             [all_embeddings, all_ds_embeddings], axis=-1
-    #         )
-
-    #     # if output_adata_path is provided, write the adata to the file
-    #     if output_adata_path is not None:
-    #         adata.obsm[emb_key] = all_embeddings
-    #         adata.write_h5ad(output_adata_path)
-        
-    #     return all_embeddings, adata
 
     def _convert_to_csr(self, adata):
         """Convert the adata.X matrix to CSR format if it's not already."""
