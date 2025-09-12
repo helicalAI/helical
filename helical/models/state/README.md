@@ -101,7 +101,7 @@ from helical.models.state import stateEmbeddingsModel
 from helical.models.state import stateConfig
 import scanpy as sc
 
-state_config = stateConfig()
+state_config = stateConfig(batch_size=16)
 state_embed = stateEmbeddingsModel(configurer=state_config)
 
 adata = sc.read_h5ad("example.h5ad")
@@ -113,20 +113,28 @@ embeddings = state_embed.get_embeddings(processed_data)
 
 **Example State Transitions Usage:**
 
-See below for the steps to run the STATE transition model for perturbing cells. We show a more concrete example shortly for the Virtual Cell Challenge with input data.
+See below for the steps to run the STATE transition model for perturbing cells. The notebook shows a full example with example input data.
 
 ```python
 from helical.models.state import stateTransitionModel
 from helical.models.state import stateConfig
 import scanpy as sc
+import random 
 
-state_config = stateConfig()
-state_transition = stateTransitionModel(configurer=state_config)
-
+# see the notebook for an example perturbations added to the data
 adata = sc.read_h5ad("example_data.h5ad")
+perturbations = [
+    pert_1,
+    pert_2,
+    pert_3,
+]
 
-adata = state_transition.process_data(adata)
-adata = state_transition.get_embeddings(adata)
+adata.obs['target_gene'] = random.choices(perturbations, k=n_cells)
+perturb_config = stateConfig()
+state_transition = stateTransitionModel(configurer=perturb_config)
+
+processed_data = state_transition.process_data(adata)
+perturbed_embeds = state_transition.get_embeddings(processed_data)
 ```
 
 **Example State Transition Finetuning:**
@@ -148,7 +156,7 @@ cell_types = list(adata.obs.cell_type)
 label_set = set(cell_types)
 
 # Create the fine-tuning model with the relevant configs
-config = stateConfig()
+config = stateConfig(batch_size=8)
 model = stateModularFineTuningModel(
     configurer=config, 
     fine_tuning_head="classification", 
@@ -156,124 +164,17 @@ model = stateModularFineTuningModel(
 )
 
 # Process the data for training 
-data = model.process_data(adata)
+dataset = model.process_data(adata)
 
 # Create a dictionary mapping the classes to unique integers for training
 class_id_dict = dict(zip(label_set, [i for i in range(len(label_set))]))
-
-for i in range(len(cell_types)):
-    cell_types[i] = class_id_dict[cell_types[i]]
-
-print(f"Converted {len(cell_types)} labels to integers")
+cell_type_labels = [class_id_dict[ct] for ct in cell_types]
 
 # Fine-tune
-model.train(train_input_data=data, train_labels=cell_types)
+model.train(train_input_data=dataset, train_labels=cell_type_labels)
 ```
 
-**Creating a Virtual Cell Challenge Submission:**
-
-Similar to the Colab notebook by the authors we download the relevant datasets.
-
-```python
-'''
-Download the dataset
-
-(taken from Colab Notebook by Adduri et al.
-https://colab.research.google.com/drive/1QKOtYP7bMpdgDJEipDxaJqOchv7oQ-_l#scrollTo=h0aSjKX7Rtyw)
-'''
-
-import requests
-from tqdm.auto import tqdm  # picks the best bar for the environment
-from zipfile import ZipFile
-from tqdm.auto import tqdm
-import os
-
-# Download the Replogle-Nadig training dataset.
-url = "https://storage.googleapis.com/vcc_data_prod/datasets/state/competition_support_set.zip"
-output_path = "competition_support_set.zip"
-
-# stream the download so we can track progress
-response = requests.get(url, stream=True)
-total = int(response.headers.get("content-length", 0))
-
-with open(output_path, "wb") as f, tqdm(
-    total=total, unit='B', unit_scale=True, desc="Downloading"
-) as bar:
-    for chunk in response.iter_content(chunk_size=8192):
-        if not chunk:
-            break
-        f.write(chunk)
-        bar.update(len(chunk))
-
-out_dir  = "competition_support_set"
-os.makedirs(out_dir, exist_ok=True)
-with ZipFile(output_path, 'r') as z:
-    for member in tqdm(z.infolist(), desc="Unzipping", unit="file"):
-        z.extract(member, out_dir)
-```
-
-Once downloaded, edit `competition_support_set/starter.toml` to point to the correct dataset path (the top line). 
-We can now train the model on the dataset with the below code.
-
-```python
-
-from helical.models.state import stateTransitionTrainModel
-from helical.models.state.train_configs import trainingConfig
-
-train_config = trainingConfig(
-    toml_config_path="competition_support_set/starter.toml",
-    num_workers=4,
-    batch_col="batch_var",
-    pert_col="target_gene",
-    cell_type_key="cell_type",
-    control_pert="non-targeting",
-    perturbation_features_file="competition_support_set/ESM2_pert_features.pt",
-    max_steps=40000,
-    ckpt_every_n_steps=20000,
-    model="state")
-
-state_train = stateTransitionTrainModel(configurer = train_config)
-state_train.train() 
-state_train.predict() 
-
-```
-
-We use the `stateTransitionTrainModel` class when wanting to train on new datasets. Once complete, checkpoint files will be generated that can be used to initialise the `stateTransitionModel` class for future inference.
-
-We run model inference using the new checkpoint on the validation dataset. 
-
-```python
-from helical.models.state import stateConfig
-from helical.models.state import stateTransitionModel
-import scanpy as sc
-
-state_config = stateConfig(
-    output = "competition/prediction.h5ad",
-    model_dir = "competition/first_run",
-    checkpoint = "competition/first_run/checkpoints/final.ckpt",
-    pert_col = "target_gene",
-    embed_key = None,
-    celltype_col = None,
-    celltypes = None,
-    batch_col = None,
-    control_pert = None,
-    seed = 42,
-    max_set_len = None,
-    tsv = None
-)
-
-adata = sc.read_h5ad("competition_support_set/competition_val_template.h5ad")
-
-state_transition = stateTransitionModel(configurer=state_config)
-adata = state_transition.process_data(adata)
-embeds = state_transition.get_embeddings(adata)
-```
-
-This will generate a `.vcc` predictions file which can be evaluated using the `cell-eval` package for submission to the public Virtual Cell Challenge leaderboard.
-
-```python
-
-```
+Refer to the notebook for a further example showing how to train STATE to create a submission for the Virtual Cell Challenge.
 
 ## Citation
 
