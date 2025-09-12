@@ -21,8 +21,6 @@ from omegaconf import OmegaConf
 from scipy.sparse import csr_matrix, issparse
 
 LOGGER = logging.getLogger(__name__)
-os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
-
 
 class stateEmbed(HelicalBaseFoundationModel):
     def __init__(self, configurer: stateConfig = None) -> None:
