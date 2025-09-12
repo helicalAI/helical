@@ -73,7 +73,7 @@ def _compute_embeddings_depending_on_mode(
             else:
                 length -= 1  # length is subtracted because just the cls is removed
 
-        batch_embeddings = mean_nonpadding_embs(embeddings, length).cpu().numpy()
+        batch_embeddings = mean_nonpadding_embs(embeddings, length)
 
     elif emb_mode == "gene":
         if cls_present:
@@ -89,12 +89,12 @@ def _compute_embeddings_depending_on_mode(
                 if eos_present:
                     ids = ids[:-1]
             for id, gene_emb in zip(ids, embedding):
-                cell_dict[token_to_ensembl_dict[id.item()]] = gene_emb.cpu().numpy()
+                cell_dict[token_to_ensembl_dict[id.item()]] = gene_emb
 
             batch_embeddings.append(pd.Series(cell_dict))
 
     elif emb_mode == "cls":
-        batch_embeddings = embeddings[:, 0, :].cpu().numpy()  # CLS token layer
+        batch_embeddings = embeddings[:, 0, :]  # CLS token layer
 
     return batch_embeddings
 
@@ -155,7 +155,7 @@ def get_embs(
     device,
     silent=False,
     output_attentions=False,
-    output_genes=False
+    output_genes=False,
 ):
     model_input_size = get_model_input_size(model)
     total_batch_length = len(filtered_input_data)
@@ -168,71 +168,83 @@ def get_embs(
     )
 
     overall_max_len = 0
-    for i in trange(0, total_batch_length, forward_batch_size, leave=(not silent)):
-        max_range = min(i + forward_batch_size, total_batch_length)
+    with torch.no_grad(), torch.cuda.amp.autocast(enabled=True):
+        for i in trange(0, total_batch_length, forward_batch_size, leave=(not silent)):
+            max_range = min(i + forward_batch_size, total_batch_length)
 
-        minibatch = filtered_input_data.select([i for i in range(i, max_range)])
+            minibatch = filtered_input_data.select([i for i in range(i, max_range)])
 
-        max_len = int(max(minibatch["length"]))
-        minibatch.set_format(type="torch", device=device)
+            minibatch.set_format(type="torch", device=device)
+            lengths = minibatch["length"]
+            max_len = int(max(lengths))
 
-        input_data_minibatch = minibatch["input_ids"]
-        input_data_minibatch = pad_tensor_list(
-            input_data_minibatch, max_len, pad_token_id, model_input_size
-        ).to(device)
+            input_data_minibatch = minibatch["input_ids"]
+            if output_genes:
+                for input_ids in input_data_minibatch:
+                    input_ids = input_ids.cpu().numpy()
+                    gene_list = []
+                    for id in input_ids:
+                        gene_list.append(token_to_ensembl_dict[id])
+                    input_genes.append(gene_list)
+            input_data_minibatch = pad_tensor_list(
+                input_data_minibatch, max_len, pad_token_id, model_input_size
+            ).to(device)
 
-        model = model.to(device)
-        with torch.no_grad():
             outputs = model(
                 input_ids=input_data_minibatch,
                 attention_mask=gen_attention_mask(minibatch),
                 output_attentions=output_attentions,
             )
 
-        embs_i = outputs.hidden_states[layer_to_quant]
-        # attention of size (batch_size, num_heads, sequence_length, sequence_length)
-        if output_attentions:
-            attn_i = outputs.attentions[layer_to_quant]
-            # attn_i = torch.mean(attn_i, dim=1).cpu().numpy()  # average over heads
-            attn_list.extend(attn_i.cpu().numpy())
+            embs_i = outputs.hidden_states[layer_to_quant]
+            # attention of size (batch_size, num_heads, sequence_length, sequence_length)
+            if output_attentions:
+                attn_i = outputs.attentions[layer_to_quant]
+                # attn_i = torch.mean(attn_i, dim=1).cpu().numpy()  # average over heads
+                attn_list.extend(attn_i.cpu().numpy())
 
-        if output_genes:
-            for input_ids in minibatch["input_ids"]:
-                gene_list = []
-                for id in input_ids:
-                    gene_list.append(token_to_ensembl_dict[id.item()])
-                input_genes.append(gene_list)
+            # if output_genes:
+            #     for input_ids in minibatch["input_ids"]:
+            #         gene_list = []
+            #         for id in input_ids:
+            #             gene_list.append(token_to_ensembl_dict[id.item()])
+            #         input_genes.append(gene_list)
 
-        embs_list.extend(
-            _compute_embeddings_depending_on_mode(
-                embs_i,
-                minibatch,
-                emb_mode,
-                cls_present,
-                eos_present,
-                token_to_ensembl_dict,
+            embs_list.extend(
+                _compute_embeddings_depending_on_mode(
+                    embs_i,
+                    {
+                        "input_ids": input_data_minibatch,
+                        "length": lengths,
+                    },
+                    emb_mode,
+                    cls_present,
+                    eos_present,
+                    token_to_ensembl_dict,
+                )
             )
-        )
 
-        overall_max_len = max(overall_max_len, max_len)
-        del outputs
-        del minibatch
-        del input_data_minibatch
-        del embs_i
+            overall_max_len = max(overall_max_len, max_len)
+            del outputs
+            del minibatch
+            del input_data_minibatch
+            del embs_i
 
-        torch.cuda.empty_cache()
-    if emb_mode != "gene":
-        embs_list = np.array(embs_list)
+            # torch.cuda.empty_cache()
+        if emb_mode != "gene":
+            embs_list = np.array(
+                [embs_list[i].cpu().numpy() for i in range(len(embs_list))]
+            )
 
-    if output_attentions:
+        if output_attentions:
+            if output_genes:
+                return embs_list, attn_list, input_genes
+            return embs_list, attn_list
+
         if output_genes:
-            return embs_list, attn_list, input_genes
-        return embs_list, attn_list
-    
-    if output_genes:
-        return embs_list, input_genes
-    
-    return embs_list
+            return embs_list, input_genes
+
+        return embs_list
 
 
 def downsample_and_sort(data, max_ncells):

@@ -496,11 +496,43 @@ class TranscriptomeTokenizer:
             keep_uncropped_input_ids (bool): Whether to keep the original uncropped input_ids. Defaults to False.
 
         Returns:
-            A dataset with formatted cell features.
+            A Hugging Face dataset with formatted cell features.
         """
-        LOGGER.info("Creating dataset.")
-        # create dict for dataset creation
-        dataset_dict = {"input_ids": tokenized_cells}
+        LOGGER.info("Creating dataset (optimized, no map).")
+
+        cls_token = self.gene_token_dict.get("<cls>")
+        eos_token = self.gene_token_dict.get("<eos>")
+
+        processed_inputs = []
+        lengths = []
+        uncropped_inputs = [] if keep_uncropped_input_ids else None
+        uncropped_lengths = [] if keep_uncropped_input_ids else None
+
+        for cell in tokenized_cells:
+            if keep_uncropped_input_ids:
+                uncropped_inputs.append(cell)
+                uncropped_lengths.append(len(cell))
+
+            if self.special_token:
+                # truncate but keep room for CLS + EOS
+                cropped = cell[: self.model_input_size - 2]
+                processed = [cls_token] + cropped + [eos_token]
+            else:
+                processed = cell[: self.model_input_size]
+
+            processed_inputs.append(processed)
+            lengths.append(len(processed))
+
+        # build dataset dict
+        dataset_dict = {
+            "input_ids": processed_inputs,
+            "length": lengths,
+        }
+
+        if keep_uncropped_input_ids:
+            dataset_dict["input_ids_uncropped"] = uncropped_inputs
+            dataset_dict["length_uncropped"] = uncropped_lengths
+
         if self.custom_attr_name_dict is not None:
             dataset_dict.update(cell_metadata)
 
@@ -508,40 +540,11 @@ class TranscriptomeTokenizer:
         if use_generator:
 
             def dict_generator():
-                for i in range(len(tokenized_cells)):
-                    yield {k: dataset_dict[k][i] for k in dataset_dict.keys()}
+                for i in range(len(processed_inputs)):
+                    yield {k: dataset_dict[k][i] for k in dataset_dict}
 
             output_dataset = Dataset.from_generator(dict_generator, num_proc=self.nproc)
         else:
             output_dataset = Dataset.from_dict(dataset_dict)
 
-        def format_cell_features(example):
-            # Store original uncropped input_ids in separate feature
-            if keep_uncropped_input_ids:
-                example["input_ids_uncropped"] = example["input_ids"]
-                example["length_uncropped"] = len(example["input_ids"])
-
-            # Truncate/Crop input_ids to input size
-            if self.special_token:
-                example["input_ids"] = example["input_ids"][
-                    0 : self.model_input_size - 2
-                ]  # truncate to leave space for CLS and EOS token
-                example["input_ids"] = np.insert(
-                    example["input_ids"], 0, self.gene_token_dict.get("<cls>")
-                )
-                example["input_ids"] = np.insert(
-                    example["input_ids"],
-                    len(example["input_ids"]),
-                    self.gene_token_dict.get("<eos>"),
-                )
-            else:
-                # Truncate/Crop input_ids to input size
-                example["input_ids"] = example["input_ids"][0 : self.model_input_size]
-            example["length"] = len(example["input_ids"])
-
-            return example
-
-        output_dataset_truncated = output_dataset.map(
-            format_cell_features, num_proc=self.nproc
-        )
-        return output_dataset_truncated
+        return output_dataset
