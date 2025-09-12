@@ -37,6 +37,11 @@ class trainConfig:
             "checkpoint_name": checkpoint_name,
             "predict_only": predict_only,
             "profile": profile,
+            "model_configs": "config.yaml",
+
+
+
+
             "data": {
                 "name": "PerturbationDataModule",
                 "kwargs": {
