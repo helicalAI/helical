@@ -7,8 +7,9 @@ import scanpy as sc
 import torch
 from tqdm import tqdm
 
-from .model_dir.perturb_utils.state_transition_model import (
-    StateTransitionPerturbationModel,
+
+from .model_dir.perturb_utils.st_without_lightning import (
+    STBaseClassWithoutLightning,
 )
 
 from .state_config import StateConfig
@@ -26,7 +27,7 @@ import logging
 LOGGER = logging.getLogger(__name__)
 
 # this class is used to do inference on new data using the transition model
-class StateTransitionModel(HelicalBaseFoundationModel):
+class StateTransitionModelWithoutLightning(HelicalBaseFoundationModel):
     def __init__(self, configurer: StateConfig = None) -> None:
         super().__init__()
         if configurer is None:
@@ -56,14 +57,15 @@ class StateTransitionModel(HelicalBaseFoundationModel):
         )
 
         self.checkpoint_path = os.path.join(
-            self.model_dir, self.config["checkpoint_name"]
+            self.model_dir, "ST_all.pt"
         )
+
+        model_configs = torch.load(self.checkpoint_path)
+        input_params = model_configs["params"]
+        weights = model_configs["state_dict"]
+        self.model = STBaseClassWithoutLightning(**input_params)
+        self.model.load_state_dict(weights)
         LOGGER.info(f"Using checkpoint: {self.checkpoint_path}")
-
-        self.model = StateTransitionPerturbationModel.load_from_checkpoint(
-            self.checkpoint_path,
-        )
-
         self.model.eval()
         self.device = next(self.model.parameters()).device
 

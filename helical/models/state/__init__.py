@@ -17,5 +17,7 @@ if not LOGGER.hasHandlers() or len(LOGGER.handlers) == 0:
 from .state_config import StateConfig
 from .state_embeddings import StateEmbed
 from .state_transition import StateTransitionModel
+from .st_no_l import StateTransitionModelWithoutLightning
+
 from .fine_tuning_model import StateFineTuningModel
 from .state_train import StateTransitionTrainModel
