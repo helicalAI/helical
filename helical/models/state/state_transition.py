@@ -64,6 +64,22 @@ class StateTransitionModel(HelicalBaseFoundationModel):
             self.checkpoint_path,
         )
 
+
+
+
+        # here we need to initialise the model using .pt torch model
+
+        ## # # # # # # # # # # # # # # # # 
+        # 
+        # <new code>
+        # 
+        # 
+        # # # # # # # # # # # # # # # # # 
+
+
+
+
+
         self.model.eval()
         self.device = next(self.model.parameters()).device
 
