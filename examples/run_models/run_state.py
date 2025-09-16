@@ -1,7 +1,7 @@
 from helical.models.state import (
     StateConfig, 
     StateEmbed, 
-    StateTransitionModel
+    StatePerturb
     )
 import hydra
 from omegaconf import DictConfig
@@ -45,11 +45,11 @@ def run_state(cfg: DictConfig):
         output_path="yolksac_perturbed.h5ad",
     )
 
-    state_transition = StateTransitionModel(configurer=config)
+    state_perturb = StatePerturb(configurer=config)
 
     # again we process the data and get the perturbed embeddings
-    processed_data = state_transition.process_data(adata)
-    perturbed_embeds = state_transition.get_embeddings(processed_data)
+    processed_data = state_perturb.process_data(adata)
+    perturbed_embeds = state_perturb.get_embeddings(processed_data)
 
     return
 

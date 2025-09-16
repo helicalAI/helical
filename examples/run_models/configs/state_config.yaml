@@ -1,7 +1,4 @@
 output_path: prediction.h5ad
-checkpoint_name: final.ckpt
-perturb_dir: null
-embed_dir: null
 batch_size: 16
 batch_col: batch_var
 pert_col: target_gene
@@ -11,5 +8,4 @@ celltype_col: null
 celltypes: null
 max_set_len: null
 tsv: null
-freeze_backbone: true
 seed: 42

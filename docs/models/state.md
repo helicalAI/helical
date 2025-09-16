@@ -7,7 +7,7 @@
       show_root_heading: True
       show_source: True
 
-::: helical.models.state.StateTransitionModel
+::: helical.models.state.StatePerturb
     handler: python
     options:
       members:

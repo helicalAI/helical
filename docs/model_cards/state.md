@@ -31,8 +31,6 @@
 
 - Embedding transcriptomes
 - Embedding conditions (i.e. perturbation experiment alterations, which are indicated by perturbation tokens)
-- Pretraining 
-- Finetuning 
 - Pre- and post-perturbation single-cell embeddings
 
 **Broader research applications:**  
@@ -116,7 +114,7 @@ embeddings = state_embed.get_embeddings(processed_data)
 See below for the steps to run the STATE transition model for perturbing cells. The notebook shows a full example with example input data.
 
 ```python
-from helical.models.state import StateTransitionModel
+from helical.models.state import StatePerturb
 from helical.models.state import StateConfig
 import scanpy as sc
 import random 
@@ -131,50 +129,11 @@ perturbations = [
 
 adata.obs['target_gene'] = random.choices(perturbations, k=n_cells)
 perturb_config = StateConfig()
-state_transition = StateTransitionModel(configurer=perturb_config)
+state_perturb = StatePerturb(configurer=perturb_config)
 
-processed_data = state_transition.process_data(adata)
-perturbed_embeds = state_transition.get_embeddings(processed_data)
+processed_data = state_perturb.process_data(adata)
+perturbed_embeds = state_perturb.get_embeddings(processed_data)
 ```
-
-**Example State Transition Finetuning:**
-
-We can add a classification or regression head to the perturbed cell embeddings as below.
-
-```python
-from helical.models.state import StateFineTuningModel
-from helical.models.state import StateConfig
-import scanpy as sc
-
-# Load the desired dataset
-adata = sc.read_h5ad("example.h5ad")
-
-# Get the desired label class
-cell_types = list(adata.obs.cell_type)
-
-# Get unique labels
-label_set = set(cell_types)
-
-# Create the fine-tuning model with the relevant configs
-config = StateConfig(batch_size=8)
-state_finetune = StateFineTuningModel(
-    configurer=config, 
-    fine_tuning_head="classification", 
-    output_size=len(label_set),
-)
-
-# Process the data for training 
-dataset = state_finetune.process_data(adata)
-
-# Create a dictionary mapping the classes to unique integers for training
-class_id_dict = dict(zip(label_set, [i for i in range(len(label_set))]))
-cell_type_labels = [class_id_dict[ct] for ct in cell_types]
-
-# Fine-tune
-state_finetune.train(train_input_data=dataset, train_labels=cell_type_labels)
-```
-
-Refer to the notebook for a further example showing how to train STATE to create a submission for the Virtual Cell Challenge.
 
 ## Citation
 
