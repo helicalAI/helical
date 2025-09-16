@@ -121,6 +121,9 @@ def sum_ensembl_ids(
             else:
                 raise ValueError("Error: data Ensembl IDs non-unique.")
 
+        ## NOTE genes_in_map_dict that comes from the original paper, has both gene names as keys and ENSEMBL IDs as keys!!
+        ## This is probably done to simplify the mapping and checks but not clean. Gene Name: ENSEMBL ID and ENSEMBL ID: ENSEMBL ID (same ensembl ID though).
+
         # Get the genes that exist in the mapping dictionary and the value of those genes
         genes_in_map_dict = [
             gene for gene in ensembl_ids if gene in gene_mapping_dict.keys()
