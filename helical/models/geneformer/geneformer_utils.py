@@ -197,21 +197,12 @@ def get_embs(
             )
 
             embs_i = outputs.hidden_states[layer_to_quant]
-            print("Embedding output keys:", embs_i)
             # attention of size (batch_size, num_heads, sequence_length, sequence_length)
             if output_attentions:
                 attn_i = outputs.attentions[layer_to_quant]
                 # attn_i = torch.mean(attn_i, dim=1).cpu().numpy()  # average over heads
                 attn_list.extend(attn_i.cpu().numpy())
 
-            # if output_genes:
-            #     for input_ids in minibatch["input_ids"]:
-            #         gene_list = []
-            #         for id in input_ids:
-            #             gene_list.append(token_to_ensembl_dict[id.item()])
-            #         input_genes.append(gene_list)
-            print(lengths)
-            print("Embs i shape", embs_i.shape)
             embs_list.extend(
                 _compute_embeddings_depending_on_mode(
                     embs_i,
@@ -225,8 +216,6 @@ def get_embs(
                     token_to_ensembl_dict,
                 )
             )
-            print("Embs List", embs_list)
-
             overall_max_len = max(overall_max_len, max_len)
             del outputs
             del minibatch
@@ -235,9 +224,6 @@ def get_embs(
 
             # torch.cuda.empty_cache()
     if emb_mode != "gene":
-        # embs_list = np.array(
-        #     [embs_list[i].cpu().numpy() for i in range(len(embs_list))]
-        # )
         embs_list = np.array(embs_list)
 
     if output_attentions:
