@@ -61,3 +61,4 @@ helical/models/state/model_dir/train_utils/
 helical/models/state/fine_tuning_model.py 
 helical/models/state/state_train.py 
 helical/models/state/test.ipynb
+helical/models/state/st_configs.yaml

@@ -23,7 +23,7 @@ import logging
 LOGGER = logging.getLogger(__name__)
 
 # this class is used to do inference on new data using the transition model
-class StateTransitionModel(HelicalBaseFoundationModel):
+class StatePerturb(HelicalBaseFoundationModel):
     def __init__(self, configurer: StateConfig = None) -> None:
         super().__init__()
         if configurer is None:
