@@ -39,11 +39,6 @@ dependencies = [
     'louvain==0.8.2',
     'pyensembl',
     'datasets==3.6.0',
-    
-    # for state
-    'lightning==2.5.5',
-    'geomloss==0.2.6',
-    'cell-load',
 ]
 
 
