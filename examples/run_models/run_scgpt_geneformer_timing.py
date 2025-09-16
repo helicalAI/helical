@@ -28,7 +28,7 @@ def run_geneformer(cfg: DictConfig, ann_data: ad.AnnData):
     # or load directly
 
     start_time = time.time()
-    dataset = geneformer.process_data(ann_data[:100])
+    dataset = geneformer.process_data(ann_data[:])
     end_time = time.time()
     print(f"Data processing time: {end_time - start_time:.4f} seconds")
     start_time = time.time()
@@ -61,7 +61,7 @@ def run_scgpt(cfg: DictConfig, ann_data: ad.AnnData):
     # or load directly
     ann_data = ad.read_h5ad("./yolksac_human.h5ad")
     start_time = time.time()
-    data = scgpt.process_data(ann_data[:100])
+    data = scgpt.process_data(ann_data[:])
     end_time = time.time()
     print(f"Data processing time: {end_time - start_time:.4f} seconds")
     start_time = time.time()
