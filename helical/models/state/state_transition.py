@@ -22,8 +22,44 @@ import logging
 
 LOGGER = logging.getLogger(__name__)
 
-# this class is used to do inference on new data using the transition model
 class StatePerturb(HelicalBaseFoundationModel):
+    """
+    State Perturbation Model.
+
+    The State Perturbation Model is used to predict the effects of perturbations
+    on cell states. This model can simulate virtual experiments by predicting how cells
+    would respond to different perturbations, enabling in-silico perturbation studies.
+
+    Example
+    -------
+    ```python
+    from helical.models.state import StatePerturb, StateConfig
+    import anndata as ad
+
+    config = StateConfig(batch_size=16)
+    state_perturb = StatePerturb(configurer=config)
+
+    # Process your data
+    processed_adata = state_perturb.process_data(adata)
+
+    # Get perturbation predictions
+    predictions = state_perturb.get_embeddings(processed_adata)
+    print("Perturbation predictions shape:", predictions.shape)
+    ```
+
+    Parameters
+    ----------
+    configurer : StateConfig, optional, default=None
+        The model configuration. If None, uses default StateConfig.
+
+    Notes
+    -----
+    This model performs virtual perturbation experiments by predicting how cells would
+    respond to different genetic perturbations. It uses a transformer-based architecture
+    trained on perturbation data to simulate the effects of gene perturbations on
+    cell state transitions.
+    """
+
     def __init__(self, configurer: StateConfig = None) -> None:
         super().__init__()
         if configurer is None:
@@ -68,6 +104,32 @@ class StatePerturb(HelicalBaseFoundationModel):
         LOGGER.info(f"Output space: {self.output_space}")
 
     def process_data(self, adata: sc.AnnData):
+        """
+        Process AnnData object for perturbation prediction.
+
+        This method prepares the input data for perturbation prediction by identifying
+        control and perturbed cells, setting up batch information, and configuring
+        the data for the perturbation model.
+
+        Parameters
+        ----------
+        adata : sc.AnnData
+            The AnnData object containing single-cell data with perturbation information.
+            Should contain perturbation labels in obs and optionally batch and cell type
+            information.
+
+        Returns
+        -------
+        sc.AnnData
+            The processed AnnData object ready for perturbation prediction.
+
+        Raises
+        ------
+        KeyError
+            If required columns (perturbation column) are not found in adata.obs.
+        ValueError
+            If cell type filtering is requested but the cell type column is not found.
+        """
 
         control_pert = self.config["control_pert"]
 
@@ -249,6 +311,34 @@ class StatePerturb(HelicalBaseFoundationModel):
         return adata
 
     def get_embeddings(self, adata: sc.AnnData):
+        """
+        Generate perturbation predictions for the input data.
+
+        This method performs virtual perturbation experiments by predicting how cells
+        would respond to different genetic perturbations. It simulates the effects
+        of perturbations by using control cells as baselines and predicting the
+        perturbed states.
+
+        Parameters
+        ----------
+        adata : sc.AnnData
+            The processed AnnData object from process_data() method.
+
+        Returns
+        -------
+        np.ndarray
+            A numpy array of shape (n_cells, n_features) containing the predicted
+            perturbed states. The features depend on the model configuration:
+            - If using raw gene expression: shape is (n_cells, n_genes)
+            - If using embeddings: shape is (n_cells, embedding_dim)
+
+        Notes
+        -----
+        The method performs homogeneous perturbation prediction where all cells
+        with the same perturbation are processed together. It uses control cells
+        as baselines and predicts the perturbed states. The results are saved
+        to the output file specified in the configuration.
+        """
 
         rng = np.random.RandomState(self.config["seed"])
 
@@ -426,6 +516,24 @@ class StatePerturb(HelicalBaseFoundationModel):
         return embeddings
 
     def pick_first_present(self, d: "sc.AnnData", candidates: List[str]) -> Optional[str]:
+        """
+        Pick the first column name that exists in the AnnData object.
+
+        This helper method searches through a list of candidate column names and
+        returns the first one that exists in the AnnData object's obs dataframe.
+
+        Parameters
+        ----------
+        d : sc.AnnData
+            The AnnData object to search in.
+        candidates : List[str]
+            List of candidate column names to search for.
+
+        Returns
+        -------
+        Optional[str]
+            The first column name found, or None if none of the candidates exist.
+        """
         for c in candidates:
             if c in d.obs:
                 return c

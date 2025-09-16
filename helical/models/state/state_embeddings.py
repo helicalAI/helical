@@ -22,6 +22,44 @@ from scipy.sparse import csr_matrix, issparse
 LOGGER = logging.getLogger(__name__)
 
 class StateEmbed(HelicalBaseFoundationModel):
+    """
+    State Embedding Model.
+
+    The State Embedding Model is a transformer-based model that can be used to extract 
+    cell embeddings from single-cell RNA-seq data. This model 
+    leverages pre-trained ESM2 gene embeddings to create rich representations of gene 
+    expression data that can be used for various downstream tasks including perturbation 
+    prediction and cell state analysis.
+
+    Example
+    -------
+    ```python
+    from helical.models.state import StateEmbed, StateConfig
+    import anndata as ad
+
+    config = StateConfig(batch_size=16)
+    state_embed = StateEmbed(configurer=config)
+
+    # Process your data
+    dataloader = state_embed.process_data(adata)
+
+    # Get embeddings
+    embeddings = state_embed.get_embeddings(dataloader)
+    print("State embeddings shape:", embeddings.shape)
+    ```
+
+    Parameters
+    ----------
+    configurer : StateConfig, optional, default=None
+        The model configuration. If None, uses default StateConfig.
+
+    Notes
+    -----
+    This model uses protein embeddings from ESM2 and a transformer architecture to 
+    create cell embeddings. The model can also perform reverse engineering to 
+    reconstruct gene expression from cell embeddings.
+    """
+
     def __init__(self, configurer: StateConfig = None) -> None:
         super().__init__()
 
@@ -57,6 +95,20 @@ class StateEmbed(HelicalBaseFoundationModel):
         self.load_model()
 
     def load_model(self):
+        """
+        Load and initialize the State Embedding model.
+
+        This method initializes the transformer model with the configuration parameters,
+        loads the pre-trained weights, and sets up the gene embeddings. The model
+        is moved to the appropriate device (GPU if available) and set to evaluation mode.
+
+        Raises
+        ------
+        ValueError
+            If the model is already initialized.
+        FileNotFoundError
+            If the model checkpoint file is not found.
+        """
         if self.model:
             raise ValueError("Model already initialized")
 
@@ -103,6 +155,24 @@ class StateEmbed(HelicalBaseFoundationModel):
         self,
         adata: anndata.AnnData,
     ):
+        """
+        Process AnnData object for embedding generation.
+
+        This method converts the input AnnData object into a format suitable for the
+        State Embedding model. It handles data preprocessing, gene column detection,
+        and creates a dataloader for efficient batch processing.
+
+        Parameters
+        ----------
+        adata : anndata.AnnData
+            The AnnData object containing single-cell RNA-seq data. The data should
+            have gene expression counts in the X matrix and gene names in var.
+
+        Returns
+        -------
+        DataLoader
+            A PyTorch DataLoader object that can be used with get_embeddings() method.
+        """
 
         shape_dict = self.__load_dataset_meta_from_adata(adata)
         adata = self._convert_to_csr(adata)
@@ -127,6 +197,24 @@ class StateEmbed(HelicalBaseFoundationModel):
         return dataloader
 
     def get_embeddings(self, dataloader):
+        """
+        Generate cell embeddings from processed data.
+
+        This method processes the dataloader through the State Embedding model to
+        generate cell embeddings. It handles both regular embeddings and dataset-specific
+        embeddings, concatenating them if both are available.
+
+        Parameters
+        ----------
+        dataloader : DataLoader
+            The processed dataloader from process_data() method.
+
+        Returns
+        -------
+        np.ndarray
+            A numpy array of shape (n_cells, embedding_dim) containing the cell embeddings.
+            If dataset embeddings are available, they are concatenated to the regular embeddings.
+        """
         all_embeddings = []
         all_ds_embeddings = []
         for embeddings, ds_embeddings in tqdm(
@@ -152,12 +240,20 @@ class StateEmbed(HelicalBaseFoundationModel):
         """
         Extract dataset metadata directly from an AnnData object.
 
-        Args:
-            adata: AnnData object
-            dataset_name: Optional name for the dataset. If None, uses 'inference'
+        This helper method extracts basic metadata (number of cells and genes) from
+        an AnnData object and returns it in the format expected by the model.
 
-        Returns:
-            dict: Dictionary with dataset name as key and (num_cells, num_genes) as value
+        Parameters
+        ----------
+        adata : anndata.AnnData
+            The AnnData object to extract metadata from.
+        dataset_name : str, optional, default=None
+            Optional name for the dataset. If None, uses 'inference'.
+
+        Returns
+        -------
+        dict
+            Dictionary with dataset name as key and (num_cells, num_genes) as value.
         """
         num_cells = adata.n_obs
         num_genes = adata.n_vars
@@ -167,50 +263,23 @@ class StateEmbed(HelicalBaseFoundationModel):
 
         return {dataset_name: (num_cells, num_genes)}
 
-    def _save_data(self, input_adata_path, output_adata_path, obsm_key, data):
-        """
-        Save data in the output file. This function addresses following cases:
-        - output_adata_path does not exist:
-          In this case, the function copies the rest of the input file to the
-          output file then adds the data to the output file.
-        - output_adata_path exists but the dataset does not exist:
-          In this case, the function adds the dataset to the output file.
-        - output_adata_path exists and the dataset exists:
-          In this case, the function resizes the dataset and appends the data to
-          the dataset.
-        """
-        if not os.path.exists(output_adata_path):
-            os.makedirs(os.path.dirname(output_adata_path), exist_ok=True)
-            # Copy rest of the input file to output file
-            with h5.File(input_adata_path) as input_h5f:
-                with h5.File(output_adata_path, "a") as output_h5f:
-                    # Replicate the input data to the output file
-                    for _, obj in input_h5f.items():
-                        input_h5f.copy(obj, output_h5f)
-                    output_h5f.create_dataset(
-                        f"/obsm/{obsm_key}",
-                        chunks=True,
-                        data=data,
-                        maxshape=(None, data.shape[1]),
-                    )
-        else:
-            with h5.File(output_adata_path, "a") as output_h5f:
-                # If the dataset is added to an existing file that does not have the dataset
-                if f"/obsm/{obsm_key}" not in output_h5f:
-                    output_h5f.create_dataset(
-                        f"/obsm/{obsm_key}",
-                        chunks=True,
-                        data=data,
-                        maxshape=(None, data.shape[1]),
-                    )
-                else:
-                    output_h5f[f"/obsm/{obsm_key}"].resize(
-                        (output_h5f[f"/obsm/{obsm_key}"].shape[0] + data.shape[0]),
-                        axis=0,
-                    )
-                    output_h5f[f"/obsm/{obsm_key}"][-data.shape[0] :] = data
-
     def get_gene_embedding(self, genes):
+        """
+        Get gene embeddings for a list of genes.
+
+        This method retrieves protein embeddings for the specified genes and processes
+        them through the gene embedding layer to create gene-specific embeddings.
+
+        Parameters
+        ----------
+        genes : list
+            List of gene names to get embeddings for.
+
+        Returns
+        -------
+        torch.Tensor
+            Tensor containing gene embeddings of shape (n_genes, embedding_dim).
+        """
         protein_embeds = [
             self.protein_embeds[x] if x in self.protein_embeds else torch.zeros(5120)
             for x in genes
@@ -223,6 +292,24 @@ class StateEmbed(HelicalBaseFoundationModel):
         return self.model.gene_embedding_layer(protein_embeds)
 
     def encode(self, dataloader, rda=None):
+        """
+        Encode data through the model to generate embeddings.
+
+        This method processes batches of data through the State Embedding model
+        to generate cell embeddings and dataset embeddings.
+
+        Parameters
+        ----------
+        dataloader : DataLoader
+            The dataloader containing processed data.
+        rda : optional
+            Optional parameter for read depth adjustment (currently unused).
+
+        Yields
+        ------
+        tuple
+            Tuple containing (embeddings, dataset_embeddings) for each batch.
+        """
         with torch.no_grad():
             device_type = "cuda" if torch.cuda.is_available() else "cpu"
             precision = get_precision_config(device_type=device_type)
@@ -240,7 +327,22 @@ class StateEmbed(HelicalBaseFoundationModel):
                     yield embeddings, ds_embeddings
 
     def _convert_to_csr(self, adata):
-        """Convert the adata.X matrix to CSR format if it's not already."""
+        """
+        Convert the adata.X matrix to CSR format if it's not already.
+
+        This helper method ensures that the data matrix is in CSR (Compressed Sparse Row)
+        format for efficient processing by the model.
+
+        Parameters
+        ----------
+        adata : anndata.AnnData
+            The AnnData object to convert.
+
+        Returns
+        -------
+        anndata.AnnData
+            The AnnData object with X matrix in CSR format.
+        """
 
         if issparse(adata.X) and not isinstance(adata.X, csr_matrix):
             LOGGER.info(f"Converting {type(adata.X).__name__} to csr_matrix format")
@@ -248,7 +350,23 @@ class StateEmbed(HelicalBaseFoundationModel):
         return adata
 
     def _auto_detect_gene_column(self, adata):
-        """Auto-detect the gene column with highest overlap with protein embeddings."""
+        """
+        Auto-detect the gene column with highest overlap with protein embeddings.
+
+        This method automatically identifies which column in adata.var contains gene names
+        that have the best overlap with the available gene embeddings. It checks the
+        index and all string columns in var.
+
+        Parameters
+        ----------
+        adata : anndata.AnnData
+            The AnnData object to analyze.
+
+        Returns
+        -------
+        str or None
+            The name of the column with the best gene overlap, or None if using index.
+        """
         if self.protein_embeds is None:
             LOGGER.warning(
                 "No protein embeddings available for auto-detection, using index"
@@ -297,15 +415,61 @@ class StateEmbed(HelicalBaseFoundationModel):
     def decode_from_file(
         self, adata_path, emb_key: str, read_depth=None, batch_size=64
     ):
+        """
+        Decode gene expression from embeddings stored in a file.
+
+        This method reads an h5ad file, extracts embeddings, and reconstructs gene
+        expression profiles from the embeddings.
+
+        Parameters
+        ----------
+        adata_path : str
+            Path to the h5ad file containing embeddings.
+        emb_key : str
+            Key in obsm where embeddings are stored.
+        read_depth : float, optional, default=None
+            Read depth parameter for reconstruction.
+        batch_size : int, optional, default=64
+            Batch size for processing.
+
+        Yields
+        ------
+        np.ndarray
+            Reconstructed gene expression profiles for each batch.
+        """
         adata = anndata.read_h5ad(adata_path)
         genes = adata.var.index
         yield from self.decode_from_adata(adata, genes, emb_key, read_depth, batch_size)
 
-    #  reverse engineering - it takes pre-computed cell embeddings and reconstructs the original gene expression from them. 
     @torch.no_grad()
     def decode_from_adata(
         self, adata, genes, emb_key: str, read_depth=None, batch_size=64
     ):
+        """
+        Decode gene expression from embeddings in AnnData object.
+
+        This method performs reverse engineering by taking pre-computed cell embeddings
+        and reconstructing the original gene expression profiles from them.
+
+        Parameters
+        ----------
+        adata : anndata.AnnData
+            AnnData object containing embeddings.
+        genes : list
+            List of gene names to reconstruct.
+        emb_key : str
+            Key in obsm where embeddings are stored.
+        read_depth : float, optional, default=None
+            Read depth parameter for reconstruction. If None and RDA is enabled,
+            defaults to 4.0.
+        batch_size : int, optional, default=64
+            Batch size for processing.
+
+        Yields
+        ------
+        np.ndarray
+            Reconstructed gene expression profiles for each batch.
+        """
         try:
             cell_embs = adata.obsm[emb_key]
         except:
@@ -348,6 +512,22 @@ class StateEmbed(HelicalBaseFoundationModel):
 
     @staticmethod
     def load_esm2_embeddings(cfg):
+        """
+        Load ESM2 embeddings and special tokens.
+
+        This static method loads pre-computed ESM2 protein embeddings from the
+        configuration file and prepares them for use with the model.
+
+        Parameters
+        ----------
+        cfg : OmegaConf
+            Configuration object containing embedding paths.
+
+        Returns
+        -------
+        torch.Tensor
+            Tensor containing ESM2 embeddings moved to GPU if available.
+        """
         # Load in ESM2 embeddings and special tokens
         all_pe = torch.load(get_embedding_cfg(cfg).all_embeddings, weights_only=False)
         if isinstance(all_pe, dict):
