@@ -132,7 +132,6 @@ class StatePerturb(HelicalBaseFoundationModel):
         """
 
         control_pert = self.config["control_pert"]
-
         if control_pert is None:
             try:
                 control_pert = self.input_params["control_pert"]
@@ -144,48 +143,19 @@ class StatePerturb(HelicalBaseFoundationModel):
 
         if control_pert is None:
             control_pert = "non-targeting"
-
         self.config["control_pert"] = control_pert
 
-        # choose cell type column
-        if self.config["celltype_col"] is None:
-            ct_from_cfg = None
-            try:
-                ct_from_cfg = self.input_params.get(
-                    "cell_type_key", None
-                )
-            except Exception:
-                pass
+        # setup cell type processing
+        self.detect_celltype(adata)
+        LOGGER.info(f"Grouping by cell type column: {self.config['celltype_col']}")
 
-            pick_first_present_ct = self.pick_first_present(
-                adata,
-                candidates=(
-                    [
-                        ct_from_cfg,
-                        "cell_type",
-                        "celltype",
-                        "cellType",
-                        "ctype",
-                        "celltype_col",
-                    ]
-                    if ct_from_cfg
-                    else ["cell_type", "celltype", "cellType", "ctype", "celltype_col"]
-                ),
-            )
-            self.config["celltype_col"] = pick_first_present_ct
-
-            celltype_col = self.config["celltype_col"]
-            if celltype_col:
-                LOGGER.info(f"Grouping by cell type column: {celltype_col}")
-            else:
-                LOGGER.info("Grouping by cell type column: not found; no grouping")
-
-        # choose batch column
+        # choose batch column if present 
         if self.config["batch_col"] is None:
             try:
                 self.config["batch_col"] = self.input_params.get("batch_col", None)
             except Exception:
                 self.config["batch_col"] = None
+        LOGGER.info(f"Batch column: {self.config['batch_col']}")
 
         if self.config["tsv"]:
             LOGGER.info(f"==> TSV padding mode: loading {self.config['tsv']}")
@@ -242,72 +212,8 @@ class StatePerturb(HelicalBaseFoundationModel):
             )
 
         self.pert_names_all = adata.obs[self.config["pert_col"]].astype(str).values
-
-        # derive batch indices (per-token integers) if needed
-        self.batch_indices_all: Optional[np.ndarray] = None
-
-        batch_onehot_map = None
-        if os.path.exists(self.batch_onehot_map_path):
-            with open(self.batch_onehot_map_path, "rb") as f:
-                batch_onehot_map = pickle.load(f)
-
-        if self.uses_batch_encoder:
-            # locate batch column
-            batch_col = self.config["batch_col"]
-            if batch_col is None:
-                candidates = [
-                    "gem_group",
-                    "gemgroup",
-                    "batch",
-                    "donor",
-                    "plate",
-                    "experiment",
-                    "lane",
-                    "batch_id",
-                ]
-
-                batch_col = next((c for c in candidates if c in adata.obs), None)
-
-            if batch_col is not None and batch_col in adata.obs:
-                raw_labels = adata.obs[batch_col].astype(str).values
-                if batch_onehot_map is None:
-                    warnings.warn(
-                        f"Model has a batch encoder, "
-                        f"but '{self.batch_onehot_map_path}' not found. "
-                        "Batch info will be ignored; predictions may degrade."
-                    )
-                    self.uses_batch_encoder = False
-                else:
-                    # Convert labels to indices using saved map
-                    label_to_idx: Dict[str, int] = {}
-                    for k, v in batch_onehot_map.items():
-                        key = str(k)
-                        idx = argmax_index_from_any(v, expected_dim=self.batch_dim)
-
-                        if idx is not None:
-                            label_to_idx[key] = idx
-                    idxs = np.zeros(len(raw_labels), dtype=np.int64)
-                    misses = 0
-                    for i, lab in enumerate(raw_labels):
-                        if lab in label_to_idx:
-                            idxs[i] = label_to_idx[lab]
-                        else:
-                            misses += 1
-                            idxs[i] = 0  # fallback to zero
-                    if misses:
-                        LOGGER.info(
-                            f"Warning: {misses} / {len(raw_labels)} "
-                            f"batch labels not found in saved mapping;"
-                            f"using index 0 as fallback."
-                        )
-                    self.batch_indices_all = idxs
-            else:
-                LOGGER.info(
-                    """Batch encoder present, but no batch column found;
-                        proceeding without batch indices."""
-                )
-                self.uses_batch_encoder = False
-
+        self.setup_batch_processing(adata)
+        
         return adata
 
     def get_embeddings(self, adata: sc.AnnData):
@@ -515,6 +421,125 @@ class StatePerturb(HelicalBaseFoundationModel):
 
         return embeddings
 
+
+    def setup_batch_processing(self, adata: sc.AnnData):
+        """
+        Get the batch column from the AnnData object.
+        """
+        # derive batch indices (per-token integers) if needed
+        self.batch_indices_all: Optional[np.ndarray] = None
+        batch_onehot_map = None
+
+        if os.path.exists(self.batch_onehot_map_path):
+            with open(self.batch_onehot_map_path, "rb") as f:
+                batch_onehot_map = pickle.load(f)
+
+        if self.uses_batch_encoder:
+            LOGGER.info("Using batch encoder")
+            # locate batch column
+            batch_col = self.config["batch_col"]
+            if batch_col is None:
+                LOGGER.info(
+                    """Batch column not found, trying to 
+                        find batch column using default candidates""")
+                candidates = [
+                    "gem_group",
+                    "gemgroup",
+                    "batch",
+                    "donor",
+                    "plate",
+                    "experiment",
+                    "lane",
+                    "batch_id",
+                ]
+
+                batch_col = next((c for c in candidates if c in adata.obs), None)
+
+            if batch_col is not None and batch_col in adata.obs:
+                LOGGER.info(f"Batch column found: {batch_col}")
+                raw_labels = adata.obs[batch_col].astype(str).values
+                if batch_onehot_map is None:
+                    warnings.warn(
+                        f"Model has a batch encoder, "
+                        f"but '{self.batch_onehot_map_path}' not found. "
+                        "Batch info will be ignored; predictions may degrade."
+                    )
+                    self.uses_batch_encoder = False
+                else:
+                    LOGGER.info("Batch onehot map found, converting labels to indices")
+                    # Convert labels to indices using saved map
+                    label_to_idx: Dict[str, int] = {}
+                    for k, v in batch_onehot_map.items():
+                        key = str(k)
+                        idx = argmax_index_from_any(v, expected_dim=self.batch_dim)
+
+                        if idx is not None:
+                            label_to_idx[key] = idx
+                    idxs = np.zeros(len(raw_labels), dtype=np.int64)
+                    misses = 0
+                    for i, lab in enumerate(raw_labels):
+                        if lab in label_to_idx:
+                            idxs[i] = label_to_idx[lab]
+                        else:
+                            misses += 1
+                            idxs[i] = 0  # fallback to zero
+                    if misses:
+                        LOGGER.info(
+                            f"Warning: {misses} / {len(raw_labels)} "
+                            f"batch labels not found in saved mapping;"
+                            f"using index 0 as fallback."
+                        )
+                    self.batch_indices_all = idxs
+            else:
+                LOGGER.info(
+                    """Batch encoder present, but no batch column found;
+                        proceeding without batch indices."""
+                )
+                self.uses_batch_encoder = False    
+        return
+    
+    def detect_celltype(self, adata: sc.AnnData):
+        """
+        Get the cell type column from the AnnData object.
+        """
+
+        # add docstrings
+
+        # choose cell type column
+        if self.config["celltype_col"] is None:
+            LOGGER.info("Cell type column not found, trying to find it using default candidates")
+            ct_from_cfg = None
+            try:
+                ct_from_cfg = self.input_params.get(
+                    "cell_type_key", None
+                )
+            except Exception:
+                pass
+
+            pick_first_present_ct = self.pick_first_present(
+                adata,
+                candidates=(
+                    [
+                        ct_from_cfg,
+                        "cell_type",
+                        "celltype",
+                        "cellType",
+                        "ctype",
+                        "celltype_col",
+                    ]
+                    if ct_from_cfg
+                    else ["cell_type", "celltype", "cellType", "ctype", "celltype_col"]
+                ),
+            )
+            self.config["celltype_col"] = pick_first_present_ct
+
+            celltype_col = self.config["celltype_col"]
+            if celltype_col:
+                LOGGER.info(f"Grouping by cell type column: {celltype_col}")
+            else:
+                LOGGER.info("Grouping by cell type column: not found; no grouping")
+        return
+
     def pick_first_present(self, d: "sc.AnnData", candidates: List[str]) -> Optional[str]:
         """
         Pick the first column name that exists in the AnnData object.
@@ -534,6 +559,7 @@ class StatePerturb(HelicalBaseFoundationModel):
         Optional[str]
             The first column name found, or None if none of the candidates exist.
         """
+        LOGGER.info(f"Picking first cell type column name that exists in adata.obs using candidates: {candidates}")
         for c in candidates:
             if c in d.obs:
                 return c
