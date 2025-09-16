@@ -84,8 +84,9 @@ class StateEmbed(HelicalBaseFoundationModel):
 
         embedding_file = os.path.join(self.model_dir, "protein_embeddings.pt")
         
+        self.device_type = "cuda" if torch.cuda.is_available() else "cpu"
         self.protein_embeds = (
-            torch.load(embedding_file, weights_only=False, map_location="cpu")
+            torch.load(embedding_file, weights_only=False, map_location=self.device_type)
             if os.path.exists(embedding_file)
             else None
         )
@@ -131,8 +132,7 @@ class StateEmbed(HelicalBaseFoundationModel):
         missing_keys, _ = self.model.load_state_dict(loaded_weights, strict=False)
         # LOGGER.info(f"Missing keys: {missing_keys}")
 
-        device_type = "cuda" if torch.cuda.is_available() else "cpu"
-        precision = get_precision_config(device_type=device_type)
+        precision = get_precision_config(device_type=self.device_type)
         self.model = self.model.to(precision)
 
         all_pe = self.protein_embeds or StateEmbed.load_esm2_embeddings(self.model_conf)
@@ -141,7 +141,7 @@ class StateEmbed(HelicalBaseFoundationModel):
 
         self.model.pe_embedding = nn.Embedding.from_pretrained(all_pe)
         self.model.pe_embedding.to(self.model.device, dtype=precision)
-        self.model.to(device_type)
+        self.model.to(self.device_type)
         self.model.binary_decoder.requires_grad = False
         self.model.eval()
 
@@ -178,8 +178,7 @@ class StateEmbed(HelicalBaseFoundationModel):
         adata = self._convert_to_csr(adata)
         gene_column: Optional[str] = self._auto_detect_gene_column(adata)
 
-        device_type = "cuda" if torch.cuda.is_available() else "cpu"
-        precision = get_precision_config(device_type=device_type)
+        precision = get_precision_config(device_type=self.device_type)
 
         dataloader = create_dataloader(
             self.model_conf,
@@ -284,8 +283,7 @@ class StateEmbed(HelicalBaseFoundationModel):
             self.protein_embeds[x] if x in self.protein_embeds else torch.zeros(5120)
             for x in genes
         ]
-        device_type = "cuda" if torch.cuda.is_available() else "cpu"
-        precision = get_precision_config(device_type=device_type)
+        precision = get_precision_config(device_type=self.device_type)
         protein_embeds = torch.stack(protein_embeds).to(
             self.model.device, dtype=precision
         )
@@ -311,9 +309,8 @@ class StateEmbed(HelicalBaseFoundationModel):
             Tuple containing (embeddings, dataset_embeddings) for each batch.
         """
         with torch.no_grad():
-            device_type = "cuda" if torch.cuda.is_available() else "cpu"
-            precision = get_precision_config(device_type=device_type)
-            with torch.autocast(device_type=device_type, dtype=precision):
+            precision = get_precision_config(device_type=self.device_type)
+            with torch.autocast(device_type=self.device_type, dtype=precision):
                 for i, batch in enumerate(dataloader):
 
                     _, _, _, emb, ds_emb = self.model._compute_embedding_for_batch(
@@ -475,8 +472,7 @@ class StateEmbed(HelicalBaseFoundationModel):
         except:
             cell_embs = adata.X
 
-        device_type = "cuda" if torch.cuda.is_available() else "cpu"
-        precision = get_precision_config(device_type=device_type)
+        precision = get_precision_config(device_type=self.device_type)
         cell_embs = torch.Tensor(cell_embs).to(self.model.device, dtype=precision)
 
         use_rda = getattr(self.model.cfg.model, "rda", False)
@@ -484,7 +480,7 @@ class StateEmbed(HelicalBaseFoundationModel):
             read_depth = 4.0
 
         gene_embeds = self.get_gene_embedding(genes)
-        with torch.autocast(device_type=device_type, dtype=precision):
+        with torch.autocast(device_type=self.device_type, dtype=precision):
             for i in tqdm(
                 range(0, cell_embs.size(0), batch_size),
                 total=int(cell_embs.size(0) // batch_size),
