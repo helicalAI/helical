@@ -64,5 +64,5 @@ helical/models/state/test.ipynb
 helical/models/state/st_configs.yaml
 helical/models/state/tutorial_all.ipynb
 
-helical/examples/fine_tune_models/fine_tune_state.py
-helical/docs/fine_tuning_models/state_fine_tune.md
+examples/fine_tune_models/fine_tune_state.py
+docs/fine_tuning_models/state_fine_tune.md
