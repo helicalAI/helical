@@ -56,9 +56,8 @@ outputs
 vortex
 
 # state repo 
-test.ipynb
 sample_vcc_data/
 helical/models/state/model_dir/train_utils/
 helical/models/state/fine_tuning_model.py 
 helical/models/state/state_train.py 
-
+helical/models/state/test.ipynb

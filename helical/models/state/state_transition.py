@@ -39,15 +39,15 @@ class StateTransitionModel(HelicalBaseFoundationModel):
         ]
 
         model_configs = torch.load(self.checkpoint_path)
-        self.input_params = model_configs["params"]
-        weights = model_configs["state_dict"]
 
+        self.input_params = model_configs["params"]
         self.pert_dim = self.input_params.get("pert_dim")
         self.batch_dim = self.input_params.get("batch_dim", None)
         self.model = StateTransitionPerturbationModel(**self.input_params)
-        self.model.load_state_dict(weights)
+        self.model.load_state_dict(model_configs["state_dict"])
         self.model.eval()
-        self.device = next(self.model.parameters()).device
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model.to(self.device)
 
         self.cell_set_len = (
             self.config["max_set_len"]
