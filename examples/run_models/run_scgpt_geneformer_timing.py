@@ -7,6 +7,7 @@ from datasets import load_dataset
 from helical.utils import get_anndata_from_hf_dataset
 import time
 import numpy as np
+import torch
 
 
 def run_geneformer(cfg: DictConfig, ann_data: ad.AnnData):
@@ -59,7 +60,7 @@ def run_scgpt(cfg: DictConfig, ann_data: ad.AnnData):
     # ann_data = get_anndata_from_hf_dataset(hf_dataset)
 
     # or load directly
-    ann_data = ad.read_h5ad("./yolksac_human.h5ad")
+    # ann_data = ad.read_h5ad("./yolksac_human.h5ad")
     start_time = time.time()
     data = scgpt.process_data(ann_data[:])
     end_time = time.time()
@@ -89,6 +90,8 @@ if __name__ == "__main__":
     end_time = time.time()
     print(f"Geneformer run time: {end_time - start_time:.4f} seconds")
     print("\n\n\n")
+
+    torch.cuda.empty_cache()
     # hydra.initialize(config_path="configs", job_name="scgpt_config")
     cfg_scgpt = hydra.compose(config_name="scgpt_config", overrides=["device=cuda"])
     start_time = time.time()
