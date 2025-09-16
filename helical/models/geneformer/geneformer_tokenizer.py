@@ -397,7 +397,6 @@ class TranscriptomeTokenizer:
         Returns:
             tuple: A tuple containing a list of tokenized cells and a dictionary of cell metadata.
         """
-        print("Anndata shape:", adata_obj.shape)
         adata = sum_ensembl_ids(
             adata_obj,
             self.collapse_gene_ids,
@@ -406,7 +405,6 @@ class TranscriptomeTokenizer:
             file_format="h5ad",
             chunk_size=self.chunk_size,
         )
-        print("Anndata shape after summing Ensembl IDs:", adata.shape)
         if self.custom_attr_name_dict is not None:
             file_cell_metadata = {
                 attr_key: [] for attr_key in self.custom_attr_name_dict.keys()
@@ -505,7 +503,6 @@ class TranscriptomeTokenizer:
         lengths = []
         uncropped_inputs = [] if keep_uncropped_input_ids else None
         uncropped_lengths = [] if keep_uncropped_input_ids else None
-        print("Tokenized cells:", tokenized_cells)
         for cell in tokenized_cells:
             if keep_uncropped_input_ids:
                 uncropped_inputs.append(cell)
@@ -514,13 +511,11 @@ class TranscriptomeTokenizer:
             if self.special_token:
                 # truncate but keep room for CLS + EOS
                 cropped = cell[: self.model_input_size - 2]
-                processed = [cls_token] + cropped + [eos_token]
+                processed = np.concatenate([[cls_token], cropped, [eos_token]])
             else:
                 processed = cell[: self.model_input_size]
-
             processed_inputs.append(processed)
             lengths.append(len(processed))
-
         # build dataset dict
         dataset_dict = {
             "input_ids": processed_inputs,
@@ -544,5 +539,4 @@ class TranscriptomeTokenizer:
             output_dataset = Dataset.from_generator(dict_generator, num_proc=self.nproc)
         else:
             output_dataset = Dataset.from_dict(dataset_dict)
-        print(output_dataset)
         return output_dataset
