@@ -6,11 +6,9 @@ import numpy as np
 import scanpy as sc
 import torch
 from tqdm import tqdm
-
 from .model_dir.perturb_utils.state_transition_model import (
     StateTransitionPerturbationModel,
 )
-
 from .state_config import StateConfig
 from .model_dir.perturb_utils.utils import (
     to_dense,
@@ -19,7 +17,6 @@ from .model_dir.perturb_utils.utils import (
     prepare_batch,
 )
 from helical.models.base_models import HelicalBaseFoundationModel
-import yaml
 from helical.utils.downloader import Downloader
 import logging
 
@@ -31,39 +28,24 @@ class StateTransitionModel(HelicalBaseFoundationModel):
         super().__init__()
         if configurer is None:
             configurer = StateConfig()
-
         self.config = configurer.config
-        self.model_dir = self.config["perturb_dir"]
 
         downloader = Downloader()
         for file in self.config["perturbation_files_to_download"]:
             downloader.download_via_name(file)
 
-        with open(os.path.join(self.model_dir, "config.yaml"), "r") as f:
-            self.model_config = yaml.safe_load(f)
+        self.pert_onehot_map_path, self.batch_onehot_map_path, self.checkpoint_path = [
+            os.path.join(self.config["perturb_dir"], f) for f in ["pert_onehot_map.pt", "batch_onehot_map.pkl", "ST_all.pt"]
+        ]
 
-        with open(os.path.join(self.model_dir, "var_dims.pkl"), "rb") as f:
-            var_dims = pickle.load(f)
+        model_configs = torch.load(self.checkpoint_path)
+        self.input_params = model_configs["params"]
+        weights = model_configs["state_dict"]
 
-        self.pert_dim = var_dims.get("pert_dim")
-        self.batch_dim = var_dims.get("batch_dim", None)
-        # mappings
-        self.pert_onehot_map_path = os.path.join(
-            self.model_dir, "pert_onehot_map.pt"
-        )
-        self.batch_onehot_map_path = os.path.join(
-            self.model_dir, "batch_onehot_map.pkl"
-        )
-
-        self.checkpoint_path = os.path.join(
-            self.model_dir, self.config["checkpoint_name"]
-        )
-        LOGGER.info(f"Using checkpoint: {self.checkpoint_path}")
-
-        self.model = StateTransitionPerturbationModel.load_from_checkpoint(
-            self.checkpoint_path,
-        )
-
+        self.pert_dim = self.input_params.get("pert_dim")
+        self.batch_dim = self.input_params.get("batch_dim", None)
+        self.model = StateTransitionPerturbationModel(**self.input_params)
+        self.model.load_state_dict(weights)
         self.model.eval()
         self.device = next(self.model.parameters()).device
 
@@ -73,24 +55,25 @@ class StateTransitionModel(HelicalBaseFoundationModel):
             else getattr(self.model, "cell_sentence_len", 256)
         )
         self.uses_batch_encoder = getattr(self.model, "batch_encoder", None) is not None
+        
         self.output_space = getattr(
             self.model,
             "output_space",
-            self.model_config.get("data", {})
-            .get("kwargs", {})
-            .get("output_space", "gene"),
+            self.input_params.get("output_space", "gene"),
         )
-        LOGGER.info(f"Model device: {self.device}")
-        LOGGER.info(f"Model cell_set_len (max sequence length): {self.cell_set_len}")
-        LOGGER.info(f"Model uses batch encoder: {bool(self.uses_batch_encoder)}")
-        LOGGER.info(f"Model output space: {self.output_space}")
+
+        LOGGER.info(f"Checkpoint: {self.checkpoint_path}, Device: {self.device}")
+        LOGGER.info(f"Cell set length (max sequence length): {self.cell_set_len}")
+        LOGGER.info(f"Batch encoder: {bool(self.uses_batch_encoder)}")
+        LOGGER.info(f"Output space: {self.output_space}")
 
     def process_data(self, adata: sc.AnnData):
 
         control_pert = self.config["control_pert"]
+
         if control_pert is None:
             try:
-                control_pert = self.model_config["data"]["kwargs"]["control_pert"]
+                control_pert = self.input_params["control_pert"]
             except Exception:
                 control_pert = None
 
@@ -106,7 +89,7 @@ class StateTransitionModel(HelicalBaseFoundationModel):
         if self.config["celltype_col"] is None:
             ct_from_cfg = None
             try:
-                ct_from_cfg = self.model_config["data"]["kwargs"].get(
+                ct_from_cfg = self.input_params.get(
                     "cell_type_key", None
                 )
             except Exception:
@@ -138,9 +121,7 @@ class StateTransitionModel(HelicalBaseFoundationModel):
         # choose batch column
         if self.config["batch_col"] is None:
             try:
-                self.config["batch_col"] = self.model_config["data"]["kwargs"].get(
-                    "batch_col", None
-                )
+                self.config["batch_col"] = self.input_params.get("batch_col", None)
             except Exception:
                 self.config["batch_col"] = None
 
@@ -444,11 +425,7 @@ class StateTransitionModel(HelicalBaseFoundationModel):
 
         return embeddings
 
-
-    def pick_first_present(
-        self, d: "sc.AnnData", candidates: List[str]
-    ) -> Optional[str]:
-
+    def pick_first_present(self, d: "sc.AnnData", candidates: List[str]) -> Optional[str]:
         for c in candidates:
             if c in d.obs:
                 return c

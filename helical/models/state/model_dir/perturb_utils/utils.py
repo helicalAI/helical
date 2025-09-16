@@ -14,6 +14,7 @@ import pandas as pd
 from typing import Dict, List, Optional
 import numpy as _np
 
+LOGGER = logging.getLogger(__name__)
 
 class RobustCSVLogger(BaseCSVLogger):
     """
@@ -73,14 +74,14 @@ class RobustCSVLogger(BaseCSVLogger):
 
 @contextmanager
 def time_it(timer_name: str):
-    logging.debug(f"Starting timer {timer_name}")
+    LOGGER.debug(f"Starting timer {timer_name}")
     start_time = time.perf_counter()
     try:
         yield
     finally:
         end_time = time.perf_counter()
         elapsed_time = end_time - start_time
-        logging.debug(f"Elapsed time {timer_name}: {elapsed_time:.4f} seconds")
+        LOGGER.debug(f"Elapsed time {timer_name}: {elapsed_time:.4f} seconds")
 
 
 def get_loggers(
@@ -142,14 +143,6 @@ def to_dense(mat):
     except Exception:
         pass
     return np.asarray(mat)
-
-
-def pick_first_present(d: "sc.AnnData", candidates: List[str]) -> Optional[str]:
-    for c in candidates:
-        if c in d.obs:
-            return c
-    return None
-
 
 def argmax_index_from_any(v, expected_dim: Optional[int]) -> Optional[int]:
     """
@@ -252,7 +245,7 @@ def pad_adata_with_tsv(
         )
 
     if not quiet:
-        print(f"Found {len(control_indices)} control cells for padding")
+        LOGGER.info(f"Found {len(control_indices)} control cells for padding")
 
     # Collect cells to add
     new_cells_data = []
@@ -276,11 +269,11 @@ def pad_adata_with_tsv(
 
     if len(new_cells_data) == 0:
         if not quiet:
-            print("No cells to add from TSV file")
+            LOGGER.info("No cells to add from TSV file")
         return adata
 
     if not quiet:
-        print(f"Adding {total_to_add} cells from TSV specification")
+        LOGGER.info(f"Adding {total_to_add} cells from TSV specification")
 
     # Create new AnnData with padded cells
     original_n_obs = adata.n_obs
@@ -339,63 +332,6 @@ def pad_adata_with_tsv(
     )
 
     if not quiet:
-        print(f"Padded AnnData: {original_n_obs} -> {new_n_obs} cells")
+        LOGGER.info(f"Padded AnnData: {original_n_obs} -> {new_n_obs} cells")
 
     return new_adata
-
-
-def cfg_setup_inference(cfg):
-    # control_pert
-    # the config should just be the inference part of it so config['inference']
-    control_pert = cfg["control_pert"]
-    if control_pert is None:
-        try:
-            control_pert = cfg["data"]["kwargs"]["control_pert"]
-        except Exception:
-            control_pert = None
-
-    if control_pert is None and cfg["pert_col"] == "drugname_drugconc":
-        control_pert = "[('DMSO_TF', 0.0, 'uM')]"
-
-    if control_pert is None:
-        control_pert = "non-targeting"
-
-    print(f"Control perturbation: {control_pert}")
-
-    # choose cell type column
-    if cfg["celltype_col"] is None:
-        ct_from_cfg = None
-        try:
-            ct_from_cfg = cfg["data"]["kwargs"].get("cell_type_key", None)
-        except Exception:
-            pass
-
-        guess = pick_first_present(
-            sc.read_h5ad(cfg["adata"]),
-            candidates=(
-                [
-                    ct_from_cfg,
-                    "cell_type",
-                    "celltype",
-                    "cellType",
-                    "ctype",
-                    "celltype_col",
-                ]
-                if ct_from_cfg
-                else ["cell_type", "celltype", "cellType", "ctype", "celltype_col"]
-            ),
-        )
-        cfg["celltype_col"] = guess
-
-        print(
-            f"Grouping by cell type column: {cfg['celltype_col'] if cfg['celltype_col'] else 'not found; no grouping'}"
-        )
-
-    # choose batch column
-    if cfg["batch_col"] is None:
-        try:
-            cfg["batch_col"] = cfg["data"]["kwargs"].get("batch_col", None)
-        except Exception:
-            cfg["batch_col"] = None
-
-    return cfg, control_pert

@@ -4,8 +4,8 @@ from typing import Dict, List, Optional
 
 import torch
 import torch.nn as nn
+from lightning.pytorch import LightningModule
 import typing as tp
-import yaml
 
 from .model_utils import get_loss_fn
 
@@ -119,7 +119,7 @@ class LatentToGeneDecoder(nn.Module):
             return self.decoder(x)
 
 
-class PerturbationModelWithoutLightning(ABC, nn.Module):
+class PerturbationModel(ABC, LightningModule):
     """
     Base class for perturbation models that can operate on either raw counts or embeddings.
 
@@ -155,7 +155,8 @@ class PerturbationModelWithoutLightning(ABC, nn.Module):
         **kwargs,
     ):
         super().__init__()
-        self.decoder_cfg = decoder_cfg        
+        self.decoder_cfg = decoder_cfg
+        self.save_hyperparameters()
         self.gene_decoder_bool = kwargs.get("gene_decoder_bool", True)
 
         # Core architecture settings
@@ -184,8 +185,7 @@ class PerturbationModelWithoutLightning(ABC, nn.Module):
         self.dropout = dropout
         self.lr = lr
         self.loss_fn = get_loss_fn(loss_fn)
-        # self._build_decoder()
-        self.on_load_checkpoint()
+        self._build_decoder()
 
     def transfer_batch_to_device(self, batch, device, dataloader_idx: int):
         return {
@@ -198,17 +198,23 @@ class PerturbationModelWithoutLightning(ABC, nn.Module):
         """Build the core neural network components."""
         pass
 
-    # def _build_decoder(self):
-    #     """Create self.gene_decoder from self.decoder_cfg (or leave None)."""
-    #     if self.gene_decoder_bool == False:
-    #         self.gene_decoder = None
-    #         return
-    #     if self.decoder_cfg is None:
-    #         self.gene_decoder = None
-    #         return
-    #     self.gene_decoder = LatentToGeneDecoder(**self.decoder_cfg)
+    def _build_decoder(self):
+        """Create self.gene_decoder from self.decoder_cfg (or leave None)."""
+        if self.gene_decoder_bool == False:
+            self.gene_decoder = None
+            return
+        if self.decoder_cfg is None:
+            self.gene_decoder = None
+            return
+        self.gene_decoder = LatentToGeneDecoder(**self.decoder_cfg)
 
-    def on_load_checkpoint(self) -> None:
+    def on_load_checkpoint(self, checkpoint: dict[str, tp.Any]) -> None:
+        """
+        Lightning calls this *before* the checkpoint's state_dict is loaded.
+        Re-create the decoder using the exact hyper-parameters saved in the ckpt,
+        so that parameter shapes match and load_state_dict succeeds.
+        """
+        # Check if decoder_cfg was already set externally (e.g., by training script for output_space mismatch)
         decoder_already_configured = (
             hasattr(self, "_decoder_externally_configured")
             and self._decoder_externally_configured
@@ -219,8 +225,9 @@ class PerturbationModelWithoutLightning(ABC, nn.Module):
             return
         if (
             not decoder_already_configured
-            and self.decoder_cfg
+            and "decoder_cfg" in checkpoint["hyper_parameters"]
         ):
+            self.decoder_cfg = checkpoint["hyper_parameters"]["decoder_cfg"]
             self.gene_decoder = LatentToGeneDecoder(**self.decoder_cfg)
             LOGGER.info(
                 f"Loaded decoder from checkpoint decoder_cfg: {self.decoder_cfg}"
@@ -271,6 +278,79 @@ class PerturbationModelWithoutLightning(ABC, nn.Module):
                 "Decoder was already configured externally, skipping checkpoint decoder configuration"
             )
 
+    def training_step(
+        self, batch: Dict[str, torch.Tensor], batch_idx: int
+    ) -> torch.Tensor:
+        """Training step logic for both main model and decoder."""
+        # Get model predictions (in latent space)
+        pred = self(batch)
+
+        # Compute main model loss
+        main_loss = self.loss_fn(pred, batch["pert_cell_emb"])
+        self.log("train_loss", main_loss)
+
+        # Process decoder if available
+        decoder_loss = None
+        if self.gene_decoder is not None and "pert_cell_counts" in batch:
+            # Train decoder to map latent predictions to gene space
+            with torch.no_grad():
+                latent_preds = (
+                    pred.detach()
+                )  # Detach to prevent gradient flow back to main model
+
+            pert_cell_counts_preds = self.gene_decoder(latent_preds)
+            gene_targets = batch["pert_cell_counts"]
+            decoder_loss = self.loss_fn(pert_cell_counts_preds, gene_targets)
+
+            # Log decoder loss
+            self.log("decoder_loss", decoder_loss)
+
+            total_loss = main_loss + decoder_loss
+        else:
+            total_loss = main_loss
+
+        return total_loss
+
+    def validation_step(self, batch: Dict[str, torch.Tensor], batch_idx: int) -> None:
+        """Validation step logic."""
+        pred = self(batch)
+        loss = self.loss_fn(pred, batch["pert_cell_emb"])
+
+        # TODO: remove unused
+        # is_control = self.control_pert in batch["pert_name"]
+        self.log("val_loss", loss)
+
+        return {"loss": loss, "predictions": pred}
+
+    def test_step(self, batch: Dict[str, torch.Tensor], batch_idx: int) -> None:
+        latent_output = self(batch)
+        target = batch[self.embed_key]
+        loss = self.loss_fn(latent_output, target)
+
+        output_dict = {
+            "preds": latent_output,  # The distribution's sample
+            "pert_cell_emb": batch.get(
+                "pert_cell_emb", None
+            ),  # The target gene expression or embedding
+            "pert_cell_counts": batch.get(
+                "pert_cell_counts", None
+            ),  # the true, raw gene expression
+            "pert_name": batch.get("pert_name", None),
+            "celltype_name": batch.get("cell_type", None),
+            "batch": batch.get("batch", None),
+            "ctrl_cell_emb": batch.get("ctrl_cell_emb", None),
+        }
+
+        if self.gene_decoder is not None:
+            pert_cell_counts_preds = self.gene_decoder(latent_output)
+            output_dict["pert_cell_counts_preds"] = pert_cell_counts_preds
+            decoder_loss = self.loss_fn(
+                pert_cell_counts_preds, batch["pert_cell_counts"]
+            )
+            self.log("test_decoder_loss", decoder_loss, prog_bar=True)
+
+        self.log("test_loss", loss, prog_bar=True)
+
     def predict_step(self, batch, batch_idx, **kwargs):
         """
         Typically used for final inference. We'll replicate old logic:
@@ -312,3 +392,11 @@ class PerturbationModelWithoutLightning(ABC, nn.Module):
                 pert_cell_counts_preds += basal_expr
             return pert_cell_counts_preds
         return None
+
+    def configure_optimizers(self):
+        """
+        Configure a single optimizer for both the main model and the gene decoder.
+        """
+        # Use a single optimizer for all parameters
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
+        return optimizer

@@ -1,16 +1,43 @@
 import logging
-from typing import Tuple, Optional
+from typing import Dict, Optional
+
+import anndata as ad
+import numpy as np
 import torch
 import torch.nn as nn
-from .base_without_lighting import PerturbationModelWithoutLightning
-from .decoders_nb import NBDecoder
+
+from geomloss import SamplesLoss
+from typing import Tuple
+
+from .base import PerturbationModel
+
+from .decoders_nb import NBDecoder, nb_nll
 from .model_utils import (
     build_mlp,
     get_activation_class,
     get_transformer_backbone,
 )
 
+
 LOGGER = logging.getLogger(__name__)
+
+
+class CombinedLoss(nn.Module):
+    """
+    Combined Sinkhorn + Energy loss
+    """
+
+    def __init__(self, sinkhorn_weight=0.001, energy_weight=1.0, blur=0.05):
+        super().__init__()
+        self.sinkhorn_weight = sinkhorn_weight
+        self.energy_weight = energy_weight
+        self.sinkhorn_loss = SamplesLoss(loss="sinkhorn", blur=blur)
+        self.energy_loss = SamplesLoss(loss="energy", blur=blur)
+
+    def forward(self, pred, target):
+        sinkhorn_val = self.sinkhorn_loss(pred, target)
+        energy_val = self.energy_loss(pred, target)
+        return self.sinkhorn_weight * sinkhorn_val + self.energy_weight * energy_val
 
 
 class ConfidenceToken(nn.Module):
@@ -79,7 +106,7 @@ class ConfidenceToken(nn.Module):
         return main_output, confidence_pred
 
 
-class STBaseClassWithoutLightning(PerturbationModelWithoutLightning):
+class StateTransitionPerturbationModel(PerturbationModel):
     """
     This model:
       1) Projects basal expression and perturbation encodings into a shared latent space.
@@ -114,7 +141,6 @@ class STBaseClassWithoutLightning(PerturbationModelWithoutLightning):
             loss: choice of distributional metric ("sinkhorn", "energy", etc.).
             **kwargs: anything else to pass up to PerturbationModel or not used.
         """
-
         # Call the parent PerturbationModel constructor
         super().__init__(
             input_dim=input_dim,
@@ -126,7 +152,6 @@ class STBaseClassWithoutLightning(PerturbationModelWithoutLightning):
             output_space=output_space,
             **kwargs,
         )
-  
 
         # Save or store relevant hyperparams
         self.predict_residual = predict_residual
@@ -147,8 +172,27 @@ class STBaseClassWithoutLightning(PerturbationModelWithoutLightning):
 
         self.distributional_loss = distributional_loss
         self.gene_dim = gene_dim
+
+        # Build the distributional loss from geomloss
+        blur = kwargs.get("blur", 0.05)
+        loss_name = kwargs.get("loss", "energy")
+        if loss_name == "energy":
+            self.loss_fn = SamplesLoss(loss=self.distributional_loss, blur=blur)
+        elif loss_name == "mse":
+            self.loss_fn = nn.MSELoss()
+        elif loss_name == "se":
+            sinkhorn_weight = kwargs.get("sinkhorn_weight", 0.01)  # 1/100 = 0.01
+            energy_weight = kwargs.get("energy_weight", 1.0)
+            self.loss_fn = CombinedLoss(
+                sinkhorn_weight=sinkhorn_weight, energy_weight=energy_weight, blur=blur
+            )
+        elif loss_name == "sinkhorn":
+            self.loss_fn = SamplesLoss(loss="sinkhorn", blur=blur)
+        else:
+            raise ValueError(f"Unknown loss function: {loss_name}")
+
         self.use_basal_projection = kwargs.get("use_basal_projection", True)
-  
+
         # Build the underlying neural OT network
         self._build_networks()
 
@@ -156,9 +200,6 @@ class STBaseClassWithoutLightning(PerturbationModelWithoutLightning):
         self.batch_encoder = None
         self.batch_dim = None
         self.predict_mean = kwargs.get("predict_mean", False)
-        self.mask_attn = kwargs.get("mask_attn", False)
-        self.embed_key = kwargs.get("embed_key", None)    
-
         if kwargs.get("batch_encoder", False) and batch_dim is not None:
             self.batch_encoder = nn.Embedding(
                 num_embeddings=batch_dim,
@@ -168,8 +209,8 @@ class STBaseClassWithoutLightning(PerturbationModelWithoutLightning):
 
         # if the model is outputting to counts space, apply relu
         # otherwise its in embedding space and we don't want to
-        self.is_gene_space = self.embed_key == "X_hvg" or self.embed_key is None
-        if self.is_gene_space or self.gene_decoder is None:
+        is_gene_space = kwargs["embed_key"] == "X_hvg" or kwargs["embed_key"] is None
+        if is_gene_space or self.gene_decoder is None:
             self.relu = torch.nn.ReLU()
 
         # initialize a confidence token
@@ -316,7 +357,7 @@ class STBaseClassWithoutLightning(PerturbationModelWithoutLightning):
             seq_input = self.confidence_token.append_confidence_token(seq_input)
 
         # forward pass + extract CLS last hidden state
-        if self.mask_attn:
+        if self.hparams.get("mask_attn", False):
             batch_size, seq_length, _ = seq_input.shape
             device = seq_input.device
 
@@ -358,7 +399,12 @@ class STBaseClassWithoutLightning(PerturbationModelWithoutLightning):
             out_pred = self.project_out(res_pred)
 
         # apply relu if specified and we output to HVG space
-        if self.is_gene_space or self.gene_decoder is None:
+        is_gene_space = (
+            self.hparams["embed_key"] == "X_hvg" or self.hparams["embed_key"] is None
+        )
+        # logger.info(f"DEBUG: is_gene_space: {is_gene_space}")
+        # logger.info(f"DEBUG: self.gene_decoder: {self.gene_decoder}")
+        if is_gene_space or self.gene_decoder is None:
             out_pred = self.relu(out_pred)
 
         output = out_pred.reshape(-1, self.output_dim)
@@ -367,6 +413,217 @@ class STBaseClassWithoutLightning(PerturbationModelWithoutLightning):
             return output, confidence_pred
         else:
             return output
+
+    def training_step(
+        self, batch: Dict[str, torch.Tensor], batch_idx: int, padded=True
+    ) -> torch.Tensor:
+        """Training step logic for both main model and decoder."""
+        # Get model predictions (in latent space)
+        confidence_pred = None
+        if self.confidence_token is not None:
+            pred, confidence_pred = self.forward(batch, padded=padded)
+        else:
+            pred = self.forward(batch, padded=padded)
+
+        target = batch["pert_cell_emb"]
+
+        if padded:
+            pred = pred.reshape(-1, self.cell_sentence_len, self.output_dim)
+            target = target.reshape(-1, self.cell_sentence_len, self.output_dim)
+        else:
+            pred = pred.reshape(1, -1, self.output_dim)
+            target = target.reshape(1, -1, self.output_dim)
+
+        main_loss = self.loss_fn(pred, target).nanmean()
+        self.log("train_loss", main_loss)
+
+        # Log individual loss components if using combined loss
+        if hasattr(self.loss_fn, "sinkhorn_loss") and hasattr(
+            self.loss_fn, "energy_loss"
+        ):
+            sinkhorn_component = self.loss_fn.sinkhorn_loss(pred, target).nanmean()
+            energy_component = self.loss_fn.energy_loss(pred, target).nanmean()
+            self.log("train/sinkhorn_loss", sinkhorn_component)
+            self.log("train/energy_loss", energy_component)
+
+        # Process decoder if available
+        decoder_loss = None
+        total_loss = main_loss
+
+        if self.gene_decoder is not None and "pert_cell_counts" in batch:
+            gene_targets = batch["pert_cell_counts"]
+            # Train decoder to map latent predictions to gene space
+
+            if self.detach_decoder:
+                # with some random change, use the true targets
+                if np.random.rand() < 0.1:
+                    latent_preds = target.reshape_as(pred).detach()
+                else:
+                    latent_preds = pred.detach()
+            else:
+                latent_preds = pred
+
+            if isinstance(self.gene_decoder, NBDecoder):
+                mu, theta = self.gene_decoder(latent_preds)
+                gene_targets = batch["pert_cell_counts"].reshape_as(mu)
+                decoder_loss = nb_nll(gene_targets, mu, theta)
+            else:
+                pert_cell_counts_preds = self.gene_decoder(latent_preds)
+                if padded:
+                    gene_targets = gene_targets.reshape(
+                        -1, self.cell_sentence_len, self.gene_decoder.gene_dim()
+                    )
+                else:
+                    gene_targets = gene_targets.reshape(
+                        1, -1, self.gene_decoder.gene_dim()
+                    )
+
+                decoder_loss = self.loss_fn(pert_cell_counts_preds, gene_targets).mean()
+
+            # Log decoder loss
+            self.log("decoder_loss", decoder_loss)
+
+            total_loss = total_loss + self.decoder_loss_weight * decoder_loss
+
+        if confidence_pred is not None:
+            # Detach main loss to prevent gradients flowing through it
+            loss_target = total_loss.detach().clone().unsqueeze(0) * 10
+
+            # Ensure proper shapes for confidence loss computation
+            if confidence_pred.dim() == 2:  # [B, 1]
+                loss_target = loss_target.unsqueeze(0).expand(
+                    confidence_pred.size(0), 1
+                )
+            else:  # confidence_pred is [B,]
+                loss_target = loss_target.unsqueeze(0).expand(confidence_pred.size(0))
+
+            # Compute confidence loss
+            confidence_loss = self.confidence_loss_fn(
+                confidence_pred.squeeze(), loss_target.squeeze()
+            )
+            self.log("train/confidence_loss", confidence_loss)
+            self.log("train/actual_loss", loss_target.mean())
+
+            # Add to total loss with weighting
+            confidence_weight = 0.1  # You can make this configurable
+            total_loss = total_loss + confidence_weight * confidence_loss
+
+            # Add to total loss
+            total_loss = total_loss + confidence_loss
+
+        if self.regularization > 0.0:
+            ctrl_cell_emb = batch["ctrl_cell_emb"].reshape_as(pred)
+            delta = pred - ctrl_cell_emb
+
+            # compute l1 loss
+            l1_loss = torch.abs(delta).mean()
+
+            # Log the regularization loss
+            self.log("train/l1_regularization", l1_loss)
+
+            # Add regularization to total loss
+            total_loss = total_loss + self.regularization * l1_loss
+
+        return total_loss
+
+    def validation_step(self, batch: Dict[str, torch.Tensor], batch_idx: int) -> None:
+        """Validation step logic."""
+        if self.confidence_token is None:
+            pred, confidence_pred = self.forward(batch), None
+        else:
+            pred, confidence_pred = self.forward(batch)
+
+        pred = pred.reshape(-1, self.cell_sentence_len, self.output_dim)
+        target = batch["pert_cell_emb"]
+        target = target.reshape(-1, self.cell_sentence_len, self.output_dim)
+
+        loss = self.loss_fn(pred, target).mean()
+        self.log("val_loss", loss)
+
+        # Log individual loss components if using combined loss
+        if hasattr(self.loss_fn, "sinkhorn_loss") and hasattr(
+            self.loss_fn, "energy_loss"
+        ):
+            sinkhorn_component = self.loss_fn.sinkhorn_loss(pred, target).mean()
+            energy_component = self.loss_fn.energy_loss(pred, target).mean()
+            self.log("val/sinkhorn_loss", sinkhorn_component)
+            self.log("val/energy_loss", energy_component)
+
+        if self.gene_decoder is not None and "pert_cell_counts" in batch:
+            gene_targets = batch["pert_cell_counts"]
+
+            # Get model predictions from validation step
+            latent_preds = pred
+
+            # Train decoder to map latent predictions to gene space
+            if isinstance(self.gene_decoder, NBDecoder):
+                mu, theta = self.gene_decoder(latent_preds)
+                gene_targets = batch["pert_cell_counts"].reshape_as(mu)
+                decoder_loss = nb_nll(gene_targets, mu, theta)
+            else:
+                # Get decoder predictions
+                pert_cell_counts_preds = self.gene_decoder(latent_preds).reshape(
+                    -1, self.cell_sentence_len, self.gene_decoder.gene_dim()
+                )
+                gene_targets = gene_targets.reshape(
+                    -1, self.cell_sentence_len, self.gene_decoder.gene_dim()
+                )
+                decoder_loss = self.loss_fn(pert_cell_counts_preds, gene_targets).mean()
+
+            # Log the validation metric
+            self.log("val/decoder_loss", decoder_loss)
+            loss = loss + self.decoder_loss_weight * decoder_loss
+
+        if confidence_pred is not None:
+            # Detach main loss to prevent gradients flowing through it
+            loss_target = loss.detach().clone() * 10
+
+            # Ensure proper shapes for confidence loss computation
+            if confidence_pred.dim() == 2:  # [B, 1]
+                loss_target = loss_target.unsqueeze(0).expand(
+                    confidence_pred.size(0), 1
+                )
+            else:  # confidence_pred is [B,]
+                loss_target = loss_target.unsqueeze(0).expand(confidence_pred.size(0))
+
+            # Compute confidence loss
+            confidence_loss = self.confidence_loss_fn(
+                confidence_pred.squeeze(), loss_target.squeeze()
+            )
+            self.log("val/confidence_loss", confidence_loss)
+            self.log("val/actual_loss", loss_target.mean())
+
+        return {"loss": loss, "predictions": pred}
+
+    def test_step(self, batch: Dict[str, torch.Tensor], batch_idx: int) -> None:
+        if self.confidence_token is None:
+            pred, confidence_pred = self.forward(batch, padded=False), None
+        else:
+            pred, confidence_pred = self.forward(batch, padded=False)
+
+        target = batch["pert_cell_emb"]
+        pred = pred.reshape(1, -1, self.output_dim)
+        target = target.reshape(1, -1, self.output_dim)
+        loss = self.loss_fn(pred, target).mean()
+        self.log("test_loss", loss)
+
+        if confidence_pred is not None:
+            # Detach main loss to prevent gradients flowing through it
+            loss_target = loss.detach().clone() * 10.0
+
+            # Ensure proper shapes for confidence loss computation
+            if confidence_pred.dim() == 2:  # [B, 1]
+                loss_target = loss_target.unsqueeze(0).expand(
+                    confidence_pred.size(0), 1
+                )
+            else:  # confidence_pred is [B,]
+                loss_target = loss_target.unsqueeze(0).expand(confidence_pred.size(0))
+
+            # Compute confidence loss
+            confidence_loss = self.confidence_loss_fn(
+                confidence_pred.squeeze(), loss_target.squeeze()
+            )
+            self.log("test/confidence_loss", confidence_loss)
 
     def predict_step(self, batch, batch_idx, padded=True, **kwargs):
         """

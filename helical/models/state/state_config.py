@@ -44,12 +44,13 @@ class StateConfig:
                 "state/state_embed/se600m_model_weights.pt",
             ],
             "perturbation_files_to_download": [
-                "state/state_transition/config.yaml",
+                # "state/state_transition/config.yaml",
                 "state/state_transition/pert_onehot_map.pt",
                 "state/state_transition/batch_onehot_map.pkl",
-                "state/state_transition/var_dims.pkl",
-                "state/state_transition/cell_type_onehot_map.pkl",
-                "state/state_transition/data_module.torch",
-                "state/state_transition/final.ckpt",
+                # "state/state_transition/var_dims.pkl",
+                # "state/state_transition/cell_type_onehot_map.pkl",
+                # "state/state_transition/data_module.torch",
+                # "state/state_transition/final.ckpt",
+                "state/state_transition/ST_all.pt",
             ],
         }

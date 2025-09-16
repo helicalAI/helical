@@ -9,9 +9,11 @@ from torch import nn, optim
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.metrics import roc_auc_score, accuracy_score
 import warnings
+import logging
 
+LOGGER = logging.getLogger(__name__)
 
-def evaluate_intrinsic(model, cfg, device=None, logger=print, adata=None):
+def evaluate_intrinsic(model, cfg, device=None, adata=None):
     """
     Standalone evaluation of perturbation effects.
     """
@@ -42,12 +44,12 @@ def evaluate_intrinsic(model, cfg, device=None, logger=print, adata=None):
         adata.obsm["X_emb"] = all_embs
 
     # Run the intrinsic benchmark evaluation
-    intrinsic_results = run_intrinsic_benchmark(adata, device, logger)
+    intrinsic_results = run_intrinsic_benchmark(adata, device)
 
     return intrinsic_results
 
 
-def evaluate_de(model, cfg, device=None, logger=print):
+def evaluate_de(model, cfg, device=None):
     """
     Standalone evaluation of differential expression (DE).
 
@@ -81,7 +83,7 @@ def evaluate_de(model, cfg, device=None, logger=print):
         pred_exp, true_top_genes, k=cfg["validations"]["diff_exp"]["top_k_rank"]
     )
     mean_overlap = float(np.array(list(de_metrics.values())).mean())
-    logger(f"DE gene overlap mean: {mean_overlap:.4f}")
+    LOGGER.info(f"DE gene overlap mean: {mean_overlap:.4f}")
     return tmp_adata
 
 
@@ -315,15 +317,15 @@ def filter_and_split_by_celltype(
     cell_types = adata.obs[cell_type_key].astype(str)
     cell_type_counts = cell_types.value_counts()
 
-    print("\nCell type distribution:")
+    LOGGER.info("\nCell type distribution:")
     for ct, count in cell_type_counts.items():
-        print(f"  {ct}: {count} cells")
+        LOGGER.info(f"  {ct}: {count} cells")
 
     # Filter cell types with sufficient cells
     valid_cell_types = cell_type_counts[
         cell_type_counts >= min_cells_per_celltype
     ].index.tolist()
-    print(f"\nCell types with >= {min_cells_per_celltype} cells: {valid_cell_types}")
+    LOGGER.info(f"\nCell types with >= {min_cells_per_celltype} cells: {valid_cell_types}")
 
     if not valid_cell_types:
         raise ValueError(f"No cell types have >= {min_cells_per_celltype} cells")
@@ -331,7 +333,7 @@ def filter_and_split_by_celltype(
     celltype_data = {}
 
     for cell_type in valid_cell_types:
-        print(f"\nProcessing cell type: {cell_type}")
+        LOGGER.info(f"\nProcessing cell type: {cell_type}")
 
         # Subset data for this cell type
         mask = cell_types == cell_type
@@ -344,7 +346,7 @@ def filter_and_split_by_celltype(
         # Keep perturbations with enough cells
         keep_perturbs = set(uniq_perturbs[counts >= min_cells_per_perturb])
         if not keep_perturbs:
-            print(
+            LOGGER.info(
                 f"  Skipping {cell_type}: no perturbations with >= {min_cells_per_perturb} cells"
             )
             continue
@@ -361,7 +363,7 @@ def filter_and_split_by_celltype(
         # Get features
         features = ct_adata.obsm[embed_key]
 
-        print(f"  Final data: {len(labels)} cells, {len(label_names)} perturbations")
+        LOGGER.info(f"  Final data: {len(labels)} cells, {len(label_names)} perturbations")
 
         celltype_data[cell_type] = (features, labels, label_names)
 
@@ -385,21 +387,21 @@ def benchmark_single_celltype(
     seed=42,
 ):
     """Run benchmarking for a single cell type."""
-    print(f"\nBenchmarking cell type: {cell_type}")
+    LOGGER.info(f"\nBenchmarking cell type: {cell_type}")
 
     # Split data
     tr_idx, va_idx, te_idx = split_indices_fraction(
         labels, val_split, len(label_names), seed
     )
 
-    print(f"  Data splits: {len(tr_idx)} train, {len(va_idx)} val, {len(te_idx)} test")
+    LOGGER.info(f"  Data splits: {len(tr_idx)} train, {len(va_idx)} val, {len(te_idx)} test")
 
     # Create data loaders
     loaders = make_loaders(features, labels, tr_idx, va_idx, te_idx, batch_size)
     train_loader, val_loader, test_loader = loaders
 
     if train_loader is None or test_loader is None:
-        print(f"  Insufficient data for cell type {cell_type}")
+        LOGGER.info(f"  Insufficient data for cell type {cell_type}")
         return None
 
     # Create and train model
@@ -410,7 +412,7 @@ def benchmark_single_celltype(
         n_layers=n_layers,
     ).to(device)
 
-    print(
+    LOGGER.info(
         f"  Training model with {sum(p.numel() for p in model.parameters())} parameters..."
     )
     model = train_and_select(model, loaders, epochs, lr, device)
@@ -428,19 +430,19 @@ def benchmark_single_celltype(
         "n_test": len(te_idx),
     }
 
-    print(
+    LOGGER.info(
         f"  Results: Loss={test_loss:.4f}, Accuracy={test_acc:.4f}, AUROC={test_auroc:.4f}"
     )
 
     return results
 
 
-def run_intrinsic_benchmark(adata, device, logger=print):
+def run_intrinsic_benchmark(adata, device):
     """
     Run the intrinsic benchmark evaluation on embeddings.
     Returns averaged AUROC and Accuracy across all cell types.
     """
-    logger("Running intrinsic perturbation benchmark...")
+    LOGGER.info("Running intrinsic perturbation benchmark...")
 
     # Fixed parameters
     embed_key = "X_emb"
@@ -470,13 +472,13 @@ def run_intrinsic_benchmark(adata, device, logger=print):
             min_cells_per_celltype,
         )
     except Exception as e:
-        logger(f"Error in data filtering: {e}")
+        LOGGER.info(f"Error in data filtering: {e}")
         return {
             "intrinsic_auroc_mean": float("nan"),
             "intrinsic_accuracy_mean": float("nan"),
         }
 
-    logger(f"Benchmarking {len(celltype_data)} cell types")
+    LOGGER.info(f"Benchmarking {len(celltype_data)} cell types")
 
     # Run benchmarking for each cell type
     all_results = []
@@ -499,7 +501,7 @@ def run_intrinsic_benchmark(adata, device, logger=print):
 
     # Calculate and report averaged metrics
     if not all_results:
-        logger("No valid results obtained from intrinsic benchmark!")
+        LOGGER.info("No valid results obtained from intrinsic benchmark!")
         return {
             "intrinsic_auroc_mean": float("nan"),
             "intrinsic_accuracy_mean": float("nan"),
@@ -513,19 +515,19 @@ def run_intrinsic_benchmark(adata, device, logger=print):
     avg_auroc = np.mean(aurocs) if aurocs else float("nan")
 
     # Print individual results
-    logger("\nPer-cell-type intrinsic benchmark results:")
+    LOGGER.info("\nPer-cell-type intrinsic benchmark results:")
     for result in all_results:
-        logger(
+        LOGGER.info(
             f"  {result['cell_type']:15s}: "
             f"Acc={result['accuracy']:.4f}, "
             f"AUROC={result['auroc']:.4f} "
             f"({result['n_perturbations']} perturbations, {result['n_test']} test cells)"
         )
 
-    logger(
+    LOGGER.info(
         f"\nIntrinsic benchmark averaged metrics (across {len(all_results)} cell types):"
     )
-    logger(f"  Average Accuracy: {avg_accuracy:.4f}")
-    logger(f"  Average AUROC: {avg_auroc:.4f}")
+    LOGGER.info(f"  Average Accuracy: {avg_accuracy:.4f}")
+    LOGGER.info(f"  Average AUROC: {avg_auroc:.4f}")
 
     return {"intrinsic_auroc_mean": avg_auroc, "intrinsic_accuracy_mean": avg_accuracy}
