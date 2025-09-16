@@ -212,7 +212,17 @@ class StatePerturb(HelicalBaseFoundationModel):
             )
 
         self.pert_names_all = adata.obs[self.config["pert_col"]].astype(str).values
-        self.setup_batch_processing(adata)
+        
+        # self.setup_batch_processing(adata)
+
+        self.batch_indices_all, self.uses_batch_encoder, self.config = setup_batch_processing(
+            adata=adata,
+            config=self.config,
+            uses_batch_encoder=self.uses_batch_encoder,
+            batch_onehot_map_path=self.batch_onehot_map_path,
+            batch_dim=self.batch_dim,
+            input_params=self.input_params
+)
         
         return adata
 
@@ -424,7 +434,29 @@ class StatePerturb(HelicalBaseFoundationModel):
 
     def setup_batch_processing(self, adata: sc.AnnData):
         """
-        Get the batch column from the AnnData object.
+        Set up batch processing for the perturbation model.
+
+        This method handles batch column detection and batch index generation for the
+        perturbation model. It automatically detects batch columns if not specified,
+        loads batch mapping files, and converts batch labels to indices for model input.
+
+        Parameters
+        ----------
+        adata : sc.AnnData
+            The AnnData object containing single-cell data. Should contain batch
+            information in obs columns if batch processing is needed.
+
+        Notes
+        -----
+        This method sets up batch processing by:
+        1. Loading batch onehot mapping from saved files if available
+        2. Auto-detecting batch columns if not specified in config
+        3. Converting batch labels to integer indices for model input
+        4. Setting self.batch_indices_all for use during prediction
+        5. Disabling batch encoder if required files or columns are missing
+
+        The method handles cases where batch information is missing gracefully by
+        disabling batch processing and logging appropriate warnings.
         """
         # derive batch indices (per-token integers) if needed
         self.batch_indices_all: Optional[np.ndarray] = None
@@ -500,10 +532,30 @@ class StatePerturb(HelicalBaseFoundationModel):
     
     def detect_celltype(self, adata: sc.AnnData):
         """
-        Get the cell type column from the AnnData object.
-        """
+        Detect and set up cell type column for the perturbation model.
 
-        # add docstrings
+        This method automatically detects the cell type column in the AnnData object
+        if not specified in the configuration. It searches through common cell type
+        column names and updates the configuration with the found column.
+
+        Parameters
+        ----------
+        adata : sc.AnnData
+            The AnnData object containing single-cell data. Should contain cell type
+            information in obs columns if cell type processing is needed.
+
+        Notes
+        -----
+        This method performs cell type column detection by:
+        1. Checking if celltype_col is already specified in config
+        2. If not specified, searching through common cell type column names
+        3. Using pick_first_present to find the first matching column
+        4. Updating self.config["celltype_col"] with the found column name
+        5. Logging the detected column or indicating no grouping if none found
+
+        The method only processes when self.config["celltype_col"] is None, allowing
+        users to override the auto-detection by setting the column name in the config.
+        """
 
         # choose cell type column
         if self.config["celltype_col"] is None:
@@ -564,3 +616,113 @@ class StatePerturb(HelicalBaseFoundationModel):
             if c in d.obs:
                 return c
         return None
+
+
+def setup_batch_processing(
+    adata: sc.AnnData,
+    config: dict,
+    uses_batch_encoder: bool,
+    batch_onehot_map_path: str,
+    batch_dim: int,
+    input_params: dict = None
+) -> tuple[Optional[np.ndarray], bool, dict]:
+    """
+    Set up batch processing for the perturbation model.
+
+    Parameters
+    ----------
+    adata : sc.AnnData
+        The AnnData object containing single-cell data.
+    config : dict
+        Configuration dictionary that will be modified in place.
+    uses_batch_encoder : bool
+        Whether the model uses batch encoding.
+    batch_onehot_map_path : str
+        Path to the batch onehot mapping file.
+    batch_dim : int
+        Expected batch dimension.
+    input_params : dict, optional
+        Additional input parameters.
+
+    Returns
+    -------
+    tuple
+        (batch_indices_all, uses_batch_encoder, config)
+        - batch_indices_all: Array of batch indices or None
+        - uses_batch_encoder: Updated boolean for batch encoder usage
+        - config: Updated configuration dictionary
+    """
+    # derive batch indices (per-token integers) if needed
+    batch_indices_all: Optional[np.ndarray] = None
+    batch_onehot_map = None
+
+    if os.path.exists(batch_onehot_map_path):
+        with open(batch_onehot_map_path, "rb") as f:
+            batch_onehot_map = pickle.load(f)
+
+    if uses_batch_encoder:
+        LOGGER.info("Using batch encoder")
+        # locate batch column
+        batch_col = config["batch_col"]
+        if batch_col is None:
+            LOGGER.info(
+                """Batch column not found, trying to 
+                    find batch column using default candidates""")
+            candidates = [
+                "gem_group",
+                "gemgroup", 
+                "batch",
+                "donor",
+                "plate",
+                "experiment",
+                "lane",
+                "batch_id",
+            ]
+
+            batch_col = next((c for c in candidates if c in adata.obs), None)
+            # Update config with found batch column
+            config["batch_col"] = batch_col
+
+        if batch_col is not None and batch_col in adata.obs:
+            LOGGER.info(f"Batch column found: {batch_col}")
+            raw_labels = adata.obs[batch_col].astype(str).values
+            if batch_onehot_map is None:
+                warnings.warn(
+                    f"Model has a batch encoder, "
+                    f"but '{batch_onehot_map_path}' not found. "
+                    "Batch info will be ignored; predictions may degrade."
+                )
+                uses_batch_encoder = False
+            else:
+                LOGGER.info("Batch onehot map found, converting labels to indices")
+                # Convert labels to indices using saved map
+                label_to_idx: Dict[str, int] = {}
+                for k, v in batch_onehot_map.items():
+                    key = str(k)
+                    idx = argmax_index_from_any(v, expected_dim=batch_dim)
+
+                    if idx is not None:
+                        label_to_idx[key] = idx
+                idxs = np.zeros(len(raw_labels), dtype=np.int64)
+                misses = 0
+                for i, lab in enumerate(raw_labels):
+                    if lab in label_to_idx:
+                        idxs[i] = label_to_idx[lab]
+                    else:
+                        misses += 1
+                        idxs[i] = 0  # fallback to zero
+                if misses:
+                    LOGGER.info(
+                        f"Warning: {misses} / {len(raw_labels)} "
+                        f"batch labels not found in saved mapping;"
+                        f"using index 0 as fallback."
+                    )
+                batch_indices_all = idxs
+        else:
+            LOGGER.info(
+                """Batch encoder present, but no batch column found;
+                    proceeding without batch indices."""
+            )
+            uses_batch_encoder = False
+
+    return batch_indices_all, uses_batch_encoder, config
