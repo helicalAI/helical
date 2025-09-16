@@ -16,4 +16,4 @@ if not LOGGER.hasHandlers() or len(LOGGER.handlers) == 0:
 
 from .state_config import StateConfig
 from .state_embeddings import StateEmbed
-from .state_transition import StatePerturb
+from .state_perturb import StatePerturb

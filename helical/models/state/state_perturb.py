@@ -36,7 +36,7 @@ class StatePerturb(HelicalBaseFoundationModel):
     from helical.models.state import StatePerturb, StateConfig
     import anndata as ad
 
-    config = StateConfig(batch_size=16)
+    config = StateConfig()
     state_perturb = StatePerturb(configurer=config)
 
     # Process your data

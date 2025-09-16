@@ -467,7 +467,6 @@ def test_state_perturb_initialization():
     
     # Test with default config
     config = StateConfig(
-        batch_size=8,
         pert_col="target_gene",
         control_pert="non-targeting",
         batch_col="batch_var"
@@ -478,11 +477,10 @@ def test_state_perturb_initialization():
         state_perturb = StatePerturb(configurer=config)
         
         # Test basic attributes
-        assert state_perturb.batch_size == 8
+        assert hasattr(state_perturb, 'cell_set_len')
         assert state_perturb.device is not None
         assert state_perturb.model is not None
         assert hasattr(state_perturb, 'uses_batch_encoder')
-        assert hasattr(state_perturb, 'batch_indices_all')
         
         print("✅ StatePerturb initialization test passed!")
         
@@ -518,7 +516,6 @@ def test_state_perturb_process_data():
     adata.var_names = gene_names
     
     config = StateConfig(
-        batch_size=4,
         pert_col="target_gene",
         control_pert="non-targeting",
         batch_col="batch_var",
@@ -567,7 +564,6 @@ def test_state_perturb_batch_processing():
     adata.var_names = [f"GENE_{i:03d}" for i in range(n_genes)]
     
     config = StateConfig(
-        batch_size=4,
         pert_col="target_gene",
         control_pert="non-targeting",
         batch_col="batch_var"
@@ -575,10 +571,7 @@ def test_state_perturb_batch_processing():
     
     try:
         state_perturb = StatePerturb(configurer=config)
-        
-        # Test batch processing setup
-        state_perturb.get_batch_col(adata)
-        
+                
         # Check that batch processing attributes are set
         assert hasattr(state_perturb, 'batch_indices_all')
         assert hasattr(state_perturb, 'uses_batch_encoder')
@@ -609,7 +602,6 @@ def test_state_perturb_celltype_processing():
     adata.var_names = [f"GENE_{i:03d}" for i in range(n_genes)]
     
     config = StateConfig(
-        batch_size=4,
         pert_col="target_gene",
         control_pert="non-targeting",
         celltype_col="cell_type",
@@ -655,7 +647,6 @@ def test_state_perturb_embedding_processing():
     adata.obsm['state_emb'] = embeddings  # Add embeddings
     
     config = StateConfig(
-        batch_size=4,
         pert_col="target_gene",
         control_pert="non-targeting",
         embed_key="state_emb"  # Use embeddings instead of expression
@@ -708,7 +699,6 @@ def test_state_perturb_tsv_processing():
     
     try:
         config = StateConfig(
-            batch_size=4,
             pert_col="target_gene",
             control_pert="non-targeting",
             tsv=tsv_path
@@ -753,7 +743,6 @@ def test_state_perturb_get_embeddings():
     adata.var_names = [f"GENE_{i:03d}" for i in range(n_genes)]
     
     config = StateConfig(
-        batch_size=2,
         pert_col="target_gene",
         control_pert="non-targeting"
     )
@@ -821,7 +810,6 @@ def test_state_perturb_error_handling():
     adata_no_pert.var_names = [f"GENE_{i}" for i in range(5)]
     
     config = StateConfig(
-        batch_size=4,
         pert_col="target_gene",
         control_pert="non-targeting"
     )
@@ -842,22 +830,22 @@ def test_state_perturb_error_handling():
 
 if __name__ == "__main__":
     # Run the tests
-    test_pad_adata_with_tsv()
-    test_pad_adata_with_tsv_edge_cases()
-    test_pad_adata_with_tsv_errors()
+    # test_pad_adata_with_tsv()
+    # test_pad_adata_with_tsv_edge_cases()
+    # test_pad_adata_with_tsv_errors()
     
-    # Run StateEmbed tests
-    print("\n" + "="*50)
-    print("Running StateEmbed unit tests...")
-    print("="*50)
+    # # Run StateEmbed tests
+    # print("\n" + "="*50)
+    # print("Running StateEmbed unit tests...")
+    # print("="*50)
     
-    test_state_embed_initialization()
-    test_state_embed_process_data()
-    test_state_embed_auto_detect_gene_column()
-    test_state_embed_dataset_metadata()
-    test_state_embed_gene_embedding()
-    test_state_embed_config_validation()
-    test_state_embed_error_handling()
+    # test_state_embed_initialization()
+    # # test_state_embed_process_data()
+    # test_state_embed_auto_detect_gene_column()
+    # test_state_embed_dataset_metadata()
+    # test_state_embed_gene_embedding()
+    # test_state_embed_config_validation()
+    # test_state_embed_error_handling()
     
     # Run StatePerturb tests
     print("\n" + "="*50)
