@@ -17,7 +17,7 @@ from helical.models.base_models import HelicalBaseFoundationModel
 from helical.models.state.state_config import StateConfig
 from helical.utils.downloader import Downloader
 from omegaconf import OmegaConf
-from scipy.sparse import csr_matrix, issparse
+from helical.utils.converter import convert_to_csr
 
 LOGGER = logging.getLogger(__name__)
 
@@ -172,7 +172,7 @@ class StateEmbed(HelicalBaseFoundationModel):
         """
 
         shape_dict = self.__load_dataset_meta_from_adata(adata)
-        adata = self._convert_to_csr(adata)
+        adata = convert_to_csr(adata)
         gene_column: Optional[str] = self._auto_detect_gene_column(adata)
 
         precision = get_precision_config(device_type=self.device_type)
@@ -319,29 +319,6 @@ class StateEmbed(HelicalBaseFoundationModel):
                     ds_embeddings = ds_emb.detach().cpu().float().numpy()
 
                     yield embeddings, ds_embeddings
-
-    def _convert_to_csr(self, adata):
-        """
-        Convert the adata.X matrix to CSR format if it's not already.
-
-        This helper method ensures that the data matrix is in CSR (Compressed Sparse Row)
-        format for efficient processing by the model.
-
-        Parameters
-        ----------
-        adata : anndata.AnnData
-            The AnnData object to convert.
-
-        Returns
-        -------
-        anndata.AnnData
-            The AnnData object with X matrix in CSR format.
-        """
-
-        if issparse(adata.X) and not isinstance(adata.X, csr_matrix):
-            LOGGER.info(f"Converting {type(adata.X).__name__} to csr_matrix format")
-            adata.X = csr_matrix(adata.X)
-        return adata
 
     def _auto_detect_gene_column(self, adata):
         """
