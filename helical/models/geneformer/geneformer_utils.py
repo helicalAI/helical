@@ -73,7 +73,7 @@ def _compute_embeddings_depending_on_mode(
             else:
                 length -= 1  # length is subtracted because just the cls is removed
 
-        batch_embeddings = mean_nonpadding_embs(embeddings, length)
+        batch_embeddings = mean_nonpadding_embs(embeddings, length).cpu().numpy()
 
     elif emb_mode == "gene":
         if cls_present:
@@ -89,7 +89,7 @@ def _compute_embeddings_depending_on_mode(
                 if eos_present:
                     ids = ids[:-1]
             for id, gene_emb in zip(ids, embedding):
-                cell_dict[token_to_ensembl_dict[id.item()]] = gene_emb
+                cell_dict[token_to_ensembl_dict[id.item()]] = gene_emb.cpu().numpy()
 
             batch_embeddings.append(pd.Series(cell_dict))
 
@@ -168,7 +168,7 @@ def get_embs(
     )
 
     overall_max_len = 0
-    with torch.no_grad(), torch.cuda.amp.autocast(enabled=True):
+    with torch.no_grad(), torch.amp.autocast("cuda", enabled=True):
         for i in trange(0, total_batch_length, forward_batch_size, leave=(not silent)):
             max_range = min(i + forward_batch_size, total_batch_length)
 
@@ -197,6 +197,7 @@ def get_embs(
             )
 
             embs_i = outputs.hidden_states[layer_to_quant]
+            print("Embedding output keys:", embs_i)
             # attention of size (batch_size, num_heads, sequence_length, sequence_length)
             if output_attentions:
                 attn_i = outputs.attentions[layer_to_quant]
@@ -209,7 +210,8 @@ def get_embs(
             #         for id in input_ids:
             #             gene_list.append(token_to_ensembl_dict[id.item()])
             #         input_genes.append(gene_list)
-
+            print(lengths)
+            print("Embs i shape", embs_i.shape)
             embs_list.extend(
                 _compute_embeddings_depending_on_mode(
                     embs_i,
@@ -223,6 +225,7 @@ def get_embs(
                     token_to_ensembl_dict,
                 )
             )
+            print("Embs List", embs_list)
 
             overall_max_len = max(overall_max_len, max_len)
             del outputs
@@ -231,20 +234,21 @@ def get_embs(
             del embs_i
 
             # torch.cuda.empty_cache()
-        if emb_mode != "gene":
-            embs_list = np.array(
-                [embs_list[i].cpu().numpy() for i in range(len(embs_list))]
-            )
+    if emb_mode != "gene":
+        # embs_list = np.array(
+        #     [embs_list[i].cpu().numpy() for i in range(len(embs_list))]
+        # )
+        embs_list = np.array(embs_list)
 
-        if output_attentions:
-            if output_genes:
-                return embs_list, attn_list, input_genes
-            return embs_list, attn_list
-
+    if output_attentions:
         if output_genes:
-            return embs_list, input_genes
+            return embs_list, attn_list, input_genes
+        return embs_list, attn_list
 
-        return embs_list
+    if output_genes:
+        return embs_list, input_genes
+
+    return embs_list
 
 
 def downsample_and_sort(data, max_ncells):

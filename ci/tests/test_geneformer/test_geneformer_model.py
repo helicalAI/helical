@@ -209,6 +209,8 @@ class TestGeneformer:
             )
             for key in data_list.index:
                 assert np.all(np.equal(embeddings[0][key], data_list[key]))
+        print("Mock Dataset:", mock_embeddings_v2)
+        print("Embeddings: ", embeddings)
 
         if emb_mode == "cls":
             assert (embeddings == np.array([6.0, 5.0, 7.0, 5.0, 5.0])).all()
