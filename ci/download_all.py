@@ -139,13 +139,8 @@ def main():
     downloader.download_via_name("state/state_embed/config.yaml")
 
     downloader.download_via_name("state/state_transition/config.yaml")
-    downloader.download_via_name("state/state_transition/final.ckpt")
     downloader.download_via_name("state/state_transition/pert_onehot_map.pt")
     downloader.download_via_name("state/state_transition/batch_onehot_map.pkl")
-    downloader.download_via_name("state/state_transition/var_dims.pkl")
-    downloader.download_via_name("state/state_transition/cell_type_onehot_map.pkl")
-    downloader.download_via_name("state/state_transition/data_module.torch")
-
     return True
 
 
