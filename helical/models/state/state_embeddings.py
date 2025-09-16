@@ -74,25 +74,22 @@ class StateEmbed(HelicalBaseFoundationModel):
         for file in self.config["embed_files_to_download"]:
             downloader.download_via_name(file)
 
-        self.model_dir = self.config["embed_dir"]
+        self.model_dir = os.path.join(self.config["model_path"], "state_embed")
         self.ckpt_path = os.path.join(self.model_dir, "se600m_model_weights.pt")
-        
+        self.device_type = "cuda" if torch.cuda.is_available() else "cpu"
+        self.model_conf = OmegaConf.load(os.path.join(self.model_dir, "config.yaml"))
+        self.batch_size = self.config["batch_size"]
+
         if not os.path.exists(self.ckpt_path):
             raise FileNotFoundError(f"Model checkpoint not found at {self.ckpt_path}")
-
         LOGGER.info(f"Using model checkpoint: {self.ckpt_path}")
 
         embedding_file = os.path.join(self.model_dir, "protein_embeddings.pt")
-        
-        self.device_type = "cuda" if torch.cuda.is_available() else "cpu"
         self.protein_embeds = (
             torch.load(embedding_file, weights_only=False, map_location=self.device_type)
             if os.path.exists(embedding_file)
             else None
         )
-
-        self.model_conf = OmegaConf.load(os.path.join(self.model_dir, "config.yaml"))
-        self.batch_size = self.config["batch_size"]
         self.load_model()
 
     def load_model(self):

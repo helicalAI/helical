@@ -71,7 +71,7 @@ class StatePerturb(HelicalBaseFoundationModel):
             downloader.download_via_name(file)
 
         self.pert_onehot_map_path, self.batch_onehot_map_path, self.checkpoint_path = [
-            os.path.join(self.config["perturb_dir"], f) for f in ["pert_onehot_map.pt", "batch_onehot_map.pkl", "ST_all.pt"]
+            os.path.join(self.config["model_path"], "state_transition", f) for f in ["pert_onehot_map.pt", "batch_onehot_map.pkl", "ST_all.pt"]
         ]
 
         model_configs = torch.load(self.checkpoint_path)
@@ -81,9 +81,9 @@ class StatePerturb(HelicalBaseFoundationModel):
         self.batch_dim = self.input_params.get("batch_dim", None)
         self.model = StateTransitionPerturbationModel(**self.input_params)
         self.model.load_state_dict(model_configs["state_dict"])
-        self.model.eval()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
+        self.model.eval()
 
         self.cell_set_len = (
             self.config["max_set_len"]
@@ -157,7 +157,7 @@ class StatePerturb(HelicalBaseFoundationModel):
             except Exception:
                 pass
 
-            guess = self.pick_first_present(
+            pick_first_present_ct = self.pick_first_present(
                 adata,
                 candidates=(
                     [
@@ -172,7 +172,7 @@ class StatePerturb(HelicalBaseFoundationModel):
                     else ["cell_type", "celltype", "cellType", "ctype", "celltype_col"]
                 ),
             )
-            self.config["celltype_col"] = guess
+            self.config["celltype_col"] = pick_first_present_ct
 
             celltype_col = self.config["celltype_col"]
             if celltype_col:

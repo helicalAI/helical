@@ -1,5 +1,5 @@
 from helical.constants.paths import CACHE_DIR_HELICAL
-import os
+from pathlib import Path
 
 
 class StateConfig:
@@ -10,12 +10,6 @@ class StateConfig:
     ----------
     output_path : str, optional, default="prediction.h5ad"
         Path where the prediction results will be saved as an h5ad file
-    checkpoint_name : str, optional, default="final.ckpt"
-        Name of the model checkpoint file to load
-    perturb_dir : str, optional, default=os.path.join(CACHE_DIR_HELICAL, "state", "state_transition")
-        Directory path where perturbation-related model files are stored
-    embed_dir : str, optional, default=os.path.join(CACHE_DIR_HELICAL, "state", "state_embed")
-        Directory path where embedding-related model files are stored
     batch_size : int, optional, default=16
         The batch size for inference
     batch_col : str, optional, default="batch_var"
@@ -52,9 +46,6 @@ class StateConfig:
     def __init__(
         self,
         output_path: str = "prediction.h5ad",
-        checkpoint_name: str = "final.ckpt",
-        perturb_dir: str = os.path.join(CACHE_DIR_HELICAL, "state", "state_transition"),
-        embed_dir: str = os.path.join(CACHE_DIR_HELICAL, "state", "state_embed"),
         batch_size: int = 16,
         batch_col: str = "batch_var",
         pert_col: str = "target_gene",
@@ -68,10 +59,8 @@ class StateConfig:
     ):
 
         self.config = {
+            "model_path": Path(CACHE_DIR_HELICAL, "state"),
             "batch_size": batch_size,
-            "perturb_dir": perturb_dir,
-            "embed_dir": embed_dir,
-            "checkpoint_name": checkpoint_name,
             "output_path": output_path,
             "control_pert": control_pert,
             "embed_key": embed_key,
