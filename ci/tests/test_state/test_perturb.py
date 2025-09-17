@@ -43,12 +43,39 @@ def test_initialization():
 def test_process_data():
     processed_adata = state_perturb.process_data(adata)
 
-    # Check that processed data is returned
+    # Basic structure
     assert processed_adata is not None
+    assert hasattr(processed_adata, 'n_obs')
+    assert hasattr(processed_adata, 'n_vars')
+    assert hasattr(processed_adata, 'X')
+    assert hasattr(processed_adata, 'obs')
+    assert hasattr(processed_adata, 'var')
+    
+    # Dimensions
     assert processed_adata.n_obs == n_cells
     assert processed_adata.n_vars == n_genes
+    
+    # Data types
+    assert isinstance(processed_adata.X, np.ndarray) or hasattr(processed_adata.X, 'toarray')
+    assert isinstance(processed_adata.obs, pd.DataFrame)
+    assert isinstance(processed_adata.var, pd.DataFrame)
+    
+    # Data validity
+    X_data = processed_adata.X.toarray() if hasattr(processed_adata.X, 'toarray') else processed_adata.X
+    assert np.all(X_data >= 0)  # Non-negative values
+    assert np.all(np.isfinite(X_data))  # Finite values
+    
+    # Batch indices
     assert hasattr(state_perturb, "batch_indices_all")
-
+    assert isinstance(state_perturb.batch_indices_all, (list, np.ndarray))
+    assert len(state_perturb.batch_indices_all) == n_cells
+    
+    # Data preservation - check that original data is preserved
+    original_X = adata.X.toarray() if hasattr(adata.X, 'toarray') else adata.X
+    processed_X = processed_adata.X.toarray() if hasattr(processed_adata.X, 'toarray') else processed_adata.X
+    assert np.allclose(original_X, processed_X)
+    assert processed_adata.obs.equals(adata.obs)
+    assert processed_adata.var.equals(adata.var)
 
 def test_celltype_processing():
     config = StateConfig(
