@@ -1,9 +1,6 @@
-import pytest
 import numpy as np
 import pandas as pd
 import scanpy as sc
-import tempfile
-import os
 from helical.models.state.model_dir.perturb_utils.utils import pad_adata_with_tsv
 
 def test_initialization():

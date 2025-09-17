@@ -185,7 +185,6 @@ def test_pert_col_missing_error_handling():
         logging.info(f"StatePerturb raised appropriate error for missing perturbation column: {type(e).__name__}")
 
 if __name__ == "__main__":
-
     test_initialization()
     test_process_data()
     test_celltype_processing()
