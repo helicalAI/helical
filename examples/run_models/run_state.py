@@ -13,7 +13,6 @@ import numpy as np
 def run_state(cfg: DictConfig):
 
     adata = sc.read_h5ad("yolksac_human.h5ad")
-    # for demonstration we subset to 10 cells and 2000 genes
     adata = adata[:10, :2000].copy()
 
     # embedding model
@@ -50,7 +49,6 @@ def run_state(cfg: DictConfig):
     # again we process the data and get the perturbed embeddings
     processed_data = state_perturb.process_data(adata)
     perturbed_embeds = state_perturb.get_embeddings(processed_data)
-
     return
 
 if __name__ == "__main__":

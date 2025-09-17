@@ -300,7 +300,6 @@ class PerturbationModel(ABC, nn.Module):
         Decode latent embeddings to gene expression space.
 
         Args:
-            latent_embeds: Embeddings in latent space
 
         Returns:
             Gene expression predictions or None if decoder is not available
