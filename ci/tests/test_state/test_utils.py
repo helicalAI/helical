@@ -4,10 +4,9 @@ import pandas as pd
 import scanpy as sc
 import tempfile
 from helical.models.state.model_dir.perturb_utils.utils import pad_adata_with_tsv
-
+import random
 
 def test_pad_adata_with_tsv():
-    import random
     # Create dummy AnnData object
     n_cells = 100
     n_genes = 50
@@ -76,7 +75,7 @@ def test_pad_adata_with_tsv():
 
 
 def test_pad_adata_with_tsv_edge_cases():
-    import random
+
     n_cells = 50
     n_genes = 20
     
@@ -115,7 +114,7 @@ def test_pad_adata_with_tsv_edge_cases():
 
 
 def test_pad_adata_with_tsv_errors():
-    import random
+
     adata = sc.AnnData(X=np.random.poisson(2, size=(10, 5)))
     adata.obs['perturbation'] = ['control'] * 10
     adata.var['gene_name'] = [random.choice(["ABCC3", "ACOX1", "AKIP1", "ANGPTL4"]) for i in range(5)]

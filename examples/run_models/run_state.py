@@ -21,6 +21,7 @@ def run_state(cfg: DictConfig):
     
     processed_data = state_embed.process_data(adata=adata)
     embeddings = state_embed.get_embeddings(processed_data)
+    assert embeddings.shape[0] == adata.n_obs
 
     perturbations = [
         "[('DMSO_TF', 0.0, 'uM')]",  # Control
@@ -44,10 +45,9 @@ def run_state(cfg: DictConfig):
     )
 
     state_perturb = StatePerturb(configurer=config)
-
-    # again we process the data and get the perturbed embeddings
     processed_data = state_perturb.process_data(adata)
     perturbed_embeds = state_perturb.get_embeddings(processed_data)
+    assert perturbed_embeds.shape[0] == adata.n_obs
     return
 
 if __name__ == "__main__":
