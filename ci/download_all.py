@@ -138,7 +138,7 @@ def main():
     downloader.download_via_name("state/state_embed/protein_embeddings.pt")
     downloader.download_via_name("state/state_embed/config.yaml")
 
-    downloader.download_via_name("state/state_transition/config.yaml")
+    downloader.download_via_name("state/state_transition/ST_all.pt")
     downloader.download_via_name("state/state_transition/pert_onehot_map.pt")
     downloader.download_via_name("state/state_transition/batch_onehot_map.pkl")
     return True
