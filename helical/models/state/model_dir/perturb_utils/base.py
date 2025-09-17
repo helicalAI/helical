@@ -223,7 +223,7 @@ class PerturbationModel(ABC, nn.Module):
         ):
             self.gene_decoder = LatentToGeneDecoder(**self.decoder_cfg)
             LOGGER.info(
-                f"Loaded decoder from checkpoint decoder_cfg: {self.decoder_cfg}"
+                f"Loaded decoder from checkpoint decoder_cfg"
             )
         elif not decoder_already_configured:
             # Only fall back to old logic if no decoder_cfg was saved and not externally configured

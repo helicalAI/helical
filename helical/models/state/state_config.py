@@ -56,6 +56,7 @@ class StateConfig:
         max_set_len: int = None,
         tsv: str = None,
         seed: int = 42,
+        
     ):
 
         self.config = {

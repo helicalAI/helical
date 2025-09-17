@@ -253,9 +253,6 @@ class FilteredGenesCounts(H5adSentenceDataset):
             new_mapping = np.array([global_pos.get(g, -1) for g in gene_names])
             if (new_mapping == -1).all():
                 # probably it contains ensembl id's instead
-                if self.gene_column is None:
-                    raise ValueError("No genes mapped to embedding file and no gene column specified. "
-                       "Please provide a gene column name or ensure gene names in index match protein embeddings.")
                 assert (
                     self.gene_column in adata.var.keys()
                 ), f"Column '{self.gene_column}' not found in adata.var. Available columns: {list(adata.var.keys())}"
