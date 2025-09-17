@@ -418,6 +418,16 @@ class StatePerturb(HelicalBaseFoundationModel):
                         embeddings[idx_window, :] = preds
                         start = end  # next window
 
+        # Handle case where no predictions were made
+        if embeddings is None:
+            LOGGER.warning("No predictions were made. This could happen if no control cells are available or no valid perturbations were found.")
+            if self.config["embed_key"] is None:
+                output_dim = adata.n_vars
+            else:
+                output_dim = self.model.output_dim
+            embeddings = np.zeros((n_total, output_dim), dtype=np.float32)
+            LOGGER.info(f"Created zero embeddings array with shape {embeddings.shape}")
+            
         key = "perturbed_embeds" if self.config["embed_key"] is None else f"{self.config['embed_key']}_perturbed_embeds"
         adata.obsm[key] = embeddings
         adata.write_h5ad(self.config["output_path"])

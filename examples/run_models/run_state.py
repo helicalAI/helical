@@ -37,7 +37,6 @@ def run_state(cfg: DictConfig):
     adata.obs['batch_var'] = batch_labels
 
     config = StateConfig(
-        embed_key=None,
         pert_col="target_gene",
         celltype_col="cell_type",
         control_pert="[('DMSO_TF', 0.0, 'uM')]",
