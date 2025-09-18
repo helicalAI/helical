@@ -107,43 +107,46 @@ def sum_ensembl_ids(
         assert (
             "ensembl_id" in data.var.columns
         ), "'ensembl_id' column missing from data.var"
-        gene_ids_in_dict = [
-            gene for gene in data.var.ensembl_id if gene in gene_token_dict.keys()
-        ]
-        if len(gene_ids_in_dict) == len(set(gene_ids_in_dict)):
-            token_genes_unique = True
-        else:
-            token_genes_unique = False
 
-        if collapse_gene_ids is False:
-            if token_genes_unique:
+        # Get the ensembl ids that exist in data
+        ensembl_ids = data.var.ensembl_id
+        # Check for duplicate Ensembl IDs if collapse_gene_ids is False.
+        # Comparing to gene_token_dict here, would not perform any mapping steps
+        if not collapse_gene_ids:
+            ensembl_id_check = [
+                gene for gene in ensembl_ids if gene in gene_token_dict.keys()
+            ]
+            if len(ensembl_id_check) == len(set(ensembl_id_check)):
                 return data
             else:
                 raise ValueError("Error: data Ensembl IDs non-unique.")
 
-        gene_ids_collapsed = [
-            gene_mapping_dict.get(str(gene_id).upper())
-            for gene_id in data.var.ensembl_id
-        ]
-        gene_ids_collapsed_in_dict = [
-            gene for gene in gene_ids_collapsed if gene in gene_token_dict.keys()
-        ]
+        ## NOTE genes_in_map_dict that comes from the original paper, has both gene names as keys and ENSEMBL IDs as keys!!
+        ## This is probably done to simplify the mapping and checks but not clean. Gene Name: ENSEMBL ID and ENSEMBL ID: ENSEMBL ID (same ensembl ID though).
 
-        if (
-            len(set(gene_ids_collapsed_in_dict)) == len(set(gene_ids_in_dict))
-        ) and token_genes_unique:
+        # Get the genes that exist in the mapping dictionary and the value of those genes
+        genes_in_map_dict = [
+            gene for gene in ensembl_ids if gene in gene_mapping_dict.keys()
+        ]
+        vals_from_map_dict = [gene_mapping_dict.get(gene) for gene in genes_in_map_dict]
+
+        # if the genes in the mapping dict and the value of those genes are of the same length,
+        # simply return the mapped values
+        if len(set(genes_in_map_dict)) == len(set(vals_from_map_dict)):
+            data.var["ensembl_id_collapsed"] = data.var.ensembl_id.str.upper().map(
+                gene_mapping_dict
+            )
             return data
-
+        # Genes need to be collapsed
         else:
-            data.var["gene_ids_collapsed"] = gene_ids_collapsed
-            data.var_names = gene_ids_collapsed
+            data.var["ensembl_id_collapsed"] = data.var.ensembl_id.str.upper().map(
+                gene_mapping_dict
+            )
+            data.var_names = data.var["ensembl_id_collapsed"]
             data = data[:, ~data.var.index.isna()]
             dup_genes = [
                 idx for idx, count in Counter(data.var_names).items() if count > 1
             ]
-
-            if len(dup_genes) == 0:
-                return data
 
             num_chunks = int(np.ceil(data.shape[0] / chunk_size))
 
@@ -169,16 +172,13 @@ def sum_ensembl_ids(
                 processed_chunks = pd.concat(processed_chunks, axis=1)
                 processed_genes.append(processed_chunks)
             processed_genes = pd.concat(processed_genes, axis=0)
-            var_df = pd.DataFrame({"gene_ids_collapsed": processed_genes.columns})
+            var_df = pd.DataFrame({"ensembl_id_collapsed": processed_genes.columns})
             var_df.index = processed_genes.columns
             processed_genes = sc.AnnData(X=processed_genes, obs=data.obs, var=var_df)
 
             data_dedup = data[:, ~data.var.index.isin(dup_genes)]  # Deduplicated data
             data_dedup = sc.concat([data_dedup, processed_genes], axis=1)
             data_dedup.obs = data.obs
-            data_dedup.var = data_dedup.var.rename(
-                columns={"gene_ids_collapsed": "ensembl_id"}
-            )
             return data_dedup
     else:
         raise ValueError(
@@ -408,7 +408,6 @@ class TranscriptomeTokenizer:
             file_format="h5ad",
             chunk_size=self.chunk_size,
         )
-
         if self.custom_attr_name_dict is not None:
             file_cell_metadata = {
                 attr_key: [] for attr_key in self.custom_attr_name_dict.keys()
@@ -496,11 +495,40 @@ class TranscriptomeTokenizer:
             keep_uncropped_input_ids (bool): Whether to keep the original uncropped input_ids. Defaults to False.
 
         Returns:
-            A dataset with formatted cell features.
+            A Hugging Face dataset with formatted cell features.
         """
         LOGGER.info("Creating dataset.")
-        # create dict for dataset creation
-        dataset_dict = {"input_ids": tokenized_cells}
+
+        cls_token = self.gene_token_dict.get("<cls>")
+        eos_token = self.gene_token_dict.get("<eos>")
+
+        processed_inputs = []
+        lengths = []
+        uncropped_inputs = [] if keep_uncropped_input_ids else None
+        uncropped_lengths = [] if keep_uncropped_input_ids else None
+        for cell in tokenized_cells:
+            if keep_uncropped_input_ids:
+                uncropped_inputs.append(cell)
+                uncropped_lengths.append(len(cell))
+
+            if self.special_token:
+                # truncate but keep room for CLS + EOS
+                cropped = cell[: self.model_input_size - 2]
+                processed = np.concatenate([[cls_token], cropped, [eos_token]])
+            else:
+                processed = cell[: self.model_input_size]
+            processed_inputs.append(processed)
+            lengths.append(len(processed))
+        # build dataset dict
+        dataset_dict = {
+            "input_ids": processed_inputs,
+            "length": lengths,
+        }
+
+        if keep_uncropped_input_ids:
+            dataset_dict["input_ids_uncropped"] = uncropped_inputs
+            dataset_dict["length_uncropped"] = uncropped_lengths
+
         if self.custom_attr_name_dict is not None:
             dataset_dict.update(cell_metadata)
 
@@ -508,40 +536,10 @@ class TranscriptomeTokenizer:
         if use_generator:
 
             def dict_generator():
-                for i in range(len(tokenized_cells)):
-                    yield {k: dataset_dict[k][i] for k in dataset_dict.keys()}
+                for i in range(len(processed_inputs)):
+                    yield {k: dataset_dict[k][i] for k in dataset_dict}
 
             output_dataset = Dataset.from_generator(dict_generator, num_proc=self.nproc)
         else:
             output_dataset = Dataset.from_dict(dataset_dict)
-
-        def format_cell_features(example):
-            # Store original uncropped input_ids in separate feature
-            if keep_uncropped_input_ids:
-                example["input_ids_uncropped"] = example["input_ids"]
-                example["length_uncropped"] = len(example["input_ids"])
-
-            # Truncate/Crop input_ids to input size
-            if self.special_token:
-                example["input_ids"] = example["input_ids"][
-                    0 : self.model_input_size - 2
-                ]  # truncate to leave space for CLS and EOS token
-                example["input_ids"] = np.insert(
-                    example["input_ids"], 0, self.gene_token_dict.get("<cls>")
-                )
-                example["input_ids"] = np.insert(
-                    example["input_ids"],
-                    len(example["input_ids"]),
-                    self.gene_token_dict.get("<eos>"),
-                )
-            else:
-                # Truncate/Crop input_ids to input size
-                example["input_ids"] = example["input_ids"][0 : self.model_input_size]
-            example["length"] = len(example["input_ids"])
-
-            return example
-
-        output_dataset_truncated = output_dataset.map(
-            format_cell_features, num_proc=self.nproc
-        )
-        return output_dataset_truncated
+        return output_dataset
