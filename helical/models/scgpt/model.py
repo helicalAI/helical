@@ -87,7 +87,10 @@ class scGPT(HelicalRNAModel):
         )
 
     def get_embeddings(
-        self, dataset: Dataset, output_attentions: bool = False, output_genes: bool = False
+        self,
+        dataset: Dataset,
+        output_attentions: bool = False,
+        output_genes: bool = False,
     ) -> np.array:
         """Gets the gene embeddings
 
@@ -150,12 +153,12 @@ class scGPT(HelicalRNAModel):
 
         resulting_embeddings = []
         resulting_attn_maps = []
-        input_genes = [] 
+        input_genes = []
 
         with (
             torch.no_grad(),
-            torch.cuda.amp.autocast(enabled=True),
-        ):  # torch.autocast(device_type=str(device),enabled=True): # torch.cuda.amp.autocast(enabled=True):
+            torch.amp.autocast("cuda", enabled=True),
+        ):
             for data_dict in tqdm(data_loader, desc="Embedding cells"):
                 input_gene_ids = data_dict["gene"].to(device)
 
@@ -188,20 +191,29 @@ class scGPT(HelicalRNAModel):
                     )
 
                 if output_genes and self.config["emb_mode"] != "gene":
-                    embeddings_batch, input_genes_batch = self._compute_embeddings_depending_on_mode(
-                        embeddings, data_dict, output_genes=output_genes)
+                    embeddings_batch, input_genes_batch = (
+                        self._compute_embeddings_depending_on_mode(
+                            embeddings, data_dict, output_genes=output_genes
+                        )
+                    )
                     resulting_embeddings.extend(embeddings_batch)
                     input_genes.extend(input_genes_batch)
                 else:
                     resulting_embeddings.extend(
-                        self._compute_embeddings_depending_on_mode(embeddings, data_dict, output_genes=output_genes)
+                        self._compute_embeddings_depending_on_mode(
+                            embeddings, data_dict, output_genes=output_genes
+                        )
                     )
 
         resulting_embeddings = self._normalize_embeddings(resulting_embeddings)
 
         LOGGER.info(f"Finished getting embeddings.")
         if output_attentions and output_genes:
-            return resulting_embeddings, torch.stack(resulting_attn_maps).cpu().numpy(), input_genes
+            return (
+                resulting_embeddings,
+                torch.stack(resulting_attn_maps).cpu().numpy(),
+                input_genes,
+            )
         elif output_attentions:
             return resulting_embeddings, torch.stack(resulting_attn_maps).cpu().numpy()
         elif output_genes:
@@ -255,7 +267,7 @@ class scGPT(HelicalRNAModel):
             batch_embeddings = []
             for ids in gene_ids:
                 gene_list = []
-                for id in ids[1:]: # skip the <cls> token
+                for id in ids[1:]:  # skip the <cls> token
                     if id != self.vocab[self.config["pad_token"]]:
                         gene_list.append(self.vocab_id_to_str[id])
                 input_genes.append(gene_list)

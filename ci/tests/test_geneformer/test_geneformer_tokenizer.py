@@ -58,21 +58,22 @@ class TestGeneformerTokenizer:
         "collapse_gene_ids, expected_shape, expected_exception, data_format",
         [
             (True, (2, 2), None, "h5ad"),
-            (False, (2, 3), ValueError, "h5ad"),
-            (True, (2, 3), ValueError, "bad_format"),
+            (False, (2, 4), ValueError, "h5ad"),
+            (True, (2, 4), ValueError, "bad_format"),
         ],
     )
     def test_sum_ensembl_ids_h5ad(
         self, collapse_gene_ids, expected_shape, expected_exception, data_format
     ):
         # Create a test AnnData object
-        adata = AnnData(X=sp.csr_matrix([[1, 2, 3], [4, 5, 6]]))
-        adata.var["ensembl_id"] = ["ENSG1", "ENSG2", "ENSG2"]
+        adata = AnnData(X=sp.csr_matrix([[1, 2, 3, 7], [4, 5, 6, 8]]))
+        adata.var["ensembl_id"] = ["ENSG1", "ENSG2", "ENSG3", "ENSG3"]
         adata.obs["n_counts"] = [6, 15]
 
         # Mock gene_mapping_dict and gene_token_dict
-        gene_mapping_dict = {"ENSG1": "ENSG1", "ENSG2": "ENSG2"}
-        gene_token_dict = {"ENSG1": 1, "ENSG2": 2}
+        # gene_mapping_dict = {"ENSG1": "ENSG1", "ENSG2": "ENSG2"}
+        gene_mapping_dict = {"ENSG1": "Gene1", "ENSG2": "Gene2", "ENSG3": "Gene2"}
+        gene_token_dict = {"ENSG1": 1, "ENSG2": 2, "ENSG3": 3}
 
         if expected_exception:
             with pytest.raises(expected_exception):
@@ -91,6 +92,7 @@ class TestGeneformerTokenizer:
                 gene_token_dict,
                 file_format=data_format,
             )
+            print(result.X)
             assert isinstance(result, AnnData)
             assert result.shape == expected_shape
 
