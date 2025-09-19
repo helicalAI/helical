@@ -8,6 +8,13 @@ from anndata import AnnData
 import torch
 import pandas as pd
 import numpy as np
+import anndata as ad
+
+geneformer1_config = GeneformerConfig(model_name="gf-12L-40M-i2048", batch_size=1)
+geneformer1 = Geneformer(geneformer1_config)
+ann_data = ad.read_h5ad("./yolksac_human.h5ad")
+dataset = geneformer1.process_data(ann_data[:1, :100])
+embeddings_geneformer_v1 = geneformer1.get_embeddings(dataset, output_genes=False)
 
 
 class TestGeneformer:
@@ -209,6 +216,8 @@ class TestGeneformer:
             )
             for key in data_list.index:
                 assert np.all(np.equal(embeddings[0][key], data_list[key]))
+        print("Mock Dataset:", mock_embeddings_v2)
+        print("Embeddings: ", embeddings)
 
         if emb_mode == "cls":
             assert (embeddings == np.array([6.0, 5.0, 7.0, 5.0, 5.0])).all()
@@ -303,3 +312,11 @@ class TestGeneformer:
         config = GeneformerConfig(model_name=old_model_name)
 
         assert config.config["model_name"] == new_model_name
+
+    def test_embedding_genformer_v1_output(self):
+        expected = np.loadtxt(
+            "ci/tests/data/geneformer_sample_embeddings.txt", delimiter=","
+        )
+        np.testing.assert_allclose(
+            embeddings_geneformer_v1.squeeze(), expected, rtol=1e-5, atol=1e-5
+        )

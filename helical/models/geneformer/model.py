@@ -174,7 +174,6 @@ class Geneformer(HelicalRNAModel):
         """
         LOGGER.info(f"Processing data for Geneformer.")
         self.ensure_rna_data_validity(adata, gene_names, use_raw_counts)
-
         # map gene symbols to ensemble ids if provided
         if gene_names != "ensembl_id":
             if (adata.var[gene_names].str.startswith("ENS").all()) or (
@@ -194,12 +193,9 @@ class Geneformer(HelicalRNAModel):
                 raise ValueError(message)
 
         tokenized_cells, cell_metadata = self.tk.tokenize_anndata(adata)
-
-        # tokenized_cells, cell_metadata =  self.tk.tokenize_anndata(adata)
         tokenized_dataset = self.tk.create_dataset(
             tokenized_cells, cell_metadata, use_generator=False
         )
-
         if output_path:
             output_path = Path(output_path).with_suffix(".dataset")
             tokenized_dataset.save_to_disk(output_path)
@@ -208,7 +204,10 @@ class Geneformer(HelicalRNAModel):
         return tokenized_dataset
 
     def get_embeddings(
-        self, dataset: Dataset, output_attentions: bool = False, output_genes: bool = False
+        self,
+        dataset: Dataset,
+        output_attentions: bool = False,
+        output_genes: bool = False,
     ) -> np.array:
         """Gets the gene embeddings from the Geneformer model
 
