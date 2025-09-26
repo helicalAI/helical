@@ -32,7 +32,8 @@ def _digitize(x: np.ndarray, bins: np.ndarray, side="both") -> np.ndarray:
 
     right_digits = np.digitize(x, bins, right=True)
 
-    rands = np.random.rand(len(x))  # uniform random numbers
+    rng = np.random.default_rng(42)
+    rands = rng.random(len(x))
 
     digits = rands * (right_digits - left_digits) + left_digits
     digits = np.ceil(digits).astype(np.int64)

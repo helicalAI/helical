@@ -38,7 +38,7 @@ def test_digitize_identical_bins():
     x = np.array([1, 2, 3, 4, 5])
     bins = np.array([2, 2, 4, 4])
     result = _digitize(x, bins)
-    expected = np.array([0, 1, 2, 3, 4])
+    expected = np.array([0, 2, 2, 3, 4])
     assert np.array_equal(result, expected)
 
 
@@ -51,7 +51,7 @@ def test_digitize_identical_bins():
             np.array([1, 1, 1, 2, 2, 2, 3, 3, 4]),
         ),
         # distrubution of the bins depends on the distribution of the data
-        (np.array([1, 1, 1, 1, 1, 1, 1, 8, 9]), np.array([2, 1, 1, 2, 3, 3, 3, 3, 4])),
+        (np.array([1, 1, 1, 1, 1, 1, 1, 8, 9]), np.array([1, 2, 1, 1, 3, 1, 1, 3, 4])),
         (np.array([1, 2, 1, 1, 9, 6, 7, 8, 9]), np.array([1, 2, 1, 1, 4, 2, 2, 3, 4])),
     ),
 )

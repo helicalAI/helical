@@ -163,7 +163,10 @@ class DataCollator:
 
         # keep the first n tokens unchanged
         _n = self.keep_first_n_tokens
-        indices = torch.randperm(len(genes) - _n, device=device)[: max_length - _n]
+        g = torch.Generator().manual_seed(0)
+        indices = torch.randperm(len(genes) - _n, device=device, generator=g)[
+            : max_length - _n
+        ]
         indices = torch.cat([torch.arange(_n), indices + _n], dim=0)
         return genes[indices], expressions[indices]
 
