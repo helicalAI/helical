@@ -54,3 +54,15 @@ outputs
 
 # Vortex repo
 vortex
+
+# state repo 
+sample_vcc_data/
+helical/models/state/model_dir/train_utils/
+helical/models/state/fine_tuning_model.py 
+helical/models/state/state_train.py 
+helical/models/state/test.ipynb
+helical/models/state/st_configs.yaml
+helical/models/state/tutorial_all.ipynb
+
+examples/fine_tune_models/fine_tune_state.py
+docs/fine_tuning_models/state_fine_tune.md

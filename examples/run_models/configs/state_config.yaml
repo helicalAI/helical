@@ -1,0 +1,11 @@
+output_path: prediction.h5ad
+batch_size: 16
+batch_col: batch_var
+pert_col: target_gene
+control_pert: non-targeting
+embed_key: null
+celltype_col: null
+celltypes: null
+max_set_len: null
+tsv: null
+seed: 42

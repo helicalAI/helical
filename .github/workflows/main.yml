@@ -128,6 +128,10 @@ jobs:
       - name: Fine-tune Caduceus
         run: |
           python examples/fine_tune_models/fine_tune_caduceus.py
+        
+      - name: Execute State
+        run: |
+          python examples/run_models/run_state.py
 
   notebooks:
     needs: tests
