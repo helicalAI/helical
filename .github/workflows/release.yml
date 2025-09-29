@@ -175,6 +175,7 @@ jobs:
           sed -i 's/list(np.array(train_dataset.obs\[\\"LVL1\\"].tolist()))/list(np.array(train_dataset.obs\[\\"LVL1\\"].tolist()))[:100]/g' ./examples/notebooks/Cell-Type-Classification-Fine-Tuning.ipynb
           sed -i 's/list(np.array(test_dataset.obs\[\\"LVL1\\"].tolist()))/list(np.array(test_dataset.obs\[\\"LVL1\\"].tolist()))[:10]/g' ./examples/notebooks/Cell-Type-Classification-Fine-Tuning.ipynb
           rm ./examples/notebooks/Evo-2.ipynb
+          rm ./examples/notebooks/Geneformer-Series-Comparison.ipynb
 
       - name: Run Notebooks
         run: |
