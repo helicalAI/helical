@@ -131,8 +131,16 @@ def main():
 
     downloader.download_via_link(
         Path("yolksac_human.h5ad"),
-        "https://huggingface.co/datasets/helical-ai/yolksac_human/resolve/main/data/17_04_24_YolkSacRaw_F158_WE_annots.h5ad?download=true",
-    )
+        "https://huggingface.co/datasets/helical-ai/yolksac_human/resolve/main/data/17_04_24_YolkSacRaw_F158_WE_annots.h5ad?download=true",)
+    
+
+    downloader.download_via_name("state/state_embed/se600m_model_weights.pt")
+    downloader.download_via_name("state/state_embed/protein_embeddings.pt")
+    downloader.download_via_name("state/state_embed/config.yaml")
+
+    downloader.download_via_name("state/state_transition/ST_all.pt")
+    downloader.download_via_name("state/state_transition/pert_onehot_map.pt")
+    downloader.download_via_name("state/state_transition/batch_onehot_map.pkl")
     return True
 
 

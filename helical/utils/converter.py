@@ -1,7 +1,7 @@
 import pandas as pd
 import anndata as ad
 import numpy as np
-from scipy.sparse import lil_matrix
+from scipy.sparse import lil_matrix, csr_matrix, issparse
 from datasets import Dataset
 import logging
 
@@ -57,3 +57,27 @@ def get_anndata_from_hf_dataset(dataset: Dataset) -> ad.AnnData:
     ann_data.var["gene_name"] = ann_data.var_names
 
     return ann_data
+
+
+def convert_to_csr(adata: ad.AnnData):
+    """
+    Convert the adata.X matrix to CSR format if it's not already.
+
+    This helper method ensures that the data matrix is in CSR (Compressed Sparse Row)
+    format for efficient processing by the model.
+
+    Parameters
+    ----------
+    adata : anndata.AnnData
+        The AnnData object to convert.
+
+    Returns
+    -------
+    anndata.AnnData
+        The AnnData object with X matrix in CSR format.
+    """
+
+    if issparse(adata.X) and not isinstance(adata.X, csr_matrix):
+        LOGGER.info(f"Converting {type(adata.X).__name__} to csr_matrix format")
+        adata.X = csr_matrix(adata.X)
+    return adata
