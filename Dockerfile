@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:2.5.0-cuda12.4-cudnn9-runtime
+FROM pytorch/pytorch:2.9.0-cuda12.8-cudnn9-runtime
 
 RUN apt-get update -y \
     && apt-get upgrade -y \
