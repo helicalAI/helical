@@ -36,11 +36,12 @@ dependencies = [
     'einops==0.8.0',
     'omegaconf==2.3.0',
     'hydra-core==1.3.2',
-    'louvain==0.8.2',
+    'louvain; platform_system != "Windows"',
+    'python-louvain; platform_system == "Windows"',
     'pyensembl',
-    'datasets==4.2.0'
+    'datasets==4.2.0',
+    'jupyter>=1.1.1'
 ]
-
 
 [project.optional-dependencies]
 mamba-ssm = [
@@ -52,6 +53,9 @@ evo-2 = [
     'biopython==1.85',
     'transformer-engine[pytorch]==2.8.0',
 ]
+
+[tool.hatch.envs.default.env-vars]
+PIP_EXTRA_INDEX_URL = "https://download.pytorch.org/whl/cu130"
 
 [tool.hatch.metadata]
 allow-direct-references = true # Allows installing package from git
