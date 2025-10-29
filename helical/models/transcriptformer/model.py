@@ -129,7 +129,7 @@ class TranscriptFormer(HelicalRNAModel):
 
         logger.info("Loading model checkpoint")
         state_dict = torch.load(
-            self.model.inference_config.load_checkpoint, weights_only=True
+            self.model.inference_config.load_checkpoint, weights_only=True, map_location=torch.device("cuda")
         )
 
         # Filter out auxiliary embedding weights if aux_vocab_path is None
@@ -143,6 +143,7 @@ class TranscriptFormer(HelicalRNAModel):
 
         self.model.load_state_dict(state_dict)
         logger.info("Model weights loaded successfully")
+        del state_dict
 
         # Perform embedding surgery if specified in config
         if self.model.inference_config.pretrained_embedding is not None:
