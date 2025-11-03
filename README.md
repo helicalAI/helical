@@ -11,13 +11,17 @@
 
 # What is Helical ?
 
-Helical provides a framework for state-of-the-art pre-trained bio foundation models on genomics and transcriptomics modalities.
+Helical builds the Virtual AI Lab for Biological Discovery.
+This open framework provides access to state-of-the-art Bio Foundation Models across genomics, transcriptomics, and single-cell data modalities.
 
-Helical simplifies the entire application lifecycle when building with bio foundation models. You will be able to:
-- Leverage the latest bio foundation models through our easy-to-use python package
-- Run example notebooks on key downstream tasks from examples
+Helical simplifies the entire lifecycle of applying Bio Foundation Models — from model access to fine-tuning and in-silico experimentation. With Helical's open-source framework, you can:
+	•	Leverage the latest Bio Foundation Models through a simple Python interface
+	•	Run example notebooks for key downstream tasks
+	•	Customize models and workflows for your own datasets and experiments
+  
+This repository is continuously updated with new models, benchmarks, and utilities.
+Join us in shaping the next generation of AI-powered biology.
 
-We will update this repo on a regular basis with new models, benchmarks, modalities and functions - so stay tuned.
 Let’s build the most exciting AI-for-Bio community together!
 <div align="center">
 
