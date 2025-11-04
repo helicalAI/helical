@@ -105,7 +105,7 @@ def convert_list_ensembl_ids_to_gene_symbols(
     """
     df = _get_ensembl_mart_df(species=species)
     mapping = df.drop_duplicates(subset="ensembl_id").set_index("ensembl_id")["gene_name"]
-    return list(pd.Series(ensembl_ids, dtype="object").map(mapping))
+    return list(pd.Series(list(ensembl_ids), dtype="object").map(mapping).where(pd.notna, None))
 
 
 def convert_list_gene_symbols_to_ensembl_ids(
@@ -128,4 +128,4 @@ def convert_list_gene_symbols_to_ensembl_ids(
     """
     df = _get_ensembl_mart_df(species=species)
     mapping = df.drop_duplicates(subset="gene_name").set_index("gene_name")["ensembl_id"]
-    return list(pd.Series(gene_symbols, dtype="object").map(mapping))
+    return list(pd.Series(list(gene_symbols), dtype="object").map(mapping).where(pd.notna, None))
