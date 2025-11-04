@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "helical"
-version = "1.4.7"
+version = "1.4.8"
 authors = [
   { name="Helical Team", email="support@helical-ai.com" },
 ]
@@ -37,7 +37,7 @@ dependencies = [
     'omegaconf==2.3.0',
     'hydra-core==1.3.2',
     'louvain==0.8.2',
-    'pyensembl',
+    'pybiomart',
     'datasets==3.6.0'
 ]
 
