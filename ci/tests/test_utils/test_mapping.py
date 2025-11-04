@@ -1,8 +1,6 @@
 from helical.utils.mapping import map_gene_symbols_to_ensembl_ids
 from helical.utils.mapping import map_ensembl_ids_to_gene_symbols
 from helical.utils.mapping import convert_list_ensembl_ids_to_gene_symbols, convert_list_gene_symbols_to_ensembl_ids
-from pyensembl.species import human
-from pyensembl.species import macaque
 import anndata as ad
 import pytest
 
@@ -15,7 +13,7 @@ def test_map_gene_symbols_to_ensembl_ids():
     CD99 should be mapped to ENSG00000002586.
     """
     adata.var["gene_names"] = ["CD99"] * adata.var.shape[0]
-    map_gene_symbols_to_ensembl_ids(adata, gene_names="gene_names", species=human)
+    map_gene_symbols_to_ensembl_ids(adata, gene_names="gene_names", species='hsapiens')
     assert all(adata.var["ensembl_id"] == ["ENSG00000002586"] * adata.var.shape[0])
 
 
@@ -25,7 +23,7 @@ def test_map_ensembl_ids_to_gene_symbols():
     ENSG00000002330 should be mapped to BAD.
     """
     adata.var["ensembl_id"] = ["ENSG00000002330"] * adata.var.shape[0]
-    map_ensembl_ids_to_gene_symbols(adata, ensembl_id_key="ensembl_id", species=human)
+    map_ensembl_ids_to_gene_symbols(adata, ensembl_id_key="ensembl_id", species='hsapiens')
     assert all(adata.var["gene_names"] == ["BAD"] * adata.var.shape[0])
 
 
@@ -39,17 +37,17 @@ def test_map_gene_symbols_to_ensembl_ids_macaque():
     Note, this test may be long the first time it is being run because the database for macaque needs to be downloaded.
     """
     adata.var["gene_names"] = ["CD99"] * adata.var.shape[0]
-    map_gene_symbols_to_ensembl_ids(adata, gene_names="gene_names", species=macaque)
+    map_gene_symbols_to_ensembl_ids(adata, gene_names="gene_names", species='mfascicularis')
     assert all(adata.var["ensembl_id"] == ["ENSMFAG00000000608"] * adata.var.shape[0])
 
 
 def test_convert_list_ensembl_ids_to_gene_symbols():
     ensembl_ids = ["ENSG00000139618", "ENSG00000139620"]
-    gene_symbols = convert_list_ensembl_ids_to_gene_symbols(ensembl_ids, species=human)
+    gene_symbols = convert_list_ensembl_ids_to_gene_symbols(ensembl_ids, species='hsapiens')
     assert gene_symbols == ["BRCA2", "KANSL2"]
 
 
 def test_convert_list_gene_symbols_to_ensembl_ids():
     gene_symbols = ["BRCA2", "KANSL2"]
-    ensembl_ids = convert_list_gene_symbols_to_ensembl_ids(gene_symbols, species=human)
+    ensembl_ids = convert_list_gene_symbols_to_ensembl_ids(gene_symbols, species='hsapiens')
     assert ensembl_ids == ["ENSG00000139618", "ENSG00000139620"]
