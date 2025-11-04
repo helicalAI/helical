@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "helical"
-version = "1.4.7"
+version = "1.4.8"
 authors = [
   { name="Helical Team", email="support@helical-ai.com" },
 ]
