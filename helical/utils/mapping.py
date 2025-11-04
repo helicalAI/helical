@@ -24,7 +24,9 @@ def _get_ensembl_mart_df(species: str = "hsapiens") -> pd.DataFrame:
     """
     server = pybiomart.Server(host="http://www.ensembl.org")
     dataset = server.marts["ENSEMBL_MART_ENSEMBL"].datasets[f"{species}_gene_ensembl"]
-    return dataset.query(attributes=["ensembl_gene_id", "external_gene_name"])
+    df = dataset.query(attributes=["ensembl_gene_id", "external_gene_name"])
+    df = df.rename(columns={"Gene stable ID": "ensembl_id", "Gene name": "gene_name"})
+    return df.sort_values(by="ensembl_id")
 
 
 def map_gene_symbols_to_ensembl_ids(
@@ -102,7 +104,7 @@ def convert_list_ensembl_ids_to_gene_symbols(
         Gene symbols aligned to the input order (None if not found).
     """
     df = _get_ensembl_mart_df(species=species)
-    mapping = df.drop_duplicates(subset="Gene stable ID").set_index("Gene stable ID")["Gene name"]
+    mapping = df.drop_duplicates(subset="ensembl_id").set_index("ensembl_id")["gene_name"]
     return list(pd.Series(ensembl_ids, dtype="object").map(mapping))
 
 
@@ -125,5 +127,5 @@ def convert_list_gene_symbols_to_ensembl_ids(
         Ensembl Gene IDs aligned to the input order (None if not found).
     """
     df = _get_ensembl_mart_df(species=species)
-    mapping = df.drop_duplicates(subset="Gene name").set_index("Gene name")["Gene stable ID"]
+    mapping = df.drop_duplicates(subset="gene_name").set_index("gene_name")["ensembl_id"]
     return list(pd.Series(gene_symbols, dtype="object").map(mapping))
