@@ -22,11 +22,11 @@ class TestTranscriptFormerModel:
         dataset = self.transcriptformer.process_data([self.data])
         assert len(dataset) == 1
         assert all(
-            dataset.files_list[0].var["ensembl_id"].astype(str).values
+            dataset.files_list[0].var["ensembl_id"].values
             == [
                 "ENSG00000121410",
                 "ENSG00000036549",
-                "nan",
+                None,
                 "ENSG00000074755",
             ]
         )
