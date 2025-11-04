@@ -20,7 +20,7 @@ def _get_ensembl_mart_df(species: str = "hsapiens") -> pd.DataFrame:
     Returns
     -------
     pandas.DataFrame
-        DataFrame with columns "Gene stable ID" and "Gene name".
+        DataFrame with columns "ensembl_id" and "gene_name".
     """
     server = pybiomart.Server(host="http://www.ensembl.org")
     dataset = server.marts["ENSEMBL_MART_ENSEMBL"].datasets[f"{species}_gene_ensembl"]
