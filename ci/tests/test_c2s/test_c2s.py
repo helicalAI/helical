@@ -225,7 +225,7 @@ class TestGetEmbeddings:
 
 
 class TestGetPerturbations:
-    """Test get_pertubations method."""
+    """Test get_perturbations method."""
     
     def test_get_perturbations_comprehensive(self, cell2sen_model, processed_dataset_with_perturbation):
         """Test perturbation generation comprehensively."""
@@ -233,7 +233,7 @@ class TestGetPerturbations:
         original_batch_size = cell2sen_model.batch_size
         cell2sen_model.batch_size = 5
         
-        dataset, perturbed_sentences = cell2sen_model.get_pertubations(processed_dataset_with_perturbation)
+        dataset, perturbed_sentences = cell2sen_model.get_perturbations(processed_dataset_with_perturbation)
         assert isinstance(perturbed_sentences, list)
         assert len(perturbed_sentences) == len(dataset)
         assert all(isinstance(s, str) or s is None for s in perturbed_sentences)
@@ -247,7 +247,7 @@ class TestGetPerturbations:
     def test_get_perturbations_with_perturbations_list(self, cell2sen_model, processed_dataset_basic):
         """Test perturbation generation with provided perturbations_list."""
         perturbations_list = ['IFNg'] * len(processed_dataset_basic)
-        dataset, perturbed_sentences = cell2sen_model.get_pertubations(
+        dataset, perturbed_sentences = cell2sen_model.get_perturbations(
             processed_dataset_basic,
             perturbations_list=perturbations_list
         )
@@ -268,7 +268,7 @@ class TestGetPerturbations:
         cell2sen_model.perturbation_column = 'perturbation'
         
         dataset = cell2sen_model.process_data(sample_anndata_copy)
-        dataset, perturbed_sentences = cell2sen_model.get_pertubations(dataset)
+        dataset, perturbed_sentences = cell2sen_model.get_perturbations(dataset)
         assert len(perturbed_sentences) == len(dataset)
         assert any(s is None for s in perturbed_sentences)
         assert any(s is not None for s in perturbed_sentences)
@@ -277,14 +277,14 @@ class TestGetPerturbations:
     def test_get_perturbations_all_none_error(self, cell2sen_model, processed_dataset_basic):
         """Test error when all perturbations are None."""
         with pytest.raises(ValueError, match="No valid perturbations"):
-            cell2sen_model.get_pertubations(processed_dataset_basic)
+            cell2sen_model.get_perturbations(processed_dataset_basic)
     
     def test_get_perturbations_length_mismatch_error(self, cell2sen_model, processed_dataset_basic):
         """Test error when perturbations_list length doesn't match dataset."""
         perturbations_list = ['IFNg'] * 5  # Wrong length
         
         with pytest.raises(ValueError, match="must match dataset length"):
-            cell2sen_model.get_pertubations(
+            cell2sen_model.get_perturbations(
                 processed_dataset_basic,
                 perturbations_list=perturbations_list
             )
