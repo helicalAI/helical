@@ -149,7 +149,7 @@ jobs:
       
       - name: Execute Cell2Sen
         run: |
-          python examples/run_models/run_c2s.py ++device="cuda"
+          python examples/run_models/run_c2s.py
 
   notebooks:
     needs: tests
