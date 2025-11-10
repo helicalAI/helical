@@ -1,0 +1,346 @@
+'''
+
+This package implements the Cell2Sen model from the open-source weights available on huggingface and the Gemma 2-2b/27b Model.
+We add custom code that follows the original method outlined in the C2S-Scale paper. 
+The model supports pre-processing and generating embeddings/perturbations.
+See the tutorial notebook for usage. 
+
+'''
+
+import torch
+import anndata
+import numpy as np
+from tqdm import tqdm
+from helical.models.base_models import HelicalBaseFoundationModel
+# from helical.utils.downloader import Downloader
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from sklearn.linear_model import LinearRegression
+from datasets import Dataset
+from .config import PERTURBATION_PROMPT, EMBEDDING_PROMPT
+import logging
+from .config import Cell2SenConfig
+
+LOGGER = logging.getLogger(__name__)
+
+class Cell2Sen(HelicalBaseFoundationModel):
+    """
+    Cell2Sen Model.
+
+    The Cell2Sen Model is a transformer/Gemma-based model that can be used to generate cell sentences from gene expression data.
+
+    Example
+    -------
+    ```python
+    from helical.models.cell2sen import Cell2Sen, Cell2SenConfig
+    import anndata as ad
+
+    config = Cell2SenConfig(batch_size=16)
+    cell2sen = Cell2Sen(configurer=config)
+
+    # Process your data
+    dataloader = cell2sen.process_data(adata)
+
+    # Get embeddings
+    embeddings = cell2sen.get_embeddings(dataloader)
+    print("State embeddings shape:", embeddings.shape)
+    ```
+
+    Parameters
+    ----------
+    configurer : Cell2SenConfig, optional, default=None
+        The model configuration. If None, uses default Cell2SenConfig.
+
+    """
+
+    def __init__(self, configurer: Cell2SenConfig = None) -> None:
+        super().__init__()
+
+        if configurer is None:
+            self.config = Cell2SenConfig().config
+        else:
+            self.config = configurer.config
+
+        # downloader = Downloader()
+        # for file in self.config["list_of_files_to_download"]:
+        #     downloader.download_via_name(file)
+
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        if self.config["dtype"] == "bfloat16":
+            self.torch_dtype = torch.bfloat16
+        elif self.config["dtype"] == "float32":
+            self.torch_dtype = torch.float32
+        else:
+            raise ValueError(f"Dtype {self.config['dtype']} not supported. Please choose from 'bfloat16' or 'float32'.")
+
+        if self.torch_dtype == "bfloat16" and self.device == "cpu":
+            LOGGER.warning("Bfloat16 is not supported on CPU. Defaulting to 'float32' instead.")
+            self.torch_dtype = torch.float32
+       
+        self.model = AutoModelForCausalLM.from_pretrained(self.config["hf_model_path"],torch_dtype=self.torch_dtype, cache_dir=self.config["model_path"]).to(self.device)
+        self.tokenizer = AutoTokenizer.from_pretrained(self.config["hf_model_path"], cache_dir=self.config["model_path"])
+        self.model.eval()
+       
+        self.batch_size = self.config['batch_size']
+        self.max_new_tokens = self.config['max_new_tokens']
+        self.organism = self.config['organism']
+        self.perturbation_column = self.config['perturbation_column']
+        self.return_fit = self.config['return_fit']
+        
+        LOGGER.info("Successfully loaded model")
+
+    def process_data(
+        self, 
+        anndata: anndata.AnnData, 
+    ):
+        """
+        Process anndata to create a HuggingFace Dataset with cell sentences and fit parameters.
+        
+        Parameters:
+        -----------
+        anndata : AnnData
+            Annotated data object with gene expression
+        min_genes : int
+            Minimum number of genes expressed per cell
+        min_counts : int
+            Minimum total counts per cell
+        min_cells : int
+            Minimum number of cells expressing a gene
+        max_cells : int, optional
+            Maximum number of cells to process
+        max_genes : int, optional
+            Maximum number of genes to process
+        organism : str, optional
+            Organism name. If None, tries to extract from anndata.uns or uses default
+        perturbation_column : str, optional
+            Column name in anndata.obs to use for perturbations. If None, no perturbations are created.
+        Returns:
+        --------
+        dataset : Dataset
+            HuggingFace Dataset with fields: cell_sentence, fit_parameters, organism, perturbations
+        """
+
+        LOGGER.info("Processing data")
+
+        X = anndata.X    
+        if hasattr(X, 'toarray'):
+            X = X.toarray()
+
+        X_log = np.log10(X + 1)
+        # gene names correcponding to each cell in order
+        # anndata.X[i, j] is the expression of the j-th gene in the i-th cell
+        gene_names = anndata.var_names.values
+        cell_sentences = []
+        fit_parameters = []  # Will be list of lists: [slope, intercept, r_squared] for each cell
+
+        if self.organism is None:
+            if 'organism' in anndata.uns:
+                self.organism = anndata.uns['organism']
+            elif 'organism' in anndata.obs.columns:
+                # If organism varies per cell, use first one or most common
+                self.organism = anndata.obs['organism'].iloc[0] if len(anndata.obs['organism'].unique()) == 1 else anndata.obs['organism'].mode()[0]
+            elif 'species' in anndata.uns:
+                self.organism = anndata.uns['species']
+            elif 'species' in anndata.obs.columns:
+                self.organism = anndata.obs['species'].iloc[0] if len(anndata.obs['species'].unique()) == 1 else anndata.obs['species'].mode()[0]
+            else:
+                self.organism = "unknown"  # Default if not found
+
+        # Process each cell
+        progress_bar = tqdm(total=X_log.shape[0], desc="Processing cells")
+        for cell_idx in range(X_log.shape[0]):
+            cell_expr = X_log[cell_idx, :]
+            
+            # Rank genes by expression (highest = rank 1)
+            ranked_indices = np.argsort(cell_expr)[::-1]
+            assert len(ranked_indices) != 0, "No genes expressed in cell"
+            expr_values = cell_expr[ranked_indices]  # Expression values in descending order
+
+            if self.return_fit:
+                non_zero_mask = expr_values > 0
+                if non_zero_mask.sum() > 0:
+                    last_non_zero_idx = np.where(non_zero_mask)[0][-1]  # Last index where expr > 0
+                    # Fit only up to the last non-zero gene
+                    ranks_to_fit = np.arange(1, last_non_zero_idx + 2)  # +1 because rank starts at 1, +1 for inclusive
+                    expr_to_fit = expr_values[:last_non_zero_idx + 1]                    
+                    # Fit linear model
+                    model = LinearRegression()
+                    model.fit(ranks_to_fit.reshape(-1, 1), expr_to_fit)
+                    slope, intercept = model.coef_[0], model.intercept_
+                    r_squared = model.score(ranks_to_fit.reshape(-1, 1), expr_to_fit)
+                else:
+                    slope, intercept, r_squared = 0.0, 0.0, 0.0
+                fit_parameters.append({"slope": float(slope), "intercept": float(intercept), "r_squared": float(r_squared)})
+            else:
+                fit_parameters.append(None)
+
+            cell_sentence = " ".join(gene_names[ranked_indices])            
+            cell_sentences.append(cell_sentence)
+            progress_bar.update(1)
+        progress_bar.close()
+
+        if self.perturbation_column is not None:
+            perturbations = anndata.obs[self.perturbation_column].values.tolist()
+            if len(perturbations) != len(cell_sentences):
+                raise ValueError(f"Number of perturbations ({len(perturbations)}) does not match number of cells ({len(cell_sentences)})")
+        else:
+            perturbations = [None] * len(cell_sentences)
+        
+        dataset = Dataset.from_dict({
+            'cell_sentence': cell_sentences,
+            'fit_parameters': fit_parameters,
+            'organism': [self.organism] * len(cell_sentences),
+            'perturbations': perturbations
+        })
+
+        LOGGER.info("Successfully processed data")
+        
+        return dataset
+
+    def get_embeddings(self, dataset: Dataset):
+        """
+        Extract embeddings from cell sentences in a HuggingFace Dataset using the last hidden layer of Gemma.
+        
+        Parameters:
+        -----------
+        dataset : Dataset
+            HuggingFace Dataset with 'cell_sentence' and 'organism' fields  
+        Returns:
+        --------
+        embeddings : np.ndarray
+            Embeddings of shape (num_sentences, hidden_size)
+        """
+
+        LOGGER.info("Extracting embeddings from dataset")
+
+        sentences_list = dataset['cell_sentence']
+        organisms_list = dataset['organism']
+        
+        all_embeddings = []
+        progress_bar = tqdm(total=len(sentences_list), desc="Processing embeddings")
+        for i in range(0, len(sentences_list), self.batch_size):
+            batch_sentences = sentences_list[i:i + self.batch_size]
+            batch_organisms = organisms_list[i:i + self.batch_size]
+            
+            prompts = [
+                EMBEDDING_PROMPT.format(organism=org, cell_sentence=cs)
+                for org, cs in zip(batch_organisms, batch_sentences)
+            ]
+
+            inputs = self.tokenizer(
+                prompts,
+                return_tensors="pt",
+                padding=True,
+                truncation=False,
+                # truncation=True,
+                # max_length=max_length
+            ).to(self.device)
+
+            with torch.no_grad():
+                outputs = self.model(**inputs, output_hidden_states=True)
+                last_hidden = outputs.hidden_states[-1]  # Shape: (batch_size, seq_len, hidden_size)
+                del outputs
+                attention_mask = inputs['attention_mask'].float() # Shape: (batch_size, seq_len, 1)
+
+                # Sum embeddings over sequence length, masking out padding tokens
+                sum_embeddings = torch.sum(last_hidden * attention_mask.unsqueeze(-1), dim=1)
+                sum_mask = torch.clamp(attention_mask.sum(dim=1, keepdim=True), min=1e-9)
+                batch_embeddings = sum_embeddings / sum_mask
+
+            all_embeddings.append(batch_embeddings.float().cpu().numpy())
+            progress_bar.update(len(batch_sentences))
+        progress_bar.close()
+        LOGGER.info("Successfully extracted embeddings")
+        return np.concatenate(all_embeddings, axis=0)
+
+    def get_perturbations(self, dataset: Dataset, perturbations_list: list[str] = None):
+        """
+        Generate perturbed cell sentences using the model.
+        
+        Parameters:
+        -----------
+        dataset : Dataset
+            HuggingFace Dataset with 'cell_sentence' and 'perturbations' fields
+        
+        Returns:
+        --------
+        perturbed_sentences : list
+            List of perturbed cell sentences (strings)
+        """
+
+        LOGGER.info("Generating perturbed cell sentences")
+
+        sentences_list = dataset['cell_sentence']
+        organisms_list = dataset['organism']
+        if perturbations_list is None:
+            perturbations_list = dataset['perturbations']
+        else:
+            if len(perturbations_list) != len(sentences_list):
+                raise ValueError(f"perturbations_list length ({len(perturbations_list)}) must match dataset length ({len(sentences_list)})")
+        
+        # Handle None perturbations - skip those entries or use empty string
+        valid_indices = [i for i, p in enumerate(perturbations_list) if p is not None]
+        if len(valid_indices) == 0:
+                raise ValueError("No valid perturbations found in dataset. All perturbations are None.")
+                    
+        valid_sentences = [sentences_list[i] for i in valid_indices]
+        valid_perturbations = [perturbations_list[i] for i in valid_indices]
+        valid_organisms = [organisms_list[i] for i in valid_indices]    
+        all_perturbed = []
+        
+        # Process in batches
+        progress_bar = tqdm(total=len(valid_sentences), desc="Processing valid perturbations")
+        for i in range(0, len(valid_sentences), self.batch_size):
+            batch_cells = valid_sentences[i:i + self.batch_size]
+            batch_perturbs = valid_perturbations[i:i + self.batch_size]
+            batch_organisms = valid_organisms[i:i + self.batch_size]
+
+            prompts = [
+                PERTURBATION_PROMPT.format(
+                    organism=org,
+                    perturbation=pert,  # Changed from perturbation_in_words
+                    cell_sentence=cs
+                )
+                for org, pert, cs in zip(batch_organisms, batch_perturbs, batch_cells)
+            ]
+            
+            inputs = self.tokenizer(
+                prompts,
+                return_tensors="pt",
+                padding=True,
+                truncation=False,
+                # truncation=True,
+                # max_length=max_length
+            ).to(self.device)
+            
+            with torch.no_grad():
+                outputs = self.model.generate(
+                    **inputs,
+                    max_new_tokens=self.max_new_tokens,
+                    do_sample=False,
+                    pad_token_id=self.tokenizer.pad_token_id or self.tokenizer.eos_token_id
+                )
+            
+            input_lengths = inputs['attention_mask'].sum(dim=1)
+            batch_perturbed = []
+            
+            for j, output in enumerate(outputs):
+                # Extract only the generated tokens (skip the prompt)
+                input_length = input_lengths[j].item()
+                generated_tokens = output[input_length:]  # Only generated part
+                decoded = self.tokenizer.decode(generated_tokens, skip_special_tokens=True)
+                batch_perturbed.append(decoded.strip())
+            
+            all_perturbed.extend(batch_perturbed)
+            progress_bar.update(len(batch_cells))
+        progress_bar.close()
+        # Create result list with None for entries without perturbations
+        perturbed_sentences = [None] * len(sentences_list)
+        for idx, perturbed in zip(valid_indices, all_perturbed):
+            perturbed_sentences[idx] = perturbed
+        
+        dataset = dataset.add_column('perturbed_cell_sentence', perturbed_sentences)
+
+        LOGGER.info("Successfully generated perturbed cell sentences")
+
+        return dataset, perturbed_sentences
