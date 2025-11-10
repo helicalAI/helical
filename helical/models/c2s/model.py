@@ -77,7 +77,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
             self.torch_dtype = torch.float32
        
         self.model = AutoModelForCausalLM.from_pretrained(self.config["hf_model_path"],torch_dtype=self.torch_dtype, cache_dir=self.config["model_path"]).to(self.device)
-        self.tokenizer = AutoTokenizer.from_pretrained(self.config["hf_model_path"], cache_dir=self.config["model_path"], trust_remote_code=True)
+        self.tokenizer = AutoTokenizer.from_pretrained(self.config["hf_model_path"], cache_dir=self.config["model_path"])
         self.model.eval()
        
         self.batch_size = self.config['batch_size']
