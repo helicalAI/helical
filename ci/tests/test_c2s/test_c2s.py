@@ -3,17 +3,16 @@ Unit tests for Cell2Sen model using pytest.
 """
 import pytest
 import numpy as np
-import scanpy as sc
+import anndata as ad
 from datasets import Dataset
 import torch
 from helical.models.c2s.model import Cell2Sen
 from helical.models.c2s.config import Cell2SenConfig
 
-
 @pytest.fixture(scope="module")
 def sample_anndata():
     """Load and prepare a small sample of the yolksac dataset for testing."""
-    anndata = sc.read_h5ad("yolksac_human.h5ad")
+    anndata = ad.read_h5ad("yolksac_human.h5ad")
     # Use a small subset for faster testing
     anndata = anndata[:3, :10].copy()
     return anndata
