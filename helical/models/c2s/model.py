@@ -16,9 +16,8 @@ from helical.models.base_models import HelicalBaseFoundationModel
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from sklearn.linear_model import LinearRegression
 from datasets import Dataset
-from .config import PERTURBATION_PROMPT, EMBEDDING_PROMPT
+from .config import Cell2SenConfig, PERTURBATION_PROMPT, EMBEDDING_PROMPT
 import logging
-from .config import Cell2SenConfig
 
 LOGGER = logging.getLogger(__name__)
 
