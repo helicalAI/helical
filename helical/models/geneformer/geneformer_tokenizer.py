@@ -461,7 +461,9 @@ class TranscriptomeTokenizer:
 
             X_view0 = adata[idx, :].X
             X_view = X_view0[:, coding_miRNA_loc]
-            X_norm = X_view / n_counts * target_sum / norm_factor_vector
+            
+            # Broadcasting: (batch_size, num_genes) / (batch_size, 1) * target_sum / (1, num_genes)
+            X_norm = (X_view / np.asarray(n_counts).reshape(-1, 1)) * target_sum / norm_factor_vector.reshape(1, -1)
             X_norm = sp.csr_matrix(X_norm)
 
             tokenized_cells += [
