@@ -34,7 +34,8 @@ class Cell2SenConfig:
         One gene is roughly 4 tokens. 
 
     return_fit: bool = False
-        Whether to return model fit parameters in outputs. Default is False.
+        Whether to return model fit parameters in outputs. Default is False. This fits a linear model (y=mx+c) to the gene rank and expression values in log10-transformed space
+        and can be used to map between expression values and gene ranks. The paper shows this is well captured by a linear model. The fit parameters are returned in the `fit_parameters` field.
     
     dtype: str = "bfloat16"
         Data type for the model. Default is "bfloat16". 
@@ -42,6 +43,9 @@ class Cell2SenConfig:
     model_size: str = "2B"
         Size of the model. Default is "2B".
         Choices are "2B" or "27B".
+    
+    use_quantization: bool = False
+        Whether to use 4-bit quantization. Default is False.
 
     seed: int = 42
         Random seed for reproducibility. Default is 42.
@@ -56,6 +60,7 @@ class Cell2SenConfig:
         return_fit: bool = False,
         dtype: str = "bfloat16", 
         model_size: str = "2B",
+        use_quantization: bool = False,
         seed: int = 42,
     ):
 
@@ -107,6 +112,7 @@ class Cell2SenConfig:
             "perturbation_column": perturbation_column,
             "max_new_tokens": max_new_tokens,
             "return_fit": return_fit,
+            "use_quantization": use_quantization,
             "seed": seed,
             "dtype": dtype,
             "model_size": model_size,

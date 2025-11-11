@@ -13,11 +13,12 @@ import numpy as np
 from tqdm import tqdm
 from helical.models.base_models import HelicalBaseFoundationModel
 # from helical.utils.downloader import Downloader
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 from sklearn.linear_model import LinearRegression
 from datasets import Dataset
 from .config import Cell2SenConfig, PERTURBATION_PROMPT, EMBEDDING_PROMPT
 import logging
+import torch._dynamo
 
 LOGGER = logging.getLogger(__name__)
 
@@ -75,11 +76,27 @@ class Cell2Sen(HelicalBaseFoundationModel):
         if self.torch_dtype == "bfloat16" and self.device == "cpu":
             LOGGER.warning("Bfloat16 is not supported on CPU. Defaulting to 'float32' instead.")
             self.torch_dtype = torch.float32
+    
+        if self.config["use_quantization"]:
+            self.bnb_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_use_double_quant=True,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_compute_dtype=torch.bfloat16
+            )
+        else:
+            self.bnb_config = None
        
-        self.model = AutoModelForCausalLM.from_pretrained(self.config["hf_model_path"],torch_dtype=self.torch_dtype, cache_dir=self.config["model_path"]).to(self.device)
+        self.model = AutoModelForCausalLM.from_pretrained(
+            self.config["hf_model_path"],
+            torch_dtype=self.torch_dtype, 
+            cache_dir=self.config["model_path"],
+            quantization_config=self.bnb_config,
+            ).to(self.device)
+        
         self.tokenizer = AutoTokenizer.from_pretrained(self.config["hf_model_path"], cache_dir=self.config["model_path"])
         self.model.eval()
-       
+         
         self.batch_size = self.config['batch_size']
         self.max_new_tokens = self.config['max_new_tokens']
         self.organism = self.config['organism']
@@ -196,7 +213,11 @@ class Cell2Sen(HelicalBaseFoundationModel):
         
         return dataset
 
-    def get_embeddings(self, dataset: Dataset):
+    def get_embeddings(
+        self, 
+        dataset: Dataset, 
+        output_attentions: bool = False
+        ):
         """
         Extract embeddings from cell sentences in a HuggingFace Dataset using the last hidden layer of Gemma.
         
@@ -204,6 +225,10 @@ class Cell2Sen(HelicalBaseFoundationModel):
         -----------
         dataset : Dataset
             HuggingFace Dataset with 'cell_sentence' and 'organism' fields  
+        
+        output_attentions : bool, optional
+            Whether to output the attention maps from the model. If set to True, the attention maps will be returned along with the embeddings.
+            If set to False, only the embeddings will be returned. **Note**: This will increase the memory usage of the model significantly, so use it only if you need the attention maps.
         Returns:
         --------
         embeddings : np.ndarray
@@ -216,6 +241,8 @@ class Cell2Sen(HelicalBaseFoundationModel):
         organisms_list = dataset['organism']
         
         all_embeddings = []
+        all_attentions = []
+
         progress_bar = tqdm(total=len(sentences_list), desc="Processing embeddings")
         for i in range(0, len(sentences_list), self.batch_size):
             batch_sentences = sentences_list[i:i + self.batch_size]
@@ -236,9 +263,12 @@ class Cell2Sen(HelicalBaseFoundationModel):
             ).to(self.device)
 
             with torch.no_grad():
-                outputs = self.model(**inputs, output_hidden_states=True)
+                outputs = self.model(
+                    **inputs, 
+                    output_hidden_states=True,
+                    output_attentions=output_attentions
+                )
                 last_hidden = outputs.hidden_states[-1]  # Shape: (batch_size, seq_len, hidden_size)
-                del outputs
                 attention_mask = inputs['attention_mask'].float() # Shape: (batch_size, seq_len, 1)
 
                 # Sum embeddings over sequence length, masking out padding tokens
@@ -246,13 +276,40 @@ class Cell2Sen(HelicalBaseFoundationModel):
                 sum_mask = torch.clamp(attention_mask.sum(dim=1, keepdim=True), min=1e-9)
                 batch_embeddings = sum_embeddings / sum_mask
 
+                if output_attentions:
+                    # outputs.attentions is a tuple of tensors, one per layer
+                    # Each tensor has shape (batch_size, num_heads, seq_length, seq_length)
+                    # Initialize all_attentions_per_layer on first batch
+                    if len(all_attentions) == 0:
+                        num_layers = len(outputs.attentions)
+                        all_attentions = [[] for _ in range(num_layers)]
+                    
+                    # Append attention maps from each layer to the corresponding list
+                    for layer_idx, attn in enumerate(outputs.attentions):
+                        all_attentions[layer_idx].append(attn.float().cpu().numpy())
+                del outputs
+
             all_embeddings.append(batch_embeddings.float().cpu().numpy())
             progress_bar.update(len(batch_sentences))
         progress_bar.close()
         LOGGER.info("Successfully extracted embeddings")
-        return np.concatenate(all_embeddings, axis=0)
 
-    def get_perturbations(self, dataset: Dataset, perturbations_list: list[str] = None):
+        if output_attentions:
+            # Concatenate attention maps per layer across batches
+            # Each element in stacked_attentions has shape (total_batch_size, num_heads, seq_length, seq_length)
+            stacked_attentions = tuple(
+                np.concatenate(all_attentions[layer_idx], axis=0)
+                for layer_idx in range(len(all_attentions))
+            )
+            return np.concatenate(all_embeddings, axis=0), stacked_attentions
+        else:
+            return np.concatenate(all_embeddings, axis=0)
+
+    def get_perturbations(
+        self, 
+        dataset: Dataset, 
+        perturbations_list: list[str] = None, 
+        ):
         """
         Generate perturbed cell sentences using the model.
         
@@ -261,8 +318,15 @@ class Cell2Sen(HelicalBaseFoundationModel):
         dataset : Dataset
             HuggingFace Dataset with 'cell_sentence' and 'perturbations' fields
         
+        perturbations_list : list[str], optional
+            List of perturbations to apply to the cells. If None, uses the perturbations from the dataset.
+            If provided, overrides the perturbations in the dataset. E.g. ["pert1", "pert2", "pert3", ...]
+
         Returns:
         --------
+        perturbed_dataset : Dataset
+            HuggingFace Dataset with 'cell_sentence' and 'perturbations' fields and a new column 'perturbed_cell_sentence'
+
         perturbed_sentences : list
             List of perturbed cell sentences (strings)
         """
@@ -286,7 +350,6 @@ class Cell2Sen(HelicalBaseFoundationModel):
         valid_perturbations = [perturbations_list[i] for i in valid_indices]
         valid_organisms = [organisms_list[i] for i in valid_indices]    
         all_perturbed = []
-        
         # Process in batches
         progress_bar = tqdm(total=len(valid_sentences), desc="Processing valid perturbations")
         for i in range(0, len(valid_sentences), self.batch_size):
@@ -313,12 +376,30 @@ class Cell2Sen(HelicalBaseFoundationModel):
             ).to(self.device)
             
             with torch.no_grad():
-                outputs = self.model.generate(
-                    **inputs,
-                    max_new_tokens=self.max_new_tokens,
-                    do_sample=False,
-                    pad_token_id=self.tokenizer.pad_token_id or self.tokenizer.eos_token_id
-                )
+                if self.config["use_quantization"]:
+                    # Disable torch.compile entirely for quantized models
+                    # suppress_errors alone isn't sufficient - we need to disable compilation
+                    original_disable = torch._dynamo.config.disable
+                    original_suppress = torch._dynamo.config.suppress_errors
+                    torch._dynamo.config.disable = True
+                    torch._dynamo.config.suppress_errors = True
+                    try:
+                        outputs = self.model.generate(
+                            **inputs,
+                            max_new_tokens=self.max_new_tokens,
+                            do_sample=False,
+                            pad_token_id=self.tokenizer.pad_token_id or self.tokenizer.eos_token_id
+                        )
+                    finally:
+                        torch._dynamo.config.disable = original_disable
+                        torch._dynamo.config.suppress_errors = original_suppress
+                else:
+                    outputs = self.model.generate(
+                        **inputs,
+                        max_new_tokens=self.max_new_tokens,
+                        do_sample=False,
+                        pad_token_id=self.tokenizer.pad_token_id or self.tokenizer.eos_token_id
+                    )
             
             input_lengths = inputs['attention_mask'].sum(dim=1)
             batch_perturbed = []

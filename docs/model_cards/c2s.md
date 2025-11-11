@@ -94,17 +94,23 @@ Syed Asad Rizvi, Daniel Levine, Aakash Patel, Shiyang Zhang, Eric Wang, Curtis J
 
 **Example: Getting Cell Embeddings**
 
+We use the configs to set up the model. See the docstrings in `config.py` for every arguement.
+Of note is the `pertubation_column`. This looks for the field in the underlying `anndata.obs`
+and if not specified is set to `None`. If you forget to specify this you can always pass 
+in a list later (see notebook example).
+
 ```python
 from helical.models.cell2sen import Cell2Sen, Cell2SenConfig
 import anndata as ad
 
+# if you would like to use 4-bit quantization for reduced memory usage, set use_quantization=True in the config
 config = Cell2SenConfig(batch_size=16, perturbation_column='perturbation')
 cell2sen = Cell2Sen(configurer=config)
 
 adata = ad.read_h5ad("dataset.h5ad")
 processed_dataset = cell2sen.process_data(adata)
 
-embeddings = cell2sen.get_embeddings(processed_dataset)
+embeddings, attention_maps = cell2sen.get_embeddings(processed_dataset, output_attentions=True)
 print("State embeddings shape:", embeddings.shape)
 
 perturbed_dataset, perturbed_sentences = cell2sen.get_perturbations(processed_dataset)

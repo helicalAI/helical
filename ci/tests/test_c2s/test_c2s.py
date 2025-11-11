@@ -223,6 +223,30 @@ class TestGetEmbeddings:
         with pytest.raises((ValueError, IndexError, AssertionError)):
             cell2sen_model.get_embeddings(empty_dataset)
 
+    def test_get_embeddings_attention_shapes(self, cell2sen_model, processed_dataset_basic):
+        """Test that attention maps have correct shapes when output_attentions=True."""
+        embeddings, attentions = cell2sen_model.get_embeddings(
+            processed_dataset_basic, 
+            output_attentions=True
+        )
+        
+        # Check embeddings shape
+        assert isinstance(embeddings, np.ndarray)
+        assert embeddings.shape[0] == len(processed_dataset_basic)
+        
+        # Check attentions is a tuple (one element per layer)
+        assert isinstance(attentions, tuple)
+        assert len(attentions) > 0  # Should have at least one layer
+        
+        # Check each layer's attention map shape
+        num_cells = len(processed_dataset_basic)
+        for layer_idx, attn_layer in enumerate(attentions):
+            assert isinstance(attn_layer, np.ndarray)
+            assert attn_layer.ndim == 4, f"Layer {layer_idx} attention should be 4D"
+            assert attn_layer.shape[0] == num_cells, f"Layer {layer_idx} batch dimension should match number of cells"
+            assert attn_layer.shape[1] > 0, f"Layer {layer_idx} should have at least one attention head"
+            assert attn_layer.shape[2] == attn_layer.shape[3], f"Layer {layer_idx} attention should be square (seq_len x seq_len)"
+            assert attn_layer.shape[2] > 0, f"Layer {layer_idx} sequence length should be positive"
 
 class TestGetPerturbations:
     """Test get_perturbations method."""
