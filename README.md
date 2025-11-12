@@ -35,6 +35,9 @@ Let’s build the most exciting AI-for-Bio community together!
 
 ## What's new?
 
+### Cell2Sentence-Scale
+We have integrated the new Cell2Sentence-Scale models which use cell sentences as input and are based on the Gemma language model architecture (2B and 27B models available in quantised versions too). You can use this model for embeddings and perturbation prediction. Follow our notebook tutorial [here](./examples/notebooks/Cell2Sen-Tutorial.ipynb). 
+
 ### New Larger Geneformer Models
 We have integrated the new Geneformer models which are larger and have been trained on more data. Find out which models have been integrated into the Geneformer suite in the [model card](./helical/models/geneformer/README.md). Check out the our notebook on drug perturbation prediction using different Geneformer scalings [here](./examples/notebooks/Geneformer-Series-Comparison.ipynb).
 
@@ -141,6 +144,8 @@ Within the `examples/notebooks` folder, open the notebook of your choice. We rec
 |[HyenaDNA-Fine-Tuning.ipynb](./examples/notebooks/HyenaDNA-Fine-Tuning.ipynb)|An example of how to fine-tune the HyenaDNA model on downstream benchmarks.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/HyenaDNA-Fine-Tuning.ipynb) |
 |[Cell-Gene-Cls-embedding-generation.ipynb](./examples/notebooks/Cell-Gene-Cls-embedding-generation.ipynb)|A notebook explaining the different embedding modes of single cell RNA models.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Cell-Gene-Cls-embedding-generation.ipynb) |
 |[Geneformer-Series-Comparison.ipynb](./examples/notebooks/Geneformer-Series-Comparison.ipynb)|A zero shot comparison between Geneformer model scaling on drug perturbation prediction|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Geneformer-Series-Comparison.ipynb) |
+|[Cell2Sen-Tutorial.ipynb](./examples/notebooks/Cell2Sen-Tutorial.ipynb)|An example tutorial of how to use cell2sen models for embeddings and perturbation predictions.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Cell2Sen-Tutorial.ipynb) |
+
 
 ## Stuck somewhere ? Other ideas ?
 We are eager to help you and interact with you:
@@ -170,6 +175,7 @@ A lot of our models have been published by talend authors developing these excit
 - [UCE](https://github.com/snap-stanford/UCE)
 - [TranscriptFormer](https://github.com/czi-ai/transcriptformer)
 - [HyenaDNA](https://github.com/HazyResearch/hyena-dna)
+- [Cell2Sen](https://github.com/vandijklab/cell2sentence)
 - [anndata](https://github.com/scverse/anndata)
 - [scanpy](https://github.com/scverse/scanpy)
 - [transformers](https://github.com/huggingface/transformers)
@@ -192,6 +198,7 @@ You can find the Licenses for each model implementation in the model repositorie
 - [TranscriptFormer](https://github.com/helicalAI/helical/blob/release/helical/models/transcriptformer/LICENSE.md)
 - [HyenaDNA](https://github.com/helicalAI/helical/blob/release/helical/models/hyena_dna/LICENSE)
 - [Evo2](https://github.com/helicalAI/helical/blob/release/helical/models/evo_2/LICENSE)
+- [Cell2Sen](https://github.com/helicalAI/helical/blob/release/helical/models/c2s/LICENSE)
 
 ## Citation
 
