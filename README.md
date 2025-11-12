@@ -175,6 +175,7 @@ A lot of our models have been published by talend authors developing these excit
 - [UCE](https://github.com/snap-stanford/UCE)
 - [TranscriptFormer](https://github.com/czi-ai/transcriptformer)
 - [HyenaDNA](https://github.com/HazyResearch/hyena-dna)
+- [Cell2Sen](https://github.com/vandijklab/cell2sentence)
 - [anndata](https://github.com/scverse/anndata)
 - [scanpy](https://github.com/scverse/scanpy)
 - [transformers](https://github.com/huggingface/transformers)
@@ -197,6 +198,7 @@ You can find the Licenses for each model implementation in the model repositorie
 - [TranscriptFormer](https://github.com/helicalAI/helical/blob/release/helical/models/transcriptformer/LICENSE.md)
 - [HyenaDNA](https://github.com/helicalAI/helical/blob/release/helical/models/hyena_dna/LICENSE)
 - [Evo2](https://github.com/helicalAI/helical/blob/release/helical/models/evo_2/LICENSE)
+- [Cell2Sen](https://github.com/helicalAI/helical/blob/release/helical/models/c2s/LICENSE)
 
 ## Citation
 
