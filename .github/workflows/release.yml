@@ -146,6 +146,10 @@ jobs:
       - name: Fine-tune Caduceus
         run: |
           python examples/fine_tune_models/fine_tune_caduceus.py
+      
+      - name: Execute Cell2Sen
+        run: |
+          python examples/run_models/run_c2s.py
 
   notebooks:
     needs: tests
