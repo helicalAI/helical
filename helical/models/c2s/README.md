@@ -63,7 +63,7 @@ Syed Asad Rizvi, Daniel Levine, Aakash Patel, Shiyang Zhang, Eric Wang, Curtis J
 
 **Preprocessing:**
 
-* Log transformtion 
+* Log transformation 
 * Conversion of anndata into rank-ordered “cell sentences”
 * Tokenization
 
@@ -95,7 +95,7 @@ Syed Asad Rizvi, Daniel Levine, Aakash Patel, Shiyang Zhang, Eric Wang, Curtis J
 **Example: Getting Cell Embeddings**
 
 We use the configs to set up the model. See the docstrings in `config.py` for every arguement.
-Of note is the `pertubation_column`. This looks for the field in the underlying `anndata.obs`
+Of note is the `perturbation_column`. This looks for the field in the underlying `anndata.obs`
 and if not specified is set to `None`. If you forget to specify this you can always pass 
 in a list later (see notebook example).
 
@@ -114,7 +114,7 @@ embeddings, attention_maps = cell2sen.get_embeddings(processed_dataset, output_a
 print("State embeddings shape:", embeddings.shape)
 
 perturbed_dataset, perturbed_sentences = cell2sen.get_perturbations(processed_dataset)
-print("Pertrubed Cell Sentence:", perturbed_sentences[0])
+print("Perturbed Cell Sentence:", perturbed_sentences[0])
 
 ```
 

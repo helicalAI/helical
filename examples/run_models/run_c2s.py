@@ -19,7 +19,7 @@ def run(cfg: DictConfig):
 
     processes_dataset = c2s.process_data(adata)
     embeddings = c2s.get_embeddings(processes_dataset)
-    perturbed_dataset, pertubed_cell_sentences = c2s.get_perturbations(processes_dataset)
+    perturbed_dataset, perturbed_cell_sentences = c2s.get_perturbations(processes_dataset)
 
 if __name__ == "__main__":
     run()

@@ -73,7 +73,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
         else:
             raise ValueError(f"Dtype {self.config['dtype']} not supported. Please choose from 'bfloat16' or 'float32'.")
 
-        if self.torch_dtype == "bfloat16" and self.device == "cpu":
+        if self.torch_dtype == torch.bfloat16 and self.device == "cpu":
             LOGGER.warning("Bfloat16 is not supported on CPU. Defaulting to 'float32' instead.")
             self.torch_dtype = torch.float32
     
@@ -143,7 +143,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
             X = X.toarray()
 
         X_log = np.log10(X + 1)
-        # gene names correcponding to each cell in order
+        # gene names corresponding to each cell in order
         # anndata.X[i, j] is the expression of the j-th gene in the i-th cell
         gene_names = anndata.var_names.values
         cell_sentences = []
