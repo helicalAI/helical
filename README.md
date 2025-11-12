@@ -35,6 +35,9 @@ Let’s build the most exciting AI-for-Bio community together!
 
 ## What's new?
 
+### Cell2Sentence-Scale
+We have integrated the new Cell2Sentence-Scale models which use cell sentences as input and are based on the Gemma language model architecture (2B and 27B models available in quantised versions too). You can use this model for embeddings and perturbation prediction. Follow our notebook tutorial [here](./examples/notebooks/Cell2Sen-Tutorial.ipynb). 
+
 ### New Larger Geneformer Models
 We have integrated the new Geneformer models which are larger and have been trained on more data. Find out which models have been integrated into the Geneformer suite in the [model card](./helical/models/geneformer/README.md). Check out the our notebook on drug perturbation prediction using different Geneformer scalings [here](./examples/notebooks/Geneformer-Series-Comparison.ipynb).
 
