@@ -163,7 +163,7 @@ We welcome all kinds of contributions, including code, documentation, bug report
 
 ## Acknowledgements
 
-A lot of our models have been published by talend authors developing these exciting technologies. We sincerely thank the authors of the following open-source projects:
+A lot of our models have been published by talented authors developing these exciting technologies. We sincerely thank the authors of the following open-source projects:
 
 - [scGPT](https://github.com/bowang-lab/scGPT/)
 - [Geneformer](https://huggingface.co/ctheodoris/Geneformer)
