@@ -30,7 +30,7 @@ class Cell2SenConfig:
         Column name in the input data that specifies the perturbation applied to cells.
 
     max_new_tokens: int = 200
-        Maximum number of new tokens that the model can generate for prediction. Default is 800.
+        Maximum number of new tokens that the model can generate for prediction. Default is 200.
         One gene is roughly 4 tokens. 
 
     return_fit: bool = False

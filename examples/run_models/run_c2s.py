@@ -17,9 +17,9 @@ def run(cfg: DictConfig):
     config = Cell2SenConfig(**cfg)
     c2s = Cell2Sen(configurer=config)
 
-    processes_dataset = c2s.process_data(adata)
-    embeddings = c2s.get_embeddings(processes_dataset)
-    perturbed_dataset, perturbed_cell_sentences = c2s.get_perturbations(processes_dataset)
+    processed_dataset = c2s.process_data(adata)
+    embeddings = c2s.get_embeddings(processed_dataset)
+    perturbed_dataset, perturbed_cell_sentences = c2s.get_perturbations(processed_dataset)
 
 if __name__ == "__main__":
     run()
