@@ -1,0 +1,8 @@
+model_size: "70m"  # Options: "70m", "1b", "3b"
+batch_size: 8
+emb_mode: "cell"  # Options: "cell", "gene"
+device: "cpu"  # Options: "cpu", "cuda"
+max_length: 2048
+num_workers: 8
+prefetch_factor: 48
+hf_repo_id: "tahoebio/Tahoe-x1"
