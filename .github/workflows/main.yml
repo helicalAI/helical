@@ -20,7 +20,8 @@ jobs:
       - name: Install dependencies
         run: |
             pip install -r requirements-dev.txt
-            pip install .[mamba-ssm]
+            pip install --no-cache-dir .[tahoe]
+            pip install --no-cache-dir .[mamba-ssm]
             
       # First download before tests as they make use of the downloaded files 
       - name: Download all files
@@ -150,7 +151,7 @@ jobs:
       # because jobs may not be run in the same order, we need to install the dependencies again
       - name: Install helical
         run: |
-            pip install .[mamba-ssm]
+            pip install --no-cache-dir .[mamba-ssm]
         
       - name: Reduce datasets to speedup checks
         run: |
