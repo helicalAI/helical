@@ -7,14 +7,13 @@ This directory contains the Tahoe-1x model integration for the helical library.
 ```
 tahoe/
 ├── __init__.py              # Exports Tahoe and TahoeConfig
-├── model.py                 # Main Tahoe model class (inherits from HelicalRNAModel)
+├── model.py                 # Main Tahoe model class (self-contained embedding logic)
 ├── tahoe_config.py          # Configuration class for Tahoe
-└── tahoe_x1/                # Self-contained copy of tahoe-x1 components
-    ├── data/                # Data processing (collator, dataloader)
+└── tahoe_x1/                # Minimal tahoe-x1 components
+    ├── data/                # Data processing (collator, dataloader - 67 lines)
     ├── model/               # Model architecture (blocks, model)
-    ├── tasks/               # Task implementations (embedding extraction)
     ├── tokenizer/           # Gene vocabulary and tokenization
-    ├── utils/               # Utility functions
+    ├── utils/               # Utility functions (96 lines)
     └── loss.py              # Loss functions
 ```
 
@@ -44,16 +43,16 @@ tahoe_config = TahoeConfig(
 # Initialize the model
 tahoe = Tahoe(configurer=tahoe_config)
 
-# Load and process data
+# Load and process data - returns a DataLoader
 adata = ad.read_h5ad("your_data.h5ad")
-processed_adata = tahoe.process_data(adata)
+dataloader = tahoe.process_data(adata)
 
-# Get cell embeddings
-cell_embeddings = tahoe.get_embeddings(processed_adata)
+# Get cell embeddings from the DataLoader
+cell_embeddings = tahoe.get_embeddings(dataloader)
 
 # Or get both cell and gene embeddings
 cell_embeddings, gene_embeddings = tahoe.get_embeddings(
-    processed_adata,
+    dataloader,
     return_gene_embeddings=True
 )
 ```
@@ -61,6 +60,8 @@ cell_embeddings, gene_embeddings = tahoe.get_embeddings(
 ## Features
 
 - **Self-contained**: No need to install or clone the separate tahoe-x1 package
+- **Minimal dependencies**: Only ~2,315 lines from tahoe-x1 (16% reduction through cleanup)
+- **Clean API**: Clear separation between data processing and embedding extraction
 - **Follows helical patterns**: Uses the same structure as other models (Geneformer, scGPT)
 - **Automatic gene mapping**: Maps gene symbols to Ensembl IDs using helical utilities
 - **Flexible embeddings**: Supports both cell-level and gene-level embeddings

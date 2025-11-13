@@ -4,8 +4,8 @@ from pathlib import Path
 import numpy as np
 from anndata import AnnData
 import torch
-from typing import Optional
-from datasets import Dataset
+from typing import Optional, Union
+from torch.utils.data import DataLoader
 from helical.models.tahoe.tahoe_config import TahoeConfig
 from helical.utils.mapping import map_gene_symbols_to_ensembl_ids
 
@@ -33,16 +33,16 @@ class Tahoe(HelicalRNAModel):
     tahoe_config = TahoeConfig(model_size="70m", batch_size=8)
     tahoe = Tahoe(configurer=tahoe_config)
 
-    # Load and process data
+    # Load and process data - returns a DataLoader
     ann_data = ad.read_h5ad("anndata_file.h5ad")
-    dataset = tahoe.process_data(ann_data)
+    dataloader = tahoe.process_data(ann_data)
 
-    # Get embeddings
-    embeddings = tahoe.get_embeddings(dataset)
+    # Get embeddings from the DataLoader
+    embeddings = tahoe.get_embeddings(dataloader)
     print("Tahoe embeddings shape:", embeddings.shape)
 
     # Get both cell and gene embeddings
-    cell_embeddings, gene_embeddings = tahoe.get_embeddings(dataset, return_gene_embeddings=True)
+    cell_embeddings, gene_embeddings = tahoe.get_embeddings(dataloader, return_gene_embeddings=True)
     print("Cell embeddings shape:", cell_embeddings.shape)
     print("Gene embeddings shape:", gene_embeddings.shape)
     ```
@@ -98,9 +98,9 @@ class Tahoe(HelicalRNAModel):
         adata: AnnData,
         gene_names: str = "index",
         use_raw_counts: bool = True,
-    ) -> AnnData:
+    ) -> DataLoader:
         """
-        Processes the data for the Tahoe model.
+        Processes the data for the Tahoe model and returns a DataLoader.
 
         Parameters
         ----------
@@ -119,8 +119,8 @@ class Tahoe(HelicalRNAModel):
 
         Returns
         -------
-        AnnData
-            The processed AnnData object with gene IDs mapped to the vocabulary.
+        DataLoader
+            A PyTorch DataLoader ready for inference.
         """
         LOGGER.info("Processing data for Tahoe.")
         self.ensure_rna_data_validity(adata, gene_names, use_raw_counts)
@@ -168,23 +168,34 @@ class Tahoe(HelicalRNAModel):
         if not np.all(gene_ids >= 0):
             raise ValueError("Some genes are not in the vocabulary after filtering.")
 
-        # Store gene_ids in adata for later use
-        adata.uns["tahoe_gene_ids"] = gene_ids
+        # Create DataLoader from AnnData
+        from helical.models.tahoe.tahoe_x1.utils.util import loader_from_adata
+
+        dataloader = loader_from_adata(
+            adata=adata,
+            collator_cfg=self.collator_cfg,
+            vocab=self.vocab,
+            batch_size=self.config["batch_size"],
+            max_length=self.config["max_length"],
+            gene_ids=gene_ids,
+            num_workers=self.config["num_workers"],
+            prefetch_factor=self.config["prefetch_factor"],
+        )
 
         LOGGER.info("Successfully processed the data for Tahoe.")
-        return adata
+        return dataloader
 
     def get_embeddings(
         self,
-        adata: AnnData,
+        dataloader: DataLoader,
         return_gene_embeddings: bool = False,
-    ) -> np.ndarray:
+    ) -> Union[np.ndarray, tuple[np.ndarray, np.ndarray]]:
         """Gets the embeddings from the Tahoe model.
 
         Parameters
         ----------
-        adata : AnnData
-            The processed AnnData object containing the data.
+        dataloader : DataLoader
+            The DataLoader returned from process_data().
         return_gene_embeddings : bool, optional, default=False
             Whether to return gene embeddings in addition to cell embeddings.
 
@@ -200,40 +211,112 @@ class Tahoe(HelicalRNAModel):
         """
         LOGGER.info("Extracting embeddings from Tahoe model...")
 
-        # Import the embedding extraction function from local copy
-        from helical.models.tahoe.tahoe_x1.tasks import get_batch_embeddings
+        from typing import List
+        from tqdm.auto import tqdm
 
-        # Get gene_ids from the processed data
-        if "tahoe_gene_ids" not in adata.uns:
-            raise ValueError(
-                "Data must be processed with process_data() before calling get_embeddings()"
+        device = self.device
+        model = self.model.model
+        model.return_gene_embeddings = return_gene_embeddings
+
+        cell_embs: List[torch.Tensor] = []
+
+        if return_gene_embeddings:
+            gene_array = torch.zeros(
+                len(self.vocab),
+                self.model_cfg["d_model"],
+                dtype=torch.float32,
+                device=device,
+            )
+            gene_array_counts = torch.zeros(
+                len(self.vocab),
+                dtype=torch.float32,
+                device=device,
             )
 
-        gene_ids = adata.uns["tahoe_gene_ids"]
+        dtype_from_string = {
+            "fp32": torch.float32,
+            "amp_bf16": torch.bfloat16,
+            "amp_fp16": torch.float16,
+            "fp16": torch.float16,
+            "bf16": torch.bfloat16,
+        }
 
-        # Get embeddings using the tahoe_x1 function
-        result = get_batch_embeddings(
-            adata=adata,
-            model=self.model.model,
-            vocab=self.vocab,
-            model_cfg=self.model_cfg,
-            collator_cfg=self.collator_cfg,
-            gene_ids=gene_ids,
-            batch_size=self.config["batch_size"],
-            num_workers=self.config["num_workers"],
-            prefetch_factor=self.config["prefetch_factor"],
-            max_length=self.config["max_length"],
-            return_gene_embeddings=return_gene_embeddings,
+        with (
+            torch.no_grad(),
+            torch.amp.autocast(
+                enabled=True,
+                dtype=dtype_from_string[self.model_cfg["precision"]],
+                device_type=device.type,
+            ),
+        ):
+            pbar = tqdm(total=len(dataloader), desc="Embedding cells")
+
+            for data_dict in dataloader:
+                input_gene_ids = data_dict["gene"].to(device)
+                src_key_padding_mask = ~input_gene_ids.eq(self.collator_cfg["pad_token_id"])
+
+                output = model(
+                    genes=input_gene_ids,
+                    values=data_dict["expr"].to(device),
+                    gen_masks=data_dict["gen_mask"].to(device),
+                    key_padding_mask=src_key_padding_mask,
+                    drug_ids=(
+                        data_dict["drug_ids"].to(device)
+                        if "drug_ids" in data_dict
+                        else None
+                    ),
+                    skip_decoders=True,
+                )
+
+                cell_embs.append(output["cell_emb"].to("cpu").to(dtype=torch.float32))
+
+                if return_gene_embeddings:
+                    gene_embs = output.get("gene_emb").to(torch.float32)
+                    flat_gene_ids = input_gene_ids.view(-1)
+                    flat_embeddings = gene_embs.view(-1, gene_embs.shape[-1])
+
+                    valid = flat_gene_ids != self.collator_cfg["pad_token_id"]
+                    flat_gene_ids = flat_gene_ids[valid]
+                    flat_embeddings = flat_embeddings[valid].to(gene_embs.dtype)
+
+                    gene_array.index_add_(0, flat_gene_ids, flat_embeddings)
+                    gene_array_counts.index_add_(
+                        0,
+                        flat_gene_ids,
+                        torch.ones_like(flat_gene_ids, dtype=gene_embs.dtype),
+                    )
+
+                pbar.update(1)
+
+        # Normalize cell embeddings
+        cell_array = torch.cat(cell_embs, dim=0).numpy()
+        cell_array = cell_array / np.linalg.norm(
+            cell_array,
+            axis=1,
+            keepdims=True,
         )
 
         if return_gene_embeddings:
-            cell_embeddings, gene_embeddings = result
-            LOGGER.info(
-                f"Finished extracting embeddings. Cell shape: {cell_embeddings.shape}, Gene shape: {gene_embeddings.shape}"
+            # Average gene embeddings
+            gene_array = gene_array.to("cpu").to(torch.float32).numpy()
+            gene_array_counts = gene_array_counts.to("cpu").to(torch.float32).numpy()
+            gene_array_counts = np.expand_dims(gene_array_counts, axis=1)
+
+            gene_array = np.divide(
+                gene_array,
+                gene_array_counts,
+                out=np.ones_like(gene_array) * np.nan,
+                where=gene_array_counts != 0,
             )
-            return cell_embeddings, gene_embeddings
+
+            gene2idx = self.vocab.get_stoi()
+            all_gene_ids = np.array(list(gene2idx.values()))
+            gene_array = gene_array[all_gene_ids, :]
+
+            LOGGER.info(
+                f"Finished extracting embeddings. Cell shape: {cell_array.shape}, Gene shape: {gene_array.shape}"
+            )
+            return cell_array, gene_array
         else:
-            LOGGER.info(
-                f"Finished extracting embeddings. Shape: {result.shape}"
-            )
-            return result
+            LOGGER.info(f"Finished extracting embeddings. Shape: {cell_array.shape}")
+            return cell_array

@@ -26,16 +26,16 @@ def run(cfg: DictConfig):
     # or load directly
     ann_data = ad.read_h5ad("./yolksac_human.h5ad")
 
-    # Process data (maps gene symbols to Ensembl IDs)
-    processed_data = tahoe.process_data(ann_data[:10])
+    # Process data - returns a DataLoader
+    dataloader = tahoe.process_data(ann_data[:10])
 
-    # Get cell embeddings
-    cell_embeddings = tahoe.get_embeddings(processed_data)
+    # Get cell embeddings from the DataLoader
+    cell_embeddings = tahoe.get_embeddings(dataloader)
     print(f"Cell embeddings shape: {cell_embeddings.shape}")
 
     # Get both cell and gene embeddings
     cell_embeddings, gene_embeddings = tahoe.get_embeddings(
-        processed_data, return_gene_embeddings=True
+        dataloader, return_gene_embeddings=True
     )
     print(f"Cell embeddings shape: {cell_embeddings.shape}")
     print(f"Gene embeddings shape: {gene_embeddings.shape}")
