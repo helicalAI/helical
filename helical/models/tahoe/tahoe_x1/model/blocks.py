@@ -1,7 +1,7 @@
 # Copyright (C) Tahoe Therapeutics 2025. All rights reserved.
 import logging
 from functools import lru_cache
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import torch
@@ -147,35 +147,49 @@ class TXBlock(nn.Module):
         x: Tensor,
         attn_bias: Optional[Tensor] = None,
         flash_attn_padding_info: Optional[Tensor] = None,
-    ) -> Tensor:
+        output_attentions: bool = False,
+    ) -> Union[Tensor, tuple[Tensor, Optional[Tensor]]]:
         r"""Pass the input through the encoder layer.
 
         Args:
             src: the sequence to the encoder layer (required).
             src_mask: the mask for the src sequence (optional).
             src_key_padding_mask: the mask for the src keys per batch (optional).
+            output_attentions: whether to return attention weights (optional).
 
         Shape:
             see the docs in Transformer class.
         """
 
         if self.norm_scheme == "pre":
-            x = x + self._sa_block(
+            sa_output = self._sa_block(
                 self.norm1(x),
                 attn_bias=attn_bias,
                 flash_attn_padding_info=flash_attn_padding_info,
+                output_attentions=output_attentions,
             )
+            if output_attentions:
+                sa_x, attn_weights = sa_output
+                x = x + sa_x
+            else:
+                x = x + sa_output
             x = x + self._ff_block(self.norm2(x))
         else:
-            x = self.norm1(
-                x
-                + self._sa_block(
-                    x,
-                    attn_bias=attn_bias,
-                    flash_attn_padding_info=flash_attn_padding_info,
-                ),
+            sa_output = self._sa_block(
+                x,
+                attn_bias=attn_bias,
+                flash_attn_padding_info=flash_attn_padding_info,
+                output_attentions=output_attentions,
             )
+            if output_attentions:
+                sa_x, attn_weights = sa_output
+                x = self.norm1(x + sa_x)
+            else:
+                x = self.norm1(x + sa_output)
             x = self.norm2(x + self._ff_block(x))
+
+        if output_attentions:
+            return x, attn_weights
         return x
 
     def _sa_block(
@@ -183,14 +197,19 @@ class TXBlock(nn.Module):
         x: Tensor,
         attn_bias: Optional[Tensor] = None,
         flash_attn_padding_info: Optional[Tensor] = None,
-    ) -> Tensor:
-        x, _, _ = self.self_attn(
+        output_attentions: bool = False,
+    ) -> Union[Tensor, tuple[Tensor, Optional[Tensor]]]:
+        x, attn_weights, _ = self.self_attn(
             x,
             attn_bias=attn_bias,
             flash_attn_padding_info=flash_attn_padding_info,
             is_causal=False,
+            needs_weights=output_attentions,
         )
-        return self.post_sa_dropout(x)
+        x = self.post_sa_dropout(x)
+        if output_attentions:
+            return x, attn_weights
+        return x
 
     def _ff_block(self, x: Tensor) -> Tensor:
         if self.use_glu:
@@ -251,7 +270,8 @@ class TXEncoder(nn.Module):
         total_embs: Tensor,
         key_padding_mask: Optional[Tensor] = None,
         gen_mask: Optional[Tensor] = None,
-    ) -> Tensor:
+        output_attentions: bool = False,
+    ) -> Union[Tensor, tuple[Tensor, List[Tensor]]]:
 
         flash_attn_padding_info = gen_flash_attn_padding_info(
             bsz=total_embs.shape[0],
@@ -286,16 +306,27 @@ class TXEncoder(nn.Module):
                     ~key_padding_mask.view((b_size, 1, 1, s_k)),
                     torch.finfo(total_embs.dtype).min,
                 )
+
+        all_attentions = [] if output_attentions else None
+
         for mod in self.layers:
-            total_embs = mod(
+            layer_output = mod(
                 total_embs,
                 attn_bias=attn_bias,
                 flash_attn_padding_info=flash_attn_padding_info,
+                output_attentions=output_attentions,
             )
+            if output_attentions:
+                total_embs, attn_weights = layer_output
+                all_attentions.append(attn_weights)
+            else:
+                total_embs = layer_output
 
         if self.use_norm:
             total_embs = self.norm(total_embs)
 
+        if output_attentions:
+            return total_embs, all_attentions
         return total_embs
 
     @torch.no_grad()

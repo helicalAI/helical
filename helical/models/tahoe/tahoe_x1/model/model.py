@@ -181,7 +181,8 @@ class TXModel(nn.Module):
         drug_ids: Optional[
             Tensor
         ] = None,  # drug_ids is None if use_chem_token is set to False
-    ) -> Tensor:
+        output_attentions: bool = False,
+    ):
 
         token_embs = self.gene_encoder(genes)  # (batch, seq_len, embsize)
         token_values = self.expression_encoder(values)  # (batch, seq_len, embsize)
@@ -202,13 +203,17 @@ class TXModel(nn.Module):
 
         self.cur_gene_token_embs = token_embs
 
-        output = self.transformer_encoder(
+        encoder_output = self.transformer_encoder(
             total_embs=total_embs,
             key_padding_mask=key_padding_mask,
             gen_mask=gen_masks,
+            output_attentions=output_attentions,
         )
 
-        return output
+        if output_attentions:
+            output, attentions = encoder_output
+            return output, attentions
+        return encoder_output
 
     def _get_cell_emb_from_layer(
         self,
@@ -246,19 +251,27 @@ class TXModel(nn.Module):
         key_padding_mask: Tensor,
         drug_ids: Optional[Tensor] = None,
         skip_decoders: Optional[bool] = None,
+        output_attentions: bool = False,
     ) -> Mapping[str, Tensor]:
 
         if skip_decoders is None:
             skip_decoders = (
                 not self.training
             )  # get the mode of the model: either train or val
-        transformer_output = self.transformer_generate(
+
+        transformer_result = self.transformer_generate(
             genes,
             values,
             gen_masks,
             key_padding_mask,
             drug_ids=drug_ids,
+            output_attentions=output_attentions,
         )
+
+        if output_attentions:
+            transformer_output, attentions = transformer_result
+        else:
+            transformer_output = transformer_result
 
         output = {}
         if not skip_decoders:
@@ -272,6 +285,8 @@ class TXModel(nn.Module):
         if self.return_gene_embeddings:
             output["gene_ids"] = genes
             output["gene_emb"] = transformer_output
+        if output_attentions:
+            output["attentions"] = attentions
         if not skip_decoders:
             mvc_output = self.mvc_decoder(
                 cell_emb,
@@ -427,6 +442,7 @@ class ComposerTX(ComposerModel):
         model_size: str,
         return_gene_embeddings: bool = False,
         use_chem_inf: bool = False,
+        attn_impl: str = "flash",
     ):
 
         # helper function to download files
@@ -450,9 +466,12 @@ class ComposerTX(ComposerModel):
 
         # load and edit attention implementation if needed
         model_config = om.load(model_cfg_path)
-        if model_config["attn_config"]["attn_impl"] == "triton":
-            model_config["attn_config"]["attn_impl"] = "flash"
-            model_config["attn_config"]["use_attn_mask"] = False
+
+        # Set the attention implementation based on the parameter
+        model_config["attn_config"]["attn_impl"] = attn_impl
+        # Keep use_attn_mask=False for all implementations to avoid shape issues
+        # The key_padding_mask is sufficient for masking
+        model_config["attn_config"]["use_attn_mask"] = False
 
         # set up model config for inference
         model_config["do_mlm"] = False

@@ -45,6 +45,13 @@ class Tahoe(HelicalRNAModel):
     cell_embeddings, gene_embeddings = tahoe.get_embeddings(dataloader, return_gene_embeddings=True)
     print("Cell embeddings shape:", cell_embeddings.shape)
     print("Gene embeddings shape:", gene_embeddings.shape)
+
+    # Get attention weights (requires attn_impl='torch')
+    tahoe_config_attn = TahoeConfig(model_size="70m", batch_size=8, attn_impl='torch')
+    tahoe_attn = Tahoe(configurer=tahoe_config_attn)
+    dataloader_attn = tahoe_attn.process_data(ann_data)
+    cell_embeddings, attentions = tahoe_attn.get_embeddings(dataloader_attn, output_attentions=True)
+    print("Attention shape:", attentions.shape)  # (n_cells, n_heads, seq_len, seq_len) - last layer only
     ```
 
     Parameters
@@ -57,6 +64,10 @@ class Tahoe(HelicalRNAModel):
     The Tahoe-1x model uses Ensembl IDs to identify genes and currently supports only
     human genes. The model is published by Tahoe Therapeutics and available on
     Hugging Face at https://huggingface.co/tahoebio/Tahoe-x1.
+
+    By default, the model uses Flash Attention (attn_impl='flash') for efficient inference.
+    To extract attention weights, use attn_impl='torch' when creating the TahoeConfig,
+    though this will be slower and use more memory.
     """
 
     default_configurer = TahoeConfig()
@@ -80,6 +91,7 @@ class Tahoe(HelicalRNAModel):
                 repo_id=self.config["hf_repo_id"],
                 model_size=self.config["model_size"],
                 return_gene_embeddings=(self.config["emb_mode"] == "gene"),
+                attn_impl=self.config["attn_impl"],
             )
         )
 
@@ -90,7 +102,8 @@ class Tahoe(HelicalRNAModel):
             f"Model loaded with {self.model.model.n_layers} transformer layers."
         )
         LOGGER.info(
-            f"Tahoe model is in 'eval' mode, on device '{self.device}' with embedding mode '{self.config['emb_mode']}'."
+            f"Tahoe model is in 'eval' mode, on device '{self.device}' with embedding mode '{self.config['emb_mode']}' "
+            f"and attention implementation '{self.config['attn_impl']}'."
         )
 
     def process_data(
@@ -189,7 +202,8 @@ class Tahoe(HelicalRNAModel):
         self,
         dataloader: DataLoader,
         return_gene_embeddings: bool = False,
-    ) -> Union[np.ndarray, tuple[np.ndarray, np.ndarray]]:
+        output_attentions: bool = False,
+    ) -> Union[np.ndarray, tuple]:
         """Gets the embeddings from the Tahoe model.
 
         Parameters
@@ -198,18 +212,39 @@ class Tahoe(HelicalRNAModel):
             The DataLoader returned from process_data().
         return_gene_embeddings : bool, optional, default=False
             Whether to return gene embeddings in addition to cell embeddings.
+        output_attentions : bool, optional, default=False
+            Whether to return attention weights from all transformer layers.
+            Note: This requires the model to be initialized with attn_impl='torch'.
+            The default Flash Attention (attn_impl='flash') does not support attention
+            weight extraction for efficiency reasons.
 
         Returns
         -------
-        np.ndarray or tuple of np.ndarray
-            If return_gene_embeddings is False:
-                - Cell embeddings as a numpy array of shape (n_cells, embedding_dim)
-            If return_gene_embeddings is True:
-                - Tuple of (cell_embeddings, gene_embeddings)
-                - Cell embeddings: shape (n_cells, embedding_dim)
-                - Gene embeddings: shape (n_genes_in_vocab, embedding_dim)
+        np.ndarray or tuple
+            Depending on the combination of flags:
+            - If both False: cell_embeddings (n_cells, embedding_dim)
+            - If return_gene_embeddings=True only: (cell_embeddings, gene_embeddings)
+            - If output_attentions=True only: (cell_embeddings, attentions)
+            - If both True: (cell_embeddings, gene_embeddings, attentions)
+
+            Where attentions is a numpy array of attention weights from the last transformer layer.
+            Shape: (n_cells, n_heads, seq_length, seq_length).
+            Only the last transformer layer's attention is returned to conserve memory.
         """
         LOGGER.info("Extracting embeddings from Tahoe model...")
+
+        # Check if attention extraction is requested but not supported
+        if output_attentions:
+            attn_impl = self.model_cfg.get("attn_config", {}).get("attn_impl", "flash")
+            if attn_impl in ["flash", "triton"]:
+                raise RuntimeError(
+                    f"Attention weight extraction is not supported with attn_impl='{attn_impl}'. "
+                    "Flash Attention is optimized for speed and memory efficiency and does not "
+                    "compute/store attention weights. To extract attention weights, initialize the model "
+                    "with attn_impl='torch':\n\n"
+                    "    tahoe_config = TahoeConfig(model_size='70m', attn_impl='torch')\n"
+                    "    tahoe = Tahoe(configurer=tahoe_config)"
+                )
 
         from typing import List
         from tqdm.auto import tqdm
@@ -219,6 +254,7 @@ class Tahoe(HelicalRNAModel):
         model.return_gene_embeddings = return_gene_embeddings
 
         cell_embs: List[torch.Tensor] = []
+        all_attentions: List[torch.Tensor] = [] if output_attentions else None
 
         if return_gene_embeddings:
             gene_array = torch.zeros(
@@ -266,9 +302,17 @@ class Tahoe(HelicalRNAModel):
                         else None
                     ),
                     skip_decoders=True,
+                    output_attentions=output_attentions,
                 )
 
                 cell_embs.append(output["cell_emb"].to("cpu").to(dtype=torch.float32))
+
+                if output_attentions:
+                    # Only keep last layer attention to save memory
+                    # Shape: (batch, n_heads, seq_len, seq_len)
+                    # Convert to float32 for numpy compatibility
+                    last_layer_attn = output["attentions"][-1].cpu().to(torch.float32)
+                    all_attentions.append(last_layer_attn)
 
                 if return_gene_embeddings:
                     gene_embs = output.get("gene_emb").to(torch.float32)
@@ -296,6 +340,7 @@ class Tahoe(HelicalRNAModel):
             keepdims=True,
         )
 
+        # Prepare gene embeddings if requested
         if return_gene_embeddings:
             # Average gene embeddings
             gene_array = gene_array.to("cpu").to(torch.float32).numpy()
@@ -313,10 +358,26 @@ class Tahoe(HelicalRNAModel):
             all_gene_ids = np.array(list(gene2idx.values()))
             gene_array = gene_array[all_gene_ids, :]
 
-            LOGGER.info(
-                f"Finished extracting embeddings. Cell shape: {cell_array.shape}, Gene shape: {gene_array.shape}"
-            )
+        # Prepare attention arrays if requested
+        if output_attentions:
+            # Concatenate all batches and convert to numpy
+            # Shape: (total_cells, n_heads, seq_len, seq_len)
+            attention_array = torch.cat(all_attentions, dim=0).numpy()
+
+        # Return based on requested outputs
+        log_msg = f"Finished extracting embeddings. Cell shape: {cell_array.shape}"
+        if return_gene_embeddings:
+            log_msg += f", Gene shape: {gene_array.shape}"
+        if output_attentions:
+            log_msg += f", Attention shape: {attention_array.shape}"
+        LOGGER.info(log_msg)
+
+        # Return appropriate combination
+        if return_gene_embeddings and output_attentions:
+            return cell_array, gene_array, attention_array
+        elif return_gene_embeddings:
             return cell_array, gene_array
+        elif output_attentions:
+            return cell_array, attention_array
         else:
-            LOGGER.info(f"Finished extracting embeddings. Shape: {cell_array.shape}")
             return cell_array

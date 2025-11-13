@@ -55,6 +55,19 @@ cell_embeddings, gene_embeddings = tahoe.get_embeddings(
     dataloader,
     return_gene_embeddings=True
 )
+
+# Get attention weights (requires attn_impl='torch')
+tahoe_config_attn = TahoeConfig(
+    model_size="70m",
+    batch_size=8,
+    attn_impl="torch"  # Use 'torch' instead of 'flash' for attention extraction
+)
+tahoe_attn = Tahoe(configurer=tahoe_config_attn)
+dataloader_attn = tahoe_attn.process_data(adata)
+cell_embeddings, attentions = tahoe_attn.get_embeddings(
+    dataloader_attn,
+    output_attentions=True
+)
 ```
 
 ## Features
@@ -65,6 +78,7 @@ cell_embeddings, gene_embeddings = tahoe.get_embeddings(
 - **Follows helical patterns**: Uses the same structure as other models (Geneformer, scGPT)
 - **Automatic gene mapping**: Maps gene symbols to Ensembl IDs using helical utilities
 - **Flexible embeddings**: Supports both cell-level and gene-level embeddings
+- **Attention extraction**: Supports attention weight extraction when using `attn_impl='torch'`
 - **Model variants**: Supports 70M, 1B, and 3B parameter models from Hugging Face
 
 ## Dependencies
@@ -80,6 +94,33 @@ The model requires the following packages (specified in tahoe-x1's dependencies)
 - scipy
 - tqdm
 - streaming (for data loading)
+
+## Attention Implementation
+
+The model supports two attention implementations:
+
+### Flash Attention (default)
+- **Fast and memory efficient**: Optimized for speed and reduced memory usage
+- **Default setting**: `attn_impl='flash'`
+- **Limitation**: Does not support attention weight extraction
+- **Best for**: Production inference and large-scale embedding extraction
+
+### Standard PyTorch Attention
+- **Slower but flexible**: Uses standard PyTorch attention mechanism
+- **Enable with**: `attn_impl='torch'`
+- **Supports**: Attention weight extraction for analysis and visualization
+- **Best for**: Research and analysis requiring attention maps
+
+Example:
+```python
+# For standard inference (fast)
+config = TahoeConfig(model_size="70m", attn_impl="flash")
+
+# For attention extraction (slower)
+config = TahoeConfig(model_size="70m", attn_impl="torch")
+tahoe = Tahoe(configurer=config)
+embeddings, attentions = tahoe.get_embeddings(dataloader, output_attentions=True)
+```
 
 ## Model Details
 

@@ -40,6 +40,18 @@ def run(cfg: DictConfig):
     print(f"Cell embeddings shape: {cell_embeddings.shape}")
     print(f"Gene embeddings shape: {gene_embeddings.shape}")
 
+    # Get embeddings with attention weights
+    # Note: This requires using attn_impl='torch' instead of the default 'flash'
+    # Only the last transformer layer's attention is returned to save memory
+    # tahoe_config_torch = TahoeConfig(**cfg, attn_impl='torch')
+    # tahoe_torch = Tahoe(configurer=tahoe_config_torch)
+    # dataloader_torch = tahoe_torch.process_data(ann_data[:10])
+    # cell_embeddings, attentions = tahoe_torch.get_embeddings(
+    #     dataloader_torch, output_attentions=True
+    # )
+    # print(f"Cell embeddings shape: {cell_embeddings.shape}")
+    # print(f"Attention shape: {attentions.shape}")  # (n_cells, n_heads, seq_len, seq_len) - last layer only
+
 
 if __name__ == "__main__":
     run()

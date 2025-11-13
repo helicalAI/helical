@@ -24,6 +24,10 @@ class TahoeConfig:
         - "gene": Returns gene-level embeddings for each gene token
     device : Literal["cpu", "cuda"], optional, default="cpu"
         The device to use. Either use "cuda" or "cpu".
+    attn_impl : Literal["flash", "torch"], optional, default="flash"
+        The attention implementation to use:
+        - "flash": Uses Flash Attention for speed and memory efficiency (doesn't support attention output)
+        - "torch": Uses standard PyTorch attention (supports attention output but slower)
     max_length : int, optional, default=2048
         The maximum sequence length for tokenization.
     num_workers : int, optional, default=8
@@ -51,6 +55,7 @@ class TahoeConfig:
         batch_size: int = 8,
         emb_mode: Literal["cell", "gene"] = "cell",
         device: Literal["cpu", "cuda"] = "cpu",
+        attn_impl: Literal["flash", "torch"] = "flash",
         max_length: int = 2048,
         num_workers: int = 8,
         prefetch_factor: int = 48,
@@ -84,6 +89,7 @@ class TahoeConfig:
             "batch_size": batch_size,
             "emb_mode": emb_mode,
             "device": device,
+            "attn_impl": attn_impl,
             "max_length": max_length,
             "num_workers": num_workers,
             "prefetch_factor": prefetch_factor,
