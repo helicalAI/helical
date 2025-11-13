@@ -66,11 +66,12 @@ To install the latest pip release of our Helical package, you can run the comman
 ```
 pip install helical
 ```
-To install Helical with GPU support, run the command below (or install pytorch with cuda first and then install helical):
+
+***Note***
+Sometimes Torch is not installed as the CUDA compiled version (e.g. on different architectures) which is why you need to manually install Helical with GPU support, run the command below (or install pytorch with cuda first and then install helical):
 ```
 pip install helical --extra-index-url https://download.pytorch.org/whl/cuXXX (replace XXX with your cuda version, e.g. 128 for cuda 12.8)
 ```
-**Important** Make sure that your Pytorch CUDA Version matches your system CUDA version, especially when using flash-attn.
 
 To install the latest Helical package, you can run the command below:
 ```
@@ -89,6 +90,8 @@ To enable Flash Attention (required by some models), run the command below:
 ```
 pip install flash-attn --no-build-isolation
 ```
+**Important** Make sure that your Pytorch CUDA Version matches your system CUDA version, especially when using flash-attn.
+
 ###Mamba-SSM Model Installation
 [Optional] To install mamba-ssm and causal-conv1d use the command below:
 ```
