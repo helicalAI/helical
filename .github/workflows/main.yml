@@ -20,6 +20,7 @@ jobs:
       - name: Install dependencies
         run: |
             pip install --no-cache-dir . --force-reinstall
+            pip install --no-cache-dir mamba-ssm[causal-conv1d] --force-reinstall --no-deps
             pip install -r requirements-dev.txt
             pip install --no-cache-dir .[tahoe] --no-deps
             pip install --no-cache-dir .[mamba-ssm] --no-deps
