@@ -5,7 +5,8 @@ from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import torch
-from composer.utils import dist
+# from composer.utils import dist
+import torch.distributed as dist
 from llmfoundry.layers_registry import attention_classes, norms
 from llmfoundry.models.layers.ffn import (
     resolve_ffn_act_fn,

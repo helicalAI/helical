@@ -66,6 +66,11 @@ To install the latest pip release of our Helical package, you can run the comman
 ```
 pip install helical
 ```
+To install Helical with GPU support, run the command below (or install pytorch with cuda first and then install helical):
+```
+pip install helical --extra-index-url https://download.pytorch.org/whl/cuXXX (replace XXX with your cuda version, e.g. 128 for cuda 12.8)
+```
+**Important** Make sure that your Pytorch CUDA Version matches your system CUDA version, especially when using flash-attn.
 
 To install the latest Helical package, you can run the command below:
 ```
@@ -78,6 +83,13 @@ git clone https://github.com/helicalAI/helical.git
 pip install .
 ```
 
+
+###Flash Attention Support
+To install Helical with Flash Attention support, run the command below:
+```
+pip install flash-attn --no-build-isolation
+```
+###Mamba-SSM Model Installation
 [Optional] To install mamba-ssm and causal-conv1d use the command below:
 ```
 pip install helical[mamba-ssm]
@@ -85,6 +97,14 @@ pip install helical[mamba-ssm]
 or in case you're installing from the Helical repo cloned locally:
 ```
 pip install .[mamba-ssm]
+```
+###Evo2 Model Installation
+To install Evo2 Specifically, follow the instructions in the [evo-2 model card](helical/models/evo_2/README.md).
+
+### Tahoe-X1 Model Installation
+To install Tahoe-X1 do the following after installing helical:
+```
+pip install helical[tahoe]
 ```
 
 ## Notes on the installation: 
