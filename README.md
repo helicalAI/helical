@@ -176,6 +176,7 @@ A lot of our models have been published by talented authors developing these exc
 - [TranscriptFormer](https://github.com/czi-ai/transcriptformer)
 - [HyenaDNA](https://github.com/HazyResearch/hyena-dna)
 - [Cell2Sen](https://github.com/vandijklab/cell2sentence)
+- [Tahoe-X1](https://github.com/tahoebio/tahoe-x1)
 - [anndata](https://github.com/scverse/anndata)
 - [scanpy](https://github.com/scverse/scanpy)
 - [transformers](https://github.com/huggingface/transformers)
@@ -199,6 +200,7 @@ You can find the Licenses for each model implementation in the model repositorie
 - [HyenaDNA](https://github.com/helicalAI/helical/blob/release/helical/models/hyena_dna/LICENSE)
 - [Evo2](https://github.com/helicalAI/helical/blob/release/helical/models/evo_2/LICENSE)
 - [Cell2Sen](https://github.com/helicalAI/helical/blob/release/helical/models/c2s/LICENSE)
+- [Tahoe-X1](https://github.com/helicalAI/helical/blob/release/helical/models/tahoe/LICENSE)
 
 ## Citation
 
