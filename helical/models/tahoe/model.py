@@ -67,14 +67,8 @@ class Tahoe(HelicalRNAModel):
         self.config = configurer.config
         self.device = torch.device(self.config["device"])
 
-        # Import tahoe_x1 modules
-        try:
-            from tahoe_x1.model import ComposerTX
-        except ImportError:
-            raise ImportError(
-                "The tahoe_x1 package is required to use the Tahoe model. "
-                "Please install it from the tahoe-x1 repository."
-            )
+        # Import tahoe_x1 modules from local copy
+        from helical.models.tahoe.tahoe_x1.model import ComposerTX
 
         LOGGER.info(
             f"Loading Tahoe model (size: {self.config['model_size']}) from Hugging Face..."
@@ -206,8 +200,8 @@ class Tahoe(HelicalRNAModel):
         """
         LOGGER.info("Extracting embeddings from Tahoe model...")
 
-        # Import the embedding extraction function
-        from tahoe_x1.tasks import get_batch_embeddings
+        # Import the embedding extraction function from local copy
+        from helical.models.tahoe.tahoe_x1.tasks import get_batch_embeddings
 
         # Get gene_ids from the processed data
         if "tahoe_gene_ids" not in adata.uns:
