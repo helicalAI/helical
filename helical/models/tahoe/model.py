@@ -51,7 +51,7 @@ class Tahoe(HelicalRNAModel):
     tahoe_attn = Tahoe(configurer=tahoe_config_attn)
     dataloader_attn = tahoe_attn.process_data(ann_data)
     cell_embeddings, attentions = tahoe_attn.get_embeddings(dataloader_attn, output_attentions=True)
-    print("Attention shape:", attentions.shape)  # (n_cells, n_heads, seq_len, seq_len) - last layer only
+    print(f"Attention shape: {attentions.shape}")  # (n_batches, batch_size, n_heads, seq_len, seq_len)
     ```
 
     Parameters
@@ -227,8 +227,9 @@ class Tahoe(HelicalRNAModel):
             - If output_attentions=True only: (cell_embeddings, attentions)
             - If both True: (cell_embeddings, gene_embeddings, attentions)
 
-            Where attentions is a numpy array of attention weights from the last transformer layer.
-            Shape: (n_cells, n_heads, seq_length, seq_length).
+            Where attentions is a numpy array containing attention weights from the last transformer layer.
+            Shape: (n_batches, batch_size, n_heads, seq_length, seq_length).
+            Sequence lengths vary per batch based on the number of genes expressed.
             Only the last transformer layer's attention is returned to conserve memory.
         """
         LOGGER.info("Extracting embeddings from Tahoe model...")
@@ -360,9 +361,29 @@ class Tahoe(HelicalRNAModel):
 
         # Prepare attention arrays if requested
         if output_attentions:
-            # Concatenate all batches and convert to numpy
-            # Shape: (total_cells, n_heads, seq_len, seq_len)
-            attention_array = torch.cat(all_attentions, dim=0).numpy()
+            # Find max sequence length across all batches
+            max_seq_len = max(attn.shape[2] for attn in all_attentions)
+
+            # Pad all batches to max_seq_len
+            padded_attentions = []
+            for attn in all_attentions:
+                batch_size, n_heads, seq_len, _ = attn.shape
+                if seq_len < max_seq_len:
+                    # Pad with zeros to max_seq_len
+                    pad_size = max_seq_len - seq_len
+                    padded = torch.nn.functional.pad(
+                        attn,
+                        (0, pad_size, 0, pad_size),  # pad last 2 dimensions (seq_len, seq_len)
+                        mode='constant',
+                        value=0
+                    )
+                    padded_attentions.append(padded)
+                else:
+                    padded_attentions.append(attn)
+
+            # Stack along first dimension and convert to numpy
+            # Shape: (n_batches, batch_size, n_heads, max_seq_len, max_seq_len)
+            attention_array = torch.cat(padded_attentions, dim=0).numpy()
 
         # Return based on requested outputs
         log_msg = f"Finished extracting embeddings. Cell shape: {cell_array.shape}"

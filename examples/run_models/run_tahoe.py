@@ -50,7 +50,7 @@ def run(cfg: DictConfig):
     #     dataloader_torch, output_attentions=True
     # )
     # print(f"Cell embeddings shape: {cell_embeddings.shape}")
-    # print(f"Attention shape: {attentions.shape}")  # (n_cells, n_heads, seq_len, seq_len) - last layer only
+    # print(f"Attention shape: {attentions.shape}")  # (n_batches, batch_size, n_heads, seq_len, seq_len)
 
 
 if __name__ == "__main__":
