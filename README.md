@@ -85,7 +85,7 @@ pip install .
 
 
 ###Flash Attention Support
-To install Helical with Flash Attention support, run the command below:
+To enable Flash Attention (required by some models), run the command below:
 ```
 pip install flash-attn --no-build-isolation
 ```

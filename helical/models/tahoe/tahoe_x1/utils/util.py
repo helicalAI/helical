@@ -80,17 +80,12 @@ def loader_from_adata(
     return data_loader
 
 
-# Wrapper function for S3 downloads used by other modules
-from helical.models.tahoe.tahoe_x1.utils.s3_utils import download_file_from_s3
-
-
 def download_file_from_s3_url(s3_url, local_file_path):
-    """Downloads a file from an S3 URL to the specified local path.
+    """Placeholder for S3 downloads - only used during training with chemical tokens.
 
-    Supports public S3 buckets without credentials (like --no-sign-request).
-
-    :param s3_url: S3 URL in the form s3://bucket-name/path/to/file
-    :param local_file_path: Local path where the file will be saved.
-    :return: The local path to the downloaded file, or None if download fails.
+    For inference from HuggingFace Hub, this function should never be called.
     """
-    return download_file_from_s3(s3_url, local_file_path)
+    raise NotImplementedError(
+        "S3 downloads are only supported during training. "
+        "For inference, use models loaded from HuggingFace Hub."
+    )

@@ -79,7 +79,7 @@ class Tahoe(HelicalRNAModel):
         self.device = torch.device(self.config["device"])
 
         # Import tahoe_x1 modules from local copy
-        from helical.models.tahoe.tahoe_x1.model import ComposerTX
+        from helical.models.tahoe.tahoe_x1.model import TXModel
 
         LOGGER.info(
             f"Loading Tahoe model (size: {self.config['model_size']}) from Hugging Face..."
@@ -87,7 +87,7 @@ class Tahoe(HelicalRNAModel):
 
         # Load model from Hugging Face
         self.model, self.vocab, self.model_cfg, self.collator_cfg = (
-            ComposerTX.from_hf(
+            TXModel.from_hf(
                 repo_id=self.config["hf_repo_id"],
                 model_size=self.config["model_size"],
                 return_gene_embeddings=(self.config["emb_mode"] == "gene"),
@@ -99,7 +99,7 @@ class Tahoe(HelicalRNAModel):
         self.model.eval()
 
         LOGGER.info(
-            f"Model loaded with {self.model.model.n_layers} transformer layers."
+            f"Model loaded with {self.model.n_layers} transformer layers."
         )
         LOGGER.info(
             f"Tahoe model is in 'eval' mode, on device '{self.device}' with embedding mode '{self.config['emb_mode']}' "
@@ -251,7 +251,7 @@ class Tahoe(HelicalRNAModel):
         from tqdm.auto import tqdm
 
         device = self.device
-        model = self.model.model
+        model = self.model
         model.return_gene_embeddings = return_gene_embeddings
 
         cell_embs: List[torch.Tensor] = []
