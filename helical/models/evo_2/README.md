@@ -98,16 +98,12 @@ conda install cuda-toolkit=12.4 -c nvidia
 export CUDNN_PATH=$CONDA_PREFIX/lib/python3.11/site-packages/nvidia/cudnn
 export CPLUS_INCLUDE_PATH=$CONDA_PREFIX/lib/python3.11/site-packages/nvidia/nvtx/include
 
-pip install torch==2.6.0
-pip install "helical[evo-2]@git+https://github.com/helicalAI/helical.git"
-
-git clone https://github.com/Zymrael/vortex.git
-cd vortex
-git checkout f243e8e
-sed -i 's/torch==2.5.1/torch==2.6.0/g' pyproject.toml
-make setup-full
-cd ..
-
+python3 -m pip install torch==2.6.0
+conda install -c nvidia cuda-nvcc cuda-cudart-dev
+conda install -c conda-forge transformer-engine-torch==2.3.0
+python3 -m pip install flash-attn==2.8.0.post2
+python3 -m pip install vtx
+python3 -m pip install helical
 pip install torch==2.6.0 torchvision
 ```
 
