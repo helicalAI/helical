@@ -47,7 +47,7 @@ dependencies = [
 [project.optional-dependencies]
 mamba-ssm = [
     'mamba-ssm==2.2.6.post3',
-    'causal-conv1d==1.5.0.post8',
+    'causal-conv1d==1.5.3.post1',
 ]
 
 evo-2 = [
