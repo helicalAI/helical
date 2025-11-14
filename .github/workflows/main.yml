@@ -19,10 +19,10 @@ jobs:
 
       - name: Install dependencies
         run: |
-            pip uninstall mamba-ssm causal-conv1d torch -y
-            pip install --no-cache-dir --force-reinstall . 
-            pip install --no-cache-dir mamba-ssm[causal-conv1d]
-            pip install -r requirements-dev.txt
+            python -m pip uninstall mamba-ssm causal-conv1d torch -y
+            python -m pip install --no-cache-dir --force-reinstall . 
+            python -m pip install --no-cache-dir mamba-ssm[causal-conv1d]
+            python -m pip install -r requirements-dev.txt
         # pip install --no-cache-dir .[tahoe] --no-deps
         # pip install --no-cache-dir .[mamba-ssm] --no-deps
             
