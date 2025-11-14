@@ -67,6 +67,12 @@ To install the latest pip release of our Helical package, you can run the comman
 pip install helical
 ```
 
+***Note***
+Sometimes Torch is not installed as the CUDA compiled version (e.g. on different architectures) which is why you need to manually install Helical with GPU support, run the command below (or install pytorch with cuda first and then install helical):
+```
+pip install helical --extra-index-url https://download.pytorch.org/whl/cuXXX (replace XXX with your cuda version, e.g. 128 for cuda 12.8)
+```
+
 To install the latest Helical package, you can run the command below:
 ```
 pip install --upgrade git+https://github.com/helicalAI/helical.git
@@ -78,6 +84,15 @@ git clone https://github.com/helicalAI/helical.git
 pip install .
 ```
 
+
+###Flash Attention Support
+To enable Flash Attention (required by some models), run the command below:
+```
+pip install flash-attn --no-build-isolation
+```
+**Important** Make sure that your Pytorch CUDA Version matches your system CUDA version, especially when using flash-attn.
+
+###Mamba-SSM Model Installation
 [Optional] To install mamba-ssm and causal-conv1d use the command below:
 ```
 pip install helical[mamba-ssm]
@@ -85,6 +100,14 @@ pip install helical[mamba-ssm]
 or in case you're installing from the Helical repo cloned locally:
 ```
 pip install .[mamba-ssm]
+```
+###Evo2 Model Installation
+To install Evo2 Specifically, follow the instructions in the [evo-2 model card](helical/models/evo_2/README.md).
+
+### Tahoe-X1 Model Installation
+To install Tahoe-X1 do the following after installing helical:
+```
+pip install helical[tahoe]
 ```
 
 ## Notes on the installation: 
@@ -176,6 +199,7 @@ A lot of our models have been published by talented authors developing these exc
 - [TranscriptFormer](https://github.com/czi-ai/transcriptformer)
 - [HyenaDNA](https://github.com/HazyResearch/hyena-dna)
 - [Cell2Sen](https://github.com/vandijklab/cell2sentence)
+- [Tahoe-X1](https://github.com/tahoebio/tahoe-x1)
 - [anndata](https://github.com/scverse/anndata)
 - [scanpy](https://github.com/scverse/scanpy)
 - [transformers](https://github.com/huggingface/transformers)
@@ -199,6 +223,7 @@ You can find the Licenses for each model implementation in the model repositorie
 - [HyenaDNA](https://github.com/helicalAI/helical/blob/release/helical/models/hyena_dna/LICENSE)
 - [Evo2](https://github.com/helicalAI/helical/blob/release/helical/models/evo_2/LICENSE)
 - [Cell2Sen](https://github.com/helicalAI/helical/blob/release/helical/models/c2s/LICENSE)
+- [Tahoe-X1](https://github.com/helicalAI/helical/blob/release/helical/models/tahoe/LICENSE)
 
 ## Citation
 
