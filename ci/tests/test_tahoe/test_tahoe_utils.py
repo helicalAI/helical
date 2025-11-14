@@ -4,6 +4,7 @@ import torch
 from scipy.sparse import csr_matrix, csc_matrix
 from anndata import AnnData
 from unittest.mock import Mock, patch
+from omegaconf import DictConfig
 
 from helical.models.tahoe.tahoe_x1.utils.util import loader_from_adata, download_file_from_s3_url
 from helical.models.tahoe.tahoe_x1.data.dataloader import CountDataset
@@ -31,7 +32,7 @@ class TestLoaderFromAdata:
     @pytest.fixture
     def mock_collator_cfg(self):
         """Create mock collator configuration."""
-        return {
+        return DictConfig({
             "pad_value": 0.0,
             "do_padding": True,
             "pad_token_id": 1,
@@ -45,13 +46,12 @@ class TestLoaderFromAdata:
             "right_binning": False,
             "keep_first_n_tokens": 1,
             "use_chem_token": False,
-        }
+        })
 
     @pytest.fixture
     def sample_adata(self):
         """Create a sample AnnData object."""
-        adata = AnnData()
-        adata.X = csr_matrix(np.array([[1.0, 0.0, 3.0], [0.0, 2.0, 4.0]]))
+        adata = AnnData(X=csr_matrix(np.array([[1.0, 0.0, 3.0], [0.0, 2.0, 4.0]])))
         adata.var["id_in_vocab"] = [2, 3, 4]
         return adata
 
@@ -59,8 +59,8 @@ class TestLoaderFromAdata:
         """Test basic dataloader creation from AnnData."""
         gene_ids = np.array([2, 3, 4])
 
-        with patch("helical.models.tahoe.tahoe_x1.utils.util.CountDataset") as MockDataset:
-            with patch("helical.models.tahoe.tahoe_x1.utils.util.DataCollator") as MockCollator:
+        with patch("helical.models.tahoe.tahoe_x1.data.CountDataset") as MockDataset:
+            with patch("helical.models.tahoe.tahoe_x1.data.DataCollator") as MockCollator:
                 MockDataset.return_value = Mock()
                 MockCollator.return_value = Mock()
 
@@ -71,13 +71,15 @@ class TestLoaderFromAdata:
                     batch_size=2,
                     gene_ids=gene_ids,
                     num_workers=0,
-                    prefetch_factor=2,
+                    prefetch_factor=None,
                 )
 
                 # Verify CountDataset was called with correct parameters
                 MockDataset.assert_called_once()
                 call_args = MockDataset.call_args
-                assert np.array_equal(call_args[1]["gene_ids"], gene_ids)
+                # gene_ids is passed as positional argument (second argument)
+                assert np.array_equal(call_args[0][1], gene_ids)
+                # cls_token_id and pad_value are keyword arguments
                 assert call_args[1]["cls_token_id"] == 0
                 assert call_args[1]["pad_value"] == 0.0
 
@@ -85,8 +87,8 @@ class TestLoaderFromAdata:
         """Test dataloader creation with max_length parameter."""
         gene_ids = np.array([2, 3, 4])
 
-        with patch("helical.models.tahoe.tahoe_x1.utils.util.CountDataset"):
-            with patch("helical.models.tahoe.tahoe_x1.utils.util.DataCollator"):
+        with patch("helical.models.tahoe.tahoe_x1.data.CountDataset"):
+            with patch("helical.models.tahoe.tahoe_x1.data.DataCollator"):
                 loader = loader_from_adata(
                     adata=sample_adata,
                     collator_cfg=mock_collator_cfg,
@@ -101,13 +103,12 @@ class TestLoaderFromAdata:
 
     def test_loader_from_adata_csc_to_csr_conversion(self, mock_vocab, mock_collator_cfg):
         """Test that CSC matrices are converted to CSR."""
-        adata = AnnData()
-        adata.X = csc_matrix(np.array([[1.0, 0.0], [0.0, 2.0]]))
+        adata = AnnData(X=csc_matrix(np.array([[1.0, 0.0], [0.0, 2.0]])))
         adata.var["id_in_vocab"] = [2, 3]
         gene_ids = np.array([2, 3])
 
-        with patch("helical.models.tahoe.tahoe_x1.utils.util.CountDataset") as MockDataset:
-            with patch("helical.models.tahoe.tahoe_x1.utils.util.DataCollator"):
+        with patch("helical.models.tahoe.tahoe_x1.data.CountDataset") as MockDataset:
+            with patch("helical.models.tahoe.tahoe_x1.data.DataCollator"):
                 loader = loader_from_adata(
                     adata=adata,
                     collator_cfg=mock_collator_cfg,
@@ -124,8 +125,8 @@ class TestLoaderFromAdata:
 
     def test_loader_from_adata_infers_gene_ids(self, sample_adata, mock_vocab, mock_collator_cfg):
         """Test that gene_ids are inferred from adata.var when not provided."""
-        with patch("helical.models.tahoe.tahoe_x1.utils.util.CountDataset") as MockDataset:
-            with patch("helical.models.tahoe.tahoe_x1.utils.util.DataCollator"):
+        with patch("helical.models.tahoe.tahoe_x1.data.CountDataset") as MockDataset:
+            with patch("helical.models.tahoe.tahoe_x1.data.DataCollator"):
                 MockDataset.return_value = Mock()
 
                 loader = loader_from_adata(
@@ -139,7 +140,8 @@ class TestLoaderFromAdata:
 
                 # Verify gene_ids were inferred from adata.var
                 call_args = MockDataset.call_args
-                passed_gene_ids = call_args[1]["gene_ids"]
+                # gene_ids is passed as positional argument (second argument)
+                passed_gene_ids = call_args[0][1]
                 expected_gene_ids = np.array(sample_adata.var["id_in_vocab"])
                 assert np.array_equal(passed_gene_ids, expected_gene_ids)
 

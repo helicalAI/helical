@@ -10,11 +10,11 @@ class TestTahoeConfig:
         config = TahoeConfig()
 
         assert config.config["model_size"] == "70m"
-        assert config.config["batch_size"] == 10
+        assert config.config["batch_size"] == 8
         assert config.config["emb_mode"] == "cell"
         assert config.config["attn_impl"] == "flash"
-        assert config.config["device"] == "cuda"
-        assert config.config["max_length"] == 10000
+        assert config.config["device"] == "cpu"
+        assert config.config["max_length"] == 2048
         assert config.config["num_workers"] == 8
         assert config.config["prefetch_factor"] == 48
 

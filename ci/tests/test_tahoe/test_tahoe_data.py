@@ -24,6 +24,7 @@ class TestDataCollator:
         vocab = Mock(spec=GeneVocab)
         vocab.__getitem__ = lambda self, key: vocab_dict.get(key, -1)
         vocab.__contains__ = lambda self, key: key in vocab_dict
+        vocab.get_stoi = lambda: vocab_dict
         vocab.pad_token_id = 1
         return vocab
 
@@ -75,7 +76,7 @@ class TestDataCollator:
 
         # Process batch
         with patch.object(collator, "_pad", return_value=batch[0]):
-            with patch.object(collator, "_binning", side_effect=lambda x: x):
+            with patch("helical.models.tahoe.tahoe_x1.data.collator.binning", side_effect=lambda row, **kwargs: row):
                 output = collator(batch)
 
         assert "gene" in output or "genes" in output

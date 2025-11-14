@@ -38,6 +38,10 @@ def loader_from_adata(
     if max_length is None:
         max_length = len(gene_ids)
 
+    # prefetch_factor must be None when num_workers is 0
+    if num_workers == 0:
+        prefetch_factor = None
+
     from helical.models.tahoe.tahoe_x1.data import CountDataset, DataCollator
 
     dataset = CountDataset(
