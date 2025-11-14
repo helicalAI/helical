@@ -19,16 +19,15 @@ jobs:
 
       - name: Install dependencies
         run: |
-            python -m pip uninstall mamba-ssm causal-conv1d torch -y
-            python -m pip install --no-cache-dir --force-reinstall . 
-       
-            python3 -m pip install https://github.com/state-spaces/mamba/releases/download/v2.2.6.post3/mamba_ssm-2.2.6.post3+cu12torch2.7cxx11abiFALSE-cp311-cp311-linux_x86_64.whl
-
-            python3 -m pip install https://github.com/Dao-AILab/causal-conv1d/releases/download/v1.5.3.post1/causal_conv1d-1.5.3.post1+cu12torch2.7cxx11abiFALSE-cp311-cp311-linux_x86_64.whl
+            python3 -m pip install .[mamba-ssm]
             python -m pip install -r requirements-dev.txt
         # pip install --no-cache-dir .[tahoe] --no-deps
         # pip install --no-cache-dir .[mamba-ssm] --no-deps
         # python -m pip install --no-cache-dir mamba-ssm[causal-conv1d]
+        #python -m pip uninstall mamba-ssm causal-conv1d torch -y
+        #python -m pip install --no-cache-dir --force-reinstall . 
+        #python3 -m pip install https://github.com/state-spaces/mamba/releases/download/v2.2.6.post3/mamba_ssm-2.2.6.post3+cu12torch2.7cxx11abiFALSE-cp311-cp311-linux_x86_64.whl
+        #python3 -m pip install https://github.com/Dao-AILab/causal-conv1d/releases/download/v1.5.3.post1/causal_conv1d-1.5.3.post1+cu12torch2.7cxx11abiFALSE-cp311-cp311-linux_x86_64.whl
             
       # First download before tests as they make use of the downloaded files 
       - name: Download all files
