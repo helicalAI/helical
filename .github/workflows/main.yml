@@ -19,6 +19,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+            pip uninstall -y torchvision
             pip install -r requirements-dev.txt
             pip install .[mamba-ssm]
             
