@@ -1,9 +1,11 @@
 import logging
 from typing import List, Optional, Sequence
-
+from helical.utils.downloader import Downloader
 import pandas as pd
 from anndata import AnnData
 import pybiomart
+from pathlib import Path
+from helical.constants.paths import CACHE_DIR_HELICAL
 
 LOGGER = logging.getLogger(__name__)
 
@@ -84,6 +86,23 @@ def map_ensembl_ids_to_gene_symbols(
     LOGGER.info("Mapped %d / %d Ensembl IDs to gene names.", non_none_mappings, adata.var.shape[0])
     return adata
 
+def _load_static_ensembl_df() -> pd.DataFrame:
+    """
+    Load a static mapping table between gene names and ensembl ids for 'hsapiens'.
+    This avoids having to call an unstable API endpoint from pybiomart.
+    Instead load a static csv from helical.
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame with columns "ensembl_id" and "gene_name".
+    """
+    downloader = Downloader()
+    downloader.download_via_name('hsapiens_pybiomart.csv')
+    df_path = Path(CACHE_DIR_HELICAL, "hsapiens_pybiomart.csv")
+    df = pd.read_csv(df_path, index_col=0)
+    return df
+
 
 def convert_list_ensembl_ids_to_gene_symbols(
     ensembl_ids: Sequence[str], species: str = "hsapiens"
@@ -103,7 +122,10 @@ def convert_list_ensembl_ids_to_gene_symbols(
     List[Optional[str]]
         Gene symbols aligned to the input order (None if not found).
     """
-    df = _get_ensembl_mart_df(species=species)
+    if species == "hsapiens":
+        df = _load_static_ensembl_df()
+    else:
+        df = _get_ensembl_mart_df(species=species)
     mapping = df.drop_duplicates(subset="ensembl_id").set_index("ensembl_id")["gene_name"]
     return list(pd.Series(list(ensembl_ids), dtype="object").map(mapping).where(pd.notna, None))
 
@@ -126,6 +148,9 @@ def convert_list_gene_symbols_to_ensembl_ids(
     List[Optional[str]]
         Ensembl Gene IDs aligned to the input order (None if not found).
     """
-    df = _get_ensembl_mart_df(species=species)
+    if species == "hsapiens":
+        df = _load_static_ensembl_df()
+    else:
+        df = _get_ensembl_mart_df(species=species)
     mapping = df.drop_duplicates(subset="gene_name").set_index("gene_name")["ensembl_id"]
     return list(pd.Series(list(gene_symbols), dtype="object").map(mapping).where(pd.notna, None))
