@@ -19,8 +19,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-            pip uninstall mamba-ssm causal-conv1d flash-attn -y
-            pip install --no-cache-dir -r ./requirements_cuda.txt
             pip install -r requirements-dev.txt
             pip install .[mamba-ssm]
             
