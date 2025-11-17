@@ -27,7 +27,7 @@ dependencies = [
     'scikit-learn>=1.5.0',
     'scipy==1.13.1',
     'gitpython==3.1.43',
-    'torch==2.6.0',
+    'torch==2.7.0',
     'accelerate==1.4.0',
     'transformers==4.49.0',
     'loompy==3.0.7',
@@ -46,8 +46,8 @@ dependencies = [
 
 [project.optional-dependencies]
 mamba-ssm = [
-    'mamba-ssm==2.2.4',
-    'causal-conv1d==1.5.0.post8',
+    'mamba-ssm==2.2.5',
+    'causal-conv1d==1.5.1',
 ]
 
 evo-2 = [
