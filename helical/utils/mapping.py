@@ -3,7 +3,6 @@ from typing import List, Optional, Sequence
 from helical.utils.downloader import Downloader
 import pandas as pd
 from anndata import AnnData
-import pybiomart
 from pathlib import Path
 from helical.constants.paths import CACHE_DIR_HELICAL
 
@@ -24,6 +23,7 @@ def _get_ensembl_mart_df(species: str = "hsapiens") -> pd.DataFrame:
     pandas.DataFrame
         DataFrame with columns "ensembl_id" and "gene_name".
     """
+    import pybiomart
     server = pybiomart.Server(host="http://www.ensembl.org")
     dataset = server.marts["ENSEMBL_MART_ENSEMBL"].datasets[f"{species}_gene_ensembl"]
     df = dataset.query(attributes=["ensembl_gene_id", "external_gene_name"])

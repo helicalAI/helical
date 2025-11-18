@@ -1,3 +1,7 @@
+# pybiomart uses requests-cache: disbale this
+import requests_cache
+requests_cache.uninstall_cache()
+
 import requests
 from helical.utils.logger import Logger
 from helical.constants.enums import LoggingType, LoggingLevel
