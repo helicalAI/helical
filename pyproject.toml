@@ -56,8 +56,9 @@ evo-2 = [
 ]
 
 tahoe = [
-    'flash_attn==2.8.3',
+    'flash_attn==2.7.4.post1',
     'llm-foundry>=0.17.1',
+    'torchvision==0.22.0',
 ]
 
 [tool.hatch.metadata]

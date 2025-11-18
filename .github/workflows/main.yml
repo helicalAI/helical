@@ -21,6 +21,7 @@ jobs:
         run: |
             pip install .[mamba-ssm]
             pip install -r requirements-dev.txt
+            pip install .[tahoe]
             
       # First download before tests as they make use of the downloaded files 
       - name: Download all files
