@@ -394,7 +394,7 @@ class scGPT(HelicalRNAModel):
         gene_ids = np.array(list(present_gene_vocab.values()), dtype=int)
 
         # gene_ids = np.array(self.vocab(genes), dtype=int)
-        count_matrix = adata.X if isinstance(adata.X, np.ndarray) else adata.X.A
+        count_matrix = adata.X
 
         # gene vocabulary ids
         if gene_ids is None:
