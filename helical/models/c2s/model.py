@@ -130,7 +130,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
 
         # standard log-normalization, enables accurate expression reconstruction
         sc.pp.normalize_total(anndata, target_sum=1e4)
-        sc.pp.log1p(anndata)
+        sc.pp.log1p(anndata, base=10)
    
         X = anndata.X    
         if hasattr(X, 'toarray'):
