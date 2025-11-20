@@ -139,15 +139,13 @@ class Cell2Sen(HelicalBaseFoundationModel):
         if hasattr(X, 'toarray'):
             X = X.toarray()
 
-        print(anndata)
         # gene names corresponding to each cell in order
         # anndata.X[i, j] is the expression of the j-th gene in the i-th cell
         cell_sentences = []
-        removed_cell_idx = []
 
-        # Collect ranks and corresponding expression as training data for reconstruction model
-        ranks_to_fit = []
-        expr_to_fit = []
+        # Collect ranks and corresponding expression means as training data for reconstruction model
+        rank_to_mean = {}  
+        rank_to_count = {} 
 
         if self.organism is None:
             if 'organism' in anndata.uns:
@@ -165,10 +163,8 @@ class Cell2Sen(HelicalBaseFoundationModel):
         # Process each cell
         progress_bar = tqdm(total=X.shape[0], desc="Processing cells")
         for cell_idx in range(X.shape[0]):
-            print(cell_idx)
             gene_names = anndata.var_names.values
             cell_expr = X[cell_idx, :]
-            print(cell_expr)
             # Rank nonzero genes by expression (highest = rank 1)
             non_zero_mask = cell_expr > 0 
             if non_zero_mask.sum() == 0:
@@ -192,18 +188,32 @@ class Cell2Sen(HelicalBaseFoundationModel):
                     expr_values = expr_values[:max_genes]
 
             if self.return_fit:
-                ranks_to_fit.extend(np.arange(1, len(gene_names) + 1))
-                expr_to_fit.extend(expr_values)
+                ranks = np.arange(1, len(gene_names) + 1)
+                for rank, expr in zip(ranks, expr_values):
+                    r = int(rank)
+
+                    if r not in rank_to_mean:
+                        # first time seeing this rank
+                        rank_to_mean[r] = expr
+                        rank_to_count[r] = 1
+                    else:
+                        # online mean update
+                        count = rank_to_count[r] + 1
+                        old_mean = rank_to_mean[r]
+                        new_mean = old_mean + (expr - old_mean) / count
+
+                        rank_to_mean[r] = new_mean
+                        rank_to_count[r] = count
+
                
-            cell_sentence = " ".join(gene_names)
-            print(cell_sentence)            
+            cell_sentence = " ".join(gene_names)           
             cell_sentences.append(cell_sentence)
             progress_bar.update(1)
 
 
         if self.return_fit:
-            log_ranks_to_fit = np.log10(ranks_to_fit)
-            expr_to_fit = np.array(expr_to_fit)
+            log_ranks_to_fit = np.log10(list(rank_to_mean.keys()))
+            expr_to_fit = np.array(list(rank_to_mean.values()))
             
             # Fit linear model to predict log-normalized expression from log rank: expr(g) = slope * log(rank(g)) = intercept
             model = LinearRegression()
