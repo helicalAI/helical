@@ -7,6 +7,12 @@ Genes: {cell_sentence} \n
 Using this information, predict the cell type. 
 """
 
+#EMBEDDING_PROMPT = """
+#You are given a list of genes in descending order of expression levels in a {organism} cell. \n
+#Genes: {cell_sentence} \n
+#Using this information, predict the wether the cell comes from an ALS or pathological normal patient.
+#"""
+
 PERTURBATION_PROMPT = """
 You are given a list of genes in descending order of expression levels in a {organism} control cell. \n
 Using this information, predict the perturbed gene profile with the perturbation: {perturbation}.
@@ -56,6 +62,7 @@ class Cell2SenConfig:
         batch_size: int = 16,
         organism: str = None,
         perturbation_column: str = None,
+        max_genes: int = None,
         max_new_tokens: int = 200,
         return_fit: bool = False,
         dtype: str = "bfloat16", 
@@ -110,6 +117,7 @@ class Cell2SenConfig:
             "batch_size": batch_size,
             "organism": organism,
             "perturbation_column": perturbation_column,
+            "max_genes": max_genes,
             "max_new_tokens": max_new_tokens,
             "return_fit": return_fit,
             "use_quantization": use_quantization,

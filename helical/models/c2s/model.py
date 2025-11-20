@@ -55,6 +55,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
     def __init__(self, configurer: Cell2SenConfig = None) -> None:
         super().__init__()
 
+
         if configurer is None:
             self.config = Cell2SenConfig().config
         else:
@@ -82,7 +83,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
                 load_in_4bit=True,
                 bnb_4bit_use_double_quant=True,
                 bnb_4bit_quant_type="nf4",
-                bnb_4bit_compute_dtype=self.torch_dtype
+                bnb_4bit_compute_dtype=self.torch_dtype,
             )
         else:
             self.bnb_config = None
@@ -98,6 +99,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
         self.model.eval()
          
         self.batch_size = self.config['batch_size']
+        self.max_genes = self.config['max_genes']
         self.max_new_tokens = self.config['max_new_tokens']
         self.organism = self.config['organism']
         self.perturbation_column = self.config['perturbation_column']
@@ -137,7 +139,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
         """
 
         LOGGER.info("Processing data")
-
+   
         X = anndata.X    
         if hasattr(X, 'toarray'):
             X = X.toarray()
@@ -145,7 +147,6 @@ class Cell2Sen(HelicalBaseFoundationModel):
         X_log = np.log10(X + 1)
         # gene names corresponding to each cell in order
         # anndata.X[i, j] is the expression of the j-th gene in the i-th cell
-        gene_names = anndata.var_names.values
         cell_sentences = []
         fit_parameters = []  # Will be list of lists: [slope, intercept, r_squared] for each cell
 
@@ -165,32 +166,44 @@ class Cell2Sen(HelicalBaseFoundationModel):
         # Process each cell
         progress_bar = tqdm(total=X_log.shape[0], desc="Processing cells")
         for cell_idx in range(X_log.shape[0]):
+            gene_names = anndata.var_names.values
             cell_expr = X_log[cell_idx, :]
             
             # Rank genes by expression (highest = rank 1)
+            non_zero_mask = cell_expr > 0 
+            if non_zero_mask.sum() == 0:
+                LOGGER.warning(f"No genes expressed above zero in cell {cell_idx}. Skipping.")
+                continue
+              
+            cell_expr = cell_expr[non_zero_mask]
+            gene_names = gene_names[non_zero_mask]
+
             ranked_indices = np.argsort(cell_expr)[::-1]
             assert len(ranked_indices) != 0, "No genes expressed in cell"
             expr_values = cell_expr[ranked_indices]  # Expression values in descending order
+            gene_names = gene_names[ranked_indices]  # Gene names in descending order by expression
+
+            if self.max_genes:
+                if len(gene_names) > self.max_genes:
+                    gene_names = gene_names[:self.max_genes]
+                    expr_values = expr_values[:self.max_genes]
 
             if self.return_fit:
-                non_zero_mask = expr_values > 0
-                if non_zero_mask.sum() > 0:
-                    last_non_zero_idx = np.where(non_zero_mask)[0][-1]  # Last index where expr > 0
-                    # Fit only up to the last non-zero gene
-                    ranks_to_fit = np.arange(1, last_non_zero_idx + 2)  # +1 because rank starts at 1, +1 for inclusive
-                    expr_to_fit = expr_values[:last_non_zero_idx + 1]                    
-                    # Fit linear model
-                    model = LinearRegression()
-                    model.fit(ranks_to_fit.reshape(-1, 1), expr_to_fit)
-                    slope, intercept = model.coef_[0], model.intercept_
-                    r_squared = model.score(ranks_to_fit.reshape(-1, 1), expr_to_fit)
-                else:
-                    slope, intercept, r_squared = 0.0, 0.0, 0.0
+                ranks_to_fit = np.arange(1, len(gene_names) + 1)  # +1 because rank starts at 1, +1 for inclusive
+                expr_to_fit = expr_values
+
+                # Fit linear model
+                model = LinearRegression()
+                model.fit(ranks_to_fit.reshape(-1, 1), expr_to_fit)
+                slope, intercept = model.coef_[0], model.intercept_
+                r_squared = model.score(ranks_to_fit.reshape(-1, 1), expr_to_fit)
+             
                 fit_parameters.append({"slope": float(slope), "intercept": float(intercept), "r_squared": float(r_squared)})
+
             else:
                 fit_parameters.append(None)
 
-            cell_sentence = " ".join(gene_names[ranked_indices])            
+            cell_sentence = " ".join(gene_names)            
             cell_sentences.append(cell_sentence)
             progress_bar.update(1)
         progress_bar.close()
@@ -236,6 +249,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
         """
 
         LOGGER.info("Extracting embeddings from dataset")
+        LOGGER.info(f"Embedding prompt: {EMBEDDING_PROMPT}")
 
         sentences_list = dataset['cell_sentence']
         organisms_list = dataset['organism']
@@ -268,6 +282,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
                     output_hidden_states=True,
                     output_attentions=output_attentions
                 )
+
                 last_hidden = outputs.hidden_states[-1]  # Shape: (batch_size, seq_len, hidden_size)
                 attention_mask = inputs['attention_mask'].float() # Shape: (batch_size, seq_len, 1)
 
