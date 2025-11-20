@@ -9,6 +9,7 @@ See the tutorial notebook for usage.
 
 import torch
 import anndata
+import scanpy as sc
 import numpy as np
 from tqdm import tqdm
 from helical.models.base_models import HelicalBaseFoundationModel
@@ -55,7 +56,6 @@ class Cell2Sen(HelicalBaseFoundationModel):
     def __init__(self, configurer: Cell2SenConfig = None) -> None:
         super().__init__()
 
-
         if configurer is None:
             self.config = Cell2SenConfig().config
         else:
@@ -83,7 +83,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
                 load_in_4bit=True,
                 bnb_4bit_use_double_quant=True,
                 bnb_4bit_quant_type="nf4",
-                bnb_4bit_compute_dtype=self.torch_dtype,
+                bnb_4bit_compute_dtype=self.torch_dtype
             )
         else:
             self.bnb_config = None
@@ -99,7 +99,6 @@ class Cell2Sen(HelicalBaseFoundationModel):
         self.model.eval()
          
         self.batch_size = self.config['batch_size']
-        self.max_genes = self.config['max_genes']
         self.max_new_tokens = self.config['max_new_tokens']
         self.organism = self.config['organism']
         self.perturbation_column = self.config['perturbation_column']
@@ -110,6 +109,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
     def process_data(
         self, 
         anndata: anndata.AnnData, 
+        max_genes: int = None,
     ):
         """
         Process anndata to create a HuggingFace Dataset with cell sentences and fit parameters.
@@ -118,20 +118,8 @@ class Cell2Sen(HelicalBaseFoundationModel):
         -----------
         anndata : AnnData
             Annotated data object with gene expression
-        min_genes : int
-            Minimum number of genes expressed per cell
-        min_counts : int
-            Minimum total counts per cell
-        min_cells : int
-            Minimum number of cells expressing a gene
-        max_cells : int, optional
-            Maximum number of cells to process
         max_genes : int, optional
-            Maximum number of genes to process
-        organism : str, optional
-            Organism name. If None, tries to extract from anndata.uns or uses default
-        perturbation_column : str, optional
-            Column name in anndata.obs to use for perturbations. If None, no perturbations are created.
+            Maximum number of genes to process per cell in descending expression order
         Returns:
         --------
         dataset : Dataset
@@ -139,16 +127,23 @@ class Cell2Sen(HelicalBaseFoundationModel):
         """
 
         LOGGER.info("Processing data")
+
+        # standard log-normalization, enables accurate expression reconstruction
+        sc.pp.normalize_total(anndata, target_sum=1e4)
+        sc.pp.log1p(anndata)
    
         X = anndata.X    
         if hasattr(X, 'toarray'):
             X = X.toarray()
 
-        X_log = np.log10(X + 1)
+
         # gene names corresponding to each cell in order
         # anndata.X[i, j] is the expression of the j-th gene in the i-th cell
         cell_sentences = []
-        fit_parameters = []  # Will be list of lists: [slope, intercept, r_squared] for each cell
+
+        # Collect ranks and corresponding expression as training data for reconstruction model
+        ranks_to_fit = []
+        expr_to_fit = []
 
         if self.organism is None:
             if 'organism' in anndata.uns:
@@ -164,12 +159,12 @@ class Cell2Sen(HelicalBaseFoundationModel):
                 self.organism = "unknown"  # Default if not found
 
         # Process each cell
-        progress_bar = tqdm(total=X_log.shape[0], desc="Processing cells")
-        for cell_idx in range(X_log.shape[0]):
+        progress_bar = tqdm(total=X.shape[0], desc="Processing cells")
+        for cell_idx in range(X.shape[0]):
             gene_names = anndata.var_names.values
-            cell_expr = X_log[cell_idx, :]
+            cell_expr = X[cell_idx, :]
             
-            # Rank genes by expression (highest = rank 1)
+            # Rank nonzero genes by expression (highest = rank 1)
             non_zero_mask = cell_expr > 0 
             if non_zero_mask.sum() == 0:
                 LOGGER.warning(f"No genes expressed above zero in cell {cell_idx}. Skipping.")
@@ -183,29 +178,36 @@ class Cell2Sen(HelicalBaseFoundationModel):
             expr_values = cell_expr[ranked_indices]  # Expression values in descending order
             gene_names = gene_names[ranked_indices]  # Gene names in descending order by expression
 
-            if self.max_genes:
-                if len(gene_names) > self.max_genes:
-                    gene_names = gene_names[:self.max_genes]
-                    expr_values = expr_values[:self.max_genes]
+            # Cut at max_genes if desired
+            if max_genes:
+                if len(gene_names) > max_genes:
+                    gene_names = gene_names[:max_genes]
+                    expr_values = expr_values[:max_genes]
 
             if self.return_fit:
-                ranks_to_fit = np.arange(1, len(gene_names) + 1)  # +1 because rank starts at 1, +1 for inclusive
-                expr_to_fit = expr_values
-
-                # Fit linear model
-                model = LinearRegression()
-                model.fit(ranks_to_fit.reshape(-1, 1), expr_to_fit)
-                slope, intercept = model.coef_[0], model.intercept_
-                r_squared = model.score(ranks_to_fit.reshape(-1, 1), expr_to_fit)
-             
-                fit_parameters.append({"slope": float(slope), "intercept": float(intercept), "r_squared": float(r_squared)})
-
-            else:
-                fit_parameters.append(None)
-
+                ranks_to_fit.extend(np.arange(1, len(gene_names) + 1))
+                expr_to_fit.extend(expr_values)
+               
             cell_sentence = " ".join(gene_names)            
             cell_sentences.append(cell_sentence)
             progress_bar.update(1)
+
+
+        if self.return_fit:
+            log_ranks_to_fit = np.log2(ranks_to_fit)
+            expr_to_fit = np.array(expr_to_fit)
+            
+            # Fit linear model to predict log-normalized expression from log rank: log(rank(g)) = slope * log(expr(g)) = intercept
+            model = LinearRegression()
+            model.fit(log_ranks_to_fit.reshape(-1, 1), np.array(expr_to_fit))
+            slope, intercept = model.coef_[0], model.intercept_
+            r_squared = model.score(log_ranks_to_fit.reshape(-1, 1), expr_to_fit)
+
+            fit_parameters = {"slope": float(slope), "intercept": float(intercept), "r_squared": float(r_squared)}
+
+        else:
+            fit_parameters = None
+
         progress_bar.close()
 
         if self.perturbation_column is not None:
@@ -217,7 +219,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
         
         dataset = Dataset.from_dict({
             'cell_sentence': cell_sentences,
-            'fit_parameters': fit_parameters,
+            'fit_parameters': [fit_parameters] * len(cell_sentences),
             'organism': [self.organism] * len(cell_sentences),
             'perturbations': perturbations
         })
@@ -249,7 +251,6 @@ class Cell2Sen(HelicalBaseFoundationModel):
         """
 
         LOGGER.info("Extracting embeddings from dataset")
-        LOGGER.info(f"Embedding prompt: {EMBEDDING_PROMPT}")
 
         sentences_list = dataset['cell_sentence']
         organisms_list = dataset['organism']
@@ -282,7 +283,6 @@ class Cell2Sen(HelicalBaseFoundationModel):
                     output_hidden_states=True,
                     output_attentions=output_attentions
                 )
-
                 last_hidden = outputs.hidden_states[-1]  # Shape: (batch_size, seq_len, hidden_size)
                 attention_mask = inputs['attention_mask'].float() # Shape: (batch_size, seq_len, 1)
 
