@@ -197,7 +197,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
             log_ranks_to_fit = np.log2(ranks_to_fit)
             expr_to_fit = np.array(expr_to_fit)
             
-            # Fit linear model to predict log-normalized expression from log rank: log(rank(g)) = slope * log(expr(g)) = intercept
+            # Fit linear model to predict log-normalized expression from log rank: expr(g) = slope * log(rank(g)) = intercept
             model = LinearRegression()
             model.fit(log_ranks_to_fit.reshape(-1, 1), np.array(expr_to_fit))
             slope, intercept = model.coef_[0], model.intercept_
