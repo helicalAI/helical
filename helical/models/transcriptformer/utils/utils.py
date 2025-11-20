@@ -7,10 +7,7 @@ import pandas as pd
 import torch
 
 # Set up logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
-
+logger = logging.getLogger(__name__)
 
 def load_embeddings(embeddings_path):
     with open(embeddings_path, "rb") as f:

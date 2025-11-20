@@ -80,6 +80,15 @@ class TestInit:
         assert model.batch_size == 16
         assert model.organism == "Homo sapiens"
     
+    def test_init_with_quantization(self):
+        """Test model initialization with quantization."""
+        config = Cell2SenConfig(batch_size=8, model_size="2B", use_quantization=True)
+        model = Cell2Sen(configurer=config)
+        assert model.model is not None
+        assert model.tokenizer is not None
+        assert model.device == "cuda" if torch.cuda.is_available() else "cpu"
+        assert model.model.config.quantization_config is not None
+    
     def test_model_on_correct_device(self, cell2sen_model):
         """Test that model is on the correct device."""
         expected_device = "cuda" if torch.cuda.is_available() else "cpu"
