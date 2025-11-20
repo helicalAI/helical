@@ -108,7 +108,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
 
     def process_data(
         self, 
-        anndata: anndata.AnnData, 
+        adata: anndata.AnnData, 
         max_genes: int = None,
     ):
         """
@@ -129,6 +129,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
         LOGGER.info("Processing data")
 
         # standard log-normalization, enables accurate expression reconstruction
+        anndata = adata.copy()
         sc.pp.normalize_total(anndata, target_sum=1e4)
         sc.pp.log1p(anndata, base=10)
    
@@ -168,13 +169,13 @@ class Cell2Sen(HelicalBaseFoundationModel):
             non_zero_mask = cell_expr > 0 
             if non_zero_mask.sum() == 0:
                 LOGGER.warning(f"No genes expressed above zero in cell {cell_idx}. Skipping.")
+                progress_bar.update(1)
                 continue
               
             cell_expr = cell_expr[non_zero_mask]
             gene_names = gene_names[non_zero_mask]
 
             ranked_indices = np.argsort(cell_expr)[::-1]
-            assert len(ranked_indices) != 0, "No genes expressed in cell"
             expr_values = cell_expr[ranked_indices]  # Expression values in descending order
             gene_names = gene_names[ranked_indices]  # Gene names in descending order by expression
 
@@ -194,7 +195,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
 
 
         if self.return_fit:
-            log_ranks_to_fit = np.log2(ranks_to_fit)
+            log_ranks_to_fit = np.log10(ranks_to_fit)
             expr_to_fit = np.array(expr_to_fit)
             
             # Fit linear model to predict log-normalized expression from log rank: expr(g) = slope * log(rank(g)) = intercept
