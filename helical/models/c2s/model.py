@@ -127,6 +127,8 @@ class Cell2Sen(HelicalBaseFoundationModel):
         """
 
         LOGGER.info("Processing data")
+        if adata.n_obs == 0:
+            raise ValueError("Anndata is empty. Please provide a valid anndata object.")
 
         # standard log-normalization, enables accurate expression reconstruction
         anndata = adata.copy()
@@ -137,10 +139,11 @@ class Cell2Sen(HelicalBaseFoundationModel):
         if hasattr(X, 'toarray'):
             X = X.toarray()
 
-
+        print(anndata)
         # gene names corresponding to each cell in order
         # anndata.X[i, j] is the expression of the j-th gene in the i-th cell
         cell_sentences = []
+        removed_cell_idx = []
 
         # Collect ranks and corresponding expression as training data for reconstruction model
         ranks_to_fit = []
@@ -162,13 +165,16 @@ class Cell2Sen(HelicalBaseFoundationModel):
         # Process each cell
         progress_bar = tqdm(total=X.shape[0], desc="Processing cells")
         for cell_idx in range(X.shape[0]):
+            print(cell_idx)
             gene_names = anndata.var_names.values
             cell_expr = X[cell_idx, :]
-            
+            print(cell_expr)
             # Rank nonzero genes by expression (highest = rank 1)
             non_zero_mask = cell_expr > 0 
             if non_zero_mask.sum() == 0:
-                LOGGER.warning(f"No genes expressed above zero in cell {cell_idx}. Skipping.")
+                LOGGER.warning(f"No genes expressed above zero in cell {cell_idx}. Using empty sentence.")
+                cell_sentence = ""
+                cell_sentences.append(cell_sentence)
                 progress_bar.update(1)
                 continue
               
@@ -189,7 +195,8 @@ class Cell2Sen(HelicalBaseFoundationModel):
                 ranks_to_fit.extend(np.arange(1, len(gene_names) + 1))
                 expr_to_fit.extend(expr_values)
                
-            cell_sentence = " ".join(gene_names)            
+            cell_sentence = " ".join(gene_names)
+            print(cell_sentence)            
             cell_sentences.append(cell_sentence)
             progress_bar.update(1)
 
