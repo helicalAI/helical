@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 from anndata import AnnData
 import torch
-from typing import Optional, Union
+from typing import Optional, Union, List
 from torch.utils.data import DataLoader
 from helical.models.tahoe.tahoe_config import TahoeConfig
 from helical.utils.mapping import map_gene_symbols_to_ensembl_ids
@@ -386,36 +386,36 @@ class Tahoe(HelicalRNAModel):
         else:
             return cell_array
 
-    def decode_embeddings(
+    def get_transformer_embeddings(
         self,
-        gene_embeddings: np.ndarray,
-    ) -> np.ndarray:
-        """Decode gene embeddings to predict expression values.
+        dataloader: DataLoader,
+    ) -> tuple:
+        """Get raw transformer embeddings before the decoder.
 
-        This method takes gene-level embeddings (e.g., from the transformer) and
-        uses the Tahoe expression decoder to predict gene expression values.
-        Useful for in-silico perturbation experiments, counterfactual analysis,
-        or expression imputation from modified embeddings.
+        This method returns the transformer output embeddings along with the gene IDs
+        for each position. This is useful for perturbation experiments where you want
+        to modify embeddings and then decode them to predicted expression.
 
         Parameters
         ----------
-        gene_embeddings : np.ndarray
-            Gene embeddings of shape (n_cells, n_genes, embedding_dim).
-            These are typically the transformer output embeddings that you want
-            to decode into expression values.
+        dataloader : DataLoader
+            The DataLoader returned from process_data().
 
         Returns
         -------
-        np.ndarray
-            Predicted expression values of shape (n_cells, n_genes).
-            Each value represents the predicted expression level for that gene in that cell.
+        tuple of (list, list)
+            - transformer_embeddings: list of numpy arrays, one per cell
+              Each array has shape (seq_len, embedding_dim) containing the transformer
+              output embeddings for that cell's genes
+            - gene_ids: list of numpy arrays, one per cell
+              Each array has shape (seq_len,) containing the gene vocabulary IDs
+              for that cell (pad_token_id for padding positions)
 
         Example
         -------
         ```python
         from helical.models.tahoe import Tahoe, TahoeConfig
         import anndata as ad
-        import numpy as np
 
         tahoe_config = TahoeConfig(model_size="70m", batch_size=8)
         tahoe = Tahoe(configurer=tahoe_config)
@@ -423,33 +423,32 @@ class Tahoe(HelicalRNAModel):
         ann_data = ad.read_h5ad("anndata_file.h5ad")
         dataloader = tahoe.process_data(ann_data)
 
-        # First, get gene embeddings for each cell
-        cell_embeddings, gene_embeddings_list = tahoe.get_embeddings(
-            dataloader, return_gene_embeddings=True
-        )
+        # Get transformer embeddings and gene IDs
+        transformer_embs, gene_ids = tahoe.get_transformer_embeddings(dataloader)
 
-        # Convert list of Series to array format for decoder
-        # (This is just an example - you'd need proper conversion based on your use case)
-        # For perturbation: modify gene_embeddings here
+        # Each is a list with one entry per cell
+        print(f"Number of cells: {len(transformer_embs)}")
+        print(f"First cell embedding shape: {transformer_embs[0].shape}")
+        print(f"First cell gene IDs shape: {gene_ids[0].shape}")
+
+        # Modify embeddings (e.g., perturb specific genes in first cell)
+        # transformer_embs[0][5, :] += 0.1  # perturb gene at position 5
 
         # Decode modified embeddings to predicted expression
-        expr_pred = tahoe.decode_embeddings(gene_embeddings_array)
-        print("Predicted expression shape:", expr_pred.shape)
+        expr_pred = tahoe.decode_embeddings(transformer_embs, gene_ids)
         ```
-
-        Notes
-        -----
-        The decoder expects embeddings in the same format as the transformer output:
-        (batch_size, sequence_length, d_model). Make sure your embeddings match
-        the model's embedding dimension (512 for 70m, 1024 for 1b, 1536 for 3b).
         """
-        LOGGER.info(f"Decoding embeddings of shape {gene_embeddings.shape}...")
+        LOGGER.info("Extracting transformer embeddings...")
+
+        from typing import List
+        from tqdm.auto import tqdm
 
         device = self.device
         model = self.model
+        model.return_gene_embeddings = True
 
-        # Convert numpy array to torch tensor
-        gene_embeddings_tensor = torch.from_numpy(gene_embeddings).to(torch.float32).to(device)
+        all_embeddings: List[np.ndarray] = []
+        all_gene_ids: List[np.ndarray] = []
 
         dtype_from_string = {
             "fp32": torch.float32,
@@ -467,12 +466,149 @@ class Tahoe(HelicalRNAModel):
                 device_type=device.type,
             ),
         ):
-            # Pass embeddings through the expression decoder
-            decoder_output = model.expression_decoder(gene_embeddings_tensor)
-            expr_pred = decoder_output["pred"]  # (batch, seq_len) or (batch, seq_len, 1)
+            pbar = tqdm(total=len(dataloader), desc="Extracting transformer embeddings")
 
-            # Convert to numpy and ensure 2D shape
-            expr_pred = expr_pred.to("cpu").to(torch.float32).numpy()
+            for data_dict in dataloader:
+                input_gene_ids = data_dict["gene"].to(device)
+                src_key_padding_mask = ~input_gene_ids.eq(self.collator_cfg["pad_token_id"])
 
-        LOGGER.info(f"Finished decoding. Predicted expression shape: {expr_pred.shape}")
-        return expr_pred
+                output = model(
+                    genes=input_gene_ids,
+                    values=data_dict["expr"].to(device),
+                    gen_masks=data_dict["gen_mask"].to(device),
+                    key_padding_mask=src_key_padding_mask,
+                    drug_ids=(
+                        data_dict["drug_ids"].to(device)
+                        if "drug_ids" in data_dict
+                        else None
+                    ),
+                    skip_decoders=True,
+                )
+
+                # Get transformer output and gene IDs from model output
+                # Shape: (batch_size, seq_len, d_model)
+                transformer_output = output["gene_emb"].to("cpu").to(dtype=torch.float32).numpy()
+                batch_gene_ids = output["gene_ids"].to("cpu").numpy()
+
+                # Split batch into individual cells
+                for i in range(transformer_output.shape[0]):
+                    all_embeddings.append(transformer_output[i])  # (seq_len, d_model)
+                    all_gene_ids.append(batch_gene_ids[i])  # (seq_len,)
+
+                pbar.update(1)
+
+        LOGGER.info(f"Extracted transformer embeddings for {len(all_embeddings)} cells")
+        return all_embeddings, all_gene_ids
+
+    def decode_embeddings(
+        self,
+        gene_embeddings: List[np.ndarray],
+        gene_ids: List[np.ndarray],
+    ) -> List[pd.Series]:
+        """Decode gene embeddings to predict expression values.
+
+        This method takes gene-level embeddings (e.g., from the transformer) and
+        uses the Tahoe expression decoder to predict gene expression values.
+        The embeddings must be in the same sequence order as the original input.
+
+        **Important**: Use `get_transformer_embeddings()` first to get embeddings
+        and gene IDs, modify them if needed, then pass both to this method.
+
+        Parameters
+        ----------
+        gene_embeddings : List[np.ndarray]
+            List of gene embeddings, one array per cell.
+            Each array has shape (seq_len, embedding_dim) containing transformer
+            output embeddings in the same sequence order as the input.
+        gene_ids : List[np.ndarray]
+            List of gene vocabulary IDs, one array per cell.
+            Each array has shape (seq_len,) corresponding to the embeddings.
+
+        Returns
+        -------
+        List[pd.Series]
+            List of pandas Series, one per cell. Each Series maps gene names
+            (Ensembl IDs) to predicted expression values. Only includes non-padding genes.
+
+        Example
+        -------
+        ```python
+        from helical.models.tahoe import Tahoe, TahoeConfig
+        import anndata as ad
+
+        tahoe_config = TahoeConfig(model_size="70m", batch_size=8)
+        tahoe = Tahoe(configurer=tahoe_config)
+
+        ann_data = ad.read_h5ad("anndata_file.h5ad")
+        dataloader = tahoe.process_data(ann_data)
+
+        # Get transformer embeddings and gene IDs
+        transformer_embs, gene_ids = tahoe.get_transformer_embeddings(dataloader)
+
+        # Optional: Modify embeddings for perturbation experiments
+        # Example - perturb gene at position 5 in first cell
+        # transformer_embs[0][5, :] += 0.1
+
+        # Decode embeddings to predicted expression
+        expr_predictions = tahoe.decode_embeddings(transformer_embs, gene_ids)
+
+        # Access predictions for first cell
+        print(f"First cell predictions: {len(expr_predictions[0])} genes")
+        for gene_name, pred_expr in list(expr_predictions[0].items())[:5]:
+            print(f"  {gene_name}: {pred_expr:.4f}")
+        ```
+
+        Notes
+        -----
+        The decoder expects embeddings in the same format as the transformer output.
+        Make sure your embeddings match the model's embedding dimension
+        (512 for 70m, 1024 for 1b, 1536 for 3b).
+        """
+        LOGGER.info(f"Decoding embeddings for {len(gene_embeddings)} cells...")
+
+        device = self.device
+        model = self.model
+        pad_token_id = self.collator_cfg["pad_token_id"]
+        idx_to_gene = self.vocab.index_to_token
+
+        all_predictions = []
+
+        dtype_from_string = {
+            "fp32": torch.float32,
+            "amp_bf16": torch.bfloat16,
+            "amp_fp16": torch.float16,
+            "fp16": torch.float16,
+            "bf16": torch.bfloat16,
+        }
+
+        with (
+            torch.no_grad(),
+            torch.amp.autocast(
+                enabled=True,
+                dtype=dtype_from_string[self.model_cfg["precision"]],
+                device_type=device.type,
+            ),
+        ):
+            for cell_emb, cell_gene_ids in zip(gene_embeddings, gene_ids):
+                # Convert to tensor and add batch dimension
+                # Shape: (1, seq_len, d_model)
+                emb_tensor = torch.from_numpy(cell_emb).unsqueeze(0).to(torch.float32).to(device)
+
+                # Pass through decoder
+                decoder_output = model.expression_decoder(emb_tensor)
+                expr_pred = decoder_output["pred"]  # (1, seq_len) or (1, seq_len, 1)
+
+                # Remove batch dimension and convert to numpy
+                expr_pred = expr_pred.squeeze(0).to("cpu").to(torch.float32).numpy()
+
+                # Create Series mapping gene names to predictions (only non-padding)
+                pred_dict = {}
+                for pos, gene_id in enumerate(cell_gene_ids):
+                    if gene_id != pad_token_id:
+                        gene_name = idx_to_gene[gene_id]
+                        pred_dict[gene_name] = float(expr_pred[pos])
+
+                all_predictions.append(pd.Series(pred_dict))
+
+        LOGGER.info(f"Finished decoding {len(all_predictions)} cells")
+        return all_predictions
