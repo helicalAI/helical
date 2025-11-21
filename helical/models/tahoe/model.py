@@ -8,6 +8,7 @@ from typing import Optional, Union
 from torch.utils.data import DataLoader
 from helical.models.tahoe.tahoe_config import TahoeConfig
 from helical.utils.mapping import map_gene_symbols_to_ensembl_ids
+import pandas as pd
 
 LOGGER = logging.getLogger(__name__)
 
@@ -44,7 +45,8 @@ class Tahoe(HelicalRNAModel):
     # Get both cell and gene embeddings
     cell_embeddings, gene_embeddings = tahoe.get_embeddings(dataloader, return_gene_embeddings=True)
     print("Cell embeddings shape:", cell_embeddings.shape)
-    print("Gene embeddings shape:", gene_embeddings.shape)
+    print("Gene embeddings:", len(gene_embeddings), "genes")
+    print("Gene embedding example:", gene_embeddings.iloc[0])  # First gene's embedding
 
     # Get attention weights (requires attn_impl='torch')
     tahoe_config_attn = TahoeConfig(model_size="70m", batch_size=8, attn_impl='torch')
@@ -227,10 +229,14 @@ class Tahoe(HelicalRNAModel):
             - If output_attentions=True only: (cell_embeddings, attentions)
             - If both True: (cell_embeddings, gene_embeddings, attentions)
 
-            Where attentions is a numpy array containing attention weights from the last transformer layer.
-            Shape: (n_batches, batch_size, n_heads, seq_length, seq_length).
-            Sequence lengths vary per batch based on the number of genes expressed.
-            Only the last transformer layer's attention is returned to conserve memory.
+            Where:
+            - cell_embeddings: numpy array of shape (n_cells, embedding_dim)
+            - gene_embeddings: pandas Series with Ensembl IDs as keys and normalized
+              embeddings as values. Only includes genes that were present in the input data.
+            - attentions: numpy array containing attention weights from the last transformer layer.
+              Shape: (n_batches, batch_size, n_heads, seq_length, seq_length).
+              Sequence lengths vary per batch based on the number of genes expressed.
+              Only the last transformer layer's attention is returned to conserve memory.
         """
         LOGGER.info("Extracting embeddings from Tahoe model...")
 
@@ -348,6 +354,7 @@ class Tahoe(HelicalRNAModel):
             gene_array_counts = gene_array_counts.to("cpu").to(torch.float32).numpy()
             gene_array_counts = np.expand_dims(gene_array_counts, axis=1)
 
+            # Average by count
             gene_array = np.divide(
                 gene_array,
                 gene_array_counts,
@@ -355,9 +362,20 @@ class Tahoe(HelicalRNAModel):
                 where=gene_array_counts != 0,
             )
 
-            gene2idx = self.vocab.get_stoi()
-            all_gene_ids = np.array(list(gene2idx.values()))
-            gene_array = gene_array[all_gene_ids, :]
+            # Create pandas Series with only genes that were seen in the data
+            gene_dict = {}
+            idx_to_gene = self.vocab.index_to_token
+
+            for gene_idx in range(len(gene_array)):
+                # Only include genes that were actually seen (count > 0)
+                if gene_array_counts[gene_idx, 0] > 0:
+                    gene_name = idx_to_gene[gene_idx]
+                    gene_embedding = gene_array[gene_idx]
+                    # Normalize the gene embedding
+                    gene_embedding = gene_embedding / np.linalg.norm(gene_embedding)
+                    gene_dict[gene_name] = gene_embedding
+
+            gene_array = pd.Series(gene_dict)
 
         # Prepare attention arrays if requested
         if output_attentions:
@@ -388,7 +406,7 @@ class Tahoe(HelicalRNAModel):
         # Return based on requested outputs
         log_msg = f"Finished extracting embeddings. Cell shape: {cell_array.shape}"
         if return_gene_embeddings:
-            log_msg += f", Gene shape: {gene_array.shape}"
+            log_msg += f", Gene embeddings: {len(gene_array)} genes"
         if output_attentions:
             log_msg += f", Attention shape: {attention_array.shape}"
         LOGGER.info(log_msg)
