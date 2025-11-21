@@ -3,7 +3,7 @@ import logging
 
 logging.captureWarnings(True)
 
-logger = logging.getLogger('helical')
+logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 handler = logging.StreamHandler()
