@@ -35,6 +35,9 @@ Let’s build the most exciting AI-for-Bio community together!
 
 ## What's new?
 
+### Tahoe-x1
+We have integrated the Tahoe-x1 foundation model for single-cell RNA-seq data. This transformer-based model can extract both cell and gene embeddings from raw count data and supports attention weight extraction for interpretability. Try it out with our [comprehensive tutorial notebook](./examples/notebooks/Tahoe-x1-Tutorial.ipynb)!
+
 ### Cell2Sentence-Scale
 We have integrated the new Cell2Sentence-Scale models which use cell sentences as input and are based on the Gemma language model architecture (2B and 27B models available in quantised versions too). You can use this model for embeddings and perturbation prediction. Follow our notebook tutorial [here](./examples/notebooks/Cell2Sen-Tutorial.ipynb). 
 
@@ -137,6 +140,7 @@ apptainer shell --nv --fakeroot singularity/helical/
 - [scGPT](https://helical.readthedocs.io/en/latest/model_cards/scgpt/)
 - [Universal Cell Embedding (UCE)](https://helical.readthedocs.io/en/latest/model_cards/uce/)
 - [TranscriptFormer](https://helical.readthedocs.io/en/latest/model_cards/transcriptformer/)
+- [Tahoe-x1](https://helical.readthedocs.io/en/latest/model_cards/tahoe/)
 
 ### DNA models:
 - [HyenaDNA](https://helical.readthedocs.io/en/latest/model_cards/hyena_dna/)
@@ -168,6 +172,7 @@ Within the `examples/notebooks` folder, open the notebook of your choice. We rec
 |[Cell-Gene-Cls-embedding-generation.ipynb](./examples/notebooks/Cell-Gene-Cls-embedding-generation.ipynb)|A notebook explaining the different embedding modes of single cell RNA models.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Cell-Gene-Cls-embedding-generation.ipynb) |
 |[Geneformer-Series-Comparison.ipynb](./examples/notebooks/Geneformer-Series-Comparison.ipynb)|A zero shot comparison between Geneformer model scaling on drug perturbation prediction|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Geneformer-Series-Comparison.ipynb) |
 |[Cell2Sen-Tutorial.ipynb](./examples/notebooks/Cell2Sen-Tutorial.ipynb)|An example tutorial of how to use cell2sen models for embeddings and perturbation predictions.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Cell2Sen-Tutorial.ipynb) |
+|[Tahoe-x1-Tutorial.ipynb](./examples/notebooks/Tahoe-x1-Tutorial.ipynb)|A comprehensive tutorial on using the Tahoe-x1 model for extracting cell and gene embeddings, with attention visualization.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Tahoe-x1-Tutorial.ipynb) |
 
 
 ## Stuck somewhere ? Other ideas ?
