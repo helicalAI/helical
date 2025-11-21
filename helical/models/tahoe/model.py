@@ -385,3 +385,94 @@ class Tahoe(HelicalRNAModel):
             return cell_array, attention_array
         else:
             return cell_array
+
+    def decode_embeddings(
+        self,
+        gene_embeddings: np.ndarray,
+    ) -> np.ndarray:
+        """Decode gene embeddings to predict expression values.
+
+        This method takes gene-level embeddings (e.g., from the transformer) and
+        uses the Tahoe expression decoder to predict gene expression values.
+        Useful for in-silico perturbation experiments, counterfactual analysis,
+        or expression imputation from modified embeddings.
+
+        Parameters
+        ----------
+        gene_embeddings : np.ndarray
+            Gene embeddings of shape (n_cells, n_genes, embedding_dim).
+            These are typically the transformer output embeddings that you want
+            to decode into expression values.
+
+        Returns
+        -------
+        np.ndarray
+            Predicted expression values of shape (n_cells, n_genes).
+            Each value represents the predicted expression level for that gene in that cell.
+
+        Example
+        -------
+        ```python
+        from helical.models.tahoe import Tahoe, TahoeConfig
+        import anndata as ad
+        import numpy as np
+
+        tahoe_config = TahoeConfig(model_size="70m", batch_size=8)
+        tahoe = Tahoe(configurer=tahoe_config)
+
+        ann_data = ad.read_h5ad("anndata_file.h5ad")
+        dataloader = tahoe.process_data(ann_data)
+
+        # First, get gene embeddings for each cell
+        cell_embeddings, gene_embeddings_list = tahoe.get_embeddings(
+            dataloader, return_gene_embeddings=True
+        )
+
+        # Convert list of Series to array format for decoder
+        # (This is just an example - you'd need proper conversion based on your use case)
+        # For perturbation: modify gene_embeddings here
+
+        # Decode modified embeddings to predicted expression
+        expr_pred = tahoe.decode_embeddings(gene_embeddings_array)
+        print("Predicted expression shape:", expr_pred.shape)
+        ```
+
+        Notes
+        -----
+        The decoder expects embeddings in the same format as the transformer output:
+        (batch_size, sequence_length, d_model). Make sure your embeddings match
+        the model's embedding dimension (512 for 70m, 1024 for 1b, 1536 for 3b).
+        """
+        LOGGER.info(f"Decoding embeddings of shape {gene_embeddings.shape}...")
+
+        device = self.device
+        model = self.model
+
+        # Convert numpy array to torch tensor
+        gene_embeddings_tensor = torch.from_numpy(gene_embeddings).to(torch.float32).to(device)
+
+        dtype_from_string = {
+            "fp32": torch.float32,
+            "amp_bf16": torch.bfloat16,
+            "amp_fp16": torch.float16,
+            "fp16": torch.float16,
+            "bf16": torch.bfloat16,
+        }
+
+        with (
+            torch.no_grad(),
+            torch.amp.autocast(
+                enabled=True,
+                dtype=dtype_from_string[self.model_cfg["precision"]],
+                device_type=device.type,
+            ),
+        ):
+            # Pass embeddings through the expression decoder
+            decoder_output = model.expression_decoder(gene_embeddings_tensor)
+            expr_pred = decoder_output["pred"]  # (batch, seq_len) or (batch, seq_len, 1)
+
+            # Convert to numpy and ensure 2D shape
+            expr_pred = expr_pred.to("cpu").to(torch.float32).numpy()
+
+        LOGGER.info(f"Finished decoding. Predicted expression shape: {expr_pred.shape}")
+        return expr_pred
