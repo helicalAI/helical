@@ -115,6 +115,8 @@ class TestProcessData:
         
         # Check dataset type and structure
         assert isinstance(dataset, Dataset)
+
+        # Check if the dataset has the right size
         assert len(dataset) == sample_anndata.n_obs
         
         # Check all required columns exist
@@ -228,8 +230,8 @@ class TestGetEmbeddings:
     
     def test_get_embeddings_empty_dataset(self, cell2sen_model, sample_anndata):
         """Test embeddings with empty dataset."""
-        empty_dataset = cell2sen_model.process_data(sample_anndata[:0])
         with pytest.raises((ValueError, IndexError, AssertionError)):
+            empty_dataset = cell2sen_model.process_data(sample_anndata[:0])
             cell2sen_model.get_embeddings(empty_dataset)
 
     def test_get_embeddings_attention_shapes(self, cell2sen_model, processed_dataset_basic):
