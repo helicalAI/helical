@@ -389,14 +389,6 @@ class TXModel(nn.Module):
 class ComposerTX(ComposerModel):
     def __init__(self, model_config, collator_config, device=None):
         super().__init__()
-        # Import loss functions only for training
-        from helical.models.tahoe.tahoe_x1.loss import (
-            MaskedMseMetric,
-            MaskedSpearmanMetric,
-            masked_mse_loss,
-        )
-
-        self.criterion = masked_mse_loss
         self.pad_token_id = collator_config.pad_token_id
 
         self.model = TXModel(
@@ -404,22 +396,8 @@ class ComposerTX(ComposerModel):
             collator_config=collator_config,
             device=device,
         )
-        self.n_active_params = sum(
-            p.numel() for p in self.model.parameters() if p.requires_grad
-        )
-        self.train_metrics = {
-            "MSE": MaskedMseMetric(name="MSE"),
-            "MVC": MaskedMseMetric(name="MVC"),
-        }
-        self.standard_scale_outputs = model_config.get("standard_scale_outputs", False)
         self.collator_config = collator_config
         self.model_config = model_config
-
-        self.val_metrics = {
-            "MSE": MaskedMseMetric(name="MSE"),
-            "MVC": MaskedMseMetric(name="MVC"),
-            "Spearman": MaskedSpearmanMetric(name="Spearman"),
-        }
 
     def forward(
         self,
@@ -446,84 +424,6 @@ class ComposerTX(ComposerModel):
         )
 
         return output_dict
-
-    def eval_forward(self, batch, outputs: Optional = None):
-        if outputs:
-            return outputs
-
-        self.model.zero_grad(set_to_none=True)
-
-        return (
-            outputs if outputs is not None else self.forward(batch, skip_decoders=False)
-        )
-
-    def loss(self, outputs, batch):
-        # pass batches and `forward` outputs to the loss
-        genes = batch["gene"]
-        expr_targets = batch["expr_target"]
-        gen_masks = batch["gen_mask"]
-
-        if self.standard_scale_outputs:
-            expr_targets = self.scale_outputs(expr_targets)
-        key_padding_mask = ~genes.eq(self.pad_token_id)
-        positions_to_match = key_padding_mask & gen_masks
-
-        expr_preds = outputs["expr_preds"]
-        loss_mse = self.criterion(expr_preds, expr_targets, positions_to_match)
-        loss_mvc = self.criterion(
-            outputs["mvc_output"],
-            expr_targets,
-            positions_to_match,
-        )
-
-        loss = (loss_mse + loss_mvc) / 2
-
-        return loss
-
-    def update_metric(self, batch, outputs, metric):
-        gen_masks = batch["gen_mask"]
-        genes = batch["gene"]
-        expr_raw = batch["expr_raw"]
-        mask = ~genes.eq(self.pad_token_id) & gen_masks
-        target = batch["expr_target"]
-
-        if self.standard_scale_outputs:
-            target = self.scale_outputs(target)
-        if metric.name == "MSE":
-            preds = outputs["expr_preds"]
-        elif metric.name == "MVC":
-            preds = outputs["mvc_output"]
-        elif metric.name == "Spearman":
-            preds = outputs["expr_preds"]
-            target = expr_raw
-        else:
-            raise ValueError(f"metric {metric.name} not recognized")
-        metric.update(preds=preds, target=target, mask=mask)
-
-    def get_metrics(self, is_train=False):
-        # defines which metrics to use in each phase of training
-        metric_dict = self.train_metrics if is_train else self.val_metrics
-        return metric_dict
-
-    def flops_per_batch(self, batch: Mapping) -> int:
-        # specify how to compute the number of FLOPs for a batch
-        # This assumes non cell-conditioned generation (single forward pass)
-        bs = batch["gene"].shape[0]
-        msl = batch["gene"].shape[1]  # Assumes no-padding (as an approximation)
-        params = self.n_active_params
-        params_flops_per_token = 2 * params
-        params_flops_per_seq = params_flops_per_token * msl
-        attn_flops_per_seq = (
-            self.model.n_layers * 2 * 2 * (self.model.d_model * (msl**2))
-        )
-        return (params_flops_per_seq + attn_flops_per_seq) * 3 * bs
-
-    def scale_outputs(self, x: torch.Tensor) -> torch.Tensor:
-        min_value = 1
-        max_value = self.collator_config.num_bins - 1
-        normalized_value = (x - min_value) / (max_value - min_value)
-        # Scale to -1..1
-        return 2 * normalized_value - 1
 
     @classmethod
     def from_hf(
