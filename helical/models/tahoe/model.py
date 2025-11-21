@@ -45,8 +45,9 @@ class Tahoe(HelicalRNAModel):
     # Get both cell and gene embeddings
     cell_embeddings, gene_embeddings = tahoe.get_embeddings(dataloader, return_gene_embeddings=True)
     print("Cell embeddings shape:", cell_embeddings.shape)
-    print("Gene embeddings:", len(gene_embeddings), "genes")
-    print("Gene embedding example:", gene_embeddings.iloc[0])  # First gene's embedding
+    print("Gene embeddings:", len(gene_embeddings), "cells")  # List of pandas Series, one per cell
+    print("First cell genes:", len(gene_embeddings[0]), "genes")  # Number of genes in first cell
+    print("Gene names for first cell:", list(gene_embeddings[0].keys())[:5])  # First 5 gene names
 
     # Get attention weights (requires attn_impl='torch')
     tahoe_config_attn = TahoeConfig(model_size="70m", batch_size=8, attn_impl='torch')
@@ -213,7 +214,9 @@ class Tahoe(HelicalRNAModel):
         dataloader : DataLoader
             The DataLoader returned from process_data().
         return_gene_embeddings : bool, optional, default=False
-            Whether to return gene embeddings in addition to cell embeddings.
+            Whether to return gene embeddings for each cell in addition to cell embeddings.
+            Gene embeddings are returned as a list of pandas Series, one per cell, where
+            each Series contains the embeddings for genes expressed in that cell.
         output_attentions : bool, optional, default=False
             Whether to return attention weights from all transformer layers.
             Note: This requires the model to be initialized with attn_impl='torch'.
@@ -231,8 +234,8 @@ class Tahoe(HelicalRNAModel):
 
             Where:
             - cell_embeddings: numpy array of shape (n_cells, embedding_dim)
-            - gene_embeddings: pandas Series with Ensembl IDs as keys and normalized
-              embeddings as values. Only includes genes that were present in the input data.
+            - gene_embeddings: list of pandas Series, one per cell. Each Series contains
+              gene embeddings indexed by Ensembl IDs for genes expressed in that cell.
             - attentions: numpy array containing attention weights from the last transformer layer.
               Shape: (n_batches, batch_size, n_heads, seq_length, seq_length).
               Sequence lengths vary per batch based on the number of genes expressed.
@@ -262,19 +265,7 @@ class Tahoe(HelicalRNAModel):
 
         cell_embs: List[torch.Tensor] = []
         all_attentions: List[torch.Tensor] = [] if output_attentions else None
-
-        if return_gene_embeddings:
-            gene_array = torch.zeros(
-                len(self.vocab),
-                self.model_cfg["d_model"],
-                dtype=torch.float32,
-                device=device,
-            )
-            gene_array_counts = torch.zeros(
-                len(self.vocab),
-                dtype=torch.float32,
-                device=device,
-            )
+        all_gene_embeddings: List[pd.Series] = [] if return_gene_embeddings else None
 
         dtype_from_string = {
             "fp32": torch.float32,
@@ -322,20 +313,23 @@ class Tahoe(HelicalRNAModel):
                     all_attentions.append(last_layer_attn)
 
                 if return_gene_embeddings:
-                    gene_embs = output.get("gene_emb").to(torch.float32)
-                    flat_gene_ids = input_gene_ids.view(-1)
-                    flat_embeddings = gene_embs.view(-1, gene_embs.shape[-1])
+                    # Get gene embeddings for this batch: shape (batch_size, seq_len, d_model)
+                    gene_embs = output.get("gene_emb").to(torch.float32).cpu().numpy()
+                    gene_ids = input_gene_ids.cpu().numpy()
 
-                    valid = flat_gene_ids != self.collator_cfg["pad_token_id"]
-                    flat_gene_ids = flat_gene_ids[valid]
-                    flat_embeddings = flat_embeddings[valid].to(gene_embs.dtype)
+                    # Create a pandas Series for each cell in the batch
+                    for i in range(gene_embs.shape[0]):
+                        cell_gene_dict = {}
+                        for j in range(gene_embs.shape[1]):
+                            gene_id = gene_ids[i, j]
+                            if gene_id != self.collator_cfg["pad_token_id"]:
+                                gene_name = self.vocab.index_to_token[gene_id]
+                                gene_embedding = gene_embs[i, j]
+                                # Normalize the gene embedding
+                                gene_embedding = gene_embedding / np.linalg.norm(gene_embedding)
+                                cell_gene_dict[gene_name] = gene_embedding
 
-                    gene_array.index_add_(0, flat_gene_ids, flat_embeddings)
-                    gene_array_counts.index_add_(
-                        0,
-                        flat_gene_ids,
-                        torch.ones_like(flat_gene_ids, dtype=gene_embs.dtype),
-                    )
+                        all_gene_embeddings.append(pd.Series(cell_gene_dict))
 
                 pbar.update(1)
 
@@ -347,35 +341,6 @@ class Tahoe(HelicalRNAModel):
             keepdims=True,
         )
 
-        # Prepare gene embeddings if requested
-        if return_gene_embeddings:
-            # Average gene embeddings
-            gene_array = gene_array.to("cpu").to(torch.float32).numpy()
-            gene_array_counts = gene_array_counts.to("cpu").to(torch.float32).numpy()
-            gene_array_counts = np.expand_dims(gene_array_counts, axis=1)
-
-            # Average by count
-            gene_array = np.divide(
-                gene_array,
-                gene_array_counts,
-                out=np.ones_like(gene_array) * np.nan,
-                where=gene_array_counts != 0,
-            )
-
-            # Create pandas Series with only genes that were seen in the data
-            gene_dict = {}
-            idx_to_gene = self.vocab.index_to_token
-
-            for gene_idx in range(len(gene_array)):
-                # Only include genes that were actually seen (count > 0)
-                if gene_array_counts[gene_idx, 0] > 0:
-                    gene_name = idx_to_gene[gene_idx]
-                    gene_embedding = gene_array[gene_idx]
-                    # Normalize the gene embedding
-                    gene_embedding = gene_embedding / np.linalg.norm(gene_embedding)
-                    gene_dict[gene_name] = gene_embedding
-
-            gene_array = pd.Series(gene_dict)
 
         # Prepare attention arrays if requested
         if output_attentions:
@@ -406,16 +371,16 @@ class Tahoe(HelicalRNAModel):
         # Return based on requested outputs
         log_msg = f"Finished extracting embeddings. Cell shape: {cell_array.shape}"
         if return_gene_embeddings:
-            log_msg += f", Gene embeddings: {len(gene_array)} genes"
+            log_msg += f", Gene embeddings: {len(all_gene_embeddings)} cells"
         if output_attentions:
             log_msg += f", Attention shape: {attention_array.shape}"
         LOGGER.info(log_msg)
 
         # Return appropriate combination
         if return_gene_embeddings and output_attentions:
-            return cell_array, gene_array, attention_array
+            return cell_array, all_gene_embeddings, attention_array
         elif return_gene_embeddings:
-            return cell_array, gene_array
+            return cell_array, all_gene_embeddings
         elif output_attentions:
             return cell_array, attention_array
         else:

@@ -51,10 +51,16 @@ dataloader = tahoe.process_data(adata)
 cell_embeddings = tahoe.get_embeddings(dataloader)
 
 # Or get both cell and gene embeddings
+# gene_embeddings is a list of pandas Series (one per cell)
 cell_embeddings, gene_embeddings = tahoe.get_embeddings(
     dataloader,
     return_gene_embeddings=True
 )
+print(f"Cell embeddings: {cell_embeddings.shape}")
+print(f"Gene embeddings: {len(gene_embeddings)} cells")
+print(f"First cell has {len(gene_embeddings[0])} genes")
+# Access gene embedding for a specific cell and gene:
+# gene_embeddings[0]['ENSG00000123456']
 
 # Get attention weights (requires attn_impl='torch')
 tahoe_config_attn = TahoeConfig(
@@ -77,7 +83,7 @@ cell_embeddings, attentions = tahoe_attn.get_embeddings(
 - **Clean API**: Clear separation between data processing and embedding extraction
 - **Follows helical patterns**: Uses the same structure as other models (Geneformer, scGPT)
 - **Automatic gene mapping**: Maps gene symbols to Ensembl IDs using helical utilities
-- **Flexible embeddings**: Supports both cell-level and gene-level embeddings
+- **Flexible embeddings**: Supports both cell-level embeddings (numpy array) and gene-level embeddings per cell (list of pandas Series)
 - **Attention extraction**: Supports attention weight extraction when using `attn_impl='torch'`
 - **Model variants**: Supports 70M, 1B, and 3B parameter models from Hugging Face
 
