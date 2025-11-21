@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import Mock, MagicMock, patch
 import torch
 import numpy as np
+import pandas as pd
 import anndata as ad
 from anndata import AnnData
 from scipy.sparse import csr_matrix
@@ -230,6 +231,7 @@ class TestTahoeModel:
             tahoe.vocab = Mock()
             tahoe.vocab.get_stoi = lambda: {"gene1": 0, "gene2": 1}
             tahoe.vocab.__len__ = lambda self: 2
+            tahoe.vocab.index_to_token = {0: "ENSG00000000001", 1: "ENSG00000000002"}
             tahoe.model_cfg = {"d_model": 512, "precision": "amp_bf16", "attn_config": {"attn_impl": "flash"}}
             tahoe.collator_cfg = {"pad_token_id": 1, "pad_value": 0.0}
 
@@ -261,7 +263,9 @@ class TestTahoeModel:
             cell_embs, gene_embs = tahoe.get_embeddings(mock_dataloader, return_gene_embeddings=True)
 
             assert isinstance(cell_embs, np.ndarray)
-            assert isinstance(gene_embs, np.ndarray)
+            assert isinstance(gene_embs, list)
+            assert len(gene_embs) == 1  # One cell
+            assert isinstance(gene_embs[0], pd.Series)
             assert cell_embs.shape[0] == 1
 
     @pytest.mark.parametrize("batch_size", [1, 8, 32])
