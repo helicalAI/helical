@@ -201,6 +201,8 @@ class TestGetPerturbations:
     def test_comprehensive(self, cell2sen_model, processed_dataset_with_perturbation):
         orig = cell2sen_model.batch_size
         cell2sen_model.batch_size = 5
+        cell2sen_model.device = "cuda" if torch.cuda.is_available() else "cpu"
+        cell2sen_model.model = cell2sen_model.model.to(cell2sen_model.device)
         dataset, perturbed = cell2sen_model.get_perturbations(processed_dataset_with_perturbation)
         cell2sen_model.batch_size = orig
         assert len(perturbed) == len(dataset)
@@ -208,6 +210,8 @@ class TestGetPerturbations:
 
     def test_with_list(self, cell2sen_model, processed_dataset_basic):
         plist = ['IFNg'] * len(processed_dataset_basic)
+        cell2sen_model.device = "cuda" if torch.cuda.is_available() else "cpu"
+        cell2sen_model.model = cell2sen_model.model.to(cell2sen_model.device)
         _, perturbed = cell2sen_model.get_perturbations(processed_dataset_basic, perturbations_list=plist)
         assert all(isinstance(p, str) for p in perturbed)
 
@@ -218,6 +222,8 @@ class TestGetPerturbations:
         original = cell2sen_model.perturbation_column
         cell2sen_model.perturbation_column = 'perturbation'
         dataset = cell2sen_model.process_data(data)
+        cell2sen_model.device = "cuda" if torch.cuda.is_available() else "cpu"
+        cell2sen_model.model = cell2sen_model.model.to(cell2sen_model.device)
         dataset, pert = cell2sen_model.get_perturbations(dataset)
         cell2sen_model.perturbation_column = original
         assert any(p is None for p in pert)
@@ -225,8 +231,12 @@ class TestGetPerturbations:
 
     def test_error_all_none(self, cell2sen_model, processed_dataset_basic):
         with pytest.raises(ValueError):
+            cell2sen_model.device = "cuda" if torch.cuda.is_available() else "cpu"
+            cell2sen_model.model = cell2sen_model.model.to(cell2sen_model.device)
             cell2sen_model.get_perturbations(processed_dataset_basic)
 
     def test_error_length_mismatch(self, cell2sen_model, processed_dataset_basic):
         with pytest.raises(ValueError):
+            cell2sen_model.device = "cuda" if torch.cuda.is_available() else "cpu"
+            cell2sen_model.model = cell2sen_model.model.to(cell2sen_model.device)
             cell2sen_model.get_perturbations(processed_dataset_basic, perturbations_list=['IFNg'] * 5)
