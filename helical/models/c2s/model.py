@@ -65,7 +65,13 @@ class Cell2Sen(HelicalBaseFoundationModel):
         # for file in self.config["list_of_files_to_download"]:
         #     downloader.download_via_name(file)
 
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = self.config["device"]
+        if self.device == "cuda" and self.config["use_flash_attn"]:
+            LOGGER.info("Using flash attention 2 for attention implementation")
+            self.attn_implementation = "flash_attention_2"
+        else:
+            LOGGER.info("Using SDPA for attention implementation - default for CPU")
+            self.attn_implementation = "sdpa"
 
         if self.config["dtype"] == "bfloat16":
             self.torch_dtype = torch.bfloat16
@@ -93,6 +99,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
             torch_dtype=self.torch_dtype, 
             cache_dir=self.config["model_path"],
             quantization_config=self.bnb_config,
+            attn_implementation=self.attn_implementation,
             ).to(self.device)
         
         self.tokenizer = AutoTokenizer.from_pretrained(self.config["hf_model_path"], cache_dir=self.config["model_path"])
@@ -103,13 +110,13 @@ class Cell2Sen(HelicalBaseFoundationModel):
         self.organism = self.config['organism']
         self.perturbation_column = self.config['perturbation_column']
         self.return_fit = self.config['return_fit']
+        self.max_genes = self.config['max_genes']
         
         LOGGER.info("Successfully loaded model")
 
     def process_data(
         self, 
         adata: anndata.AnnData, 
-        max_genes: int = None,
     ):
         """
         Process anndata to create a HuggingFace Dataset with cell sentences and fit parameters.
@@ -182,10 +189,10 @@ class Cell2Sen(HelicalBaseFoundationModel):
             gene_names = gene_names[ranked_indices]  # Gene names in descending order by expression
 
             # Cut at max_genes if desired
-            if max_genes:
-                if len(gene_names) > max_genes:
-                    gene_names = gene_names[:max_genes]
-                    expr_values = expr_values[:max_genes]
+            if self.max_genes:
+                if len(gene_names) > self.max_genes:
+                    gene_names = gene_names[:self.max_genes]
+                    expr_values = expr_values[:self.max_genes]
 
             if self.return_fit:
                 ranks = np.arange(1, len(gene_names) + 1)
