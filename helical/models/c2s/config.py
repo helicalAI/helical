@@ -1,5 +1,6 @@
 from helical.constants.paths import CACHE_DIR_HELICAL
 from pathlib import Path
+from typing import Literal
 
 EMBEDDING_PROMPT = """
 You are given a list of genes in descending order of expression levels in a {organism} cell. \n
@@ -49,6 +50,21 @@ class Cell2SenConfig:
 
     seed: int = 42
         Random seed for reproducibility. Default is 42.
+    
+    use_flash_attn: bool = False
+        Whether to use flash attention 2 for attention implementation. Default is False.
+        Only available for CUDA devices.
+        If True, the attention implementation will be set to "flash_attention_2".
+        If False, the attention implementation will be set to "sdpa".
+    
+    max_genes: int = None
+        Maximum number of genes to use for the model. Default is None.
+        If None, all genes will be used.
+        If a number is provided, the genes will be sorted by expression level and the top max_genes will be used.
+    
+    device: Literal["cpu", "cuda"] = "cpu"
+        Device to use for the model. Default is "cpu".
+        Choices are "cpu" or "cuda".
 
     """
     def __init__(
@@ -57,11 +73,14 @@ class Cell2SenConfig:
         organism: str = None,
         perturbation_column: str = None,
         max_new_tokens: int = 200,
+        max_genes: int = None,
         return_fit: bool = False,
         dtype: str = "bfloat16", 
-        model_size: str = "2B",
+        model_size: str = "2B",  
+        device: Literal["cpu", "cuda"] = "cpu",
         use_quantization: bool = False,
         seed: int = 42,
+        use_flash_attn: bool = False,
     ):
 
         if model_size == "2B":
@@ -116,4 +135,7 @@ class Cell2SenConfig:
             "seed": seed,
             "dtype": dtype,
             "model_size": model_size,
+            "use_flash_attn": use_flash_attn,
+            "max_genes": max_genes,
+            "device": device,
         }
