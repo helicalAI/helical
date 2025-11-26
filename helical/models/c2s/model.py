@@ -335,7 +335,9 @@ class Cell2Sen(HelicalBaseFoundationModel):
                     batch_embeddings = last_hidden[
                         torch.arange(last_hidden.size(0), device=last_hidden.device),
                         last_idx
-                    ]                                                            # (B, H)
+                    ]  
+                    import pdb
+                    pdb.set_trace()                                                          # (B, H)
 
                 else:   
                     raise ValueError("Invalid aggregation type. Use 'mean_pool' or 'last_token'.")                                             

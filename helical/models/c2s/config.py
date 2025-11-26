@@ -70,6 +70,9 @@ class Cell2SenConfig:
     embedding_prompt_template: str = None
         Optional custom embedding prompt template used to query the model.
         If None, a default built-in prompt template is used.
+        Example: 'You are given a list of genes in descending order of expression levels in a {organism} cell. \n
+        Genes: {cell_sentence} \n
+        Using this information, describe the function of the cell in a few words. Answer:'
     
     device: Literal["cpu", "cuda"] = "cpu"
         Device to use for the model. Default is "cpu".
