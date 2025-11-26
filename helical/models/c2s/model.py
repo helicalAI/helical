@@ -302,9 +302,6 @@ class Cell2Sen(HelicalBaseFoundationModel):
                     for org, cs in zip(batch_organisms, batch_sentences)
                 ]
 
-            import pdb
-            pdb.set_trace()
-
             inputs = self.tokenizer(
                 prompts,
                 return_tensors="pt",
@@ -330,9 +327,6 @@ class Cell2Sen(HelicalBaseFoundationModel):
                     sum_mask = attention_mask.sum(dim=1, keepdim=True).clamp(min=1e-9)
                     batch_embeddings = sum_embeddings / sum_mask                 # (B, H)
 
-                    import pdb
-                    pdb.set_trace()
-
                 elif self.aggregation_type == 'last_token':
                     # index of last non-padding token
                     last_idx = (attention_mask.sum(dim=1) - 1).long()            # (B,)
@@ -342,14 +336,9 @@ class Cell2Sen(HelicalBaseFoundationModel):
                         torch.arange(last_hidden.size(0), device=last_hidden.device),
                         last_idx
                     ]                                                            # (B, H)
-                    import pdb
-                    pdb.set_trace()  
 
                 else:   
-                    raise ValueError("Invalid aggregation type. Use 'mean_pool' or 'last_token'.")
-                    
-                import pdb
-                pdb.set_trace()                                                
+                    raise ValueError("Invalid aggregation type. Use 'mean_pool' or 'last_token'.")                                             
           
                 if output_attentions:
                     # outputs.attentions is a tuple of tensors, one per layer
