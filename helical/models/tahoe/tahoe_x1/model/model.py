@@ -152,7 +152,7 @@ class TXModel(nn.Module):
             )
 
         if self.init_device != "meta":
-            log.info(
+            LOGGER.info(
                 'MosaicML recommends using config.init_device="meta" with Composer + FSDP for faster initialization.',
             )
             self.apply(self.param_init_fn)
@@ -160,7 +160,7 @@ class TXModel(nn.Module):
     def param_init_fn(self, module: nn.Module):
         # skip initialization for modules that has skip_init=True
         if hasattr(module, "skip_init") and module.skip_init:
-            log.info(f"Skipping re-initializing for {module._get_name()}")
+            LOGGER.info(f"Skipping re-initializing for {module._get_name()}")
             return
         init_fn_name = self.init_config["name"]
         param_init_fns.get(init_fn_name)(
