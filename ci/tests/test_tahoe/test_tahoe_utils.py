@@ -59,8 +59,8 @@ class TestLoaderFromAdata:
         """Test basic dataloader creation from AnnData."""
         gene_ids = np.array([2, 3, 4])
 
-        with patch("helical.models.tahoe.tahoe_x1.data.CountDataset") as MockDataset:
-            with patch("helical.models.tahoe.tahoe_x1.data.DataCollator") as MockCollator:
+        with patch("helical.models.tahoe.tahoe_x1.utils.util.CountDataset") as MockDataset:
+            with patch("helical.models.tahoe.tahoe_x1.utils.util.DataCollator") as MockCollator:
                 MockDataset.return_value = Mock()
                 MockCollator.return_value = Mock()
 
@@ -87,8 +87,8 @@ class TestLoaderFromAdata:
         """Test dataloader creation with max_length parameter."""
         gene_ids = np.array([2, 3, 4])
 
-        with patch("helical.models.tahoe.tahoe_x1.data.CountDataset"):
-            with patch("helical.models.tahoe.tahoe_x1.data.DataCollator"):
+        with patch("helical.models.tahoe.tahoe_x1.utils.util.CountDataset"):
+            with patch("helical.models.tahoe.tahoe_x1.utils.util.DataCollator"):
                 loader = loader_from_adata(
                     adata=sample_adata,
                     collator_cfg=mock_collator_cfg,
@@ -107,8 +107,8 @@ class TestLoaderFromAdata:
         adata.var["id_in_vocab"] = [2, 3]
         gene_ids = np.array([2, 3])
 
-        with patch("helical.models.tahoe.tahoe_x1.data.CountDataset") as MockDataset:
-            with patch("helical.models.tahoe.tahoe_x1.data.DataCollator"):
+        with patch("helical.models.tahoe.tahoe_x1.utils.util.CountDataset") as MockDataset:
+            with patch("helical.models.tahoe.tahoe_x1.utils.util.DataCollator"):
                 loader = loader_from_adata(
                     adata=adata,
                     collator_cfg=mock_collator_cfg,
@@ -125,8 +125,8 @@ class TestLoaderFromAdata:
 
     def test_loader_from_adata_infers_gene_ids(self, sample_adata, mock_vocab, mock_collator_cfg):
         """Test that gene_ids are inferred from adata.var when not provided."""
-        with patch("helical.models.tahoe.tahoe_x1.data.CountDataset") as MockDataset:
-            with patch("helical.models.tahoe.tahoe_x1.data.DataCollator"):
+        with patch("helical.models.tahoe.tahoe_x1.utils.util.CountDataset") as MockDataset:
+            with patch("helical.models.tahoe.tahoe_x1.utils.util.DataCollator"):
                 MockDataset.return_value = Mock()
 
                 loader = loader_from_adata(
