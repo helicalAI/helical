@@ -26,8 +26,7 @@ from helical.models.tahoe.tahoe_x1.model.blocks import (
 )
 from helical.models.tahoe.tahoe_x1.tokenizer import GeneVocab
 
-log = logging.getLogger(__name__)
-
+LOGGER = logging.getLogger(__name__)
 
 class TXModel(nn.Module):
     def __init__(
