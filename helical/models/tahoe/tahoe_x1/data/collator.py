@@ -4,11 +4,9 @@ from typing import Dict, List, Mapping, Optional, Tuple, Union
 
 import numpy as np
 import torch
-from composer.utils import dist
 from transformers import DefaultDataCollator
 
 from helical.models.tahoe.tahoe_x1.tokenizer import GeneVocab
-from helical.models.tahoe.tahoe_x1.utils.util import download_file_from_s3_url
 
 
 class DataCollator(DefaultDataCollator):
@@ -18,7 +16,7 @@ class DataCollator(DefaultDataCollator):
     Args:
         vocab (:obj: GeneVocab): The vocabulary that includes the gene ids, name, special tokens, etc.
         use_chem_token (:obj:`bool`): whether to create and use the chemical token in the sequence.
-        drug_to_id_path (:obj:`dict`): path to the drug to id .json file.
+        drug_to_id_path (:obj:`str`): local path to the drug to id .json file.
         do_padding (:obj:`bool`): whether to pad the sequences to the max length.
         unexp_padding (:obj:`bool`): whether to pad the sequences with unexpressed genes. If False it pads with pad token.
         pad_token_id (:obj:`int`, optional): the token id to use for padding.
@@ -50,7 +48,7 @@ class DataCollator(DefaultDataCollator):
     def __init__(
         self,
         vocab: GeneVocab,
-        drug_to_id_path: Optional[dict] = None,
+        drug_to_id_path: Optional[str] = None,
         use_chem_token: int = False,
         do_padding: bool = True,
         unexp_padding: bool = False,
@@ -114,15 +112,7 @@ class DataCollator(DefaultDataCollator):
         )
         # load drug_to_id mapping if present
         if self.use_chem_token:
-            if dist.get_local_rank() == 0:
-                download_file_from_s3_url(
-                    s3_url=drug_to_id_path["remote"],
-                    local_file_path=drug_to_id_path["local"],
-                )
-            with dist.local_rank_zero_download_and_wait(drug_to_id_path["local"]):
-                dist.barrier()
-
-            with open(drug_to_id_path["local"]) as f:
+            with open(drug_to_id_path) as f:
                 self.drug_to_id = json.load(f)
 
     def __post_init__(self):

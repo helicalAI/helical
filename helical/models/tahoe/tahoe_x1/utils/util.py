@@ -7,6 +7,7 @@ import torch
 from omegaconf import DictConfig
 from scanpy import AnnData
 from scipy.sparse import csc_matrix, csr_matrix
+from helical.models.tahoe.tahoe_x1.data import CountDataset, DataCollator
 
 from helical.models.tahoe.tahoe_x1.tokenizer import GeneVocab
 
@@ -42,7 +43,6 @@ def loader_from_adata(
     if num_workers == 0:
         prefetch_factor = None
 
-    from helical.models.tahoe.tahoe_x1.data import CountDataset, DataCollator
 
     dataset = CountDataset(
         count_matrix,
@@ -84,12 +84,3 @@ def loader_from_adata(
     return data_loader
 
 
-def download_file_from_s3_url(s3_url, local_file_path):
-    """Placeholder for S3 downloads - only used during training with chemical tokens.
-
-    For inference from HuggingFace Hub, this function should never be called.
-    """
-    raise NotImplementedError(
-        "S3 downloads are only supported during training. "
-        "For inference, use models loaded from HuggingFace Hub."
-    )

@@ -5,8 +5,6 @@ from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import torch
-# from composer.utils import dist
-import torch.distributed as dist
 from llmfoundry.layers_registry import attention_classes, norms
 from llmfoundry.models.layers.ffn import (
     resolve_ffn_act_fn,
@@ -16,7 +14,6 @@ from llmfoundry.models.mpt.modeling_mpt import gen_flash_attn_padding_info
 from torch import Tensor, nn
 from torch.nn.modules.transformer import _get_clones
 
-from helical.models.tahoe.tahoe_x1.utils.util import download_file_from_s3_url
 
 attn_config_defaults: Dict = {
     "attn_type": "grouped_query_attention",
@@ -381,13 +378,8 @@ class GeneEncoder(nn.Module):
         self.extra_norms = nn.ModuleDict()
 
         for name, e_cfg in additional_embedding_cfg.items():
-            local, remote = e_cfg["local"], e_cfg["remote"]
-            if dist.get_local_rank() == 0:
-                download_file_from_s3_url(remote, local)
-            with dist.local_rank_zero_download_and_wait(local):
-                dist.barrier()
-
-            pretrained_weight = torch.load(local, weights_only=True)["embedding.weight"]
+            local_path = e_cfg["local"]
+            pretrained_weight = torch.load(local_path, weights_only=True)["embedding.weight"]
             pretrained_vocab_size, pretrained_dim = pretrained_weight.shape
             if pretrained_vocab_size < num_embeddings:
                 log.warning(
@@ -445,24 +437,16 @@ class ChemEncoder(nn.Module):
         activation: str = "leaky_relu",
         use_norm: bool = True,
         freeze: bool = False,
-        drug_fps_path: Optional[dict] = None,
+        drug_fps_path: Optional[str] = None,
         num_drugs: Optional[int] = None,
         fp_dim: Optional[int] = None,
     ):
         super().__init__()
 
-        # download pretrained drug embeddings if specified, otherwise use arguments
+        # load pretrained drug embeddings if specified, otherwise use arguments
         if drug_fps_path is not None:
-            if dist.get_local_rank() == 0:
-                download_file_from_s3_url(
-                    s3_url=drug_fps_path["remote"],
-                    local_file_path=drug_fps_path["local"],
-                )
-            with dist.local_rank_zero_download_and_wait(drug_fps_path["local"]):
-                dist.barrier()
-
             drug_fps = torch.as_tensor(
-                np.load(drug_fps_path["local"]),
+                np.load(drug_fps_path),
                 dtype=torch.float32,
             )
             embedding_dim = drug_fps.shape[1]

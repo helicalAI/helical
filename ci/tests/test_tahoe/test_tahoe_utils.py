@@ -6,7 +6,7 @@ from anndata import AnnData
 from unittest.mock import Mock, patch
 from omegaconf import DictConfig
 
-from helical.models.tahoe.tahoe_x1.utils.util import loader_from_adata, download_file_from_s3_url
+from helical.models.tahoe.tahoe_x1.utils.util import loader_from_adata
 from helical.models.tahoe.tahoe_x1.data.dataloader import CountDataset
 from helical.models.tahoe.tahoe_x1.tokenizer import GeneVocab
 
@@ -259,22 +259,6 @@ class TestCountDataset:
                 gene_ids=gene_ids,
                 add_cls_token=False,
             )
-
-
-class TestDownloadFileFromS3:
-    """Test suite for S3 download function."""
-
-    def test_download_raises_not_implemented(self):
-        """Test that S3 download raises NotImplementedError for inference."""
-        with pytest.raises(NotImplementedError, match="S3 downloads are only supported during training"):
-            download_file_from_s3_url("s3://bucket/path/file", "/local/path")
-
-    def test_download_error_message(self):
-        """Test that error message mentions HuggingFace Hub."""
-        try:
-            download_file_from_s3_url("s3://test/file", "/tmp/file")
-        except NotImplementedError as e:
-            assert "HuggingFace Hub" in str(e)
 
 
 class TestGeneVocab:
