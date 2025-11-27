@@ -62,7 +62,7 @@ class Cell2SenConfig:
         If None, all genes will be used.
         If a number is provided, the genes will be sorted by expression level and the top max_genes will be used.
 
-    aggregation_type: Literal["mean_pool", "last_token"] = "pool"
+    aggregation_type: Literal["mean_pool", "last_token"] = "mean_pool"
         How to aggregate final-layer hidden states into a single embedding. Defaults to "mean_pool".
         "mean_pool": Computes the mean of all non-padding token embeddings in the last layer.
         "last_token": Uses only the embedding of the final non-padding token (i.e., the position where the model would predict the next token).
