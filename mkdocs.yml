@@ -5,6 +5,10 @@ repo_name: helicalAI/helical
 copyright: <a href="https://www.helical-ai.com/">Helical Team</a> <br> Copyright &copy; 2024
 nav:
   - Single-Cell Models:
+    - Cell2Sen-Scale: 
+      - Model Card: ./model_cards/c2s.md
+      - Config: ./configs/c2s_config.md
+      - Model: ./models/c2s.md
     - Geneformer: 
       - Model Card: ./model_cards/geneformer.md
       - Config: ./configs/geneformer_config.md
