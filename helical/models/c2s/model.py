@@ -65,7 +65,13 @@ class Cell2Sen(HelicalBaseFoundationModel):
         # for file in self.config["list_of_files_to_download"]:
         #     downloader.download_via_name(file)
 
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = self.config["device"]
+        if "cuda" in self.device and self.config["use_flash_attn"]:
+            LOGGER.info("Using flash attention 2 for attention implementation")
+            self.attn_implementation = "flash_attention_2"
+        else:
+            LOGGER.info("Using SDPA for attention implementation - default for CPU")
+            self.attn_implementation = "sdpa"
 
         if self.config["dtype"] == "bfloat16":
             self.torch_dtype = torch.bfloat16
@@ -93,6 +99,8 @@ class Cell2Sen(HelicalBaseFoundationModel):
             torch_dtype=self.torch_dtype, 
             cache_dir=self.config["model_path"],
             quantization_config=self.bnb_config,
+            attn_implementation=self.attn_implementation,
+            device_map=self.device
             ).to(self.device)
         
         self.tokenizer = AutoTokenizer.from_pretrained(self.config["hf_model_path"], cache_dir=self.config["model_path"])
@@ -103,13 +111,15 @@ class Cell2Sen(HelicalBaseFoundationModel):
         self.organism = self.config['organism']
         self.perturbation_column = self.config['perturbation_column']
         self.return_fit = self.config['return_fit']
+        self.max_genes = self.config['max_genes']
+        self.aggregation_type = self.config["aggregation_type"]
+        self.embedding_prompt_template = self.config["embedding_prompt_template"]
         
         LOGGER.info("Successfully loaded model")
 
     def process_data(
         self, 
         adata: anndata.AnnData, 
-        max_genes: int = None,
     ):
         """
         Process anndata to create a HuggingFace Dataset with cell sentences and fit parameters.
@@ -182,10 +192,10 @@ class Cell2Sen(HelicalBaseFoundationModel):
             gene_names = gene_names[ranked_indices]  # Gene names in descending order by expression
 
             # Cut at max_genes if desired
-            if max_genes:
-                if len(gene_names) > max_genes:
-                    gene_names = gene_names[:max_genes]
-                    expr_values = expr_values[:max_genes]
+            if self.max_genes:
+                if len(gene_names) > self.max_genes:
+                    gene_names = gene_names[:self.max_genes]
+                    expr_values = expr_values[:self.max_genes]
 
             if self.return_fit:
                 ranks = np.arange(1, len(gene_names) + 1)
@@ -249,7 +259,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
     def get_embeddings(
         self, 
         dataset: Dataset, 
-        output_attentions: bool = False
+        output_attentions: bool = False,
         ):
         """
         Extract embeddings from cell sentences in a HuggingFace Dataset using the last hidden layer of Gemma.
@@ -281,10 +291,16 @@ class Cell2Sen(HelicalBaseFoundationModel):
             batch_sentences = sentences_list[i:i + self.batch_size]
             batch_organisms = organisms_list[i:i + self.batch_size]
             
-            prompts = [
-                EMBEDDING_PROMPT.format(organism=org, cell_sentence=cs)
-                for org, cs in zip(batch_organisms, batch_sentences)
-            ]
+            if self.embedding_prompt_template is None:
+                prompts = [
+                    EMBEDDING_PROMPT.format(organism=org, cell_sentence=cs)
+                    for org, cs in zip(batch_organisms, batch_sentences)
+                ]
+            else:
+                prompts = [
+                    self.embedding_prompt_template.format(organism=org, cell_sentence=cs)
+                    for org, cs in zip(batch_organisms, batch_sentences)
+                ]
 
             inputs = self.tokenizer(
                 prompts,
@@ -301,14 +317,29 @@ class Cell2Sen(HelicalBaseFoundationModel):
                     output_hidden_states=True,
                     output_attentions=output_attentions
                 )
-                last_hidden = outputs.hidden_states[-1]  # Shape: (batch_size, seq_len, hidden_size)
-                attention_mask = inputs['attention_mask'].float() # Shape: (batch_size, seq_len, 1)
+                last_hidden = outputs.hidden_states[-1]               # (B, L, H)
+                attention_mask = inputs['attention_mask'].float()    # (B, L)
 
-                # Sum embeddings over sequence length, masking out padding tokens
-                sum_embeddings = torch.sum(last_hidden * attention_mask.unsqueeze(-1), dim=1)
-                sum_mask = torch.clamp(attention_mask.sum(dim=1, keepdim=True), min=1e-9)
-                batch_embeddings = sum_embeddings / sum_mask
+                if self.aggregation_type == 'mean_pool':
+                    # mean pooling over non-padding tokens
+                    masked_hidden = last_hidden * attention_mask.unsqueeze(-1)   # (B, L, H)
+                    sum_embeddings = masked_hidden.sum(dim=1)                    # (B, H)
+                    sum_mask = attention_mask.sum(dim=1, keepdim=True).clamp(min=1e-9)
+                    batch_embeddings = sum_embeddings / sum_mask                 # (B, H)
 
+                elif self.aggregation_type == 'last_token':
+                    # index of last non-padding token
+                    last_idx = (attention_mask.sum(dim=1) - 1).long()            # (B,)
+
+                    # gather token representations
+                    batch_embeddings = last_hidden[
+                        torch.arange(last_hidden.size(0), device=last_hidden.device),
+                        last_idx
+                    ]  # (B, H)
+
+                else:   
+                    raise ValueError("Invalid aggregation type. Use 'mean_pool' or 'last_token'.")                                             
+          
                 if output_attentions:
                     # outputs.attentions is a tuple of tensors, one per layer
                     # Each tensor has shape (batch_size, num_heads, seq_length, seq_length)
