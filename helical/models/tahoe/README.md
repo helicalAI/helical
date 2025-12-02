@@ -13,8 +13,7 @@ tahoe/
     ├── data/                # Data processing (collator, dataloader - 67 lines)
     ├── model/               # Model architecture (blocks, model)
     ├── tokenizer/           # Gene vocabulary and tokenization
-    ├── utils/               # Utility functions (96 lines)
-    └── loss.py              # Loss functions
+    └── utils/               # Utility functions (96 lines)
 ```
 
 ## Copyright
