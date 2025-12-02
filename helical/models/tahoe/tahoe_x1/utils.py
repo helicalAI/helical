@@ -1,5 +1,4 @@
 # Copyright (C) Tahoe Therapeutics 2025. All rights reserved.
-import logging
 from typing import Optional
 
 import numpy as np
@@ -7,12 +6,9 @@ import torch
 from omegaconf import DictConfig
 from scanpy import AnnData
 from scipy.sparse import csc_matrix, csr_matrix
+
 from helical.models.tahoe.tahoe_x1.data import CountDataset, DataCollator
-
 from helical.models.tahoe.tahoe_x1.tokenizer import GeneVocab
-
-log = logging.getLogger(__name__)
-
 
 def loader_from_adata(
     adata: AnnData,

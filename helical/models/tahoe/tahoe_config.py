@@ -5,7 +5,6 @@ import logging
 
 LOGGER = logging.getLogger(__name__)
 
-
 class TahoeConfig:
     """Configuration class to use the Tahoe-1x Model.
 

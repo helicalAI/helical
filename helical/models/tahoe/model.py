@@ -1,17 +1,18 @@
 from helical.models.base_models import HelicalRNAModel
 import logging
-from pathlib import Path
 import numpy as np
 from anndata import AnnData
 import torch
-from typing import Optional, Union, List
+from typing import Union, List
 from torch.utils.data import DataLoader
 from helical.models.tahoe.tahoe_config import TahoeConfig
 from helical.utils.mapping import map_gene_symbols_to_ensembl_ids
 import pandas as pd
+from helical.models.tahoe.tahoe_x1.model import TXModel
+from helical.models.tahoe.tahoe_x1.utils import loader_from_adata
+from tqdm.auto import tqdm
 
 LOGGER = logging.getLogger(__name__)
-
 
 class Tahoe(HelicalRNAModel):
     """Tahoe-1x Model.
@@ -73,16 +74,13 @@ class Tahoe(HelicalRNAModel):
     though this will be slower and use more memory.
     """
 
-    default_configurer = TahoeConfig()
-
-    def __init__(self, configurer: TahoeConfig = default_configurer) -> None:
+    def __init__(self, configurer: TahoeConfig = TahoeConfig()) -> None:
+        
         super().__init__()
+        
         self.configurer = configurer
         self.config = configurer.config
         self.device = torch.device(self.config["device"])
-
-        # Import tahoe_x1 modules from local copy
-        from helical.models.tahoe.tahoe_x1.model import TXModel
 
         LOGGER.info(
             f"Loading Tahoe model (size: {self.config['model_size']}) from Hugging Face..."
@@ -184,9 +182,6 @@ class Tahoe(HelicalRNAModel):
         if not np.all(gene_ids >= 0):
             raise ValueError("Some genes are not in the vocabulary after filtering.")
 
-        # Create DataLoader from AnnData
-        from helical.models.tahoe.tahoe_x1.utils.util import loader_from_adata
-
         dataloader = loader_from_adata(
             adata=adata,
             collator_cfg=self.collator_cfg,
@@ -256,12 +251,7 @@ class Tahoe(HelicalRNAModel):
                     "    tahoe = Tahoe(configurer=tahoe_config)"
                 )
 
-        from typing import List
-        from tqdm.auto import tqdm
-
-        device = self.device
-        model = self.model
-        model.return_gene_embeddings = return_gene_embeddings
+        self.model.return_gene_embeddings = return_gene_embeddings
 
         cell_embs: List[torch.Tensor] = []
         all_attentions: List[torch.Tensor] = [] if output_attentions else None
@@ -280,22 +270,22 @@ class Tahoe(HelicalRNAModel):
             torch.amp.autocast(
                 enabled=True,
                 dtype=dtype_from_string[self.model_cfg["precision"]],
-                device_type=device.type,
+                device_type=self.device.type,
             ),
         ):
             pbar = tqdm(total=len(dataloader), desc="Embedding cells")
 
             for data_dict in dataloader:
-                input_gene_ids = data_dict["gene"].to(device)
+                input_gene_ids = data_dict["gene"].to(self.device)
                 src_key_padding_mask = ~input_gene_ids.eq(self.collator_cfg["pad_token_id"])
 
-                output = model(
+                output = self.model(
                     genes=input_gene_ids,
-                    values=data_dict["expr"].to(device),
-                    gen_masks=data_dict["gen_mask"].to(device),
+                    values=data_dict["expr"].to(self.device),
+                    gen_masks=data_dict["gen_mask"].to(self.device),
                     key_padding_mask=src_key_padding_mask,
                     drug_ids=(
-                        data_dict["drug_ids"].to(device)
+                        data_dict["drug_ids"].to(self.device)
                         if "drug_ids" in data_dict
                         else None
                     ),
@@ -440,13 +430,7 @@ class Tahoe(HelicalRNAModel):
         """
         LOGGER.info("Extracting transformer embeddings...")
 
-        from typing import List
-        from tqdm.auto import tqdm
-
-        device = self.device
-        model = self.model
-        model.return_gene_embeddings = True
-
+        self.model.return_gene_embeddings = True
         all_embeddings: List[np.ndarray] = []
         all_gene_ids: List[np.ndarray] = []
 
@@ -463,22 +447,22 @@ class Tahoe(HelicalRNAModel):
             torch.amp.autocast(
                 enabled=True,
                 dtype=dtype_from_string[self.model_cfg["precision"]],
-                device_type=device.type,
+                device_type=self.device.type,
             ),
         ):
             pbar = tqdm(total=len(dataloader), desc="Extracting transformer embeddings")
 
             for data_dict in dataloader:
-                input_gene_ids = data_dict["gene"].to(device)
+                input_gene_ids = data_dict["gene"].to(self.device)
                 src_key_padding_mask = ~input_gene_ids.eq(self.collator_cfg["pad_token_id"])
 
-                output = model(
+                output = self.model(
                     genes=input_gene_ids,
-                    values=data_dict["expr"].to(device),
-                    gen_masks=data_dict["gen_mask"].to(device),
+                    values=data_dict["expr"].to(self.device),
+                    gen_masks=data_dict["gen_mask"].to(self.device),
                     key_padding_mask=src_key_padding_mask,
                     drug_ids=(
-                        data_dict["drug_ids"].to(device)
+                        data_dict["drug_ids"].to(self.device)
                         if "drug_ids" in data_dict
                         else None
                     ),
@@ -566,8 +550,6 @@ class Tahoe(HelicalRNAModel):
         """
         LOGGER.info(f"Decoding embeddings for {len(gene_embeddings)} cells...")
 
-        device = self.device
-        model = self.model
         pad_token_id = self.collator_cfg["pad_token_id"]
         idx_to_gene = self.vocab.index_to_token
 
@@ -586,16 +568,16 @@ class Tahoe(HelicalRNAModel):
             torch.amp.autocast(
                 enabled=True,
                 dtype=dtype_from_string[self.model_cfg["precision"]],
-                device_type=device.type,
+                device_type=self.device.type,
             ),
         ):
             for cell_emb, cell_gene_ids in zip(gene_embeddings, gene_ids):
                 # Convert to tensor and add batch dimension
                 # Shape: (1, seq_len, d_model)
-                emb_tensor = torch.from_numpy(cell_emb).unsqueeze(0).to(torch.float32).to(device)
+                emb_tensor = torch.from_numpy(cell_emb).unsqueeze(0).to(torch.float32).to(self.device)
 
                 # Pass through decoder
-                decoder_output = model.expression_decoder(emb_tensor)
+                decoder_output = self.model.expression_decoder(emb_tensor)
                 expr_pred = decoder_output["pred"]  # (1, seq_len) or (1, seq_len, 1)
 
                 # Remove batch dimension and convert to numpy

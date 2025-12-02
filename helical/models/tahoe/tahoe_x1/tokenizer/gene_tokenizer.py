@@ -5,7 +5,6 @@ from collections import Counter
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Union
 
-
 class GeneVocab:
     def __init__(
         self,
