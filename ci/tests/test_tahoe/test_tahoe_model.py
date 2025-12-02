@@ -91,7 +91,7 @@ class TestTahoeModel:
 
             # Mock the loader_from_adata function
             mock_loader = Mock()
-            with patch("helical.models.tahoe.tahoe_x1.utils.util.loader_from_adata", return_value=mock_loader):
+            with patch("helical.models.tahoe.model.loader_from_adata", return_value=mock_loader):
                 result = tahoe.process_data(mock_anndata, gene_names="ensembl_id")
 
             assert result == mock_loader
@@ -120,7 +120,7 @@ class TestTahoeModel:
             tahoe.config = {"batch_size": 2, "max_length": 10000, "num_workers": 0, "prefetch_factor": 2}
 
             mock_loader = Mock()
-            with patch("helical.models.tahoe.tahoe_x1.utils.util.loader_from_adata", return_value=mock_loader):
+            with patch("helical.models.tahoe.model.loader_from_adata", return_value=mock_loader):
                 result = tahoe.process_data(data, gene_names="ensembl_id")
 
             # Verify the dataloader was created successfully
