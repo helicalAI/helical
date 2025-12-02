@@ -9,6 +9,7 @@ See the tutorial notebook for usage.
 
 import torch
 import anndata
+import scanpy as sc
 import numpy as np
 from tqdm import tqdm
 from helical.models.base_models import HelicalBaseFoundationModel
@@ -64,7 +65,13 @@ class Cell2Sen(HelicalBaseFoundationModel):
         # for file in self.config["list_of_files_to_download"]:
         #     downloader.download_via_name(file)
 
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = self.config["device"]
+        if "cuda" in self.device and self.config["use_flash_attn"]:
+            LOGGER.info("Using flash attention 2 for attention implementation")
+            self.attn_implementation = "flash_attention_2"
+        else:
+            LOGGER.info("Using SDPA for attention implementation - default for CPU")
+            self.attn_implementation = "sdpa"
 
         if self.config["dtype"] == "bfloat16":
             self.torch_dtype = torch.bfloat16
@@ -92,6 +99,8 @@ class Cell2Sen(HelicalBaseFoundationModel):
             torch_dtype=self.torch_dtype, 
             cache_dir=self.config["model_path"],
             quantization_config=self.bnb_config,
+            attn_implementation=self.attn_implementation,
+            device_map=self.device
             ).to(self.device)
         
         self.tokenizer = AutoTokenizer.from_pretrained(self.config["hf_model_path"], cache_dir=self.config["model_path"])
@@ -102,12 +111,15 @@ class Cell2Sen(HelicalBaseFoundationModel):
         self.organism = self.config['organism']
         self.perturbation_column = self.config['perturbation_column']
         self.return_fit = self.config['return_fit']
+        self.max_genes = self.config['max_genes']
+        self.aggregation_type = self.config["aggregation_type"]
+        self.embedding_prompt_template = self.config["embedding_prompt_template"]
         
         LOGGER.info("Successfully loaded model")
 
     def process_data(
         self, 
-        anndata: anndata.AnnData, 
+        adata: anndata.AnnData, 
     ):
         """
         Process anndata to create a HuggingFace Dataset with cell sentences and fit parameters.
@@ -116,20 +128,8 @@ class Cell2Sen(HelicalBaseFoundationModel):
         -----------
         anndata : AnnData
             Annotated data object with gene expression
-        min_genes : int
-            Minimum number of genes expressed per cell
-        min_counts : int
-            Minimum total counts per cell
-        min_cells : int
-            Minimum number of cells expressing a gene
-        max_cells : int, optional
-            Maximum number of cells to process
         max_genes : int, optional
-            Maximum number of genes to process
-        organism : str, optional
-            Organism name. If None, tries to extract from anndata.uns or uses default
-        perturbation_column : str, optional
-            Column name in anndata.obs to use for perturbations. If None, no perturbations are created.
+            Maximum number of genes to process per cell in descending expression order
         Returns:
         --------
         dataset : Dataset
@@ -137,17 +137,25 @@ class Cell2Sen(HelicalBaseFoundationModel):
         """
 
         LOGGER.info("Processing data")
+        if adata.n_obs == 0:
+            raise ValueError("Anndata is empty. Please provide a valid anndata object.")
 
+        # standard log-normalization, enables accurate expression reconstruction
+        anndata = adata.copy()
+        sc.pp.normalize_total(anndata, target_sum=1e4)
+        sc.pp.log1p(anndata, base=10)
+   
         X = anndata.X    
         if hasattr(X, 'toarray'):
             X = X.toarray()
 
-        X_log = np.log10(X + 1)
         # gene names corresponding to each cell in order
         # anndata.X[i, j] is the expression of the j-th gene in the i-th cell
-        gene_names = anndata.var_names.values
         cell_sentences = []
-        fit_parameters = []  # Will be list of lists: [slope, intercept, r_squared] for each cell
+
+        # Collect ranks and corresponding expression means as training data for reconstruction model
+        rank_to_mean = {}  
+        rank_to_count = {} 
 
         if self.organism is None:
             if 'organism' in anndata.uns:
@@ -163,36 +171,71 @@ class Cell2Sen(HelicalBaseFoundationModel):
                 self.organism = "unknown"  # Default if not found
 
         # Process each cell
-        progress_bar = tqdm(total=X_log.shape[0], desc="Processing cells")
-        for cell_idx in range(X_log.shape[0]):
-            cell_expr = X_log[cell_idx, :]
-            
-            # Rank genes by expression (highest = rank 1)
+        progress_bar = tqdm(total=X.shape[0], desc="Processing cells")
+        for cell_idx in range(X.shape[0]):
+            gene_names = anndata.var_names.values
+            cell_expr = X[cell_idx, :]
+            # Rank nonzero genes by expression (highest = rank 1)
+            non_zero_mask = cell_expr > 0 
+            if non_zero_mask.sum() == 0:
+                LOGGER.warning(f"No genes expressed above zero in cell {cell_idx}. Using empty sentence.")
+                cell_sentence = ""
+                cell_sentences.append(cell_sentence)
+                progress_bar.update(1)
+                continue
+              
+            cell_expr = cell_expr[non_zero_mask]
+            gene_names = gene_names[non_zero_mask]
+
             ranked_indices = np.argsort(cell_expr)[::-1]
-            assert len(ranked_indices) != 0, "No genes expressed in cell"
             expr_values = cell_expr[ranked_indices]  # Expression values in descending order
+            gene_names = gene_names[ranked_indices]  # Gene names in descending order by expression
+
+            # Cut at max_genes if desired
+            if self.max_genes:
+                if len(gene_names) > self.max_genes:
+                    gene_names = gene_names[:self.max_genes]
+                    expr_values = expr_values[:self.max_genes]
 
             if self.return_fit:
-                non_zero_mask = expr_values > 0
-                if non_zero_mask.sum() > 0:
-                    last_non_zero_idx = np.where(non_zero_mask)[0][-1]  # Last index where expr > 0
-                    # Fit only up to the last non-zero gene
-                    ranks_to_fit = np.arange(1, last_non_zero_idx + 2)  # +1 because rank starts at 1, +1 for inclusive
-                    expr_to_fit = expr_values[:last_non_zero_idx + 1]                    
-                    # Fit linear model
-                    model = LinearRegression()
-                    model.fit(ranks_to_fit.reshape(-1, 1), expr_to_fit)
-                    slope, intercept = model.coef_[0], model.intercept_
-                    r_squared = model.score(ranks_to_fit.reshape(-1, 1), expr_to_fit)
-                else:
-                    slope, intercept, r_squared = 0.0, 0.0, 0.0
-                fit_parameters.append({"slope": float(slope), "intercept": float(intercept), "r_squared": float(r_squared)})
-            else:
-                fit_parameters.append(None)
+                ranks = np.arange(1, len(gene_names) + 1)
+                for rank, expr in zip(ranks, expr_values):
+                    r = int(rank)
 
-            cell_sentence = " ".join(gene_names[ranked_indices])            
+                    if r not in rank_to_mean:
+                        # first time seeing this rank
+                        rank_to_mean[r] = expr
+                        rank_to_count[r] = 1
+                    else:
+                        # online mean update
+                        count = rank_to_count[r] + 1
+                        old_mean = rank_to_mean[r]
+                        new_mean = old_mean + (expr - old_mean) / count
+
+                        rank_to_mean[r] = new_mean
+                        rank_to_count[r] = count
+
+               
+            cell_sentence = " ".join(gene_names)           
             cell_sentences.append(cell_sentence)
             progress_bar.update(1)
+
+
+        if self.return_fit:
+            log_ranks_to_fit = np.log10(list(rank_to_mean.keys()))
+            expr_to_fit = np.array(list(rank_to_mean.values()))
+            
+            # Fit linear model to predict log-normalized expression from log rank: expr(g) = slope * log(rank(g)) = intercept
+            model = LinearRegression()
+            model.fit(log_ranks_to_fit.reshape(-1, 1), np.array(expr_to_fit))
+            slope, intercept = model.coef_[0], model.intercept_
+            r_squared = model.score(log_ranks_to_fit.reshape(-1, 1), expr_to_fit)
+
+            fit_parameters = {"slope": float(slope), "intercept": float(intercept), "r_squared": float(r_squared)}
+
+        else:
+            fit_parameters = None
+
         progress_bar.close()
 
         if self.perturbation_column is not None:
@@ -204,7 +247,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
         
         dataset = Dataset.from_dict({
             'cell_sentence': cell_sentences,
-            'fit_parameters': fit_parameters,
+            'fit_parameters': [fit_parameters] * len(cell_sentences),
             'organism': [self.organism] * len(cell_sentences),
             'perturbations': perturbations
         })
@@ -216,7 +259,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
     def get_embeddings(
         self, 
         dataset: Dataset, 
-        output_attentions: bool = False
+        output_attentions: bool = False,
         ):
         """
         Extract embeddings from cell sentences in a HuggingFace Dataset using the last hidden layer of Gemma.
@@ -248,10 +291,16 @@ class Cell2Sen(HelicalBaseFoundationModel):
             batch_sentences = sentences_list[i:i + self.batch_size]
             batch_organisms = organisms_list[i:i + self.batch_size]
             
-            prompts = [
-                EMBEDDING_PROMPT.format(organism=org, cell_sentence=cs)
-                for org, cs in zip(batch_organisms, batch_sentences)
-            ]
+            if self.embedding_prompt_template is None:
+                prompts = [
+                    EMBEDDING_PROMPT.format(organism=org, cell_sentence=cs)
+                    for org, cs in zip(batch_organisms, batch_sentences)
+                ]
+            else:
+                prompts = [
+                    self.embedding_prompt_template.format(organism=org, cell_sentence=cs)
+                    for org, cs in zip(batch_organisms, batch_sentences)
+                ]
 
             inputs = self.tokenizer(
                 prompts,
@@ -268,14 +317,29 @@ class Cell2Sen(HelicalBaseFoundationModel):
                     output_hidden_states=True,
                     output_attentions=output_attentions
                 )
-                last_hidden = outputs.hidden_states[-1]  # Shape: (batch_size, seq_len, hidden_size)
-                attention_mask = inputs['attention_mask'].float() # Shape: (batch_size, seq_len, 1)
+                last_hidden = outputs.hidden_states[-1]               # (B, L, H)
+                attention_mask = inputs['attention_mask'].float()    # (B, L)
 
-                # Sum embeddings over sequence length, masking out padding tokens
-                sum_embeddings = torch.sum(last_hidden * attention_mask.unsqueeze(-1), dim=1)
-                sum_mask = torch.clamp(attention_mask.sum(dim=1, keepdim=True), min=1e-9)
-                batch_embeddings = sum_embeddings / sum_mask
+                if self.aggregation_type == 'mean_pool':
+                    # mean pooling over non-padding tokens
+                    masked_hidden = last_hidden * attention_mask.unsqueeze(-1)   # (B, L, H)
+                    sum_embeddings = masked_hidden.sum(dim=1)                    # (B, H)
+                    sum_mask = attention_mask.sum(dim=1, keepdim=True).clamp(min=1e-9)
+                    batch_embeddings = sum_embeddings / sum_mask                 # (B, H)
 
+                elif self.aggregation_type == 'last_token':
+                    # index of last non-padding token
+                    last_idx = (attention_mask.sum(dim=1) - 1).long()            # (B,)
+
+                    # gather token representations
+                    batch_embeddings = last_hidden[
+                        torch.arange(last_hidden.size(0), device=last_hidden.device),
+                        last_idx
+                    ]  # (B, H)
+
+                else:   
+                    raise ValueError("Invalid aggregation type. Use 'mean_pool' or 'last_token'.")                                             
+          
                 if output_attentions:
                     # outputs.attentions is a tuple of tensors, one per layer
                     # Each tensor has shape (batch_size, num_heads, seq_length, seq_length)

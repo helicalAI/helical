@@ -9,6 +9,10 @@ nav:
       - Model Card: ./model_cards/tahoe.md
       - Config: ./configs/tahoe_config.md
       - Model: ./models/tahoe.md
+    - Cell2Sen-Scale: 
+      - Model Card: ./model_cards/c2s.md
+      - Config: ./configs/c2s_config.md
+      - Model: ./models/c2s.md
     - Geneformer: 
       - Model Card: ./model_cards/geneformer.md
       - Config: ./configs/geneformer_config.md
