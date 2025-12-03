@@ -5,15 +5,18 @@ from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import torch
-from llmfoundry.layers_registry import attention_classes, norms
-from llmfoundry.models.layers.ffn import (
+
+
+from helical.models.tahoe.tahoe_x1.minimal_llm_foundry.layers_registry import attention_classes, norms
+from helical.models.tahoe.tahoe_x1.minimal_llm_foundry.ffn import (
     resolve_ffn_act_fn,
     resolve_ffn_hidden_size,
 )
-from llmfoundry.models.mpt.modeling_mpt import gen_flash_attn_padding_info
+from helical.models.tahoe.tahoe_x1.minimal_llm_foundry.modeling_mpt import gen_flash_attn_padding_info
+
 from torch import Tensor, nn
 from torch.nn.modules.transformer import _get_clones
-
+from helical.models.tahoe.tahoe_x1.minimal_llm_foundry.grouped_query_attention import GroupedQueryAttention
 
 attn_config_defaults: Dict = {
     "attn_type": "grouped_query_attention",
