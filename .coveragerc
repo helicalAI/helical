@@ -1,0 +1,3 @@
+[run]
+omit =
+    */minimal_llm_foundry/*
