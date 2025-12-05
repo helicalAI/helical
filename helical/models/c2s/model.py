@@ -101,7 +101,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
             quantization_config=self.bnb_config,
             attn_implementation=self.attn_implementation,
             device_map=self.device
-            ).to(self.device)
+            )
         
         self.tokenizer = AutoTokenizer.from_pretrained(self.config["hf_model_path"], cache_dir=self.config["model_path"])
         self.model.eval()
