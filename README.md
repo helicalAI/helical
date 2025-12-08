@@ -205,6 +205,8 @@ A lot of our models have been published by talented authors developing these exc
 - [HyenaDNA](https://github.com/HazyResearch/hyena-dna)
 - [Cell2Sen](https://github.com/vandijklab/cell2sentence)
 - [Tahoe-X1](https://github.com/tahoebio/tahoe-x1)
+- [llm-foundry](https://github.com/mosaicml/llm-foundry)
+- [composer](https://github.com/mosaicml/composer)
 - [anndata](https://github.com/scverse/anndata)
 - [scanpy](https://github.com/scverse/scanpy)
 - [transformers](https://github.com/huggingface/transformers)

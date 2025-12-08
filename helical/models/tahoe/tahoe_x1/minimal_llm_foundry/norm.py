@@ -1,6 +1,5 @@
-# Copyright 2024 MosaicML LLM Foundry authors
+# Copyright 2022 MosaicML LLM Foundry authors
 # SPDX-License-Identifier: Apache-2.0
-
 
 from helical.models.tahoe.tahoe_x1.minimal_llm_foundry.registry_utils import create_registry
 from typing import Optional, Union, Sequence

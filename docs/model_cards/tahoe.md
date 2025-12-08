@@ -90,9 +90,7 @@ cell_embeddings, attentions = tahoe_attn.get_embeddings(
 
 The model requires the following packages (specified in tahoe-x1's dependencies):
 - torch
-- composer
 - huggingface_hub
-- llmfoundry
 - omegaconf
 - safetensors
 - scanpy
