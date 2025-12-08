@@ -61,6 +61,18 @@ class Cell2SenConfig:
         Maximum number of genes to use for the model. Default is 200.
         If None, all genes will be used.
         If a number is provided, the genes will be sorted by expression level and the top max_genes will be used.
+
+    aggregation_type: Literal["mean_pool", "last_token"] = "mean_pool"
+        How to aggregate final-layer hidden states into a single embedding. Defaults to "mean_pool".
+        "mean_pool": Computes the mean of all non-padding token embeddings in the last layer.
+        "last_token": Uses only the embedding of the final non-padding token (i.e., the position where the model would predict the next token).
+
+    embedding_prompt_template: str = None
+        Optional custom embedding prompt template used to query the model.
+        If None, a default built-in prompt template is used.
+        Example: 'You are given a list of genes in descending order of expression levels in a {organism} cell. \n
+        Genes: {cell_sentence} \n
+        Using this information, describe the function of the cell in a few words. Answer:'
     
     device: Literal["cpu", "cuda"] = "cpu"
         Device to use for the model. Default is "cpu".
@@ -73,7 +85,9 @@ class Cell2SenConfig:
         organism: str = None,
         perturbation_column: str = None,
         max_new_tokens: int = 200,
-        max_genes: int = 200,
+        max_genes: int = None,
+        aggregation_type: Literal["mean_pool", "last_token"] = "mean_pool",
+        embedding_prompt_template: str = None,
         return_fit: bool = False,
         dtype: str = "bfloat16", 
         model_size: str = "2B",  
@@ -137,5 +151,7 @@ class Cell2SenConfig:
             "model_size": model_size,
             "use_flash_attn": use_flash_attn,
             "max_genes": max_genes,
+            "aggregation_type": aggregation_type,
+            "embedding_prompt_template": embedding_prompt_template,
             "device": device,
         }
