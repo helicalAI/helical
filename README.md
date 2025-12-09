@@ -35,6 +35,9 @@ Let’s build the most exciting AI-for-Bio community together!
 
 ## What's new?
 
+### Tahoe-x1
+We have integrated the Tahoe-x1 foundation model for single-cell RNA-seq data. This transformer-based model can extract both cell and gene embeddings from raw count data and supports attention weight extraction for interpretability. Try it out with our [comprehensive tutorial notebook](./examples/notebooks/Tahoe-x1-Tutorial.ipynb)!
+
 ### Cell2Sentence-Scale
 We have integrated the new Cell2Sentence-Scale models which use cell sentences as input and are based on the Gemma language model architecture (2B and 27B models available in quantised versions too). You can use this model for embeddings and perturbation prediction. Follow our notebook tutorial [here](./examples/notebooks/Cell2Sen-Tutorial.ipynb). 
 
@@ -67,6 +70,12 @@ To install the latest pip release of our Helical package, you can run the comman
 pip install helical
 ```
 
+***Note***
+Sometimes Torch is not installed as the CUDA compiled version (e.g. on different architectures) which is why you need to manually install Helical with GPU support, run the command below (or install pytorch with cuda first and then install helical):
+```
+pip install helical --extra-index-url https://download.pytorch.org/whl/cuXXX (replace XXX with your cuda version, e.g. 128 for cuda 12.8)
+```
+
 To install the latest Helical package, you can run the command below:
 ```
 pip install --upgrade git+https://github.com/helicalAI/helical.git
@@ -78,6 +87,15 @@ git clone https://github.com/helicalAI/helical.git
 pip install .
 ```
 
+
+###Flash Attention Support
+To enable Flash Attention (required by some models), run the command below:
+```
+pip install flash-attn --no-build-isolation
+```
+**Important** Make sure that your Pytorch CUDA Version matches your system CUDA version, especially when using flash-attn.
+
+###Mamba-SSM Model Installation
 [Optional] To install mamba-ssm and causal-conv1d use the command below:
 ```
 pip install helical[mamba-ssm]
@@ -85,6 +103,14 @@ pip install helical[mamba-ssm]
 or in case you're installing from the Helical repo cloned locally:
 ```
 pip install .[mamba-ssm]
+```
+###Evo2 Model Installation
+To install Evo2 Specifically, follow the instructions in the [evo-2 model card](helical/models/evo_2/README.md).
+
+### Tahoe-X1 Model Installation
+To install Tahoe-X1 do the following after installing helical:
+```
+pip install helical[tahoe]
 ```
 
 ## Notes on the installation: 
@@ -114,6 +140,7 @@ apptainer shell --nv --fakeroot singularity/helical/
 - [scGPT](https://helical.readthedocs.io/en/latest/model_cards/scgpt/)
 - [Universal Cell Embedding (UCE)](https://helical.readthedocs.io/en/latest/model_cards/uce/)
 - [TranscriptFormer](https://helical.readthedocs.io/en/latest/model_cards/transcriptformer/)
+- [Tahoe-x1](https://helical.readthedocs.io/en/latest/model_cards/tahoe/)
 
 ### DNA models:
 - [HyenaDNA](https://helical.readthedocs.io/en/latest/model_cards/hyena_dna/)
@@ -145,6 +172,7 @@ Within the `examples/notebooks` folder, open the notebook of your choice. We rec
 |[Cell-Gene-Cls-embedding-generation.ipynb](./examples/notebooks/Cell-Gene-Cls-embedding-generation.ipynb)|A notebook explaining the different embedding modes of single cell RNA models.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Cell-Gene-Cls-embedding-generation.ipynb) |
 |[Geneformer-Series-Comparison.ipynb](./examples/notebooks/Geneformer-Series-Comparison.ipynb)|A zero shot comparison between Geneformer model scaling on drug perturbation prediction|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Geneformer-Series-Comparison.ipynb) |
 |[Cell2Sen-Tutorial.ipynb](./examples/notebooks/Cell2Sen-Tutorial.ipynb)|An example tutorial of how to use cell2sen models for embeddings and perturbation predictions.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Cell2Sen-Tutorial.ipynb) |
+|[Tahoe-x1-Tutorial.ipynb](./examples/notebooks/Tahoe-x1-Tutorial.ipynb)|A comprehensive tutorial on using the Tahoe-x1 model for extracting cell and gene embeddings, with attention visualization.|[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/helicalAI/helical/blob/main/examples/notebooks/Tahoe-x1-Tutorial.ipynb) |
 
 
 ## Stuck somewhere ? Other ideas ?
@@ -176,6 +204,9 @@ A lot of our models have been published by talented authors developing these exc
 - [TranscriptFormer](https://github.com/czi-ai/transcriptformer)
 - [HyenaDNA](https://github.com/HazyResearch/hyena-dna)
 - [Cell2Sen](https://github.com/vandijklab/cell2sentence)
+- [Tahoe-X1](https://github.com/tahoebio/tahoe-x1)
+- [llm-foundry](https://github.com/mosaicml/llm-foundry)
+- [composer](https://github.com/mosaicml/composer)
 - [anndata](https://github.com/scverse/anndata)
 - [scanpy](https://github.com/scverse/scanpy)
 - [transformers](https://github.com/huggingface/transformers)
@@ -199,6 +230,7 @@ You can find the Licenses for each model implementation in the model repositorie
 - [HyenaDNA](https://github.com/helicalAI/helical/blob/release/helical/models/hyena_dna/LICENSE)
 - [Evo2](https://github.com/helicalAI/helical/blob/release/helical/models/evo_2/LICENSE)
 - [Cell2Sen](https://github.com/helicalAI/helical/blob/release/helical/models/c2s/LICENSE)
+- [Tahoe-X1](https://github.com/helicalAI/helical/blob/release/helical/models/tahoe/LICENSE)
 
 ## Citation
 
