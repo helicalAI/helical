@@ -5,6 +5,10 @@ repo_name: helicalAI/helical
 copyright: <a href="https://www.helical-ai.com/">Helical Team</a> <br> Copyright &copy; 2024
 nav:
   - Single-Cell Models:
+    - Tahoe-X1:
+      - Model Card: ./model_cards/tahoe.md
+      - Config: ./configs/tahoe_config.md
+      - Model: ./models/tahoe.md
     - Cell2Sen-Scale: 
       - Model Card: ./model_cards/c2s.md
       - Config: ./configs/c2s_config.md

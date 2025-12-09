@@ -19,8 +19,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-            pip install -r requirements-dev.txt
             pip install .[mamba-ssm]
+            pip install -r requirements-dev.txt
             
       # First download before tests as they make use of the downloaded files 
       - name: Download all files
@@ -133,6 +133,10 @@ jobs:
         run: |
           python examples/run_models/run_c2s.py
 
+      - name: Execute Tahoe
+        run: |
+          python examples/run_models/run_tahoe.py ++device="cuda"
+
   notebooks:
     needs: tests
     runs-on: self-hosted
@@ -150,7 +154,7 @@ jobs:
       # because jobs may not be run in the same order, we need to install the dependencies again
       - name: Install helical
         run: |
-            pip install .[mamba-ssm]
+            pip install --no-cache-dir .[mamba-ssm]
         
       - name: Reduce datasets to speedup checks
         run: |
