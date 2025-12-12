@@ -20,6 +20,7 @@ from datasets import Dataset
 from .config import Cell2SenConfig, PERTURBATION_PROMPT, EMBEDDING_PROMPT
 import logging
 import torch._dynamo
+from scipy.sparse import issparse
 
 LOGGER = logging.getLogger(__name__)
 
@@ -146,11 +147,6 @@ class Cell2Sen(HelicalBaseFoundationModel):
         sc.pp.log1p(anndata, base=10)
    
         X = anndata.X    
-        if hasattr(X, 'toarray'):
-            X = X.toarray()
-
-        # gene names corresponding to each cell in order
-        # anndata.X[i, j] is the expression of the j-th gene in the i-th cell
         cell_sentences = []
 
         # Collect ranks and corresponding expression means as training data for reconstruction model
@@ -173,23 +169,28 @@ class Cell2Sen(HelicalBaseFoundationModel):
         # Process each cell
         progress_bar = tqdm(total=X.shape[0], desc="Processing cells")
         for cell_idx in range(X.shape[0]):
-            gene_names = anndata.var_names.values
-            cell_expr = X[cell_idx, :]
-            # Rank nonzero genes by expression (highest = rank 1)
-            non_zero_mask = cell_expr > 0 
-            if non_zero_mask.sum() == 0:
+
+            row = X[cell_idx]
+            
+            if issparse(row):
+                gene_indices = row.indices
+                expr_values = row.data
+            else:
+                # Dense fallback (rare)
+                gene_indices = np.where(row > 0)[0]
+                expr_values = row[gene_indices]
+
+            if len(expr_values) == 0:
                 LOGGER.warning(f"No genes expressed above zero in cell {cell_idx}. Using empty sentence.")
-                cell_sentence = ""
-                cell_sentences.append(cell_sentence)
+                cell_sentences.append("")
                 progress_bar.update(1)
                 continue
-              
-            cell_expr = cell_expr[non_zero_mask]
-            gene_names = gene_names[non_zero_mask]
-
-            ranked_indices = np.argsort(cell_expr)[::-1]
-            expr_values = cell_expr[ranked_indices]  # Expression values in descending order
-            gene_names = gene_names[ranked_indices]  # Gene names in descending order by expression
+            
+            gene_names = anndata.var_names.values[gene_indices]
+            # Sort by expression descending
+            ranked = np.argsort(expr_values)[::-1]
+            expr_values = expr_values[ranked]
+            gene_names = gene_names[ranked]
 
             # Cut at max_genes if desired
             if self.max_genes:
