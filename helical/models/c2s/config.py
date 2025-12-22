@@ -57,9 +57,9 @@ class Cell2SenConfig:
         If True, the attention implementation will be set to "flash_attention_2".
         If False, the attention implementation will be set to "sdpa".
     
-    max_genes: int = 200
-        Maximum number of genes to use for the model. Default is 200.
-        If None, all genes will be used.
+    max_genes: int = None
+        Maximum number of genes to use for the model. Default is None.
+        If None, all nonzero expressed genes will be used.
         If a number is provided, the genes will be sorted by expression level and the top max_genes will be used.
 
     aggregation_type: Literal["mean_pool", "last_token"] = "mean_pool"
