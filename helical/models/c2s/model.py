@@ -280,7 +280,10 @@ class Cell2Sen(HelicalBaseFoundationModel):
         """
 
         LOGGER.info("Extracting embeddings from dataset")
-
+        if output_attentions:
+            # SDPA/FlashAttention don't return attention weights;
+            # override to eager on the model config so all layers use it.
+            self.model.config._attn_implementation = "eager"
         sentences_list = dataset['cell_sentence']
         organisms_list = dataset['organism']
         
@@ -360,6 +363,9 @@ class Cell2Sen(HelicalBaseFoundationModel):
         LOGGER.info("Successfully extracted embeddings")
 
         if output_attentions:
+            # Restore original attention implementation
+            self.model.config._attn_implementation = self.attn_implementation
+
             # Concatenate attention maps per layer across batches
             # Each element in stacked_attentions has shape (total_batch_size, num_heads, seq_length, seq_length)
             stacked_attentions = tuple(
