@@ -364,9 +364,8 @@ class Cell2Sen(HelicalBaseFoundationModel):
 
         if output_attentions:
             # SDPA and FlashAttention do not support returning attention maps;
-            # switch to eager (math) attention for the forward pass.
-            self.model.set_attn_implementation("eager")
-            LOGGER.info("Switched to eager attention to capture attention maps")
+            # override to eager on the model config so all layers use it.
+            self.model.config._attn_implementation = "eager"
 
         sentences_list = dataset['cell_sentence']
         organisms_list = dataset['organism']
@@ -464,7 +463,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
 
         if output_attentions:
             # Restore the original attention implementation
-            self.model.set_attn_implementation(self.attn_implementation)
+            self.model.config._attn_implementation = self.attn_implementation
 
             # Flatten per-batch lists into a single list per layer.
             # Each sample may have a different number of words, so we
