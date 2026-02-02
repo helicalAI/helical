@@ -339,25 +339,34 @@ class Cell2Sen(HelicalBaseFoundationModel):
         return dataset
 
     def get_embeddings(
-        self, 
-        dataset: Dataset, 
+        self,
+        dataset: Dataset,
         output_attentions: bool = False,
+        emb_layer: int = -1,
         ):
         """
         Extract embeddings from cell sentences in a HuggingFace Dataset using the last hidden layer of Gemma.
-        
+
         Parameters:
         -----------
         dataset : Dataset
-            HuggingFace Dataset with 'cell_sentence' and 'organism' fields  
-        
+            HuggingFace Dataset with 'cell_sentence' and 'organism' fields
+
         output_attentions : bool, optional
             Whether to output the attention maps from the model. If set to True, the attention maps will be returned along with the embeddings.
             If set to False, only the embeddings will be returned. **Note**: This will increase the memory usage of the model significantly, so use it only if you need the attention maps.
+
+        emb_layer : int, optional
+            Which layer to extract attention from (default: -1, i.e. last layer).
+            Only used when output_attentions=True.
+
         Returns:
         --------
         embeddings : np.ndarray
             Embeddings of shape (num_sentences, hidden_size)
+        attn_list : list, optional
+            If output_attentions=True, a list of gene-level attention arrays,
+            one per sample, each of shape (num_heads, num_genes, num_genes).
         """
 
         LOGGER.info("Extracting embeddings from dataset")
@@ -465,15 +474,14 @@ class Cell2Sen(HelicalBaseFoundationModel):
             # Restore the original attention implementation
             self.model.config._attn_implementation = self.attn_implementation
 
-            # Flatten per-batch lists into a single list per layer.
-            # Each sample may have a different number of words, so we
-            # return a list of arrays (one per sample) rather than a
-            # single stacked array.
-            stacked_attentions = tuple(
+            # Flatten per-batch lists into a single list per layer
+            stacked_attentions = [
                 [arr for batch_list in all_attentions[layer_idx] for arr in batch_list]
                 for layer_idx in range(len(all_attentions))
-            )
-            return np.concatenate(all_embeddings, axis=0), stacked_attentions
+            ]
+            # Return only the selected layer as a flat list (like Geneformer)
+            attn_list = stacked_attentions[emb_layer]
+            return np.concatenate(all_embeddings, axis=0), attn_list
         else:
             return np.concatenate(all_embeddings, axis=0)
 
