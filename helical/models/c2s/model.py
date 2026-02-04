@@ -367,6 +367,9 @@ class Cell2Sen(HelicalBaseFoundationModel):
         attn_list : list, optional
             If output_attentions=True, a list of gene-level attention arrays,
             one per sample, each of shape (num_heads, num_genes, num_genes).
+        gene_names_list : list, optional
+            If output_attentions=True, a list of gene name lists, one list per sample,
+            e.g. [['geneA', 'geneB', ...], ['geneX', 'geneY', ...], ...]. This is used to attention values to specific genes.
         """
 
         LOGGER.info("Extracting embeddings from dataset")
@@ -481,7 +484,9 @@ class Cell2Sen(HelicalBaseFoundationModel):
             ]
             # Return only the selected layer as a flat list (like Geneformer)
             attn_list = stacked_attentions[emb_layer]
-            return np.concatenate(all_embeddings, axis=0), attn_list
+            # Gene names per sample from cell sentences
+            gene_names_list = [sentence.split() for sentence in sentences_list]
+            return np.concatenate(all_embeddings, axis=0), attn_list, gene_names_list
         else:
             return np.concatenate(all_embeddings, axis=0)
 
