@@ -186,8 +186,12 @@ class TestGetEmbeddings:
             cell2sen_model.get_embeddings(empty)
 
     def test_attention_shapes(self, cell2sen_model, processed_dataset_basic):
-        emb, attn = cell2sen_model.get_embeddings(processed_dataset_basic, output_attentions=True)
+        emb, attn, gene_order = cell2sen_model.get_embeddings(processed_dataset_basic, output_attentions=True)
         assert isinstance(attn, list)
+        assert isinstance(gene_order, list)
+        assert len(gene_order) == len(processed_dataset_basic)
+        assert all(isinstance(gene_list, list) for gene_list in gene_order)
+        assert all(len(gene_list) == len(processed_dataset_basic[0].split()) for gene_list in gene_order)
         assert len(attn) == len(processed_dataset_basic)
         for sample_attn in attn:
             # (num_heads, num_genes, num_genes)
