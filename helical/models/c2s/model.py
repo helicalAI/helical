@@ -360,6 +360,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
         emb_layer : int, optional
             Which layer to extract attention from (default: -1, i.e. last layer).
             Only used when output_attentions=True.
+            Only one layer of attention can be returned at a time.
 
         Returns:
         --------
@@ -452,7 +453,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
 
 
                     batch_size_actual = inputs['input_ids'].shape[0]
-                    attn = outputs.attentions[emb_layer]
+                    attn = outputs.attentions[emb_layer] #allow returning only one layer of attention 
                     word_attns = []
                     for b in range(batch_size_actual):
                         offsets_b = batch_offsets[b].tolist()
