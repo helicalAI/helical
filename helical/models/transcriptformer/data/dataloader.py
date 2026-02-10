@@ -27,7 +27,7 @@ def load_data(file_path):
         return None, False
 
 
-def load_gene_features(adata, gene_col_name):
+def load_gene_features(adata, gene_col_name, species: str = "hsapiens"):
     """Load ensembl ids from adata object."""
     if gene_col_name == "index":
         adata.var["index"] = adata.var_names
@@ -35,7 +35,7 @@ def load_gene_features(adata, gene_col_name):
         message = f"Gene column '{gene_col_name}' not found in adata.var.columns. Available columns: {adata.var.columns}. Modify config accordingly."
         logging.error(message)
         raise ValueError(message)
-    adata = map_gene_symbols_to_ensembl_ids(adata, gene_names=gene_col_name)
+    adata = map_gene_symbols_to_ensembl_ids(adata, gene_names=gene_col_name, species=species)
     gene_names = np.array(list(adata.var["ensembl_id"].values))
     return gene_names, True
 

@@ -179,6 +179,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
 
         num_words = len(word_to_tokens)
         if num_words == 0:
+            LOGGER.warning("No words found in attention map. Returning empty array.")
             return torch.zeros((attn.shape[0], 0, 0), dtype=attn.dtype, device=attn.device)
         
         sorted_word_ids = sorted(word_to_tokens.keys())
