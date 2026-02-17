@@ -177,7 +177,10 @@ class scGPT(HelicalRNAModel):
                         ),
                         output_attentions=output_attentions,
                     )
-                    resulting_attn_maps.extend(attn_maps)
+                    # Stack layers and rearrange to per-sample: (batch, n_layers, n_heads, seq, seq)
+                    stacked = torch.stack(attn_maps)  # (n_layers, batch, n_heads, seq, seq)
+                    per_sample = stacked.permute(1, 0, 2, 3, 4)
+                    resulting_attn_maps.extend(per_sample.cpu().numpy())
                 else:
                     embeddings = self.model._encode(
                         input_gene_ids,
@@ -211,11 +214,11 @@ class scGPT(HelicalRNAModel):
         if output_attentions and output_genes:
             return (
                 resulting_embeddings,
-                torch.stack(resulting_attn_maps).cpu().numpy(),
+                resulting_attn_maps,
                 input_genes,
             )
         elif output_attentions:
-            return resulting_embeddings, torch.stack(resulting_attn_maps).cpu().numpy()
+            return resulting_embeddings, resulting_attn_maps
         elif output_genes:
             return resulting_embeddings, input_genes
         else:

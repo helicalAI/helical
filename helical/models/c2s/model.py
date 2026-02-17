@@ -376,19 +376,12 @@ class Cell2Sen(HelicalBaseFoundationModel):
         """
 
         LOGGER.info("Extracting embeddings from dataset")
-<<<<<<< HEAD
-        if output_attentions:
-            # SDPA/FlashAttention don't return attention weights;
-            # override to eager on the model config so all layers use it.
-            self.model.config._attn_implementation = "eager"
-=======
 
         if output_attentions:
             # SDPA and FlashAttention do not support returning attention maps;
             # override to eager on the model config so all layers use it.
             self.model.config._attn_implementation = "eager"
 
->>>>>>> f25b766949c92b9caeff7745ac447c6686ab2d85
         sentences_list = dataset['cell_sentence']
         organisms_list = dataset['organism']
         
@@ -480,18 +473,6 @@ class Cell2Sen(HelicalBaseFoundationModel):
         LOGGER.info("Successfully extracted embeddings")
 
         if output_attentions:
-<<<<<<< HEAD
-            # Restore original attention implementation
-            self.model.config._attn_implementation = self.attn_implementation
-
-            # Concatenate attention maps per layer across batches
-            # Each element in stacked_attentions has shape (total_batch_size, num_heads, seq_length, seq_length)
-            stacked_attentions = tuple(
-                np.concatenate(all_attentions[layer_idx], axis=0)
-                for layer_idx in range(len(all_attentions))
-            )
-            return np.concatenate(all_embeddings, axis=0), stacked_attentions
-=======
             # Restore the original attention implementation
             self.model.config._attn_implementation = self.attn_implementation
 
@@ -504,7 +485,6 @@ class Cell2Sen(HelicalBaseFoundationModel):
             # Gene names per sample from cell sentences
             gene_names_list = [sentence.split() for sentence in sentences_list]
             return np.concatenate(all_embeddings, axis=0), attn_list, gene_names_list
->>>>>>> f25b766949c92b9caeff7745ac447c6686ab2d85
         else:
             return np.concatenate(all_embeddings, axis=0)
 

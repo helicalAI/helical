@@ -332,47 +332,28 @@ class Tahoe(HelicalRNAModel):
         )
 
 
-        # Prepare attention arrays if requested
+        # Prepare attention list if requested — one np.ndarray per sample
         if output_attentions:
-            # Find max sequence length across all batches
-            max_seq_len = max(attn.shape[2] for attn in all_attentions)
-
-            # Pad all batches to max_seq_len
-            padded_attentions = []
+            attn_list = []
             for attn in all_attentions:
-                batch_size, n_heads, seq_len, _ = attn.shape
-                if seq_len < max_seq_len:
-                    # Pad with zeros to max_seq_len
-                    pad_size = max_seq_len - seq_len
-                    padded = torch.nn.functional.pad(
-                        attn,
-                        (0, pad_size, 0, pad_size),  # pad last 2 dimensions (seq_len, seq_len)
-                        mode='constant',
-                        value=0
-                    )
-                    padded_attentions.append(padded)
-                else:
-                    padded_attentions.append(attn)
-
-            # Stack along first dimension and convert to numpy
-            # Shape: (n_batches, batch_size, n_heads, max_seq_len, max_seq_len)
-            attention_array = torch.cat(padded_attentions, dim=0).numpy()
+                # attn shape: (batch, n_heads, seq_len, seq_len)
+                attn_list.extend(attn.numpy())
 
         # Return based on requested outputs
         log_msg = f"Finished extracting embeddings. Cell shape: {cell_array.shape}"
         if return_gene_embeddings:
             log_msg += f", Gene embeddings: {len(all_gene_embeddings)} cells"
         if output_attentions:
-            log_msg += f", Attention shape: {attention_array.shape}"
+            log_msg += f", Attention maps: {len(attn_list)} samples"
         LOGGER.info(log_msg)
 
         # Return appropriate combination
         if return_gene_embeddings and output_attentions:
-            return cell_array, all_gene_embeddings, attention_array
+            return cell_array, all_gene_embeddings, attn_list
         elif return_gene_embeddings:
             return cell_array, all_gene_embeddings
         elif output_attentions:
-            return cell_array, attention_array
+            return cell_array, attn_list
         else:
             return cell_array
 
