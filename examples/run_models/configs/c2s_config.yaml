@@ -1,3 +1,4 @@
 batch_size: 8
 perturbation_column: "perturbation"
 model_size: "2B"
+device: "cuda"

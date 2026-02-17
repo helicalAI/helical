@@ -118,6 +118,89 @@ class Cell2Sen(HelicalBaseFoundationModel):
         
         LOGGER.info("Successfully loaded model")
 
+    @staticmethod
+    def _gene_ids_from_offsets(prompt, cell_sentence, offsets):
+        """
+        Build a per-token gene id list from character offsets.
+
+        Tokens that fall within a gene's character span get the gene's
+        index; all other tokens (prompt text, special tokens, padding)
+        get None.
+
+        Parameters
+        ----------
+        prompt : str
+            The full prompt string.
+        cell_sentence : str
+            Space-separated gene names embedded in the prompt.
+        offsets : list[tuple[int, int]]
+            Per-token (char_start, char_end) from ``return_offsets_mapping=True``.
+
+        Returns
+        -------
+        gene_ids : list[int | None]
+            Gene index for each token, or None.
+        """
+        cs_start = prompt.find(cell_sentence)
+        genes = cell_sentence.split()
+
+        # character ranges for each gene (in prompt coordinates)
+        gene_ranges = []
+        pos = cs_start
+        for g in genes:
+            gs = prompt.index(g, pos)
+            gene_ranges.append((gs, gs + len(g)))
+            pos = gs + len(g)
+
+        gene_ids = [None] * len(offsets)
+        for tok_idx, (ts, te) in enumerate(offsets):
+            if ts == te:
+                continue
+            for gi, (gs, ge) in enumerate(gene_ranges):
+                if ts < ge and te > gs:
+                    gene_ids[tok_idx] = gi
+                    break
+        return gene_ids
+
+
+    @staticmethod
+    def _aggregate_token_to_word_attention(attn, word_ids):
+        """
+        Aggregate token-level attention to word-level.
+        Works with both numpy arrays (CPU) and torch tensors (GPU).
+        """
+        use_torch = isinstance(attn, torch.Tensor)
+        
+        # Build word_to_tokens mapping
+        word_to_tokens = {}
+        for tok_idx, wid in enumerate(word_ids):
+            if wid is not None:
+                word_to_tokens.setdefault(wid, []).append(tok_idx)
+
+        num_words = len(word_to_tokens)
+        if num_words == 0:
+            LOGGER.warning("No words found in attention map. Returning empty array.")
+            return torch.zeros((attn.shape[0], 0, 0), dtype=attn.dtype, device=attn.device)
+        
+        sorted_word_ids = sorted(word_to_tokens.keys())
+        num_heads, seq_len, _ = attn.shape
+
+
+        # GPU path - much faster
+        W = torch.zeros((num_words, seq_len), dtype=attn.dtype, device=attn.device)
+        V = torch.zeros((num_words, seq_len), dtype=attn.dtype, device=attn.device)
+        
+        for wi, wid in enumerate(sorted_word_ids):
+            token_indices = word_to_tokens[wid]
+            W[wi, token_indices] = 1.0 / len(token_indices)
+            V[wi, token_indices] = 1.0
+        
+        temp = torch.einsum('wt,htk->hwk', W, attn)
+        word_attn = torch.einsum('hwk,vk->hwv', temp, V)
+        return word_attn.float().cpu().numpy()  # .float() converts bfloat16->float32
+
+
+
     def process_data(
         self, 
         adata: anndata.AnnData, 
@@ -258,37 +341,59 @@ class Cell2Sen(HelicalBaseFoundationModel):
         return dataset
 
     def get_embeddings(
-        self, 
-        dataset: Dataset, 
+        self,
+        dataset: Dataset,
         output_attentions: bool = False,
+        emb_layer: int = -1,
         ):
         """
         Extract embeddings from cell sentences in a HuggingFace Dataset using the last hidden layer of Gemma.
-        
+
         Parameters:
         -----------
         dataset : Dataset
-            HuggingFace Dataset with 'cell_sentence' and 'organism' fields  
-        
+            HuggingFace Dataset with 'cell_sentence' and 'organism' fields
+
         output_attentions : bool, optional
             Whether to output the attention maps from the model. If set to True, the attention maps will be returned along with the embeddings.
             If set to False, only the embeddings will be returned. **Note**: This will increase the memory usage of the model significantly, so use it only if you need the attention maps.
+
+        emb_layer : int, optional
+            Which layer to extract attention from (default: -1, i.e. last layer).
+            Only used when output_attentions=True.
+            Only one layer of attention can be returned at a time.
+
         Returns:
         --------
         embeddings : np.ndarray
             Embeddings of shape (num_sentences, hidden_size)
+        attn_list : list, optional
+            If output_attentions=True, a list of gene-level attention arrays,
+            one per sample, each of shape (num_heads, num_genes, num_genes).
+        gene_names_list : list, optional
+            If output_attentions=True, a list of gene name lists, one list per sample,
+            e.g. [['geneA', 'geneB', ...], ['geneX', 'geneY', ...], ...]. This is used to attention values to specific genes.
         """
 
         LOGGER.info("Extracting embeddings from dataset")
+<<<<<<< HEAD
         if output_attentions:
             # SDPA/FlashAttention don't return attention weights;
             # override to eager on the model config so all layers use it.
             self.model.config._attn_implementation = "eager"
+=======
+
+        if output_attentions:
+            # SDPA and FlashAttention do not support returning attention maps;
+            # override to eager on the model config so all layers use it.
+            self.model.config._attn_implementation = "eager"
+
+>>>>>>> f25b766949c92b9caeff7745ac447c6686ab2d85
         sentences_list = dataset['cell_sentence']
         organisms_list = dataset['organism']
         
         all_embeddings = []
-        all_attentions = []
+        all_attentions = [[]]  # Single list for the one layer we process
 
         progress_bar = tqdm(total=len(sentences_list), desc="Processing embeddings")
         for i in range(0, len(sentences_list), self.batch_size):
@@ -311,13 +416,18 @@ class Cell2Sen(HelicalBaseFoundationModel):
                 return_tensors="pt",
                 padding=True,
                 truncation=False,
+                return_offsets_mapping=output_attentions,
                 # truncation=True,
                 # max_length=max_length
-            ).to(self.device)
+            )
+            # offset_mapping is not a tensor; grab it before .to(device)
+            if output_attentions:
+                batch_offsets = inputs.pop("offset_mapping")
+            inputs = inputs.to(self.device)
 
             with torch.no_grad():
                 outputs = self.model(
-                    **inputs, 
+                    **inputs,
                     output_hidden_states=True,
                     output_attentions=output_attentions
                 )
@@ -347,14 +457,21 @@ class Cell2Sen(HelicalBaseFoundationModel):
                 if output_attentions:
                     # outputs.attentions is a tuple of tensors, one per layer
                     # Each tensor has shape (batch_size, num_heads, seq_length, seq_length)
-                    # Initialize all_attentions_per_layer on first batch
-                    if len(all_attentions) == 0:
-                        num_layers = len(outputs.attentions)
-                        all_attentions = [[] for _ in range(num_layers)]
-                    
-                    # Append attention maps from each layer to the corresponding list
-                    for layer_idx, attn in enumerate(outputs.attentions):
-                        all_attentions[layer_idx].append(attn.float().cpu().numpy())
+                    # Only process the selected layer (emb_layer)
+
+
+                    batch_size_actual = inputs['input_ids'].shape[0]
+                    attn = outputs.attentions[emb_layer] #allow returning only one layer of attention 
+                    word_attns = []
+                    for b in range(batch_size_actual):
+                        offsets_b = batch_offsets[b].tolist()
+                        gene_ids = self._gene_ids_from_offsets(
+                            prompts[b], batch_sentences[b], offsets_b
+                        )
+                        word_attns.append(
+                            self._aggregate_token_to_word_attention(attn[b], gene_ids)
+                        )
+                    all_attentions[0].append(word_attns)
                 del outputs
 
             all_embeddings.append(batch_embeddings.float().cpu().numpy())
@@ -363,6 +480,7 @@ class Cell2Sen(HelicalBaseFoundationModel):
         LOGGER.info("Successfully extracted embeddings")
 
         if output_attentions:
+<<<<<<< HEAD
             # Restore original attention implementation
             self.model.config._attn_implementation = self.attn_implementation
 
@@ -373,6 +491,20 @@ class Cell2Sen(HelicalBaseFoundationModel):
                 for layer_idx in range(len(all_attentions))
             )
             return np.concatenate(all_embeddings, axis=0), stacked_attentions
+=======
+            # Restore the original attention implementation
+            self.model.config._attn_implementation = self.attn_implementation
+
+            # Flatten per-batch lists for the selected layer
+            stacked_attentions = [
+                [arr for batch_list in all_attentions[0] for arr in batch_list]
+            ]
+            # Return only the selected layer as a flat list (like Geneformer)
+            attn_list = stacked_attentions[0]
+            # Gene names per sample from cell sentences
+            gene_names_list = [sentence.split() for sentence in sentences_list]
+            return np.concatenate(all_embeddings, axis=0), attn_list, gene_names_list
+>>>>>>> f25b766949c92b9caeff7745ac447c6686ab2d85
         else:
             return np.concatenate(all_embeddings, axis=0)
 

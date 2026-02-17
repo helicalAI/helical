@@ -186,12 +186,16 @@ class TestGetEmbeddings:
             cell2sen_model.get_embeddings(empty)
 
     def test_attention_shapes(self, cell2sen_model, processed_dataset_basic):
-        emb, attn = cell2sen_model.get_embeddings(processed_dataset_basic, output_attentions=True)
-        assert isinstance(attn, tuple)
-        for layer in attn:
-            assert layer.ndim == 4
-            assert layer.shape[0] == len(processed_dataset_basic)
-            assert layer.shape[2] == layer.shape[3]
+        emb, attn, gene_order = cell2sen_model.get_embeddings(processed_dataset_basic, output_attentions=True)
+        assert isinstance(attn, list)
+        assert isinstance(gene_order, list)
+        assert len(gene_order) == len(processed_dataset_basic)
+        assert all(isinstance(gene_list, list) for gene_list in gene_order)
+        assert len(attn) == len(processed_dataset_basic)
+        for sample_attn in attn:
+            # (num_heads, num_genes, num_genes)
+            assert sample_attn.ndim == 3
+            assert sample_attn.shape[1] == sample_attn.shape[2]
 
 
 class TestGetPerturbations:
