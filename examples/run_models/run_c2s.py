@@ -18,7 +18,7 @@ def run(cfg: DictConfig):
     c2s = Cell2Sen(configurer=config)
 
     processed_dataset = c2s.process_data(adata)
-    embeddings, attentions = c2s.get_embeddings(processed_dataset,output_attentions=True)
+    embeddings, attentions, genes_names_attn = c2s.get_embeddings(processed_dataset,output_attentions=True)
     perturbed_dataset, perturbed_cell_sentences = c2s.get_perturbations(processed_dataset)
     # Print the first cell sentence and its words for comparison
     first_sentence = processed_dataset['cell_sentence'][0]

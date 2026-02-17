@@ -201,6 +201,7 @@ class Tahoe(HelicalRNAModel):
         dataloader: DataLoader,
         return_gene_embeddings: bool = False,
         output_attentions: bool = False,
+        attn_layer: int = -1,
     ) -> Union[np.ndarray, tuple]:
         """Gets the embeddings from the Tahoe model.
 
@@ -217,6 +218,9 @@ class Tahoe(HelicalRNAModel):
             Note: This requires the model to be initialized with attn_impl='torch'.
             The default Flash Attention (attn_impl='flash') does not support attention
             weight extraction for efficiency reasons.
+        attn_layer : int, optional, default=-1
+            Which transformer layer's attention to return. Supports negative indexing
+            (e.g. -1 for the last layer). Only used when output_attentions is True.
 
         Returns
         -------
@@ -231,10 +235,8 @@ class Tahoe(HelicalRNAModel):
             - cell_embeddings: numpy array of shape (n_cells, embedding_dim)
             - gene_embeddings: list of pandas Series, one per cell. Each Series contains
               gene embeddings indexed by Ensembl IDs for genes expressed in that cell.
-            - attentions: numpy array containing attention weights from the last transformer layer.
-              Shape: (n_batches, batch_size, n_heads, seq_length, seq_length).
-              Sequence lengths vary per batch based on the number of genes expressed.
-              Only the last transformer layer's attention is returned to conserve memory.
+            - attentions: list of per-sample numpy arrays, each of shape (n_heads, seq_length, seq_length).
+              Sequence lengths vary per sample based on the number of genes expressed.
         """
         LOGGER.info("Extracting embeddings from Tahoe model...")
 
@@ -296,11 +298,9 @@ class Tahoe(HelicalRNAModel):
                 cell_embs.append(output["cell_emb"].to("cpu").to(dtype=torch.float32))
 
                 if output_attentions:
-                    # Only keep last layer attention to save memory
-                    # Shape: (batch, n_heads, seq_len, seq_len)
-                    # Convert to float32 for numpy compatibility
-                    last_layer_attn = output["attentions"][-1].cpu().to(torch.float32)
-                    all_attentions.append(last_layer_attn)
+                    # Select the requested layer: (batch, n_heads, seq_len, seq_len)
+                    layer_attn = output["attentions"][attn_layer].cpu().to(torch.float32)
+                    all_attentions.append(layer_attn)
 
                 if return_gene_embeddings:
                     # Get gene embeddings for this batch: shape (batch_size, seq_len, d_model)
