@@ -7,7 +7,7 @@ from helical.models.c2s import Cell2Sen, Cell2SenConfig
 @hydra.main(version_base=None, config_path="configs", config_name="c2s_config")
 def run(cfg: DictConfig):
 
-    adata = ad.read_h5ad("/home/maxime/git/adjusted_17_04_24_YolkSacRaw_F158_WE_annots.h5ad")
+    adata = ad.read_h5ad("./yolksac_human.h5ad")
     n_cells = 1
     n_genes = 200
     adata = adata[:n_cells, :n_genes].copy()
