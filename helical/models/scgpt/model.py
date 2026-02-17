@@ -91,6 +91,7 @@ class scGPT(HelicalRNAModel):
         dataset: Dataset,
         output_attentions: bool = False,
         output_genes: bool = False,
+        attn_layer: int = -1,
     ) -> np.array:
         """Gets the gene embeddings
 
@@ -103,6 +104,9 @@ class scGPT(HelicalRNAModel):
             If set to False, only the embeddings will be returned. **Note**: This will increase the memory usage of the model significantly, so use it only if you need the attention maps.
         output_genes : bool, optional, default=False
             Whether to output the genes corresponding to the embeddings. If set to True, the genes will be returned as a list of strings corresponding to the embeddings.
+        attn_layer : int, optional, default=-1
+            Which transformer layer's attention to return. Supports negative indexing (e.g. -1 for the last layer).
+            Only used when output_attentions is True.
 
         Returns
         -------
@@ -110,8 +114,8 @@ class scGPT(HelicalRNAModel):
             The embeddings produced by the model.
             The return type depends on the `emb_mode` parameter in the configuration.
             If `emb_mode` is set to "gene", the embeddings are returned as a list of pd.Series which contain a mapping of gene_name:embedding for each cell.
-        np.ndarray
-            If `output_attentions` is set to True, the attention maps will be returned as a numpy array of shape (n_layers, n_heads, n_cells, n_tokens, n_tokens).
+        list[np.ndarray]
+            If `output_attentions` is set to True, a list of per-sample attention maps, each of shape (n_heads, seq_len, seq_len).
         list, optional
             If `output_genes` is set to True, the genes corresponding to the embeddings will be returned as a list of strings.
             Each element in the list corresponds to the genes for each input in the dataset.
@@ -177,7 +181,8 @@ class scGPT(HelicalRNAModel):
                         ),
                         output_attentions=output_attentions,
                     )
-                    resulting_attn_maps.extend(attn_maps)
+                    # Select the requested layer: (batch, n_heads, seq, seq)
+                    resulting_attn_maps.extend(attn_maps[attn_layer].cpu().numpy())
                 else:
                     embeddings = self.model._encode(
                         input_gene_ids,
@@ -211,11 +216,11 @@ class scGPT(HelicalRNAModel):
         if output_attentions and output_genes:
             return (
                 resulting_embeddings,
-                torch.stack(resulting_attn_maps).cpu().numpy(),
+                resulting_attn_maps,
                 input_genes,
             )
         elif output_attentions:
-            return resulting_embeddings, torch.stack(resulting_attn_maps).cpu().numpy()
+            return resulting_embeddings, resulting_attn_maps
         elif output_genes:
             return resulting_embeddings, input_genes
         else:
