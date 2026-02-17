@@ -201,6 +201,7 @@ class Tahoe(HelicalRNAModel):
         dataloader: DataLoader,
         return_gene_embeddings: bool = False,
         output_attentions: bool = False,
+        attn_layer: int = -1,
     ) -> Union[np.ndarray, tuple]:
         """Gets the embeddings from the Tahoe model.
 
@@ -217,6 +218,9 @@ class Tahoe(HelicalRNAModel):
             Note: This requires the model to be initialized with attn_impl='torch'.
             The default Flash Attention (attn_impl='flash') does not support attention
             weight extraction for efficiency reasons.
+        attn_layer : int, optional, default=-1
+            Which transformer layer's attention to return. Supports negative indexing
+            (e.g. -1 for the last layer). Only used when output_attentions is True.
 
         Returns
         -------
@@ -231,10 +235,8 @@ class Tahoe(HelicalRNAModel):
             - cell_embeddings: numpy array of shape (n_cells, embedding_dim)
             - gene_embeddings: list of pandas Series, one per cell. Each Series contains
               gene embeddings indexed by Ensembl IDs for genes expressed in that cell.
-            - attentions: numpy array containing attention weights from the last transformer layer.
-              Shape: (n_batches, batch_size, n_heads, seq_length, seq_length).
-              Sequence lengths vary per batch based on the number of genes expressed.
-              Only the last transformer layer's attention is returned to conserve memory.
+            - attentions: list of per-sample numpy arrays, each of shape (n_heads, seq_length, seq_length).
+              Sequence lengths vary per sample based on the number of genes expressed.
         """
         LOGGER.info("Extracting embeddings from Tahoe model...")
 
@@ -296,11 +298,9 @@ class Tahoe(HelicalRNAModel):
                 cell_embs.append(output["cell_emb"].to("cpu").to(dtype=torch.float32))
 
                 if output_attentions:
-                    # Only keep last layer attention to save memory
-                    # Shape: (batch, n_heads, seq_len, seq_len)
-                    # Convert to float32 for numpy compatibility
-                    last_layer_attn = output["attentions"][-1].cpu().to(torch.float32)
-                    all_attentions.append(last_layer_attn)
+                    # Select the requested layer: (batch, n_heads, seq_len, seq_len)
+                    layer_attn = output["attentions"][attn_layer].cpu().to(torch.float32)
+                    all_attentions.append(layer_attn)
 
                 if return_gene_embeddings:
                     # Get gene embeddings for this batch: shape (batch_size, seq_len, d_model)
@@ -332,47 +332,28 @@ class Tahoe(HelicalRNAModel):
         )
 
 
-        # Prepare attention arrays if requested
+        # Prepare attention list if requested — one np.ndarray per sample
         if output_attentions:
-            # Find max sequence length across all batches
-            max_seq_len = max(attn.shape[2] for attn in all_attentions)
-
-            # Pad all batches to max_seq_len
-            padded_attentions = []
+            attn_list = []
             for attn in all_attentions:
-                batch_size, n_heads, seq_len, _ = attn.shape
-                if seq_len < max_seq_len:
-                    # Pad with zeros to max_seq_len
-                    pad_size = max_seq_len - seq_len
-                    padded = torch.nn.functional.pad(
-                        attn,
-                        (0, pad_size, 0, pad_size),  # pad last 2 dimensions (seq_len, seq_len)
-                        mode='constant',
-                        value=0
-                    )
-                    padded_attentions.append(padded)
-                else:
-                    padded_attentions.append(attn)
-
-            # Stack along first dimension and convert to numpy
-            # Shape: (n_batches, batch_size, n_heads, max_seq_len, max_seq_len)
-            attention_array = torch.cat(padded_attentions, dim=0).numpy()
+                # attn shape: (batch, n_heads, seq_len, seq_len)
+                attn_list.extend(attn.numpy())
 
         # Return based on requested outputs
         log_msg = f"Finished extracting embeddings. Cell shape: {cell_array.shape}"
         if return_gene_embeddings:
             log_msg += f", Gene embeddings: {len(all_gene_embeddings)} cells"
         if output_attentions:
-            log_msg += f", Attention shape: {attention_array.shape}"
+            log_msg += f", Attention maps: {len(attn_list)} samples"
         LOGGER.info(log_msg)
 
         # Return appropriate combination
         if return_gene_embeddings and output_attentions:
-            return cell_array, all_gene_embeddings, attention_array
+            return cell_array, all_gene_embeddings, attn_list
         elif return_gene_embeddings:
             return cell_array, all_gene_embeddings
         elif output_attentions:
-            return cell_array, attention_array
+            return cell_array, attn_list
         else:
             return cell_array
 
