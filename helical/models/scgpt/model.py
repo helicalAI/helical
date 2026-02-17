@@ -177,10 +177,8 @@ class scGPT(HelicalRNAModel):
                         ),
                         output_attentions=output_attentions,
                     )
-                    # Stack layers and rearrange to per-sample: (batch, n_layers, n_heads, seq, seq)
-                    stacked = torch.stack(attn_maps)  # (n_layers, batch, n_heads, seq, seq)
-                    per_sample = stacked.permute(1, 0, 2, 3, 4)
-                    resulting_attn_maps.extend(per_sample.cpu().numpy())
+                    # Keep only last layer: (batch, n_heads, seq, seq)
+                    resulting_attn_maps.extend(attn_maps[-1].cpu().numpy())
                 else:
                     embeddings = self.model._encode(
                         input_gene_ids,
