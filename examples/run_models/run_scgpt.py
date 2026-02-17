@@ -29,7 +29,8 @@ def run(cfg: DictConfig):
     embeddings, attn_weights = scgpt.get_embeddings(data, output_attentions=True)
 
     print(embeddings)
-    print(attn_weights.shape)
+    print(attn_weights[0].shape)
+    print(len(attn_weights))
 
 
 if __name__ == "__main__":
