@@ -35,12 +35,10 @@ def load_gene_features(adata, gene_col_name, species: str = "hsapiens"):
         message = f"Gene column '{gene_col_name}' not found in adata.var.columns. Available columns: {adata.var.columns}. Modify config accordingly."
         logging.error(message)
         raise ValueError(message)
-    if adata.var[gene_col_name].str.contains("ENS").mean() <= 0.5:
-        print('0')
+    if adata.var[gene_col_name].str.contains("ENS", na=False).mean() <= 0.5:
         adata = map_gene_symbols_to_ensembl_ids(adata, gene_names=gene_col_name, species=species)
         gene_names = np.array(list(adata.var["ensembl_id"].values))
     else:
-        print('a')
         adata.var["ensembl_id"] = adata.var[gene_col_name]
         gene_names = np.array(list(adata.var["ensembl_id"].values))
 
