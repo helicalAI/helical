@@ -133,6 +133,14 @@ def main():
         Path("yolksac_human.h5ad"),
         "https://huggingface.co/datasets/helical-ai/yolksac_human/resolve/main/data/17_04_24_YolkSacRaw_F158_WE_annots.h5ad?download=true",
     )
+
+    # Minimal human dissociated 10x dataset for Nicheformer integration tests.
+    # PBMC 1K v3: ~1 000 cells, "10x 3' v3", raw integer counts, ~5.5 MB.
+    downloader.download_via_link(
+        Path("nicheformer_pbmc_1k_v3.h5"),
+        "https://cf.10xgenomics.com/samples/cell-exp/3.0.0/pbmc_1k_v3/pbmc_1k_v3_filtered_feature_bc_matrix.h5",
+    )
+
     return True
 
 
