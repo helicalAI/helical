@@ -129,6 +129,10 @@ class TranscriptFormerConfig:
                 "transcriptformer/tf_metazoa/vocabs/oryctolagus_cuniculus_gene.h5",
                 "transcriptformer/tf_metazoa/vocabs/spongilla_lacustris_gene.h5",
                 "transcriptformer/tf_metazoa/vocabs/homo_sapiens_gene.h5",
+                "transcriptformer/tf_metazoa/vocabs/canis_lupus_familiaris.h5",
+                "transcriptformer/tf_metazoa/vocabs/rattus_norvegicus.h5",
+                "transcriptformer/tf_metazoa/vocabs/sus_scrofa.h5",
+                "transcriptformer/tf_metazoa/vocabs/macaca_fascicularis.h5",
             ]
         elif model_name == "tf_exemplar":
             self.list_of_files_to_download = [
