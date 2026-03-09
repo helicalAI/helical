@@ -1,5 +1,5 @@
 from omegaconf import OmegaConf
-from typing import Literal, List
+from typing import Literal, List, Union
 
 
 class TranscriptFormerConfig:
@@ -24,8 +24,8 @@ class TranscriptFormerConfig:
             Directory where results will be saved
         load_checkpoint: str = None
             Path to model weights file (automatically set by inference.py)
-        pretrained_embedding: str = None
-            Path to pretrained embeddings for out-of-distribution species
+        pretrained_embedding: Union[str, List[str]] = None
+            Path or list of paths to pretrained embeddings for out-of-distribution species
         gene_col_name: str = "ensembl_id"
             Column name in AnnData.var containing gene names which will be mapped to ensembl ids. If index is set, .var_names will be used.
         clip_counts: int = 30
@@ -57,7 +57,7 @@ class TranscriptFormerConfig:
         data_files: List[str] = [None],
         output_path: str = "./inference_results",
         load_checkpoint: str = None,
-        pretrained_embedding: str = None,
+        pretrained_embedding: Union[str, List[str]] = None,
         gene_col_name: str = "index",
         clip_counts: int = 30,
         filter_to_vocabs: bool = True,
