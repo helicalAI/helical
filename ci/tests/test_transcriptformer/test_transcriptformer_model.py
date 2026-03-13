@@ -78,3 +78,30 @@ class TestTranscriptFormerPretainedEmbeddingList:
         # All genes from both embedding files should be present in the updated vocab
         for gene in self.GENES_FILE_1 + self.GENES_FILE_2:
             assert gene in model.gene_vocab
+
+    def test_special_token_indices_preserved_after_surgery(self, tmp_path):
+        path1 = str(tmp_path / "embeddings_1.h5")
+        _write_dummy_embedding_h5(path1, self.GENES_FILE_1 + self.GENES_FILE_2)
+
+        base_configurer = TranscriptFormerConfig(emb_mode="cell")
+        base_model = TranscriptFormer(base_configurer)
+        base_special_token_indices = {
+            token: idx
+            for token, idx in base_model.gene_vocab.items()
+            if token.startswith("[") or token == "unknown"
+        }
+
+        surg_configurer = TranscriptFormerConfig(
+            emb_mode="cell",
+            pretrained_embedding=path1,
+        )
+        surg_model = TranscriptFormer(surg_configurer)
+
+        # Every special token must retain its original index after surgery so that
+        # _pad_mask (which uses model.gene_vocab.pad_idx) stays consistent with
+        # the PAD token written by process_batch (which uses gene_vocab["[PAD]"]).
+        for token, orig_idx in base_special_token_indices.items():
+            assert surg_model.gene_vocab[token] == orig_idx, (
+                f"Special token '{token}' index changed after surgery: "
+                f"expected {orig_idx}, got {surg_model.gene_vocab[token]}"
+            )
