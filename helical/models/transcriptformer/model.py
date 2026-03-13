@@ -11,7 +11,7 @@ from helical.models.transcriptformer.tokenizer.vocab import load_vocabs_and_embe
 from helical.models.transcriptformer.utils.utils import stack_dict
 from helical.models.base_models import HelicalRNAModel
 from helical.utils.downloader import Downloader
-from omegaconf import OmegaConf
+from omegaconf import OmegaConf, ListConfig
 import json
 import os
 import pandas as pd
@@ -149,12 +149,12 @@ class TranscriptFormer(HelicalRNAModel):
         if self.model.inference_config.pretrained_embedding is not None:
             logger.info("Performing embedding surgery")
             # Check if pretrained_embedding_paths is a list, if not convert it to a list
-            if not isinstance(self.model.inference_config.pretrained_embedding, list):
+            if not isinstance(self.model.inference_config.pretrained_embedding, (list, ListConfig)):
                 pretrained_embedding_paths = [
                     self.model.inference_config.pretrained_embedding
                 ]
             else:
-                pretrained_embedding_paths = (
+                pretrained_embedding_paths = list(
                     self.model.inference_config.pretrained_embedding
                 )
             self.model, self.gene_vocab = change_embedding_layer(
