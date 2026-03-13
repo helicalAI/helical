@@ -47,19 +47,31 @@ def change_embedding_layer(
         [token for token in special_tokens if token not in old_special_tokens],
     )
 
-    # Concatenate the old special token embeddings with the new embeddings
+    # Build a special-token embedding matrix that preserves the original indices.
+    # The training vocab may assign special tokens to indices that differ from
+    # the order they appear in the SPECIAL_TOKENS list, so we must place each
+    # token's embedding at its original row rather than re-numbering them.
+    n_special = len(old_special_tokens)
+    special_emb_matrix = torch.zeros(
+        n_special, old_special_token_embeddings.shape[1], device="cuda"
+    )
+    for i, token in enumerate(old_special_tokens):
+        orig_idx = model.gene_vocab.vocab_dict[token]
+        special_emb_matrix[orig_idx] = old_special_token_embeddings[i]
+
+    # Concatenate the (correctly ordered) special token embeddings with the new gene embeddings
     new_embedding_matrix = torch.cat(
-        [old_special_token_embeddings, torch.Tensor(new_embedding_matrix).to("cuda")],
+        [special_emb_matrix, torch.Tensor(new_embedding_matrix).to("cuda")],
         dim=0,
     )
 
     # Update the vocab indices of the model
     gene_vocab = {
-        gene: idx + len(old_special_tokens) for gene, idx in gene_vocab.items()
+        gene: idx + n_special for gene, idx in gene_vocab.items()
     }
 
-    # Update the gene_vocab with the special tokens
-    gene_vocab.update({token: idx for idx, token in enumerate(old_special_tokens)})
+    # Restore special tokens at their original indices from the training vocab
+    gene_vocab.update({token: model.gene_vocab.vocab_dict[token] for token in old_special_tokens})
 
     # Create a new embedding layer
     new_embedding = torch.nn.Embedding(
@@ -80,5 +92,6 @@ def change_embedding_layer(
     # Update the gene_vocab
     model.gene_vocab.vocab_dict = gene_vocab
     model.gene_vocab.embedding_matrix = new_embedding_matrix
+    model.token_to_gene_dict = {v: k for k, v in gene_vocab.items()}
 
     return model, gene_vocab
