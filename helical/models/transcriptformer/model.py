@@ -157,6 +157,7 @@ class TranscriptFormer(HelicalRNAModel):
                 pretrained_embedding_paths = list(
                     self.model.inference_config.pretrained_embedding
                 )
+            pretrained_embedding_paths = [os.path.expanduser(p) for p in pretrained_embedding_paths]
             self.model, self.gene_vocab = change_embedding_layer(
                 self.model, pretrained_embedding_paths
             )
