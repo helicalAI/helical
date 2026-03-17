@@ -133,6 +133,14 @@ def main():
         Path("yolksac_human.h5ad"),
         "https://huggingface.co/datasets/helical-ai/yolksac_human/resolve/main/data/17_04_24_YolkSacRaw_F158_WE_annots.h5ad?download=true",
     )
+
+    # Small human scRNA-seq dataset (CELLxGENE, ~33 MB) with Ensembl ID var_names,
+    # used for Nicheformer integration tests.
+    downloader.download_via_link(
+        Path("nicheformer_human_bladder.h5ad"),
+        "https://datasets.cellxgene.cziscience.com/cdf3c8cc-9eb3-4e5c-9d49-997552ffe55e.h5ad",
+    )
+
     return True
 
 

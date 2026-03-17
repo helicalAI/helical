@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "helical"
-version = "1.8.3"
+version = "1.9.0"
 authors = [
   { name="Helical Team", email="support@helical-ai.com" },
 ]
 description = "Helical Python SDK"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11,<3.13"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
