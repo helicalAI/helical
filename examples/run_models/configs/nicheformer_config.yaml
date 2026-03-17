@@ -1,0 +1,4 @@
+batch_size: 8
+device: "cpu"  # Options: "cpu", "cuda"
+layer: -1
+with_context: false
