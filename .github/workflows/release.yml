@@ -154,6 +154,10 @@ jobs:
       - name: Execute Tahoe
         run: |
           python examples/run_models/run_tahoe.py ++device="cuda"
+
+      - name: Execute Nicheformer
+        run: |
+          python examples/run_models/run_nicheformer.py ++device="cuda"
           
   notebooks:
     needs: tests
