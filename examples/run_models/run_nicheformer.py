@@ -19,7 +19,18 @@ def run(cfg: DictConfig):
     dataset = nicheformer.process_data(ann_data[:10])
 
     cell_embeddings = nicheformer.get_embeddings(dataset)
-    print(f"Cell embeddings shape: {cell_embeddings.shape}")
+    print(f"Cell embeddings shape (Ensembl IDs): {cell_embeddings.shape}")
+
+    # yolksac uses gene symbols — exercises the symbol-to-Ensembl mapping path.
+    ann_data_yolksac = ad.read_h5ad("./yolksac_human.h5ad")
+    ann_data_yolksac.obs["modality"] = "dissociated"
+    ann_data_yolksac.obs["specie"] = "human"
+    ann_data_yolksac.obs["assay"] = "10x 3' v3"
+
+    dataset_yolksac = nicheformer.process_data(ann_data_yolksac[:10])
+
+    cell_embeddings_yolksac = nicheformer.get_embeddings(dataset_yolksac)
+    print(f"Cell embeddings shape (gene symbols): {cell_embeddings_yolksac.shape}")
 
 
 if __name__ == "__main__":

@@ -1,12 +1,51 @@
+import types
+
 import pytest
 import numpy as np
 import torch
+import torch.nn as nn
 import anndata as ad
 from anndata import AnnData
 from scipy.sparse import csr_matrix
 from datasets import Dataset
 
 from helical.models.nicheformer import Nicheformer, NicheformerConfig
+
+_STUB_DIM = 8
+_STUB_NHEADS = 2
+_STUB_SEQ_LEN = 10
+_STUB_VOCAB_SIZE = 40
+
+
+@pytest.fixture
+def stub_bert():
+    """Minimal real NicheformerModel-compatible module for attention tests."""
+
+    class _StubEncoder(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.layers = nn.ModuleList(
+                [
+                    nn.TransformerEncoderLayer(
+                        d_model=_STUB_DIM,
+                        nhead=_STUB_NHEADS,
+                        batch_first=True,
+                        norm_first=False,
+                    )
+                ]
+            )
+
+    class _StubBert(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.config = types.SimpleNamespace(nlayers=1, learnable_pe=True)
+            self.embeddings = nn.Embedding(_STUB_VOCAB_SIZE, _STUB_DIM)
+            self.positional_embedding = nn.Embedding(_STUB_SEQ_LEN, _STUB_DIM)
+            self.pos = torch.arange(0, _STUB_SEQ_LEN)
+            self.dropout = nn.Dropout(0.0)
+            self.encoder = _StubEncoder()
+
+    return _StubBert()
 
 
 @pytest.fixture
@@ -24,7 +63,11 @@ def _mocks(mocker):
         }
 
     mock_tokenizer.side_effect = _tokenize
-    mock_tokenizer.get_vocab.return_value = {"GENE1": 30, "GENE2": 31, "GENE3": 32}
+    mock_tokenizer.get_vocab.return_value = {
+        "ENSG00000000001": 30,
+        "ENSG00000000002": 31,
+        "ENSG00000000003": 32,
+    }
     mocker.patch(
         "helical.models.nicheformer.model.AutoTokenizer.from_pretrained",
         return_value=mock_tokenizer,
@@ -54,7 +97,7 @@ def nicheformer(_mocks):
 def mock_adata():
     adata = AnnData(X=np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=np.int32))
     adata.obs_names = ["cell1", "cell2", "cell3"]
-    adata.var_names = ["GENE1", "GENE2", "GENE3"]
+    adata.var_names = ["ENSG00000000001", "ENSG00000000002", "ENSG00000000003"]
     return adata
 
 
@@ -106,7 +149,7 @@ class TestNicheformerProcessData:
         adata.X = adata.X.astype(float)
         adata.X[0, 0] = 0.5
         with pytest.raises(ValueError):
-            nicheformer.process_data(adata, gene_names="index")
+            nicheformer.process_data(adata)
 
     def test_no_vocab_genes_raises_value_error(self, nicheformer, mock_adata, _mocks):
         mock_tokenizer, _ = _mocks
@@ -154,6 +197,37 @@ class TestNicheformerGetEmbeddings:
         dataset = nicheformer.process_data(mock_adata)
         nicheformer.get_embeddings(dataset)
         assert mock_model.get_embeddings.call_args.kwargs["with_context"] is True
+
+    def test_attention_shape_invariant_to_masking(self, nicheformer, stub_bert):
+        nicheformer.model.bert = stub_bert
+        n_obs = 2
+        input_ids = torch.zeros((n_obs, _STUB_SEQ_LEN), dtype=torch.long)
+
+        mask_full = torch.ones((n_obs, _STUB_SEQ_LEN), dtype=torch.bool)
+        attn_full = nicheformer._extract_attention_weights(
+            input_ids, mask_full, layer=-1
+        )
+
+        mask_partial = mask_full.clone()
+        mask_partial[:, _STUB_SEQ_LEN // 2 :] = False
+        attn_partial = nicheformer._extract_attention_weights(
+            input_ids, mask_partial, layer=-1
+        )
+
+        expected = (n_obs, _STUB_NHEADS, _STUB_SEQ_LEN, _STUB_SEQ_LEN)
+        assert attn_full.shape == expected
+        assert attn_partial.shape == expected
+
+    def test_output_attentions_shape(self, nicheformer, mock_adata, mocker):
+        n_obs, n_heads, seq_len = mock_adata.n_obs, 16, 1500
+        mocker.patch.object(
+            nicheformer,
+            "_extract_attention_weights",
+            return_value=torch.zeros(n_obs, n_heads, seq_len, seq_len),
+        )
+        dataset = nicheformer.process_data(mock_adata)
+        _, attentions = nicheformer.get_embeddings(dataset, output_attentions=True)
+        assert attentions.shape == (n_obs, n_heads, seq_len, seq_len)
 
 
 class TestNicheformerTechnologyMean:
