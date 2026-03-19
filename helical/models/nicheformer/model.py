@@ -1,6 +1,7 @@
 from helical.models.base_models import HelicalRNAModel
 from helical.models.nicheformer.nicheformer_config import NicheformerConfig
 from helical.utils.downloader import Downloader
+from helical.utils.mapping import map_gene_symbols_to_ensembl_ids
 from anndata import AnnData
 from datasets import Dataset
 from transformers import AutoModelForMaskedLM, AutoTokenizer
@@ -109,7 +110,11 @@ class Nicheformer(HelicalRNAModel):
             are used to prepend context tokens when present.
         gene_names : str, optional, default="index"
             The column in ``adata.var`` that contains gene names. If set to
-            ``"index"``, the index of ``adata.var`` is used.
+            ``"index"``, the index of ``adata.var`` is used. If set to
+            ``"ensembl_id"``, no symbol-to-Ensembl mapping is performed and
+            ``adata.var_names`` must already be Ensembl IDs. Otherwise the
+            symbols in the given column are mapped to Ensembl IDs via the
+            static BioMart table.
         use_raw_counts : bool, optional, default=True
             Whether to validate that the expression matrix contains raw integer
             counts.
@@ -121,7 +126,24 @@ class Nicheformer(HelicalRNAModel):
             columns, ready for :meth:`get_embeddings`.
         """
         LOGGER.info("Processing data for Nicheformer.")
-        self.ensure_rna_data_validity(adata, gene_names, use_raw_counts)
+        # When gene_names="ensembl_id" the IDs live in var_names (the index),
+        # not in a separate column, so validate against "index".
+        self.ensure_rna_data_validity(
+            adata, "index" if gene_names == "ensembl_id" else gene_names, use_raw_counts
+        )
+
+        if gene_names != "ensembl_id":
+            col = adata.var[gene_names]
+            if not col.str.startswith("ENS").all():
+                adata = map_gene_symbols_to_ensembl_ids(
+                    adata, gene_names if gene_names != "index" else None
+                )
+                if adata.var["ensembl_id"].isnull().all():
+                    message = "All gene symbols could not be mapped to Ensembl IDs. Please check the input data."
+                    LOGGER.error(message)
+                    raise ValueError(message)
+                adata = adata[:, adata.var["ensembl_id"].notnull()]
+                adata.var_names = adata.var["ensembl_id"].values
 
         ref_genes = {k for k in self.tokenizer.get_vocab() if not k.startswith("[")}
         _original_gene_count = len(adata.var_names)
@@ -147,7 +169,11 @@ class Nicheformer(HelicalRNAModel):
         LOGGER.info("Successfully processed data for Nicheformer.")
         return dataset
 
-    def get_embeddings(self, dataset: Dataset) -> np.ndarray:
+    def get_embeddings(
+        self,
+        dataset: Dataset,
+        output_attentions: bool = False,
+    ) -> np.ndarray:
         """Extracts cell embeddings from a processed dataset using Nicheformer.
 
         Embeddings are obtained by mean-pooling over the sequence dimension at
@@ -157,11 +183,18 @@ class Nicheformer(HelicalRNAModel):
         ----------
         dataset : Dataset
             The processed dataset returned by :meth:`process_data`.
+        output_attentions : bool, optional, default=False
+            Whether to return per-head attention weights from the target
+            transformer layer. When ``True`` a second array is returned with
+            shape ``(n_cells, n_heads, seq_length, seq_length)``.
 
         Returns
         -------
         np.ndarray
             Cell embeddings of shape ``(n_cells, 512)``.
+        np.ndarray, optional
+            Attention weights of shape ``(n_cells, n_heads, seq_length,
+            seq_length)``, only returned when ``output_attentions=True``.
         """
         LOGGER.info("Started getting embeddings for Nicheformer.")
 
@@ -171,6 +204,7 @@ class Nicheformer(HelicalRNAModel):
 
         dataset.set_format(type="torch")
         all_embeddings = []
+        all_attentions = [] if output_attentions else None
 
         for i in range(0, len(dataset), batch_size):
             batch = dataset[i : i + batch_size]
@@ -185,7 +219,76 @@ class Nicheformer(HelicalRNAModel):
                     with_context=with_context,
                 )
 
+                if output_attentions:
+                    attn = self._extract_attention_weights(
+                        input_ids, attention_mask, layer
+                    )
+                    all_attentions.append(attn.cpu().numpy())
+
             all_embeddings.append(embeddings.cpu().numpy())
 
         LOGGER.info("Finished getting embeddings for Nicheformer.")
-        return np.concatenate(all_embeddings, axis=0)
+        embeddings_out = np.concatenate(all_embeddings, axis=0)
+        if output_attentions:
+            return embeddings_out, np.concatenate(all_attentions, axis=0)
+        return embeddings_out
+
+    def _extract_attention_weights(
+        self,
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
+        layer: int,
+    ) -> torch.Tensor:
+        """Return per-head attention weights from the target encoder layer.
+
+        Runs the embedding preparation and all encoder layers up to and
+        including ``layer``, extracting the self-attention weights at that
+        layer via ``MultiheadAttention`` with ``need_weights=True``.
+
+        Parameters
+        ----------
+        input_ids : torch.Tensor
+            Token IDs of shape ``(batch, seq_len)``.
+        attention_mask : torch.Tensor
+            Boolean mask of shape ``(batch, seq_len)`` — ``True`` for real
+            tokens.
+        layer : int
+            Target layer index (negative values count from the last layer).
+
+        Returns
+        -------
+        torch.Tensor
+            Attention weights of shape ``(batch, n_heads, seq_len, seq_len)``.
+        """
+        bert = self.model.bert
+        layer_idx = bert.config.nlayers + layer if layer < 0 else layer
+
+        token_embedding = bert.embeddings(input_ids)
+        if bert.config.learnable_pe:
+            pos_embedding = bert.positional_embedding(
+                bert.pos.to(token_embedding.device)
+            )
+            x = bert.dropout(token_embedding + pos_embedding)
+        else:
+            x = bert.positional_embedding(token_embedding)
+
+        padding_mask = ~attention_mask.bool()
+
+        for i in range(layer_idx + 1):
+            if i == layer_idx:
+                x_in = x
+            x = bert.encoder.layers[i](
+                x, src_key_padding_mask=padding_mask, is_causal=False
+            )
+
+        enc_layer = bert.encoder.layers[layer_idx]
+        query = enc_layer.norm1(x_in) if enc_layer.norm_first else x_in
+        _, attn_weights = enc_layer.self_attn(
+            query,
+            query,
+            query,
+            key_padding_mask=padding_mask,
+            need_weights=True,
+            average_attn_weights=False,
+        )
+        return attn_weights
