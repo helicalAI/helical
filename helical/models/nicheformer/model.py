@@ -4,7 +4,10 @@ from helical.utils.downloader import Downloader
 from helical.utils.mapping import map_gene_symbols_to_ensembl_ids
 from anndata import AnnData
 from datasets import Dataset
-from transformers import AutoModelForMaskedLM, AutoTokenizer
+from helical.models.nicheformer.modeling_nicheformer import NicheformerForMaskedLM
+from helical.models.nicheformer.tokenization_nicheformer import (
+    NicheformerTokenizer,
+)
 import numpy as np
 import torch
 import logging
@@ -75,18 +78,13 @@ class Nicheformer(HelicalRNAModel):
 
         model_files_dir = str(self.files_config["model_files_dir"])
 
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            model_files_dir, trust_remote_code=True
-        )
-        self.tokenizer.name_or_path = self.config["model_name"]
+        self.tokenizer = NicheformerTokenizer.from_pretrained(model_files_dir)
 
         technology_mean = self.config["technology_mean"]
         if technology_mean is not None:
             self.tokenizer._load_technology_mean(technology_mean)
 
-        self.model = AutoModelForMaskedLM.from_pretrained(
-            model_files_dir, trust_remote_code=True
-        )
+        self.model = NicheformerForMaskedLM.from_pretrained(model_files_dir)
         self.model.eval()
         self.model.to(self.device)
 
@@ -260,28 +258,28 @@ class Nicheformer(HelicalRNAModel):
         torch.Tensor
             Attention weights of shape ``(batch, n_heads, seq_len, seq_len)``.
         """
-        bert = self.model.bert
-        layer_idx = bert.config.nlayers + layer if layer < 0 else layer
+        nicheformer = self.model.nicheformer
+        layer_idx = nicheformer.config.nlayers + layer if layer < 0 else layer
 
-        token_embedding = bert.embeddings(input_ids)
-        if bert.config.learnable_pe:
-            pos_embedding = bert.positional_embedding(
-                bert.pos.to(token_embedding.device)
+        token_embedding = nicheformer.embeddings(input_ids)
+        if nicheformer.config.learnable_pe:
+            pos_embedding = nicheformer.positional_embedding(
+                nicheformer.pos.to(token_embedding.device)
             )
-            x = bert.dropout(token_embedding + pos_embedding)
+            x = nicheformer.dropout(token_embedding + pos_embedding)
         else:
-            x = bert.positional_embedding(token_embedding)
+            x = nicheformer.positional_embedding(token_embedding)
 
         padding_mask = ~attention_mask.bool()
 
         for i in range(layer_idx + 1):
             if i == layer_idx:
                 x_in = x
-            x = bert.encoder.layers[i](
+            x = nicheformer.encoder.layers[i](
                 x, src_key_padding_mask=padding_mask, is_causal=False
             )
 
-        enc_layer = bert.encoder.layers[layer_idx]
+        enc_layer = nicheformer.encoder.layers[layer_idx]
         query = enc_layer.norm1(x_in) if enc_layer.norm_first else x_in
         _, attn_weights = enc_layer.self_attn(
             query,
