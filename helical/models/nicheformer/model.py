@@ -81,7 +81,6 @@ class Nicheformer(HelicalRNAModel):
         self.tokenizer = NicheformerTokenizer.from_pretrained(
             model_files_dir
         )
-        self.tokenizer.name_or_path = self.config["model_name"]
 
         technology_mean = self.config["technology_mean"]
         if technology_mean is not None:

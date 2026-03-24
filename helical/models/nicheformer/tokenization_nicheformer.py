@@ -8,7 +8,6 @@ from scipy.sparse import issparse
 import numba
 import os
 import json
-from huggingface_hub import hf_hub_download
 import pandas as pd
 
 # Token IDs must match exactly with the original implementation
@@ -101,15 +100,7 @@ class NicheformerTokenizer(PreTrainedTokenizer):
     def _load_reference_model(self):
         """Load reference model for gene alignment."""
         try:
-            # Get the model name or path from the tokenizer
-            repo_id = (
-                self.name_or_path
-                if hasattr(self, "name_or_path")
-                else "aletlvl/Nicheformer"
-            )
-
-            # Download the reference model if not already cached
-            model_path = hf_hub_download(repo_id=repo_id, filename="model.h5ad")
+            model_path = os.path.join(self.name_or_path, "model.h5ad")
             return ad.read_h5ad(model_path)
         except Exception as e:
             print(f"Warning: Could not load reference model: {e}")
