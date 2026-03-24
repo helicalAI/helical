@@ -10,9 +10,10 @@ import os
 import json
 import pandas as pd
 
-# Token IDs must match exactly with the original implementation
-PAD_TOKEN = 0
-MASK_TOKEN = 1
+# Token IDs must match exactly with the original implementation.
+# PAD=1 is confirmed by padding_idx=1 in the embedding layer and masking.py.
+PAD_TOKEN = 1
+MASK_TOKEN = 0
 CLS_TOKEN = 2
 
 # These mappings preserve the exact token IDs from the original implementation
@@ -79,9 +80,9 @@ def _sub_tokenize_data(
         sorted_indices = nonzero_mask[np.argsort(-cell[nonzero_mask])][:max_seq_len]
         sorted_indices = sorted_indices + aux_tokens
         if max_seq_len:
-            scores = np.zeros(max_seq_len, dtype=np.int32)
+            scores = np.ones(max_seq_len, dtype=np.int32)  # 1 = PAD_TOKEN
         else:
-            scores = np.zeros_like(cell, dtype=np.int32)
+            scores = np.ones(cell.shape[0], dtype=np.int32)  # 1 = PAD_TOKEN
         scores[: len(sorted_indices)] = sorted_indices.astype(np.int32)
         scores_final[i, :] = scores
     return scores_final
@@ -168,6 +169,9 @@ class NicheformerTokenizer(PreTrainedTokenizer):
         self.technology_mean = None
         if technology_mean is not None:
             self._load_technology_mean(technology_mean)
+
+        # Cache the reference model so it is not reloaded on every __call__
+        self._reference_model_cache = self._load_reference_model()
 
     def _load_technology_mean(self, technology_mean):
         """Load technology mean from file or array."""
@@ -295,28 +299,28 @@ class NicheformerTokenizer(PreTrainedTokenizer):
             adata = data.copy()
 
             # Align with reference model if available
-            if hasattr(self, "_load_reference_model"):
-                reference_model = self._load_reference_model()
-                if reference_model is not None:
-                    # Store original column types before concatenation
-                    original_types = {}
-                    for col in ["modality", "specie", "assay"]:
-                        if col in adata.obs.columns:
-                            original_types[col] = adata.obs[col].dtype
+            reference_model = self._reference_model_cache
+            if reference_model is not None:
+                # Store original column types before concatenation
+                original_types = {}
+                for col in ["modality", "specie", "assay"]:
+                    if col in adata.obs.columns:
+                        original_types[col] = adata.obs[col].dtype
 
-                    # Concatenate and then remove the reference
-                    adata = ad.concat([reference_model, adata], join="outer", axis=0)
-                    adata = adata[1:]
+                # Concatenate and then remove all reference cells
+                n_ref = len(reference_model)
+                adata = ad.concat([reference_model, adata], join="outer", axis=0)
+                adata = adata[n_ref:]
 
-                    # Restore original column types after concatenation
-                    for col, dtype in original_types.items():
-                        if col in adata.obs.columns:
-                            try:
-                                adata.obs[col] = adata.obs[col].astype(dtype)
-                            except Exception as e:
-                                print(
-                                    f"Warning: Could not convert {col} back to {dtype}: {e}"
-                                )
+                # Restore original column types after concatenation
+                for col, dtype in original_types.items():
+                    if col in adata.obs.columns:
+                        try:
+                            adata.obs[col] = adata.obs[col].astype(dtype)
+                        except Exception as e:
+                            print(
+                                f"Warning: Could not convert {col} back to {dtype}: {e}"
+                            )
 
             # Get gene expression data
             X = adata.X

@@ -45,7 +45,9 @@ def complete_masking(batch, masking_p, n_tokens):
         masked_indices[mask],
     )
 
-    # Apply random tokens (10% of masked tokens)
+    # Apply random tokens (10% of masked tokens).
+    # Build a full-shape boolean mask first; single-level boolean assignment
+    # modifies the tensor in-place correctly (double-index does not).
     random_tokens = torch.randint(
         3,
         n_tokens,  # Start from 3 to avoid special tokens
@@ -53,7 +55,9 @@ def complete_masking(batch, masking_p, n_tokens):
         device=device,
         dtype=torch.long,
     )
-    masked_indices[mask][random_mask] = random_tokens
+    random_full_mask = torch.zeros_like(input_ids, dtype=torch.bool)
+    random_full_mask[mask] = random_mask
+    masked_indices[random_full_mask] = random_tokens
 
     # 10% remain unchanged
 
