@@ -4,7 +4,10 @@ from helical.utils.downloader import Downloader
 from helical.utils.mapping import map_gene_symbols_to_ensembl_ids
 from anndata import AnnData
 from datasets import Dataset
-from transformers import AutoModelForMaskedLM, AutoTokenizer
+from helical.models.nicheformer.modeling_nicheformer import NicheformerForMaskedLM
+from helical.models.nicheformer.tokenization_nicheformer import (
+    NicheformerTokenizer,
+)
 import numpy as np
 import torch
 import logging
@@ -75,8 +78,8 @@ class Nicheformer(HelicalRNAModel):
 
         model_files_dir = str(self.files_config["model_files_dir"])
 
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            model_files_dir, trust_remote_code=True
+        self.tokenizer = NicheformerTokenizer.from_pretrained(
+            model_files_dir
         )
         self.tokenizer.name_or_path = self.config["model_name"]
 
@@ -84,8 +87,8 @@ class Nicheformer(HelicalRNAModel):
         if technology_mean is not None:
             self.tokenizer._load_technology_mean(technology_mean)
 
-        self.model = AutoModelForMaskedLM.from_pretrained(
-            model_files_dir, trust_remote_code=True
+        self.model = NicheformerForMaskedLM.from_pretrained(
+            model_files_dir
         )
         self.model.eval()
         self.model.to(self.device)
