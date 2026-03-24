@@ -14,11 +14,6 @@ _MODEL_FILES = [
     "vocab.json",
     "model.safetensors",
     "model.h5ad",
-    "modeling_nicheformer.py",
-    "tokenization_nicheformer.py",
-    "configuration_nicheformer.py",
-    "masking.py",
-    "__init__.py",
 ]
 
 

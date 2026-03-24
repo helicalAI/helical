@@ -69,7 +69,7 @@ def _mocks(mocker):
         "ENSG00000000003": 32,
     }
     mocker.patch(
-        "helical.models.nicheformer.model.AutoTokenizer.from_pretrained",
+        "helical.models.nicheformer.model.NicheformerTokenizer.from_pretrained",
         return_value=mock_tokenizer,
     )
 
@@ -81,7 +81,7 @@ def _mocks(mocker):
     mock_model.get_embeddings.side_effect = _get_embeddings
     mock_model.to.return_value = mock_model
     mocker.patch(
-        "helical.models.nicheformer.model.AutoModelForMaskedLM.from_pretrained",
+        "helical.models.nicheformer.model.NicheformerForMaskedLM.from_pretrained",
         return_value=mock_model,
     )
 
@@ -199,7 +199,7 @@ class TestNicheformerGetEmbeddings:
         assert mock_model.get_embeddings.call_args.kwargs["with_context"] is True
 
     def test_attention_shape_invariant_to_masking(self, nicheformer, stub_bert):
-        nicheformer.model.bert = stub_bert
+        nicheformer.model.nicheformer = stub_bert
         n_obs = 2
         input_ids = torch.zeros((n_obs, _STUB_SEQ_LEN), dtype=torch.long)
 
