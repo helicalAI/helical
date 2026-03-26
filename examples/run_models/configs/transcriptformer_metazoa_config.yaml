@@ -1,0 +1,25 @@
+model_name: "tf_metazoa"
+
+# inference settings
+batch_size: 1
+emb_mode: "cell"
+output_keys:
+  - llh
+  - gene_llh
+obs_keys:
+  - all
+data_files:
+  - null
+output_path: ./inference_results
+load_checkpoint: null
+pretrained_embedding_species: "homo_sapiens"
+
+# data settings
+gene_col_name: 'index'
+clip_counts: 30
+filter_to_vocabs: true
+filter_outliers: 0.0
+normalize_to_scale: 0
+sort_genes: false
+randomize_genes: false
+min_expressed_genes: 0
