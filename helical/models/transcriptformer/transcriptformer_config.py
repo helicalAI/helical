@@ -88,10 +88,7 @@ class TranscriptFormerConfig:
                 else pretrained_embedding_species
             )
             vocab_base = (
-                Path(CACHE_DIR_HELICAL)
-                / "models/transcriptformer"
-                / model_name
-                / "vocabs"
+                Path(CACHE_DIR_HELICAL) / "transcriptformer" / model_name / "vocabs"
             )
             pretrained_embedding = [
                 str(vocab_base / f"{s}_gene.h5") for s in species_list
