@@ -262,10 +262,14 @@ def get_model_input_size(model):
     return int(re.split("\(|,", str(model.bert.embeddings.position_embeddings))[1])
 
 
-def load_model(model_type, model_directory, device):
+def load_model(model_type, model_directory, device, output_attentions=False):
     if model_type == "Pretrained":
+        attn_impl = "eager" if output_attentions else "sdpa"
         model = BertForMaskedLM.from_pretrained(
-            model_directory, output_hidden_states=True, output_attentions=False
+            model_directory,
+            output_hidden_states=True,
+            output_attentions=False,
+            attn_implementation=attn_impl,
         )
     # put the model in eval mode for fwd pass and load onto the GPU if available
     model.eval()

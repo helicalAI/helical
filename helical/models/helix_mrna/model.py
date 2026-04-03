@@ -11,6 +11,7 @@ import numpy as np
 from tqdm import tqdm
 from typing import Union
 from pandas import DataFrame
+from transformers.utils import is_flash_attn_2_available
 
 import logging
 
@@ -60,7 +61,17 @@ class HelixmRNA(HelicalRNAModel):
         self.configurer = configurer
         self.config = configurer.config
 
-        self.model = HelixmRNAPretrainedModel.from_pretrained(self.config["model_name"])
+        if self.config["output_attentions"]:
+            attn_impl = "eager"
+        elif is_flash_attn_2_available():
+            attn_impl = "flash_attention_2"
+        else:
+            attn_impl = "sdpa"
+        self.model = HelixmRNAPretrainedModel.from_pretrained(
+            self.config["model_name"],
+            attn_implementation=attn_impl,
+            torch_dtype=torch.bfloat16,
+        )
         self.pretrained_config = HelixmRNAPretrainedConfig.from_pretrained(
             self.config["model_name"], trust_remote=True
         )
@@ -140,7 +151,7 @@ class HelixmRNA(HelicalRNAModel):
 
                 last_hidden_states = output[0]
 
-                embeddings.append(last_hidden_states.cpu().numpy())
+                embeddings.append(last_hidden_states.float().cpu().numpy())
 
                 del batch
                 del output

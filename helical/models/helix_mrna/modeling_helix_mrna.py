@@ -1373,6 +1373,7 @@ class HelixmRNAPreTrainedModel(PreTrainedModel):
     _no_split_modules = ["HelixmRNAAttentionDecoderLayer", "Mamba2Block"]
     _skip_keys_device_placement = "past_key_values"
     _supports_flash_attn_2 = True
+    _supports_flash_attn = True  # transformers >= 4.53.0 renamed _supports_flash_attn_2
     _supports_sdpa = True
     _supports_cache_class = True  # Note: only supports HybridMambaAttentionDynamicCache
 
