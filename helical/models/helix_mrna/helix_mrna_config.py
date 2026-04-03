@@ -16,6 +16,11 @@ class HelixmRNAConfig:
         The maximum length of the input sequence.
     nproc: int, optional, default=1
         Number of processes to use for data processing.
+    output_attentions : bool, optional, default=False
+        Whether to enable attention weight outputs from the hybrid attention layers.
+        When True, forces eager attention (flash_attention_2 and SDPA do not support
+        returning attention weights). Note: eager attention materialises the full O(seq²)
+        attention matrix and may cause OOM for long sequences.
     """
 
     def __init__(
@@ -24,6 +29,7 @@ class HelixmRNAConfig:
         device: Literal["cpu", "cuda"] = "cpu",
         max_length: int = 12288,
         nproc: int = 1,
+        output_attentions: bool = False,
     ):
 
         model_name: Literal["helical-ai/Helix-mRNA"] = "helical-ai/Helix-mRNA"
@@ -34,4 +40,5 @@ class HelixmRNAConfig:
             "batch_size": batch_size,
             "device": device,
             "nproc": nproc,
+            "output_attentions": output_attentions,
         }
