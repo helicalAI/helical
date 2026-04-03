@@ -289,7 +289,7 @@ class HelicalBaseFineTuningModel(torch.nn.Module):
         path : str
             The path to save the model to.
         """
-        torch.save(self.model, path)
+        torch.save(self.model.state_dict(), path)
         LOGGER.info(f"Model saved to {path}")
 
     def load_model(self, path: str):
@@ -301,7 +301,7 @@ class HelicalBaseFineTuningModel(torch.nn.Module):
         path : str
             The path to load the model from.
         """
-        self.model = torch.load(path, weights_only=False)
+        self.model.load_state_dict(torch.load(path, weights_only=True))
         self.model.eval()
         self.fine_tuning_head.eval()
         LOGGER.info(f"Model loaded from {path}")

@@ -265,7 +265,10 @@ def get_model_input_size(model):
 def load_model(model_type, model_directory, device):
     if model_type == "Pretrained":
         model = BertForMaskedLM.from_pretrained(
-            model_directory, output_hidden_states=True, output_attentions=False
+            model_directory,
+            output_hidden_states=True,
+            output_attentions=False,
+            attn_implementation="eager",
         )
     # put the model in eval mode for fwd pass and load onto the GPU if available
     model.eval()

@@ -88,10 +88,12 @@ class Geneformer(HelicalRNAModel):
         for file in self.configurer.list_of_files_to_download:
             downloader.download_via_name(file)
 
+        attn_impl = "eager" if self.config["output_attentions"] else "sdpa"
         self.model = BertForMaskedLM.from_pretrained(
             self.files_config["model_files_dir"],
             output_hidden_states=True,
             output_attentions=False,
+            attn_implementation=attn_impl,
         )
         self.model.eval()
         self.model = self.model.to(self.device)
@@ -234,6 +236,11 @@ class Geneformer(HelicalRNAModel):
             Each element in the list corresponds to the genes for each input in the dataset.
             If `output_genes` is False, this will not be returned.
         """
+        if output_attentions and not self.config["output_attentions"]:
+            raise ValueError(
+                "output_attentions=True requires the model to be loaded with eager attention. "
+                "Set output_attentions=True in GeneformerConfig."
+            )
         LOGGER.info(f"Started getting embeddings:")
         embeddings = get_embs(
             self.model,

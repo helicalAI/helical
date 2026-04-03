@@ -47,6 +47,18 @@ logger = logging.get_logger(__name__)
 if is_flash_attn_2_available():
     from transformers.modeling_flash_attention_utils import _flash_attention_forward
 
+# Compatibility shim for mamba_ssm with transformers >= 4.53.0.
+# mamba_ssm.utils.generation still imports the removed GreedySearchDecoderOnlyOutput
+# and SampleDecoderOnlyOutput; patch them back as aliases before mamba_ssm is loaded.
+import transformers.generation as _tg
+
+if not hasattr(_tg, "GreedySearchDecoderOnlyOutput"):
+    from transformers.generation import GenerateDecoderOnlyOutput as _GDO
+
+    _tg.GreedySearchDecoderOnlyOutput = _GDO
+    _tg.SampleDecoderOnlyOutput = _GDO
+del _tg
+
 if is_mamba_2_ssm_available():
     from mamba_ssm.ops.triton.selective_state_update import selective_state_update
     from mamba_ssm.ops.triton.ssd_combined import (
@@ -1373,6 +1385,7 @@ class HelixmRNAPreTrainedModel(PreTrainedModel):
     _no_split_modules = ["HelixmRNAAttentionDecoderLayer", "Mamba2Block"]
     _skip_keys_device_placement = "past_key_values"
     _supports_flash_attn_2 = True
+    _supports_flash_attn = True  # transformers >= 4.53.0 renamed _supports_flash_attn_2
     _supports_sdpa = True
     _supports_cache_class = True  # Note: only supports HybridMambaAttentionDynamicCache
 
@@ -1529,6 +1542,10 @@ ALL_DECODER_LAYER_TYPES = {
 
 
 class HelixmRNAPretrainedModel(HelixmRNAPreTrainedModel):
+    _supports_flash_attn_2 = True
+    _supports_flash_attn = True  # transformers >= 4.53.0 renamed _supports_flash_attn_2
+    _supports_sdpa = True
+
     def __init__(self, config):
         super().__init__(config)
 
