@@ -10,6 +10,7 @@ from tqdm.auto import trange
 import re
 import torch
 from transformers import BertForMaskedLM
+from helical.utils.attn_backend import select_attn_backend
 import pandas as pd
 import numpy as np
 
@@ -196,10 +197,10 @@ def get_embs(
                 output_attentions=output_attentions,
             )
 
-            embs_i = outputs.hidden_states[layer_to_quant]
+            embs_i = outputs.hidden_states[layer_to_quant].float()
             # attention of size (batch_size, num_heads, sequence_length, sequence_length)
             if output_attentions:
-                attn_i = outputs.attentions[layer_to_quant]
+                attn_i = outputs.attentions[layer_to_quant].float()
                 # attn_i = torch.mean(attn_i, dim=1).cpu().numpy()  # average over heads
                 attn_list.extend(attn_i.cpu().numpy())
 
@@ -263,15 +264,24 @@ def get_model_input_size(model):
 
 
 def load_model(model_type, model_directory, device, output_attentions=False):
-    if model_type == "Pretrained":
-        attn_impl = "eager" if output_attentions else "sdpa"
-        model = BertForMaskedLM.from_pretrained(
-            model_directory,
-            output_hidden_states=True,
-            output_attentions=False,
-            attn_implementation=attn_impl,
+    if model_type != "Pretrained":
+        raise ValueError(
+            f"Unsupported model_type: {model_type!r}. Only 'Pretrained' is supported."
         )
-    # put the model in eval mode for fwd pass and load onto the GPU if available
+    attn_impl, model_dtype = select_attn_backend(
+        device, output_attentions=output_attentions
+    )
+    if attn_impl == "flash_attention_2":
+        logger.warning(
+            "Loading Geneformer in bfloat16 for flash_attention_2 compatibility."
+        )
+    model = BertForMaskedLM.from_pretrained(
+        model_directory,
+        output_hidden_states=True,
+        output_attentions=False,
+        attn_implementation=attn_impl,
+        torch_dtype=model_dtype,
+    )
     model.eval()
     model = model.to(device)
     return model

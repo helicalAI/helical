@@ -13,8 +13,6 @@ class CaduceusPretrainedConfig(PretrainedConfig):
 
     This config is used to initialise the Caduceus pretrained model.
 
-    model_type is required by transformers >= 4.53.0 for proper from_pretrained handling.
-
     Parameters
     ----------
     d_model : int, optional, default=2560
@@ -48,6 +46,8 @@ class CaduceusPretrainedConfig(PretrainedConfig):
     complement_map : Optional[dict], optional, default=None
         The complement map.
     """
+
+    model_type = "caduceus"
 
     def __init__(
         self,

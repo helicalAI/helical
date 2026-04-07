@@ -32,14 +32,16 @@ class GeneformerConfig:
         The embedding mode to use. "cls" is only available for Geneformer v2 models, returning the embeddings of the cls token.
         For cell level embeddings, a mean across all embeddings excluding the cls token is returned.
         For gene level embeddings, each gene token embedding is returned along with the corresponding ensembl ID.
-    device : Literal["cpu", "cuda"], optional, default="cpu"
-        The device to use. Either use "cuda" or "cpu".
+    device : str, optional, default="cpu"
+        The device to use. Accepts any string torch.device accepts, e.g. "cpu",
+        "cuda", "cuda:0".
     nproc: int, optional, default=1
         Number of processes to use for data processing.
     output_attentions : bool, optional, default=False
-        Whether to enable attention weight outputs. When True, forces eager attention (SDPA does not
-        support returning attention weights in transformers >= 4.53). Note: eager attention materialises
-        the full O(seq²) attention matrix and may cause OOM for long sequences or large batches.
+        Whether to return attention weights from get_embeddings. Must be set at construction time:
+        True forces eager attention (required for attention output; flash_attention_2 and sdpa do
+        not support it), False uses flash_attention_2 when available, else sdpa. Note: eager
+        attention materialises the full O(seq²) matrix and may OOM on long sequences or large batches.
     custom_attr_name_dict : dict, optional, default=None
         A dictionary that contains the names of the custom attributes to be added to the dataset.
         The keys of the dictionary are the names of the custom attributes, and the values are the names of the columns in adata.obs.
@@ -75,7 +77,7 @@ class GeneformerConfig:
         batch_size: int = 24,
         emb_layer: int = -1,
         emb_mode: Literal["cls", "cell", "gene"] = "cell",
-        device: Literal["cpu", "cuda"] = "cpu",
+        device: str = "cpu",
         nproc: int = 1,
         output_attentions: bool = False,
         custom_attr_name_dict: Optional[dict] = None,

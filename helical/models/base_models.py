@@ -296,12 +296,27 @@ class HelicalBaseFineTuningModel(torch.nn.Module):
         """
         Load the model from a file.
 
+        Accepts both current state-dict checkpoints and legacy pickle checkpoints
+        (saved with the old ``torch.save(model, path)`` API).  The secure state-dict
+        load is attempted first; on failure we fall back to unpickling the legacy
+        full-model object and extracting its state dict.
+
         Parameters
         ----------
         path : str
             The path to load the model from.
         """
-        self.model.load_state_dict(torch.load(path, weights_only=True))
+        try:
+            state_dict = torch.load(path, weights_only=True)
+        except Exception:
+            LOGGER.warning(
+                f"State-dict load failed for {path}; "
+                f"attempting to load as a legacy pickle checkpoint."
+            )
+            legacy = torch.load(path, weights_only=False)
+            state_dict = legacy.state_dict() if not isinstance(legacy, dict) else legacy
+
+        self.model.load_state_dict(state_dict)
         self.model.eval()
         self.fine_tuning_head.eval()
         LOGGER.info(f"Model loaded from {path}")

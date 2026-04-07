@@ -1373,9 +1373,9 @@ class HelixmRNAPreTrainedModel(PreTrainedModel):
     _no_split_modules = ["HelixmRNAAttentionDecoderLayer", "Mamba2Block"]
     _skip_keys_device_placement = "past_key_values"
     _supports_flash_attn_2 = True
-    _supports_flash_attn = True  # transformers >= 4.53.0 renamed _supports_flash_attn_2
+    _supports_flash_attn = True
     _supports_sdpa = True
-    _supports_cache_class = True  # Note: only supports HybridMambaAttentionDynamicCache
+    _supports_cache_class = True  # only supports HybridMambaAttentionDynamicCache
 
     def _init_weights(self, module):
         """Initialize the weights."""
@@ -1447,6 +1447,7 @@ class HelixmRNAOutput(ModelOutput):
     last_hidden_state: Optional[torch.FloatTensor] = None
     cache_params: Optional[Mamba2Cache] = None
     hidden_states: Optional[Tuple[torch.FloatTensor]] = None
+    attentions: Optional[Tuple[torch.FloatTensor]] = None
 
 
 @dataclass
@@ -1670,15 +1671,19 @@ class HelixmRNAPretrainedModel(HelixmRNAPreTrainedModel):
             if output_hidden_states:
                 all_hidden_states += (layer_outputs[0],)
 
+            # Mamba/MLP blocks return (hidden_states,); attention blocks return
+            # (hidden_states, attn_weights, ...). Only attention layers contribute.
+            if (
+                output_attentions
+                and len(layer_outputs) > 1
+                and layer_outputs[1] is not None
+            ):
+                all_self_attns += (layer_outputs[1],)
+
         hidden_states = self.norm_f(layer_outputs[0])
 
         if output_hidden_states:
             all_hidden_states = all_hidden_states + (hidden_states,)
-
-            if output_attentions:
-                if layer_outputs[1] is not None:
-                    # append attentions only of attention layers. Mamba layers return `None` as the attention weights
-                    all_self_attns += (layer_outputs[1],)
 
         if use_cache:
             cache_params.seqlen_offset += inputs_embeds.shape[1]
@@ -1686,7 +1691,12 @@ class HelixmRNAPretrainedModel(HelixmRNAPreTrainedModel):
         if not return_dict:
             return tuple(
                 v
-                for v in [hidden_states, cache_params, all_hidden_states]
+                for v in [
+                    hidden_states,
+                    cache_params,
+                    all_hidden_states,
+                    all_self_attns,
+                ]
                 if v is not None
             )
 
@@ -1694,6 +1704,7 @@ class HelixmRNAPretrainedModel(HelixmRNAPreTrainedModel):
             last_hidden_state=hidden_states,
             cache_params=cache_params if use_cache else None,
             hidden_states=all_hidden_states,
+            attentions=all_self_attns,
         )
 
     def _update_causal_mask(self, attention_mask, input_tensor, cache_position):

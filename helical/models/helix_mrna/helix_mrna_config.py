@@ -10,23 +10,25 @@ class HelixmRNAConfig:
     ----------
     batch_size : int, optional, default=10
         The batch size
-    device : Literal["cpu", "cuda"], optional, default="cpu"
-        The device to use. Either use "cuda" or "cpu".
+    device : str, optional, default="cpu"
+        The device to use. Accepts any string torch.device accepts, e.g. "cpu",
+        "cuda", "cuda:0".
     max_length : int, optional, default=12288
         The maximum length of the input sequence.
     nproc: int, optional, default=1
         Number of processes to use for data processing.
     output_attentions : bool, optional, default=False
-        Whether to enable attention weight outputs from the hybrid attention layers.
-        When True, forces eager attention (flash_attention_2 and SDPA do not support
-        returning attention weights). Note: eager attention materialises the full O(seq²)
-        attention matrix and may cause OOM for long sequences.
+        Whether to return attention weights from get_embeddings. Must be set at
+        construction time: True forces eager attention (required for attention
+        output), False uses flash_attention_2 when available, else sdpa. Note:
+        eager attention materialises the full O(seq²) matrix and may OOM on long
+        sequences or large batches.
     """
 
     def __init__(
         self,
         batch_size: int = 10,
-        device: Literal["cpu", "cuda"] = "cpu",
+        device: str = "cpu",
         max_length: int = 12288,
         nproc: int = 1,
         output_attentions: bool = False,

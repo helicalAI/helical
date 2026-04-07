@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 from anndata import AnnData
 from helical.utils.downloader import Downloader
+from helical.utils.attn_backend import select_attn_backend
 from transformers import BertForMaskedLM
 from helical.models.geneformer.geneformer_utils import get_embs, quant_layers
 from helical.models.geneformer.geneformer_tokenizer import TranscriptomeTokenizer
@@ -88,12 +89,20 @@ class Geneformer(HelicalRNAModel):
         for file in self.configurer.list_of_files_to_download:
             downloader.download_via_name(file)
 
-        attn_impl = "eager" if self.config["output_attentions"] else "sdpa"
+        attn_impl, model_dtype = select_attn_backend(
+            self.device,
+            output_attentions=self.config.get("output_attentions", False),
+        )
+        if attn_impl == "flash_attention_2":
+            LOGGER.warning(
+                "Loading Geneformer in bfloat16 for flash_attention_2 compatibility."
+            )
         self.model = BertForMaskedLM.from_pretrained(
             self.files_config["model_files_dir"],
             output_hidden_states=True,
             output_attentions=False,
             attn_implementation=attn_impl,
+            torch_dtype=model_dtype,
         )
         self.model.eval()
         self.model = self.model.to(self.device)
@@ -236,10 +245,10 @@ class Geneformer(HelicalRNAModel):
             Each element in the list corresponds to the genes for each input in the dataset.
             If `output_genes` is False, this will not be returned.
         """
-        if output_attentions and not self.config["output_attentions"]:
+        if output_attentions and not self.config.get("output_attentions", False):
             raise ValueError(
                 "output_attentions=True requires the model to be loaded with eager attention. "
-                "Set output_attentions=True in GeneformerConfig."
+                "Set output_attentions=True in GeneformerConfig before instantiating the model."
             )
         LOGGER.info(f"Started getting embeddings:")
         embeddings = get_embs(

@@ -312,8 +312,7 @@ class CaduceusPreTrainedModel(PreTrainedModel):
     base_model_prefix = "caduceus"
     supports_gradient_checkpointing = False
     _no_split_modules = ["BiMambaWrapper"]
-    # transformers >= 4.53.0 calls all_tied_weights_keys in mark_tied_weights_as_initialized;
-    # Caduceus handles weight tying internally so we declare no HF-managed tied weights.
+    # Caduceus handles weight tying internally (bidirectional_weight_tie), not via HF.
     all_tied_weights_keys = {}
 
     def _init_weights(
