@@ -30,12 +30,6 @@ def run(cfg: DictConfig):
     embeddings = geneformer.get_embeddings(dataset, output_genes=True)
 
     print(embeddings)
-    embeddings, attention_weights = geneformer.get_embeddings(
-        dataset, output_attentions=True
-    )
-
-    print(embeddings)
-    print(attention_weights)
 
 
 if __name__ == "__main__":
