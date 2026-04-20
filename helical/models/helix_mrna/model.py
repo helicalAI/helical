@@ -11,6 +11,7 @@ import numpy as np
 from tqdm import tqdm
 from typing import Union
 from pandas import DataFrame
+from helical.utils.attn_backend import select_attn_backend
 
 import logging
 
@@ -60,7 +61,19 @@ class HelixmRNA(HelicalRNAModel):
         self.configurer = configurer
         self.config = configurer.config
 
-        self.model = HelixmRNAPretrainedModel.from_pretrained(self.config["model_name"])
+        attn_impl, model_dtype = select_attn_backend(
+            self.config["device"],
+            output_attentions=self.config.get("output_attentions", False),
+        )
+        if attn_impl == "flash_attention_2":
+            LOGGER.warning(
+                "Loading Helix-mRNA in bfloat16 for flash_attention_2 compatibility."
+            )
+        self.model = HelixmRNAPretrainedModel.from_pretrained(
+            self.config["model_name"],
+            attn_implementation=attn_impl,
+            torch_dtype=model_dtype,
+        )
         self.pretrained_config = HelixmRNAPretrainedConfig.from_pretrained(
             self.config["model_name"], trust_remote=True
         )
@@ -105,19 +118,34 @@ class HelixmRNA(HelicalRNAModel):
         LOGGER.info("Successfully processed the data for Helix-mRNA.")
         return dataset
 
-    def get_embeddings(self, dataset: Dataset) -> np.ndarray:
+    def get_embeddings(
+        self, dataset: Dataset, output_attentions: bool = False
+    ) -> np.ndarray:
         """Get the embeddings for the mRNA sequences.
 
         Parameters
         ----------
         dataset : HelixmRNADataset
             The dataset object.
+        output_attentions : bool, optional, default=False
+            Whether to also return the last-layer attention weights. Requires the
+            model to have been loaded with eager attention (set
+            ``output_attentions=True`` in ``HelixmRNAConfig``).
 
         Returns
         -------
         np.ndarray
             The embeddings array.
+        list, optional
+            Per-batch last-layer attention tensors of shape
+            ``(batch_size, num_heads, seq_length, seq_length)``. Only returned
+            when ``output_attentions=True``.
         """
+        if output_attentions and not self.config.get("output_attentions", False):
+            raise ValueError(
+                "output_attentions=True requires the model to be loaded with eager attention. "
+                "Set output_attentions=True in HelixmRNAConfig before instantiating the model."
+            )
         LOGGER.info("Started getting embeddings:")
         dataloader = DataLoader(
             dataset,
@@ -126,6 +154,7 @@ class HelixmRNA(HelicalRNAModel):
             shuffle=False,
         )
         embeddings = []
+        attentions = [] if output_attentions else None
 
         progress_bar = tqdm(dataloader, desc="Getting embeddings")
         with torch.no_grad():
@@ -136,16 +165,26 @@ class HelixmRNA(HelicalRNAModel):
                 )
                 attention_mask = 1 - special_tokens_mask
 
-                output = self.model(input_ids=input_ids, attention_mask=attention_mask)
+                output = self.model(
+                    input_ids=input_ids,
+                    attention_mask=attention_mask,
+                    output_attentions=output_attentions,
+                )
 
                 last_hidden_states = output[0]
+                embeddings.append(last_hidden_states.cpu().float().numpy())
 
-                embeddings.append(last_hidden_states.cpu().numpy())
+                if output_attentions:
+                    output_attn = getattr(output, "attentions", None)
+                    if output_attn:
+                        attentions.append(output_attn[-1].cpu().float().numpy())
 
                 del batch
                 del output
 
         LOGGER.info(f"Finished getting embeddings.")
+        if output_attentions:
+            return np.concatenate(embeddings), (attentions if attentions else None)
         return np.concatenate(embeddings)
 
     def _collate_fn(self, batch):
