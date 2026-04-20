@@ -12,6 +12,17 @@ class TestHelixmRNAModel:
         return HelixmRNA(configurer=config)
 
     @pytest.fixture
+    def helixmRNA_eager(self):
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        config = HelixmRNAConfig(
+            batch_size=1,
+            device=self.device,
+            max_length=100,
+            output_attentions=True,
+        )
+        return HelixmRNA(configurer=config)
+
+    @pytest.fixture
     def mock_data(self, helixmRNA):
         input_sequences = [
             "AAAA",
@@ -42,6 +53,34 @@ class TestHelixmRNAModel:
         assert (
             embeddings is not None
         ), f"Embeddings should not be None for sequence: {mock_data}"
+
+    def test_get_embeddings_output_attentions_requires_eager_config(
+        self, mock_data, helixmRNA
+    ):
+        with pytest.raises(
+            ValueError,
+            match=r"output_attentions=True requires the model to be loaded with eager",
+        ):
+            helixmRNA.get_embeddings(mock_data, output_attentions=True)
+
+    def test_get_embeddings_output_attentions_returns_attention_tensors(
+        self, helixmRNA_eager
+    ):
+        sequences = ["EACUEGG", "EACUEGG"]
+        dataset = helixmRNA_eager.process_data(sequences)
+
+        result = helixmRNA_eager.get_embeddings(dataset, output_attentions=True)
+
+        assert isinstance(result, tuple), "Expected tuple when output_attentions=True"
+        assert len(result) == 2
+        embeddings, attentions = result
+        assert isinstance(attentions, list)
+        assert len(attentions) >= 1
+        for attn in attentions:
+            assert attn.ndim == 4, (
+                f"Expected attention shape (batch, heads, seq, seq); "
+                f"got shape {attn.shape}"
+            )
 
     @pytest.mark.parametrize(
         "data, raise_exception",

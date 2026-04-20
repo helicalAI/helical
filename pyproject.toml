@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "helical"
-version = "1.12.1"
+version = "2.0.0"
 authors = [
   { name="Helical Team", email="support@helical-ai.com" },
 ]
@@ -29,7 +29,7 @@ dependencies = [
     'gitpython==3.1.44',
     'torch==2.7.0',
     'accelerate==1.4.0',
-    'transformers>=4.49.0,<=4.51.3',
+    'transformers>=4.53.0',
     'loompy==3.0.7',
     'scib==1.1.5',
     'scikit-misc>=0.5.2',

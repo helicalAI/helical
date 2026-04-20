@@ -312,6 +312,8 @@ class CaduceusPreTrainedModel(PreTrainedModel):
     base_model_prefix = "caduceus"
     supports_gradient_checkpointing = False
     _no_split_modules = ["BiMambaWrapper"]
+    # Caduceus handles weight tying internally (bidirectional_weight_tie), not via HF.
+    all_tied_weights_keys = {}
 
     def _init_weights(
         self,
