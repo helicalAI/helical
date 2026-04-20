@@ -64,6 +64,7 @@ class HelixmRNA(HelicalRNAModel):
         attn_impl, model_dtype = select_attn_backend(
             self.config["device"],
             output_attentions=self.config.get("output_attentions", False),
+            supports_fa2=True,
         )
         if attn_impl == "flash_attention_2":
             LOGGER.warning(
