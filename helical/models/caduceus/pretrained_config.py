@@ -47,6 +47,8 @@ class CaduceusPretrainedConfig(PretrainedConfig):
         The complement map.
     """
 
+    model_type = "caduceus"
+
     def __init__(
         self,
         # From original MambaConfig
