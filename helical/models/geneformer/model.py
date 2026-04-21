@@ -89,14 +89,12 @@ class Geneformer(HelicalRNAModel):
         for file in self.configurer.list_of_files_to_download:
             downloader.download_via_name(file)
 
+        # BertForMaskedLM does not declare FA2 support via HF dispatch; callers wanting
+        # FA2 for Geneformer must wire flash_attn directly.
         attn_impl, model_dtype = select_attn_backend(
             self.device,
             output_attentions=self.config.get("output_attentions", False),
         )
-        if attn_impl == "flash_attention_2":
-            LOGGER.warning(
-                "Loading Geneformer in bfloat16 for flash_attention_2 compatibility."
-            )
         self.model = BertForMaskedLM.from_pretrained(
             self.files_config["model_files_dir"],
             output_hidden_states=True,
