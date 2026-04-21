@@ -268,13 +268,11 @@ def load_model(model_type, model_directory, device, output_attentions=False):
         raise ValueError(
             f"Unsupported model_type: {model_type!r}. Only 'Pretrained' is supported."
         )
+    # BertForMaskedLM does not declare FA2 support via HF dispatch; callers wanting
+    # FA2 for Geneformer must wire flash_attn directly.
     attn_impl, model_dtype = select_attn_backend(
         device, output_attentions=output_attentions
     )
-    if attn_impl == "flash_attention_2":
-        logger.warning(
-            "Loading Geneformer in bfloat16 for flash_attention_2 compatibility."
-        )
     model = BertForMaskedLM.from_pretrained(
         model_directory,
         output_hidden_states=True,

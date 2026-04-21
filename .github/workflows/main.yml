@@ -145,6 +145,42 @@ jobs:
         run: |
           python examples/run_models/run_nicheformer.py ++device="cuda"
 
+  flash-attn-integration:
+    # Smoke-tests the flash_attn code paths that the main integration-tests job cannot
+    # exercise: flash_attn is not a declared helical dependency, so the FA2 branch in
+    # select_attn_backend is dormant there. This job installs flash_attn and verifies:
+    # (1) Geneformer (BertForMaskedLM, no FA2 via HF dispatch) still loads — regression
+    #     guard against routing BERT through attn_implementation='flash_attention_2'.
+    # (2) HelixmRNA actually loads and runs on the FA2 path.
+    needs: tests
+    runs-on: self-hosted
+    env:
+      CUDA_VISIBLE_DEVICES: 0
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.11.8
+
+      - name: Install helical with flash_attn
+        run: |
+            pip install .[mamba-ssm]
+            pip install flash-attn --no-build-isolation
+
+      - name: Smoke-test Geneformer (FA2 regression guard)
+        run: |
+          python -c "
+          from helical.models.geneformer import Geneformer, GeneformerConfig
+          Geneformer(GeneformerConfig(model_name='gf-6L-10M-i2048', device='cuda'))
+          "
+
+      - name: Smoke-test HelixmRNA on FA2 path
+        run: |
+          python examples/run_models/run_helix_mrna.py ++device="cuda"
+
   notebooks:
     needs: tests
     runs-on: self-hosted
