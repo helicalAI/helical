@@ -284,22 +284,31 @@ class HelicalBaseFineTuningModel(torch.nn.Module):
         """
         Save the model to a file.
 
+        Persists the state dicts of both the backbone model and the
+        fine-tuning head so that :meth:`load_model` can fully restore a
+        fine-tuned checkpoint.
+
         Parameters
         ----------
         path : str
             The path to save the model to.
         """
-        torch.save(self.model.state_dict(), path)
+        torch.save(self.state_dict(), path)
         LOGGER.info(f"Model saved to {path}")
 
     def load_model(self, path: str):
         """
         Load the model from a file.
 
-        Accepts both current state-dict checkpoints and legacy pickle checkpoints
-        (saved with the old ``torch.save(model, path)`` API).  The secure state-dict
-        load is attempted first; on failure we fall back to unpickling the legacy
-        full-model object and extracting its state dict.
+        Accepts three checkpoint formats in order of preference:
+
+        1. **Current** -- a state dict produced by :meth:`save_model` that
+           contains keys for both ``model.*`` and ``fine_tuning_head.*``.
+        2. **Backbone-only** -- a v2.0.0 state dict that only contains
+           ``model.*`` keys (fine-tuning head is left at its current weights).
+        3. **Legacy pickle** -- a full-model pickle produced by the pre-v2.0.0
+           ``torch.save(model, path)`` API. The backbone state dict is
+           extracted and loaded; the fine-tuning head is left unchanged.
 
         Parameters
         ----------
@@ -316,7 +325,24 @@ class HelicalBaseFineTuningModel(torch.nn.Module):
             legacy = torch.load(path, weights_only=False)
             state_dict = legacy.state_dict() if not isinstance(legacy, dict) else legacy
 
-        self.model.load_state_dict(state_dict)
+        # Detect whether the checkpoint contains fine-tuning head keys.
+        has_head_keys = any(k.startswith("fine_tuning_head.") for k in state_dict)
+        has_model_keys = any(k.startswith("model.") for k in state_dict)
+
+        if has_model_keys and has_head_keys:
+            # Full checkpoint saved by the current save_model.
+            self.load_state_dict(state_dict)
+        elif has_model_keys:
+            # Backbone-only checkpoint (v2.0.0 save_model).
+            LOGGER.warning(
+                "Checkpoint contains only backbone weights; "
+                "fine-tuning head weights are left unchanged."
+            )
+            self.load_state_dict(state_dict, strict=False)
+        else:
+            # Legacy or bare backbone state dict without the 'model.' prefix.
+            self.model.load_state_dict(state_dict)
+
         self.model.eval()
         self.fine_tuning_head.eval()
         LOGGER.info(f"Model loaded from {path}")
