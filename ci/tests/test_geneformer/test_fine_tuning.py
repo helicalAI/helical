@@ -41,7 +41,7 @@ def test_save_and_load_preserves_fine_tuning_head_weights():
 
         model.save_model(path)
 
-        # Create a fresh model whose head has different (random) weights.
+        # Create a fresh model to load into.
         model2 = GeneformerFineTuningModel(config, "classification", 10)
         model2.load_model(path)
 
