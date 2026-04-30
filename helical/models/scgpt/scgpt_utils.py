@@ -100,7 +100,7 @@ def load_model(model_configs: scGPTConfig):
 
     load_pretrained(
         model,
-        torch.load(model_configs["model_path"], map_location=model_configs["device"]),
+        torch.load(model_configs["model_path"], map_location=model_configs["device"], weights_only=True),
         verbose=False,
     )
     model.to(model_configs["device"])
