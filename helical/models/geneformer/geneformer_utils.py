@@ -295,7 +295,7 @@ def pad_tensor(tensor, pad_token_id, max_len):
 
 def pad_3d_tensor(tensor, pad_token_id, max_len, dim):
     if dim == 0:
-        raise Exception("dim 0 usually does not need to be padded.")
+        raise ValueError("dim 0 usually does not need to be padded.")
     if dim == 1:
         pad = (0, 0, 0, max_len - tensor.size()[dim])
     elif dim == 2:

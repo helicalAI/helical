@@ -25,7 +25,7 @@ try:
     from vortex.model.generation import generate as vortex_generate
     from vortex.model.model import StripedHyena
     from vortex.model.utils import dotdict, load_checkpoint
-except:
+except ImportError:
     message = "Vortex is required for Evo 2 model. Please follow the instructions in the README to install it."
     LOGGER.error(message)
     raise ImportError(
@@ -380,7 +380,7 @@ class Evo2(HelicalDNAModel):
                 filename=filename,
             )
         # If file is split, download and join parts
-        except:
+        except huggingface_hub.utils.EntryNotFoundError:
             print(f"Loading checkpoint shards for {filename}")
             # If file is split, get the first part's directory to use the same cache location
             weights_path = os.path.join(

@@ -47,8 +47,8 @@ def load_weights(scratch_dict, pretrained_dict, checkpointing=False):
                 key_loaded = inject_substring(key_loaded)
             try:
                 scratch_dict[key] = pretrained_dict[key_loaded]
-            except:
-                raise Exception("key mismatch in the state dicts!")
+            except KeyError:
+                raise KeyError("key mismatch in the state dicts!")
 
     # scratch_dict has been updated
     return scratch_dict

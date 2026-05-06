@@ -66,7 +66,8 @@ def load_gene_embeddings_adata(
         species: {
             gene_symbol.lower(): gene_embedding
             for gene_symbol, gene_embedding in torch.load(
-                species_to_gene_embedding_path[species]
+                species_to_gene_embedding_path[species],
+                weights_only=False,  # gene embedding dicts contain non-tensor metadata
             ).items()
         }
         for species in species_names
@@ -104,7 +105,8 @@ def load_gene_embeddings_adata(
         species: [
             gene_symbol.lower()
             for gene_symbol, _ in torch.load(
-                species_to_gene_embedding_path[species]
+                species_to_gene_embedding_path[species],
+                weights_only=False,  # gene embedding dicts contain non-tensor metadata
             ).items()
         ]
         for species in species_names
