@@ -127,6 +127,7 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
             collate_fn=self._collate_fn,
             batch_size=self.config["batch_size"],
             shuffle=shuffle,
+            pin_memory=torch.cuda.is_available(),
         )
 
         if validation_dataset is not None and validation_labels is not None:
@@ -137,6 +138,7 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
                 validation_dataset,
                 collate_fn=self._collate_fn,
                 batch_size=self.config["batch_size"],
+                pin_memory=torch.cuda.is_available(),
             )
 
         self.to(self.config["device"])
@@ -206,7 +208,10 @@ class HyenaDNAFineTuningModel(HelicalBaseFineTuningModel, HyenaDNA):
             The outputs of the model
         """
         data_loader = DataLoader(
-            dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"]
+            dataset,
+            collate_fn=self._collate_fn,
+            batch_size=self.config["batch_size"],
+            pin_memory=torch.cuda.is_available(),
         )
 
         self.to(self.config["device"])

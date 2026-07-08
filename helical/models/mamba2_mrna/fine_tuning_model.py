@@ -207,6 +207,7 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
             collate_fn=self._collate_fn,
             batch_size=self.config["batch_size"],
             shuffle=shuffle,
+            pin_memory=torch.cuda.is_available(),
         )
 
         # initialise lr_scheduler
@@ -223,6 +224,7 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
                 validation_dataset,
                 collate_fn=self._collate_fn,
                 batch_size=self.config["batch_size"],
+                pin_memory=torch.cuda.is_available(),
             )
 
         logger.info("Starting Fine-Tuning")
@@ -317,6 +319,7 @@ class Mamba2mRNAFineTuningModel(HelicalBaseFineTuningModel, Mamba2mRNA):
             collate_fn=self._collate_fn,
             batch_size=self.config["batch_size"],
             shuffle=False,
+            pin_memory=torch.cuda.is_available(),
         )
         outputs = []
 

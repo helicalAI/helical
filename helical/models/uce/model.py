@@ -229,6 +229,7 @@ class UCE(HelicalRNAModel):
             shuffle=False,
             collate_fn=dataset.collator_fn,
             num_workers=0,
+            pin_memory=torch.cuda.is_available(),
         )
 
         if self.accelerator is not None:

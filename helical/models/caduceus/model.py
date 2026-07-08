@@ -179,6 +179,7 @@ class Caduceus(HelicalDNAModel):
             batch_size=self.config["batch_size"],
             shuffle=False,
             num_workers=self.config["nproc"],
+            pin_memory=torch.cuda.is_available(),
         )
 
         embeddings = []
