@@ -192,6 +192,7 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
             train_dataset,
             collate_fn=self._collate_fn,
             batch_size=self.config["batch_size"],
+            pin_memory=torch.cuda.is_available(),
         )
 
         lr_scheduler = None
@@ -207,6 +208,7 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
                 validation_dataset,
                 collate_fn=self._collate_fn,
                 batch_size=self.config["batch_size"],
+                pin_memory=torch.cuda.is_available(),
             )
 
         LOGGER.info("Starting Fine-Tuning")
@@ -292,6 +294,7 @@ class HelixmRNAFineTuningModel(HelicalBaseFineTuningModel, HelixmRNA):
             collate_fn=self._collate_fn,
             batch_size=self.config["batch_size"],
             shuffle=False,
+            pin_memory=torch.cuda.is_available(),
         )
         outputs = []
 
