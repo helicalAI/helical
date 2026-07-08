@@ -156,6 +156,7 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel, UCE):
             shuffle=False,
             collate_fn=train_input_data.collator_fn,
             num_workers=0,
+            pin_memory=torch.cuda.is_available(),
         )
 
         if validation_input_data is not None:
@@ -165,6 +166,7 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel, UCE):
                 shuffle=False,
                 collate_fn=validation_input_data.collator_fn,
                 num_workers=0,
+                pin_memory=torch.cuda.is_available(),
             )
 
         if self.accelerator is not None:
@@ -291,6 +293,7 @@ class UCEFineTuningModel(HelicalBaseFineTuningModel, UCE):
             shuffle=False,
             collate_fn=dataset.collator_fn,
             num_workers=0,
+            pin_memory=torch.cuda.is_available(),
         )
 
         if self.accelerator is not None:

@@ -139,7 +139,10 @@ class HyenaDNA(HelicalDNAModel):
         LOGGER.info(f"Started getting embeddings:")
 
         train_data_loader = DataLoader(
-            dataset, collate_fn=self._collate_fn, batch_size=self.config["batch_size"]
+            dataset,
+            collate_fn=self._collate_fn,
+            batch_size=self.config["batch_size"],
+            pin_memory=torch.cuda.is_available(),
         )
         with torch.inference_mode():
             embeddings = []

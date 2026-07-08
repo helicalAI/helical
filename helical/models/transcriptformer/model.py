@@ -223,7 +223,7 @@ class TranscriptFormer(HelicalRNAModel):
             batch_size=self.model.inference_config.batch_size,
             num_workers=self.model.data_config.n_data_workers,
             drop_last=False,
-            pin_memory=True,
+            pin_memory=torch.cuda.is_available(),
             collate_fn=dataset.collate_fn,
         )
 
