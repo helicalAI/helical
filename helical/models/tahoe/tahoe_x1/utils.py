@@ -73,7 +73,7 @@ def loader_from_adata(
         shuffle=False,
         drop_last=False,
         num_workers=num_workers,
-        pin_memory=True,
+        pin_memory=torch.cuda.is_available(),
         prefetch_factor=prefetch_factor,
     )
 

@@ -206,6 +206,7 @@ class CaduceusFineTuningModel(HelicalBaseFineTuningModel, Caduceus):
             collate_fn=self._collate_fn,
             batch_size=self.config["batch_size"],
             num_workers=self.config["nproc"],
+            pin_memory=torch.cuda.is_available(),
         )
 
         lr_scheduler = None
@@ -222,6 +223,7 @@ class CaduceusFineTuningModel(HelicalBaseFineTuningModel, Caduceus):
                 collate_fn=self._collate_fn,
                 batch_size=self.config["batch_size"],
                 num_workers=self.config["nproc"],
+                pin_memory=torch.cuda.is_available(),
             )
 
         LOGGER.info("Starting Fine-Tuning")
@@ -308,6 +310,7 @@ class CaduceusFineTuningModel(HelicalBaseFineTuningModel, Caduceus):
             batch_size=self.config["batch_size"],
             shuffle=False,
             num_workers=self.config["nproc"],
+            pin_memory=torch.cuda.is_available(),
         )
         outputs = []
 

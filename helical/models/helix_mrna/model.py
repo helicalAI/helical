@@ -153,6 +153,7 @@ class HelixmRNA(HelicalRNAModel):
             collate_fn=self._collate_fn,
             batch_size=self.config["batch_size"],
             shuffle=False,
+            pin_memory=torch.cuda.is_available(),
         )
         embeddings = []
         attentions = [] if output_attentions else None
