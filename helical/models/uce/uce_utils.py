@@ -53,6 +53,9 @@ def get_ESM2_embeddings(token_file: Union[Path, str], token_dim: int) -> torch.T
         The token file loaded as a torch.Tensor.
     """
 
+    # [SECURITY CWE-502] Finding: https://github.com/helicalAI/helical/blob/release/helical/models/uce/uce_utils.py#L56-L56
+    # Reached from dags repo: none (no DAG or bioagents script invokes UCE; only manual example bio-agent/examples/cross_species_integration/README.md)
+    # Pickle written externally: downloaded model artifact from Helical S3 (bucket helicalpackage) key uce/all_tokens.torch (helical/models/uce/uce_config.py:115)
     all_pe = torch.load(token_file)
 
     # TODO: Why this if clause and why this magic number 143574?
@@ -89,6 +92,9 @@ def get_protein_embeddings_idxs(
         A tensor with the indexes of the used genes
     """
     with open(offset_pkl_path, "rb") as f:
+        # [SECURITY CWE-502] Finding: https://github.com/helicalAI/helical/blob/release/helical/models/uce/uce_utils.py#L92-L92
+        # Reached from dags repo: none (no DAG or bioagents script invokes UCE; only manual example bio-agent/examples/cross_species_integration/README.md)
+        # Pickle written externally: downloaded model artifact from Helical S3 (bucket helicalpackage) key uce/species_offsets.pkl (helical/models/uce/uce_config.py:118)
         species_to_offsets = pickle.load(f)
     offset = species_to_offsets[species]
     spec_all_genes = species_to_all_gene_symbols[species]

@@ -316,12 +316,18 @@ class HelicalBaseFineTuningModel(torch.nn.Module):
             The path to load the model from.
         """
         try:
+            # [SECURITY CWE-502] Finding: https://github.com/helicalAI/helical/blob/release/helical/models/base_models.py#L319-L319
+            # Reached from dags repo: none (bio-agent uses its own loader bioagents/tracking/tracking.py load_model_from_file, not helical's load_model; reached only from helical examples/fine_tune_models/*.py and ci tests)
+            # Pickle written at: helical/models/base_models.py:296 (torch.save -- save_model writes torch.save(self.state_dict(), path))
             state_dict = torch.load(path, weights_only=True)
         except Exception:
             LOGGER.warning(
                 f"State-dict load failed for {path}; "
                 f"attempting to load as a legacy pickle checkpoint."
             )
+            # [SECURITY CWE-502] Finding: https://github.com/helicalAI/helical/blob/release/helical/models/base_models.py#L325-L325
+            # Reached from dags repo: none (bio-agent uses its own loader bioagents/tracking/tracking.py load_model_from_file, not helical's load_model; reached only from helical examples/fine_tune_models/*.py and ci tests)
+            # Pickle written at: helical/models/base_models.py:296 (torch.save); this weights_only=False branch consumes pre-v2.0.0 full-model pickles written externally by legacy torch.save(model, path)
             legacy = torch.load(path, weights_only=False)
             state_dict = legacy.state_dict() if not isinstance(legacy, dict) else legacy
 

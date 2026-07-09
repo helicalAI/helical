@@ -100,6 +100,9 @@ def load_model(model_configs: scGPTConfig):
 
     load_pretrained(
         model,
+        # [SECURITY CWE-502] Finding: https://github.com/helicalAI/helical/blob/release/helical/models/scgpt/scgpt_utils.py#L103-L103
+        # Reached from dags repo: embedding_dag.py (dag_id="embedding") & brian_embedding_dag.py (dag_id="brian_embedding") -> embedding_script.py; finetuning_dag.py (dag_id="finetuning") / nebius_finetuning_dag.py (dag_id="nebius_finetuning") / brian_nebius_finetuning.py (dag_id="brian_nebius_finetuning") -> finetuning_script.py (scgpt is the default model; via bioagents get_fine_tuning_model -> scGPTFineTuning -> scGPT.__init__)
+        # Pickle written externally: downloaded model artifact from Helical S3 (bucket helicalpackage) key scgpt/scGPT_CP/best_model.pt (helical/utils/downloader.py:72; upstream bowang-lab/scGPT)
         torch.load(model_configs["model_path"], map_location=model_configs["device"]),
         verbose=False,
     )

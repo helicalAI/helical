@@ -382,6 +382,9 @@ class GeneEncoder(nn.Module):
 
         for name, e_cfg in additional_embedding_cfg.items():
             local_path = e_cfg["local"]
+            # [SECURITY CWE-502] Finding: https://github.com/helicalAI/helical/blob/release/helical/models/tahoe/tahoe_x1/model/blocks.py#L385-L385
+            # Reached from dags repo: none (Tahoe is not imported in bioagents/ or dags/; run only via helical examples/run_models/run_tahoe.py and examples/notebooks/Tahoe-x1-Tutorial.ipynb)
+            # Pickle written externally: Hugging Face repo tahoebio/Tahoe-x1 (additional-embedding file e_cfg["local"] fetched via TXModel.from_hf -> hf_hub_download)
             pretrained_weight = torch.load(local_path, weights_only=True)["embedding.weight"]
             pretrained_vocab_size, pretrained_dim = pretrained_weight.shape
             if pretrained_vocab_size < num_embeddings:

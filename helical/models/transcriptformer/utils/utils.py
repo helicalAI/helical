@@ -12,6 +12,9 @@ logger = logging.getLogger(__name__)
 def load_embeddings(embeddings_path):
     with open(embeddings_path, "rb") as f:
         if embeddings_path.endswith(".pkl"):
+            # [SECURITY CWE-502] Finding: https://github.com/helicalAI/helical/blob/release/helical/models/transcriptformer/utils/utils.py#L15-L15
+            # Reached from dags repo: embedding_dag.py (dag_id="embedding") / finetuning_dag.py (dag_id="finetuning") / nebius_finetuning_dag.py (dag_id="nebius_finetuning") / brian_nebius_finetuning.py (dag_id="brian_nebius_finetuning") -> embedding_script.py / finetuning_script.py -> TranscriptFormer.change_embedding_layer, but only when pretrained_embedding points to a user-supplied .pkl (Helical's own embeddings ship as .h5)
+            # Pickle written externally: user-supplied out-of-distribution embedding .pkl; no in-repo writer (Helical ships/downloads embeddings as .h5)
             embeddings = pickle.load(f)
         elif embeddings_path.endswith(".h5"):
             embeddings = load_from_hdf5(embeddings_path)

@@ -128,6 +128,9 @@ class TranscriptFormer(HelicalRNAModel):
             )
 
         logger.info("Loading model checkpoint")
+        # [SECURITY CWE-502] Finding: https://github.com/helicalAI/helical/blob/release/helical/models/transcriptformer/model.py#L131-L133
+        # Reached from dags repo: embedding_dag.py (dag_id="embedding") & brian_embedding_dag.py (dag_id="brian_embedding") -> embedding_script.py; finetuning_dag.py (dag_id="finetuning") / nebius_finetuning_dag.py (dag_id="nebius_finetuning") / brian_nebius_finetuning.py (dag_id="brian_nebius_finetuning") -> finetuning_script.py (via bioagents get_fine_tuning_model -> TranscriptformerFineTuning -> TranscriptFormer.__init__)
+        # Pickle written externally: downloaded model artifact from Helical S3 (bucket helicalpackage) key transcriptformer/{model_name}/model_weights.pt (helical/utils/downloader.py:72)
         state_dict = torch.load(
             self.model.inference_config.load_checkpoint, weights_only=True, map_location=torch.device("cpu")
         )

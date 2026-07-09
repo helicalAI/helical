@@ -65,6 +65,9 @@ def load_gene_embeddings_adata(
     species_to_gene_symbol_to_embedding = {
         species: {
             gene_symbol.lower(): gene_embedding
+            # [SECURITY CWE-502] Finding: https://github.com/helicalAI/helical/blob/release/helical/models/uce/gene_embeddings.py#L68-L70
+            # Reached from dags repo: none (no DAG or bioagents script invokes UCE; only manual example bio-agent/examples/cross_species_integration/README.md)
+            # Pickle written externally: downloaded model artifact from Helical S3 (bucket helicalpackage) key uce/protein_embeddings/<Species>.gene_symbol_to_embedding_ESM2.pt (helical/models/uce/uce_config.py:119)
             for gene_symbol, gene_embedding in torch.load(
                 species_to_gene_embedding_path[species]
             ).items()
@@ -103,6 +106,9 @@ def load_gene_embeddings_adata(
     species_to_all_gene_symbols = {
         species: [
             gene_symbol.lower()
+            # [SECURITY CWE-502] Finding: https://github.com/helicalAI/helical/blob/release/helical/models/uce/gene_embeddings.py#L106-L108
+            # Reached from dags repo: none (no DAG or bioagents script invokes UCE; only manual example bio-agent/examples/cross_species_integration/README.md)
+            # Pickle written externally: downloaded model artifact from Helical S3 (bucket helicalpackage) key uce/protein_embeddings/<Species>.gene_symbol_to_embedding_ESM2.pt (helical/models/uce/uce_config.py:119)
             for gene_symbol, _ in torch.load(
                 species_to_gene_embedding_path[species]
             ).items()

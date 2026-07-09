@@ -173,6 +173,9 @@ class GeneVocab:
             file_path = Path(file_path)
         if file_path.suffix == ".pkl":
             with file_path.open("rb") as f:
+                # [SECURITY CWE-502] Finding: https://github.com/helicalAI/helical/blob/release/helical/models/tahoe/tahoe_x1/tokenizer/gene_tokenizer.py#L176-L176
+                # Reached from dags repo: none (Tahoe unused in bioagents/dags; Tahoe's own loader uses vocab.json (json branch), so this .pkl branch fires only if a local .pkl vocab is passed, e.g. helical examples/tutorial)
+                # Pickle written externally: Hugging Face repo tahoebio/Tahoe-x1 ships vocab as vocab.json, not .pkl; no in-repo .pkl writer exists
                 vocab = pickle.load(f)
             return cls(vocab)
         elif file_path.suffix == ".json":

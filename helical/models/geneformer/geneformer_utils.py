@@ -35,6 +35,9 @@ def load_mappings(gene_symbols):
         gene_id_to_ensemble.update(decoded)
         # print(repr(decoded))
 
+    # [SECURITY CWE-502] Finding: https://github.com/helicalAI/helical/blob/release/helical/models/geneformer/geneformer_utils.py#L38-L38
+    # Reached from dags repo: none (dead code: enclosing load_mappings() at line 21 has no caller in helical, bio-agent, or dags)
+    # No in-repo reader: output ./human_gene_to_ensemble_id.pkl consumed by user/downstream (no pickle.load / pd.read_pickle of it anywhere in the three repos)
     pkl.dump(gene_id_to_ensemble, open("./human_gene_to_ensemble_id.pkl", "wb"))
     return gene_id_to_ensemble
 

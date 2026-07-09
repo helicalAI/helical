@@ -79,6 +79,9 @@ class HyenaDNAPreTrainedModel(PreTrainedModel):
         scratch_model = HyenaDNAModel(
             **config, use_head=use_head, n_classes=n_classes
         )  # the new model format
+        # [SECURITY CWE-502] Finding: https://github.com/helicalAI/helical/blob/release/helical/models/hyena_dna/pretrained_model.py#L82-L84
+        # Reached from dags repo: finetuning_dag.py (dag_id="finetuning") / nebius_finetuning_dag.py (dag_id="nebius_finetuning") / brian_nebius_finetuning.py (dag_id="brian_nebius_finetuning") -> finetuning_script.py -> bioagents get_fine_tuning_model -> HyenaDNAFineTuning -> HyenaDNA.__init__ -> HyenaDNAPreTrainedModel.from_pretrained
+        # Pickle written externally: downloaded model artifact from Helical S3 (bucket helicalpackage) key hyena_dna/{model_name}.ckpt (helical/models/hyena_dna/hyena_dna_config.py:108; upstream LongSafari HyenaDNA)
         loaded_ckpt = torch.load(
             config["model_path"], map_location=torch.device(device), weights_only=False
         )

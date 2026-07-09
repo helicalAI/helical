@@ -254,10 +254,16 @@ class TranscriptomeTokenizer:
         # load dictionary of gene normalization factors
         # (non-zero median value of expression across Genecorpus-30M)
         with open(gene_median_file, "rb") as f:
+            # [SECURITY CWE-502] Finding: https://github.com/helicalAI/helical/blob/release/helical/models/geneformer/geneformer_tokenizer.py#L257-L257
+            # Reached from dags repo: finetuning_dag.py (dag_id="finetuning") / nebius_finetuning_dag.py (dag_id="nebius_finetuning") / brian_nebius_finetuning.py (dag_id="brian_nebius_finetuning") -> finetuning_script.py; embedding_dag.py (dag_id="embedding") & brian_embedding_dag.py (dag_id="brian_embedding") -> embedding_script.py; attention_analysis_dag.py (dag_id="attention_analysis") -> attention_analysis_script.py; perturbation_dag.py (dag_id="perturbation") -> perturbation_script.py; evaluation_dag.py (dag_id="evaluation") -> evaluation_script.py (all -> Geneformer.__init__ -> TranscriptomeTokenizer)
+            # Pickle written externally: downloaded model artifact from Helical S3 (bucket helicalpackage, eu-west-2) key geneformer/{model_version}/gene_median_dictionary.pkl (helical/utils/downloader.py:72)
             self.gene_median_dict = pickle.load(f)
 
         # load token dictionary (Ensembl IDs:token)
         with open(token_dictionary_file, "rb") as f:
+            # [SECURITY CWE-502] Finding: https://github.com/helicalAI/helical/blob/release/helical/models/geneformer/geneformer_tokenizer.py#L261-L261
+            # Reached from dags repo: finetuning_dag.py (dag_id="finetuning") / nebius_finetuning_dag.py (dag_id="nebius_finetuning") / brian_nebius_finetuning.py (dag_id="brian_nebius_finetuning") -> finetuning_script.py; embedding_dag.py (dag_id="embedding") & brian_embedding_dag.py (dag_id="brian_embedding") -> embedding_script.py; attention_analysis_dag.py (dag_id="attention_analysis") -> attention_analysis_script.py; perturbation_dag.py (dag_id="perturbation") -> perturbation_script.py; evaluation_dag.py (dag_id="evaluation") -> evaluation_script.py (all -> Geneformer.__init__ -> TranscriptomeTokenizer)
+            # Pickle written externally: downloaded model artifact from Helical S3 (bucket helicalpackage, eu-west-2) key geneformer/{model_version}/token_dictionary.pkl (helical/utils/downloader.py:72)
             self.gene_token_dict = pickle.load(f)
 
         # check for special token in gene_token_dict
@@ -284,6 +290,9 @@ class TranscriptomeTokenizer:
         # load gene mappings dictionary (Ensembl IDs:Ensembl ID)
         if gene_mapping_file is not None:
             with open(gene_mapping_file, "rb") as f:
+                # [SECURITY CWE-502] Finding: https://github.com/helicalAI/helical/blob/release/helical/models/geneformer/geneformer_tokenizer.py#L287-L287
+                # Reached from dags repo: finetuning_dag.py (dag_id="finetuning") / nebius_finetuning_dag.py (dag_id="nebius_finetuning") / brian_nebius_finetuning.py (dag_id="brian_nebius_finetuning") -> finetuning_script.py; embedding_dag.py (dag_id="embedding") & brian_embedding_dag.py (dag_id="brian_embedding") -> embedding_script.py; attention_analysis_dag.py (dag_id="attention_analysis") -> attention_analysis_script.py; perturbation_dag.py (dag_id="perturbation") -> perturbation_script.py; evaluation_dag.py (dag_id="evaluation") -> evaluation_script.py (all -> Geneformer.__init__ -> TranscriptomeTokenizer)
+                # Pickle written externally: downloaded model artifact from Helical S3 (bucket helicalpackage, eu-west-2) key geneformer/{model_version}/ensembl_mapping_dict.pkl (helical/utils/downloader.py:72)
                 self.gene_mapping_dict = pickle.load(f)
         else:
             self.gene_mapping_dict = {k: k for k, _ in self.gene_token_dict.items()}
