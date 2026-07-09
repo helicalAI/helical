@@ -382,6 +382,9 @@ class GeneEncoder(nn.Module):
 
         for name, e_cfg in additional_embedding_cfg.items():
             local_path = e_cfg["local"]
+            # Safe: weights_only=True restricts torch.load to tensors/plain types, so a
+            # tampered checkpoint cannot execute arbitrary code (CWE-502, helicalAI/dashboard#1154).
+            # nosemgrep: trailofbits.python.pickles-in-pytorch.pickles-in-pytorch
             pretrained_weight = torch.load(local_path, weights_only=True)["embedding.weight"]
             pretrained_vocab_size, pretrained_dim = pretrained_weight.shape
             if pretrained_vocab_size < num_embeddings:

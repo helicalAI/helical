@@ -100,7 +100,15 @@ def load_model(model_configs: scGPTConfig):
 
     load_pretrained(
         model,
-        torch.load(model_configs["model_path"], map_location=model_configs["device"]),
+        # weights_only=True restricts torch.load to tensors/plain types (best_model.pt is a
+        # plain state dict), so a tampered checkpoint cannot execute arbitrary code during
+        # unpickling (CWE-502, helicalAI/dashboard#1154).
+        # nosemgrep: trailofbits.python.pickles-in-pytorch.pickles-in-pytorch
+        torch.load(
+            model_configs["model_path"],
+            map_location=model_configs["device"],
+            weights_only=True,
+        ),
         verbose=False,
     )
     model.to(model_configs["device"])
