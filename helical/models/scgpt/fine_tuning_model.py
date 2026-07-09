@@ -188,7 +188,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
             sampler=SequentialSampler(train_input_data),
             collate_fn=collator,
             drop_last=False,
-            pin_memory=True,
+            pin_memory=torch.cuda.is_available(),
         )
 
         if validation_input_data is not None:
@@ -198,7 +198,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
                 sampler=SequentialSampler(validation_input_data),
                 collate_fn=collator,
                 drop_last=False,
-                pin_memory=True,
+                pin_memory=torch.cuda.is_available(),
             )
 
         self.to(device)
@@ -325,7 +325,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
             sampler=SequentialSampler(dataset),
             collate_fn=collator,
             drop_last=False,
-            pin_memory=True,
+            pin_memory=torch.cuda.is_available(),
         )
 
         testing_loop = tqdm(data_loader, desc="Fine-Tuning Validation")

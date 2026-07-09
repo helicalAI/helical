@@ -150,7 +150,7 @@ class scGPT(HelicalRNAModel):
             sampler=SequentialSampler(dataset),
             collate_fn=collator,
             drop_last=False,
-            pin_memory=True,
+            pin_memory=torch.cuda.is_available(),
         )
 
         device = next(self.model.parameters()).device
