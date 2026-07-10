@@ -79,12 +79,6 @@ class HyenaDNAPreTrainedModel(PreTrainedModel):
         scratch_model = HyenaDNAModel(
             **config, use_head=use_head, n_classes=n_classes
         )  # the new model format
-        # weights_only=False is required here: HyenaDNA checkpoints are Lightning-style dicts
-        # that carry non-tensor objects (consumed below as loaded_ckpt["state_dict"]), which
-        # the safe (weights_only=True) loader rejects. The checkpoint is fetched from Helical's
-        # bucket / upstream LongSafari -- load only from trusted sources (CWE-502,
-        # helicalAI/dashboard#1154).
-        # nosemgrep: trailofbits.python.pickles-in-pytorch.pickles-in-pytorch
         loaded_ckpt = torch.load(
             config["model_path"], map_location=torch.device(device), weights_only=False
         )
