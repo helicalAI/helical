@@ -316,6 +316,9 @@ class HelicalBaseFineTuningModel(torch.nn.Module):
             The path to load the model from.
         """
         try:
+            # Safe: weights_only=True restricts torch.load to tensors/plain types, so a
+            # tampered checkpoint cannot execute arbitrary code (CWE-502, helicalAI/dashboard#1154).
+            # nosemgrep: trailofbits.python.pickles-in-pytorch.pickles-in-pytorch
             state_dict = torch.load(path, weights_only=True)
         except Exception:
             LOGGER.warning(

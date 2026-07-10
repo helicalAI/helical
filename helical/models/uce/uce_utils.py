@@ -53,7 +53,11 @@ def get_ESM2_embeddings(token_file: Union[Path, str], token_dim: int) -> torch.T
         The token file loaded as a torch.Tensor.
     """
 
-    all_pe = torch.load(token_file)
+    # weights_only=True restricts torch.load to tensors/plain types (all_tokens.torch is a
+    # tensor), so a tampered file cannot execute arbitrary code during unpickling
+    # (CWE-502, helicalAI/dashboard#1154).
+    # nosemgrep: trailofbits.python.pickles-in-pytorch.pickles-in-pytorch
+    all_pe = torch.load(token_file, weights_only=True)
 
     # TODO: Why this if clause and why this magic number 143574?
     if all_pe.shape[0] == 143574:
@@ -155,7 +159,13 @@ def load_model(
     empty_pe.requires_grad = False
     model.pe_embedding = torch.nn.Embedding.from_pretrained(empty_pe)
     model.load_state_dict(
-        torch.load(model_path, map_location=model_config["device"]), strict=True
+        # weights_only=True restricts torch.load to tensors/plain types (the UCE checkpoint is
+        # a plain state dict), so a tampered checkpoint cannot execute arbitrary code during
+        # unpickling (CWE-502, helicalAI/dashboard#1154). Not in the Bastion CSV, but hardened
+        # here for consistency with the token-file load above.
+        # nosemgrep: trailofbits.python.pickles-in-pytorch.pickles-in-pytorch
+        torch.load(model_path, map_location=model_config["device"], weights_only=True),
+        strict=True,
     )
 
     # This will make sure that you don't overwrite the tokens in case you're embedding species from the training data
