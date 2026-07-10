@@ -65,8 +65,12 @@ def load_gene_embeddings_adata(
     species_to_gene_symbol_to_embedding = {
         species: {
             gene_symbol.lower(): gene_embedding
+            # weights_only=True restricts torch.load to tensors/plain types (the file is a
+            # dict of gene_symbol -> embedding tensor), blocking arbitrary code execution
+            # during unpickling (CWE-502, helicalAI/dashboard#1154).
+            # nosemgrep: trailofbits.python.pickles-in-pytorch.pickles-in-pytorch
             for gene_symbol, gene_embedding in torch.load(
-                species_to_gene_embedding_path[species]
+                species_to_gene_embedding_path[species], weights_only=True
             ).items()
         }
         for species in species_names
@@ -103,8 +107,12 @@ def load_gene_embeddings_adata(
     species_to_all_gene_symbols = {
         species: [
             gene_symbol.lower()
+            # weights_only=True restricts torch.load to tensors/plain types (the file is a
+            # dict of gene_symbol -> embedding tensor), blocking arbitrary code execution
+            # during unpickling (CWE-502, helicalAI/dashboard#1154).
+            # nosemgrep: trailofbits.python.pickles-in-pytorch.pickles-in-pytorch
             for gene_symbol, _ in torch.load(
-                species_to_gene_embedding_path[species]
+                species_to_gene_embedding_path[species], weights_only=True
             ).items()
         ]
         for species in species_names

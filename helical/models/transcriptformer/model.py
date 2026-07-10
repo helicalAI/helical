@@ -128,6 +128,9 @@ class TranscriptFormer(HelicalRNAModel):
             )
 
         logger.info("Loading model checkpoint")
+        # Safe: weights_only=True restricts torch.load to tensors/plain types, so a
+        # tampered checkpoint cannot execute arbitrary code (CWE-502, helicalAI/dashboard#1154).
+        # nosemgrep: trailofbits.python.pickles-in-pytorch.pickles-in-pytorch
         state_dict = torch.load(
             self.model.inference_config.load_checkpoint, weights_only=True, map_location=torch.device("cpu")
         )
