@@ -53,7 +53,7 @@ def get_ESM2_embeddings(token_file: Union[Path, str], token_dim: int) -> torch.T
         The token file loaded as a torch.Tensor.
     """
 
-    all_pe = torch.load(token_file)
+    all_pe = torch.load(token_file, weights_only=True)
 
     # TODO: Why this if clause and why this magic number 143574?
     if all_pe.shape[0] == 143574:
@@ -120,9 +120,9 @@ def prepare_expression_counts_file(
         LOGGER.info(
             f"Passed the gene expressions (with shape={shape} and max gene count data {gene_expression.max()}) to {filename}"
         )
-    except:
+    except Exception:
         LOGGER.error(f"Error during preparation of npz file {filename}.")
-        raise Exception
+        raise
 
 
 ## writing a funciton to load the model
@@ -155,7 +155,7 @@ def load_model(
     empty_pe.requires_grad = False
     model.pe_embedding = torch.nn.Embedding.from_pretrained(empty_pe)
     model.load_state_dict(
-        torch.load(model_path, map_location=model_config["device"]), strict=True
+        torch.load(model_path, map_location=model_config["device"], weights_only=True), strict=True
     )
 
     # This will make sure that you don't overwrite the tokens in case you're embedding species from the training data

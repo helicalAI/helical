@@ -168,7 +168,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
 
         try:
             use_batch_labels = train_input_data.batch_ids is not None
-        except:
+        except AttributeError:
             use_batch_labels = False
 
         collator = DataCollator(
@@ -305,7 +305,7 @@ class scGPTFineTuningModel(HelicalBaseFineTuningModel, scGPT):
 
         try:
             use_batch_labels = dataset.batch_ids is not None
-        except:
+        except AttributeError:
             use_batch_labels = False
 
         collator = DataCollator(
