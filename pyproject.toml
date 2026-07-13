@@ -41,6 +41,15 @@ dependencies = [
     'datasets==3.6.0',
     'sentencepiece>=0.2.0',
     'bitsandbytes>=0.48.2',
+    # Directly imported by helical but previously only satisfied transitively
+    # (scanpy via scib, now removed) or by a dirty CI env. Declared explicitly so
+    # a clean install has them: scanpy (scgpt/c2s/uce/tahoe model code),
+    # requests-cache (utils/downloader.py, used by every model), torchmetrics +
+    # catalogue (tahoe backbone).
+    'scanpy>=1.11',
+    'requests-cache>=1.2',
+    'torchmetrics>=1.0',
+    'catalogue>=2.0',
 ]
 
 constraint-dependencies = [
