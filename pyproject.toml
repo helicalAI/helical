@@ -49,6 +49,15 @@ constraint-dependencies = [
 ]
 
 [project.optional-dependencies]
+# Test/lint tooling (formerly requirements-dev.txt). Install with `.[dev]`.
+dev = [
+    'pytest==8.2.0',
+    'pytest-cov==5.0.0',
+    'pytest-mock==3.14.0',
+    'nbmake==1.5.4',
+    'black==26.3.1',
+]
+
 mamba-ssm = [
     'mamba-ssm==2.3.2.post1',
     'causal-conv1d==1.6.2.post1',
