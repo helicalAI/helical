@@ -37,8 +37,13 @@ jobs:
 
       - name: Install dependencies
         run: |
-            pip install .[dev]
-            pip install -r requirements_cuda.txt
+            python -m pip install -q uv
+            uv venv --python "$(command -v python)" "$RUNNER_TEMP/venv"
+            echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
+            echo "VIRTUAL_ENV=$RUNNER_TEMP/venv" >> "$GITHUB_ENV"
+            source "$RUNNER_TEMP/venv/bin/activate"
+            uv pip install .[dev]
+            uv pip install -r requirements_cuda.txt
 
       # First download before tests as they make use of the downloaded files 
       - name: Download all files
@@ -72,8 +77,13 @@ jobs:
       # because jobs may not be run in the same order, we need to install the dependencies again
       - name: Install helical
         run: |
-            pip install .
-            pip install -r requirements_cuda.txt
+            python -m pip install -q uv
+            uv venv --python "$(command -v python)" "$RUNNER_TEMP/venv"
+            echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
+            echo "VIRTUAL_ENV=$RUNNER_TEMP/venv" >> "$GITHUB_ENV"
+            source "$RUNNER_TEMP/venv/bin/activate"
+            uv pip install .
+            uv pip install -r requirements_cuda.txt
         
       # Required to get the data
       - name: Download all files
@@ -186,8 +196,13 @@ jobs:
 
       - name: Install helical with flash_attn
         run: |
-            pip install .
-            pip install -r requirements_cuda.txt
+            python -m pip install -q uv
+            uv venv --python "$(command -v python)" "$RUNNER_TEMP/venv"
+            echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
+            echo "VIRTUAL_ENV=$RUNNER_TEMP/venv" >> "$GITHUB_ENV"
+            source "$RUNNER_TEMP/venv/bin/activate"
+            uv pip install .
+            uv pip install -r requirements_cuda.txt
 
       - name: Smoke-test Geneformer (FA2 regression guard)
         run: |
@@ -217,8 +232,13 @@ jobs:
       # because jobs may not be run in the same order, we need to install the dependencies again
       - name: Install helical
         run: |
-            pip install .[dev]
-            pip install -r requirements_cuda.txt
+            python -m pip install -q uv
+            uv venv --python "$(command -v python)" "$RUNNER_TEMP/venv"
+            echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
+            echo "VIRTUAL_ENV=$RUNNER_TEMP/venv" >> "$GITHUB_ENV"
+            source "$RUNNER_TEMP/venv/bin/activate"
+            uv pip install .[dev]
+            uv pip install -r requirements_cuda.txt
 
       - name: Reduce datasets to speedup checks
         run: |
