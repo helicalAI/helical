@@ -92,11 +92,11 @@ def main():
 
     download_geneformer_models()
 
-    downloader.download_via_name("hyena_dna/hyenadna-tiny-1k-seqlen.ckpt")
-    downloader.download_via_name("hyena_dna/hyenadna-tiny-1k-seqlen-d256.ckpt")
-    downloader.download_via_name("hyena_dna/hyenadna-small-32k-seqlen.ckpt")
-    downloader.download_via_name("hyena_dna/hyenadna-medium-450k-seqlen.ckpt")
-    downloader.download_via_name("hyena_dna/hyenadna-large-1m-seqlen.ckpt")
+    downloader.download_via_name("hyena_dna/hyenadna-tiny-1k-seqlen.weights.ckpt")
+    downloader.download_via_name("hyena_dna/hyenadna-tiny-1k-seqlen-d256.weights.ckpt")
+    downloader.download_via_name("hyena_dna/hyenadna-small-32k-seqlen.weights.ckpt")
+    downloader.download_via_name("hyena_dna/hyenadna-medium-450k-seqlen.weights.ckpt")
+    downloader.download_via_name("hyena_dna/hyenadna-large-1m-seqlen.weights.ckpt")
 
     downloader.download_via_name(
         "caduceus/caduceus-ph-16L-seqlen-131k-d256/model.safetensors"
