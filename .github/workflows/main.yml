@@ -19,7 +19,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-            pip install .[mamba-ssm,dev]
+            pip install .[dev]
+            pip install -r requirements_cuda.txt
 
       # First download before tests as they make use of the downloaded files 
       - name: Download all files
@@ -53,7 +54,8 @@ jobs:
       # because jobs may not be run in the same order, we need to install the dependencies again
       - name: Install helical
         run: |
-            pip install .[mamba-ssm]
+            pip install .
+            pip install -r requirements_cuda.txt
         
       # Required to get the data
       - name: Download all files
@@ -166,8 +168,8 @@ jobs:
 
       - name: Install helical with flash_attn
         run: |
-            pip install .[mamba-ssm]
-            pip install flash-attn --no-build-isolation
+            pip install .
+            pip install -r requirements_cuda.txt
 
       - name: Smoke-test Geneformer (FA2 regression guard)
         run: |
@@ -197,7 +199,8 @@ jobs:
       # because jobs may not be run in the same order, we need to install the dependencies again
       - name: Install helical
         run: |
-            pip install --no-cache-dir .[mamba-ssm,dev]
+            pip install --no-cache-dir .[dev]
+            pip install --no-cache-dir -r requirements_cuda.txt
         
       - name: Reduce datasets to speedup checks
         run: |
