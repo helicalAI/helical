@@ -18,7 +18,7 @@ jobs:
       - name: setup python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
         with:
-          python-version: 3.11.8
+          python-version: "3.12.13"
       # Do not install mamba-ssm as it is not supported for machines without GPUs
       - name: Install dependencies
         run: |
@@ -33,13 +33,12 @@ jobs:
       - name: setup python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
         with:
-          python-version: 3.11.8
+          python-version: "3.12.13"
 
       - name: Install dependencies
         run: |
-            pip install -r requirements-dev.txt
-            pip install .[mamba-ssm]
-            
+            pip install .[mamba-ssm,dev]
+
       # First download before tests as they make use of the downloaded files 
       - name: Download all files
         run: |
@@ -67,7 +66,7 @@ jobs:
       - name: setup python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
         with:
-          python-version: 3.11.8
+          python-version: "3.12.13"
 
       # because jobs may not be run in the same order, we need to install the dependencies again
       - name: Install helical
@@ -181,7 +180,7 @@ jobs:
       - name: setup python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
         with:
-          python-version: 3.11.8
+          python-version: "3.12.13"
 
       - name: Install helical with flash_attn
         run: |
@@ -211,13 +210,13 @@ jobs:
       - name: setup python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
         with:
-          python-version: 3.11.8
+          python-version: "3.12.13"
 
       # because jobs may not be run in the same order, we need to install the dependencies again
       - name: Install helical
         run: |
-            pip install .[mamba-ssm]
-                    
+            pip install .[mamba-ssm,dev]
+
       - name: Reduce datasets to speedup checks
         run: |
           sed -i 's/train\[:65%\]/train\[:5%\]/g' ./examples/notebooks/Cell-Type-Annotation.ipynb
@@ -243,7 +242,7 @@ jobs:
       - name: setup python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
         with:
-          python-version: 3.11.8
+          python-version: "3.12.13"
 
       - name: Install dependencies
         run: |
