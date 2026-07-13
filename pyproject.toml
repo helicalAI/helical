@@ -32,7 +32,7 @@ dependencies = [
     # accelerator wheels + matching CUDA 13 / Python 3.12), not incidentally.
     'torch==2.10.0',
     'accelerate==1.13.0',
-    'transformers>=4.53.0',
+    'transformers>=5.3.0',  # security floor: clears CVE-2026-4372 (fixed 5.3.0)
     'scikit-misc>=0.5.2',
     'einops==0.8.1',
     'omegaconf==2.3.0',

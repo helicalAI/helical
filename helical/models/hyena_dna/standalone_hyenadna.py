@@ -31,7 +31,9 @@ import json
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Union
 
-from transformers.tokenization_utils import AddedToken, PreTrainedTokenizer
+# Import from the public top-level namespace: the internal
+# `transformers.tokenization_utils` path is removed/reorganized in v5.
+from transformers import AddedToken, PreTrainedTokenizer
 
 
 """# HyenaDNA
