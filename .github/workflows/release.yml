@@ -35,9 +35,11 @@ jobs:
         with:
           python-version: "3.12.13"
 
+      - name: Setup uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
+
       - name: Install dependencies
         run: |
-            python -m pip install -q uv
             uv venv --python "$(command -v python)" "$RUNNER_TEMP/venv"
             echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
             echo "VIRTUAL_ENV=$RUNNER_TEMP/venv" >> "$GITHUB_ENV"
@@ -75,9 +77,11 @@ jobs:
           python-version: "3.12.13"
 
       # because jobs may not be run in the same order, we need to install the dependencies again
+      - name: Setup uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
+
       - name: Install helical
         run: |
-            python -m pip install -q uv
             uv venv --python "$(command -v python)" "$RUNNER_TEMP/venv"
             echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
             echo "VIRTUAL_ENV=$RUNNER_TEMP/venv" >> "$GITHUB_ENV"
@@ -194,9 +198,11 @@ jobs:
         with:
           python-version: "3.12.13"
 
+      - name: Setup uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
+
       - name: Install helical with flash_attn
         run: |
-            python -m pip install -q uv
             uv venv --python "$(command -v python)" "$RUNNER_TEMP/venv"
             echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
             echo "VIRTUAL_ENV=$RUNNER_TEMP/venv" >> "$GITHUB_ENV"
@@ -230,9 +236,11 @@ jobs:
           python-version: "3.12.13"
 
       # because jobs may not be run in the same order, we need to install the dependencies again
+      - name: Setup uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
+
       - name: Install helical
         run: |
-            python -m pip install -q uv
             uv venv --python "$(command -v python)" "$RUNNER_TEMP/venv"
             echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
             echo "VIRTUAL_ENV=$RUNNER_TEMP/venv" >> "$GITHUB_ENV"
