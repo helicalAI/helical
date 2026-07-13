@@ -54,3 +54,6 @@ outputs
 
 # Vortex repo
 vortex
+
+# virtual environments
+/.venv/
