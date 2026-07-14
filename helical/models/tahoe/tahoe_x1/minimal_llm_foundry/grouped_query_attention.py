@@ -437,12 +437,14 @@ class GroupedQueryAttention(nn.Module):
                 # This is done to fix pipeline parallel generation using hf.generate. Please see this comment for details: https://github.com/mosaicml/llm-foundry/pull/1332#issue-2386827204
                 cos = cos.to(query.device)
                 sin = sin.to(query.device)
+                # `position_ids` was deprecated/unused on this path since 4.38
+                # and is removed entirely in transformers 5.x; omitting it keeps
+                # this call working on both 4.53+ and 5.x.
                 query, key = apply_rotary_pos_emb(
                     q=query,
                     k=key,
                     cos=cos,
                     sin=sin,
-                    position_ids=None,
                     unsqueeze_dim=2,
                 )
             elif is_transformers_version_gte('4.36'):
