@@ -17,7 +17,6 @@ torch.manual_seed(1)
 torch.cuda.manual_seed(1)
 
 
-@pytest.mark.skipif(evo2_unavailable, reason="No Evo 2 module present")
 @pytest.fixture
 def read_prompts() -> Union[List[List[str]]]:
     """Read prompts from input file."""
@@ -32,7 +31,6 @@ def read_prompts() -> Union[List[List[str]]]:
     return promptseqs
 
 
-@pytest.mark.skipif(evo2_unavailable, reason="No Evo 2 module present")
 @pytest.fixture
 def evo2_model():
     """Initialize Evo2 model."""
@@ -41,7 +39,6 @@ def evo2_model():
     return model
 
 
-@pytest.mark.skipif(evo2_unavailable, reason="No Evo 2 module present")
 @pytest.fixture
 def test_forward_pass(evo2_model, read_prompts):
     """Test model forward pass accuracy on sequences."""
