@@ -61,7 +61,7 @@ Check out our <a href="https://www.helical-ai.com/blog/helix-mrna-v0" target="_b
 
 We recommend installing Helical within a conda environment with the commands below (run them in your terminal) - this step is optional:
 ```
-conda create --name helical-package python=3.11.13
+conda create --name helical-package python=3.12.13
 conda activate helical-package
 ```
 
@@ -73,7 +73,7 @@ pip install helical
 ***Note***
 Sometimes Torch is not installed as the CUDA compiled version (e.g. on different architectures) which is why you need to manually install Helical with GPU support, run the command below (or install pytorch with cuda first and then install helical):
 ```
-pip install helical --extra-index-url https://download.pytorch.org/whl/cuXXX (replace XXX with your cuda version, e.g. 128 for cuda 12.8)
+pip install helical --extra-index-url https://download.pytorch.org/whl/cuXXX (replace XXX with your cuda version, e.g. 130 for cuda 13.0)
 ```
 
 To install the latest Helical package, you can run the command below:
@@ -104,6 +104,20 @@ or in case you're installing from the Helical repo cloned locally:
 ```
 pip install .[mamba-ssm]
 ```
+
+As a no-compile alternative on CUDA 13 / torch 2.10 / Python 3.12 (Linux x86_64),
+install the prebuilt accelerator wheels (mamba-ssm, causal-conv1d, flash-attn) on
+top of helical:
+```
+pip install .
+pip install -r requirements_cuda.txt
+```
+
+### Development Installation
+To install the test and lint tooling (pytest, pytest-cov, pytest-mock, nbmake, black), use the `dev` extra:
+```
+pip install .[dev]
+```
 ###Evo2 Model Installation
 To install Evo2 Specifically, follow the instructions in the [evo-2 model card](helical/models/evo_2/README.md).
 
@@ -116,11 +130,14 @@ pip install helical[tahoe]
 ## Notes on the installation: 
 - Make sure your machine has GPU(s) and Cuda installed. Currently this is a requirement for the packages mamba-ssm and causal-conv1d. 
 - The package `causal_conv1d` requires `torch` to be installed already. First installing `helical` separately (without `[mamba-ssm]`) will install `torch` for you. A second installation (with `[mamba-ssm]`), installs the packages correctly.
-- If you have problems installing `mamba-ssm`, you can install the package via the provided `.whl` files on their release page [here](https://github.com/state-spaces/mamba/releases/tag/v2.2.4). Choose the package according to your cuda, torch and python version:
+- If you have problems building `mamba-ssm` from source, install the prebuilt `.whl` files instead. The set matching this release (CUDA 13 / torch 2.10 / Python 3.12, Linux x86_64) is pinned in [`requirements_cuda.txt`](./requirements_cuda.txt):
 ```
-pip install https://github.com/state-spaces/mamba/releases/download/v2.2.4/mamba_ssm-2.2.4+cu12torch2.3cxx11abiFALSE-cp311-cp311-linux_x86_64.whl
+pip install -r requirements_cuda.txt
 ```
-- Now continue with `pip install .[mamba-ssm]` to also install the remaining `causal-conv1d`.
+Choose a different wheel from the [mamba releases page](https://github.com/state-spaces/mamba/releases) if your cuda / torch / python version differs, e.g.:
+```
+pip install https://github.com/state-spaces/mamba/releases/download/v2.3.2.post1/mamba_ssm-2.3.2.post1+cu13torch2.10cxx11abiTRUE-cp312-cp312-linux_x86_64.whl
+```
 
 ### Singularity (Optional)
 If you desire to run your code in a singularity file, you can use the [singularity.def](./singularity.def) file and build an apptainer with it:
