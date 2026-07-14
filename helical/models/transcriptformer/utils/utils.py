@@ -1,5 +1,4 @@
 import logging
-import pickle
 
 import h5py
 import numpy as np
@@ -10,12 +9,12 @@ import torch
 logger = logging.getLogger(__name__)
 
 def load_embeddings(embeddings_path):
-    with open(embeddings_path, "rb") as f:
-        if embeddings_path.endswith(".pkl"):
-            embeddings = pickle.load(f)
-        elif embeddings_path.endswith(".h5"):
-            embeddings = load_from_hdf5(embeddings_path)
-    return embeddings
+    if embeddings_path.endswith(".h5"):
+        return load_from_hdf5(embeddings_path)
+    raise RuntimeError(
+        f"Unsupported embeddings file format: {embeddings_path}. "
+        "Only '.h5' (HDF5) embedding files are supported."
+    )
 
 
 def load_from_hdf5(file_path):

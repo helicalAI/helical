@@ -115,7 +115,7 @@ class UCEConfig:
             "uce/all_tokens.torch",
             f"uce/{model_name}.torch",
             "uce/species_chrom.csv",
-            "uce/species_offsets.pkl",
+            "uce/species_offsets.json",
             f"uce/protein_embeddings/{SPECIES_GENE_EMBEDDINGS[gene_embedding_model][species]}",
         ]
 
