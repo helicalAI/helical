@@ -79,8 +79,10 @@ class HyenaDNAPreTrainedModel(PreTrainedModel):
         scratch_model = HyenaDNAModel(
             **config, use_head=use_head, n_classes=n_classes
         )  # the new model format
+        # weights_only=True restricts torch.load to tensors/plain types (the model
+        # file is a tensor-only checkpoint; only ["state_dict"] is used below).
         loaded_ckpt = torch.load(
-            config["model_path"], map_location=torch.device(device), weights_only=False
+            config["model_path"], map_location=torch.device(device), weights_only=True
         )
 
         # need to load weights slightly different if using gradient checkpointing

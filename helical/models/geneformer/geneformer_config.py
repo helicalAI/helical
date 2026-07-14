@@ -169,9 +169,9 @@ class GeneformerConfig:
             )
 
         self.list_of_files_to_download = [
-            f"geneformer/{self.model_map[model_name]['model_version']}/gene_median_dictionary.pkl",
-            f"geneformer/{self.model_map[model_name]['model_version']}/token_dictionary.pkl",
-            f"geneformer/{self.model_map[model_name]['model_version']}/ensembl_mapping_dict.pkl",
+            f"geneformer/{self.model_map[model_name]['model_version']}/gene_median_dictionary.json",
+            f"geneformer/{self.model_map[model_name]['model_version']}/token_dictionary.json",
+            f"geneformer/{self.model_map[model_name]['model_version']}/ensembl_mapping_dict.json",
             f"geneformer/{self.model_map[model_name]['model_version']}/{model_name}/config.json",
             f"geneformer/{self.model_map[model_name]['model_version']}/{model_name}/training_args.bin",
         ]
@@ -200,13 +200,13 @@ class GeneformerConfig:
             ),
             "gene_median_path": self.model_dir
             / self.model_map[model_name]["model_version"]
-            / "gene_median_dictionary.pkl",
+            / "gene_median_dictionary.json",
             "token_path": self.model_dir
             / self.model_map[model_name]["model_version"]
-            / "token_dictionary.pkl",
+            / "token_dictionary.json",
             "ensembl_dict_path": self.model_dir
             / self.model_map[model_name]["model_version"]
-            / "ensembl_mapping_dict.pkl",
+            / "ensembl_mapping_dict.json",
         }
 
         self.config = {

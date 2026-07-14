@@ -45,7 +45,7 @@ from __future__ import annotations
 
 import os
 import logging
-import pickle
+import json
 import warnings
 from pathlib import Path
 from typing import Literal
@@ -186,10 +186,10 @@ def sum_ensembl_ids(
         )
 
 
-DEFAULT_GENE_MEDIAN_FILE = Path(__file__).parent / "v1" / "gene_median_dictionary.pkl"
-DEFAULT_TOKEN_DICTIONARY_FILE = Path(__file__).parent / "v1" / "token_dictionary.pkl"
+DEFAULT_GENE_MEDIAN_FILE = Path(__file__).parent / "v1" / "gene_median_dictionary.json"
+DEFAULT_TOKEN_DICTIONARY_FILE = Path(__file__).parent / "v1" / "token_dictionary.json"
 DEFAULT_ENSEMBL_MAPPING_FILE = (
-    Path(__file__).parent / "v1" / "ensembl_mapping_dictionary.pkl"
+    Path(__file__).parent / "v1" / "ensembl_mapping_dictionary.json"
 )
 
 
@@ -228,12 +228,12 @@ class TranscriptomeTokenizer:
         collapse_gene_ids : bool = True
             | Whether to collapse gene IDs based on gene mapping dictionary.
         gene_median_file : Path
-            | Path to pickle file containing dictionary of non-zero median
+            | Path to JSON file containing dictionary of non-zero median
             | gene expression values across Genecorpus-30M.
         token_dictionary_file : Path
-            | Path to pickle file containing token dictionary (Ensembl IDs:token).
+            | Path to JSON file containing token dictionary (Ensembl IDs:token).
         gene_mapping_file : None, Path
-            | Path to pickle file containing dictionary for collapsing gene IDs.
+            | Path to JSON file containing dictionary for collapsing gene IDs.
         """
 
         # dictionary of custom attributes {output dataset column name: input .h5ad column name}
@@ -253,12 +253,12 @@ class TranscriptomeTokenizer:
 
         # load dictionary of gene normalization factors
         # (non-zero median value of expression across Genecorpus-30M)
-        with open(gene_median_file, "rb") as f:
-            self.gene_median_dict = pickle.load(f)
+        with open(gene_median_file, "r") as f:
+            self.gene_median_dict = json.load(f)
 
         # load token dictionary (Ensembl IDs:token)
-        with open(token_dictionary_file, "rb") as f:
-            self.gene_token_dict = pickle.load(f)
+        with open(token_dictionary_file, "r") as f:
+            self.gene_token_dict = json.load(f)
 
         # check for special token in gene_token_dict
         if self.special_token:
@@ -283,8 +283,8 @@ class TranscriptomeTokenizer:
 
         # load gene mappings dictionary (Ensembl IDs:Ensembl ID)
         if gene_mapping_file is not None:
-            with open(gene_mapping_file, "rb") as f:
-                self.gene_mapping_dict = pickle.load(f)
+            with open(gene_mapping_file, "r") as f:
+                self.gene_mapping_dict = json.load(f)
         else:
             self.gene_mapping_dict = {k: k for k, _ in self.gene_token_dict.items()}
 

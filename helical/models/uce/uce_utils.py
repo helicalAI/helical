@@ -1,6 +1,6 @@
 import scanpy as sc
 import torch
-import pickle
+import json
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -73,7 +73,7 @@ def get_ESM2_embeddings(token_file: Union[Path, str], token_dim: int) -> torch.T
 
 
 def get_protein_embeddings_idxs(
-    offset_pkl_path: str,
+    offset_json_path: str,
     species: str,
     species_to_all_gene_symbols: Dict[str, list[str]],
     adata: sc.AnnData,
@@ -84,7 +84,7 @@ def get_protein_embeddings_idxs(
     Add up the index and offset for the end result.
 
     Args:
-        offset_pkl_path: Path to the offset file
+        offset_json_path: Path to the offset file
         species: The species for which to get the offsets
         species_to_all_gene_symbols: A dictionary with all species and their gene symbols
         adata: The filtered data with the genes for which there are embeddings.
@@ -92,8 +92,8 @@ def get_protein_embeddings_idxs(
     Returns:
         A tensor with the indexes of the used genes
     """
-    with open(offset_pkl_path, "rb") as f:
-        species_to_offsets = pickle.load(f)
+    with open(offset_json_path, "r") as f:
+        species_to_offsets = json.load(f)
     offset = species_to_offsets[species]
     spec_all_genes = species_to_all_gene_symbols[species]
     return torch.tensor(
