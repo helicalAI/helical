@@ -18,9 +18,9 @@ def download_geneformer_models():
     for version in versions:
         # Download common files for each version
         common_files = [
-            f"geneformer/{version}/gene_median_dictionary.pkl",
-            f"geneformer/{version}/token_dictionary.pkl",
-            f"geneformer/{version}/ensembl_mapping_dict.pkl",
+            f"geneformer/{version}/gene_median_dictionary.json",
+            f"geneformer/{version}/token_dictionary.json",
+            f"geneformer/{version}/ensembl_mapping_dict.json",
         ]
         for file in common_files:
             downloader.download_via_name(file)
@@ -61,7 +61,7 @@ def main():
     downloader.download_via_name("uce/4layer_model.torch")
     downloader.download_via_name("uce/all_tokens.torch")
     downloader.download_via_name("uce/species_chrom.csv")
-    downloader.download_via_name("uce/species_offsets.pkl")
+    downloader.download_via_name("uce/species_offsets.json")
     downloader.download_via_name(
         "uce/protein_embeddings/Homo_sapiens.GRCh38.gene_symbol_to_embedding_ESM2.pt"
     )
@@ -92,11 +92,11 @@ def main():
 
     download_geneformer_models()
 
-    downloader.download_via_name("hyena_dna/hyenadna-tiny-1k-seqlen.ckpt")
-    downloader.download_via_name("hyena_dna/hyenadna-tiny-1k-seqlen-d256.ckpt")
-    downloader.download_via_name("hyena_dna/hyenadna-small-32k-seqlen.ckpt")
-    downloader.download_via_name("hyena_dna/hyenadna-medium-450k-seqlen.ckpt")
-    downloader.download_via_name("hyena_dna/hyenadna-large-1m-seqlen.ckpt")
+    downloader.download_via_name("hyena_dna/hyenadna-tiny-1k-seqlen.weights.ckpt")
+    downloader.download_via_name("hyena_dna/hyenadna-tiny-1k-seqlen-d256.weights.ckpt")
+    downloader.download_via_name("hyena_dna/hyenadna-small-32k-seqlen.weights.ckpt")
+    downloader.download_via_name("hyena_dna/hyenadna-medium-450k-seqlen.weights.ckpt")
+    downloader.download_via_name("hyena_dna/hyenadna-large-1m-seqlen.weights.ckpt")
 
     downloader.download_via_name(
         "caduceus/caduceus-ph-16L-seqlen-131k-d256/model.safetensors"

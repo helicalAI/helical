@@ -134,7 +134,7 @@ class UCE(HelicalRNAModel):
         files_config = {
             "spec_chrom_csv_path": self.model_dir / "species_chrom.csv",
             "protein_embeddings_dir": self.model_dir / "protein_embeddings/",
-            "offset_pkl_path": self.model_dir / "species_offsets.pkl",
+            "offset_json_path": self.model_dir / "species_offsets.json",
         }
 
         ## TODO : Remove double downloads. This is required since metaflow might not have stored the files in the right location and the files might have dissapeared. The downloader should check if the file already exists.
@@ -169,7 +169,7 @@ class UCE(HelicalRNAModel):
         shapes_dict = {name: (num_cells, num_genes)}
 
         pe_row_idxs = get_protein_embeddings_idxs(
-            files_config["offset_pkl_path"],
+            files_config["offset_json_path"],
             self.config["species"],
             species_to_all_gene_symbols,
             filtered_adata,

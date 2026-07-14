@@ -17,15 +17,15 @@ class TestGeneformerTokenizer:
     model_dir_v2 = Path(CACHE_DIR_HELICAL, "geneformer", "v2")
 
     files_config_v1 = {
-        "gene_median_path": model_dir_v1 / "gene_median_dictionary.pkl",
-        "token_path": model_dir_v1 / "token_dictionary.pkl",
-        "gene_mapping_path": model_dir_v1 / "ensembl_mapping_dict.pkl",
+        "gene_median_path": model_dir_v1 / "gene_median_dictionary.json",
+        "token_path": model_dir_v1 / "token_dictionary.json",
+        "gene_mapping_path": model_dir_v1 / "ensembl_mapping_dict.json",
     }
 
     files_config_v2 = {
-        "gene_median_path": model_dir_v2 / "gene_median_dictionary.pkl",
-        "token_path": model_dir_v2 / "token_dictionary.pkl",
-        "gene_mapping_path": model_dir_v2 / "ensembl_mapping_dict.pkl",
+        "gene_median_path": model_dir_v2 / "gene_median_dictionary.json",
+        "token_path": model_dir_v2 / "token_dictionary.json",
+        "gene_mapping_path": model_dir_v2 / "ensembl_mapping_dict.json",
     }
 
     @pytest.fixture

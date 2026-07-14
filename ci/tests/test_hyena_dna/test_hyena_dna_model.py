@@ -21,7 +21,7 @@ def test_hyena_dna__valid_model_names(model_name, d_model, d_inner):
         d_inner (int): The dimensionality of the inner layers.
     """
     configurer = HyenaDNAConfig(model_name=model_name)
-    assert configurer.config["model_path"].name == f"{model_name}.ckpt"
+    assert configurer.config["model_path"].name == f"{model_name}.weights.ckpt"
     assert configurer.config["d_model"] == d_model
     assert configurer.config["d_inner"] == d_inner
 

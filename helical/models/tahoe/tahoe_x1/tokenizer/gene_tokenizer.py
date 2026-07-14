@@ -1,6 +1,5 @@
 # Copyright (C) Tahoe Therapeutics 2025. All rights reserved.
 import json
-import pickle
 from collections import Counter
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Union
@@ -167,21 +166,17 @@ class GeneVocab:
     def from_file(cls, file_path: Union[Path, str]) -> "GeneVocab":
         """Create a GeneVocab from a file.
 
-        Supported file types: .pkl and .json.
+        Supported file types: .json.
         """
         if isinstance(file_path, str):
             file_path = Path(file_path)
-        if file_path.suffix == ".pkl":
-            with file_path.open("rb") as f:
-                vocab = pickle.load(f)
-            return cls(vocab)
-        elif file_path.suffix == ".json":
+        if file_path.suffix == ".json":
             with file_path.open("r") as f:
                 token2idx = json.load(f)
             return cls.from_dict(token2idx)
         else:
             raise ValueError(
-                f"{file_path} is not a valid file type. Only .pkl and .json are supported.",
+                f"{file_path} is not a valid file type. Only .json is supported.",
             )
 
     @classmethod
