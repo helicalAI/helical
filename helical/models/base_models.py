@@ -325,6 +325,13 @@ class HelicalBaseFineTuningModel(torch.nn.Module):
                 f"State-dict load failed for {path}; "
                 f"attempting to load as a legacy pickle checkpoint."
             )
+            # Reached whenever the strict weights_only=True load above fails. Normally that means
+            # a pre-v2.0.0 checkpoint saved with torch.save(self.model, path) (a full-model pickle
+            # the safe loader cannot read); current save_model writes a state dict that never hits
+            # this path. A corrupt or maliciously-crafted .pt can also fail the safe load and reach
+            # here, and weights_only=False unpickling then carries a CWE-502 arbitrary-code-
+            # execution risk, so only ever call load_model on checkpoints you trust.
+            # nosemgrep: trailofbits.python.pickles-in-pytorch.pickles-in-pytorch
             legacy = torch.load(path, weights_only=False)
             state_dict = legacy.state_dict() if not isinstance(legacy, dict) else legacy
 
