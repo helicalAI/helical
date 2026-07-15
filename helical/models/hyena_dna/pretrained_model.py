@@ -79,8 +79,10 @@ class HyenaDNAPreTrainedModel(PreTrainedModel):
         scratch_model = HyenaDNAModel(
             **config, use_head=use_head, n_classes=n_classes
         )  # the new model format
-        # weights_only=True restricts torch.load to tensors/plain types (the model
-        # file is a tensor-only checkpoint; only ["state_dict"] is used below).
+        # Safe: weights_only=True restricts torch.load to tensors/plain types, so a
+        # tampered checkpoint cannot execute arbitrary code (CWE-502, helicalAI/dashboard#1154).
+        # The model file is a tensor-only checkpoint; only ["state_dict"] is used below.
+        # nosemgrep: trailofbits.python.pickles-in-pytorch.pickles-in-pytorch
         loaded_ckpt = torch.load(
             config["model_path"], map_location=torch.device(device), weights_only=True
         )
