@@ -1,7 +1,5 @@
-import pickle as pkl
 import requests
 import json
-import pickle as pkl
 
 # imports
 import logging
@@ -35,7 +33,6 @@ def load_mappings(gene_symbols):
         gene_id_to_ensemble.update(decoded)
         # print(repr(decoded))
 
-    pkl.dump(gene_id_to_ensemble, open("./human_gene_to_ensemble_id.pkl", "wb"))
     return gene_id_to_ensemble
 
 
