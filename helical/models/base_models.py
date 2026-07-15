@@ -331,6 +331,7 @@ class HelicalBaseFineTuningModel(torch.nn.Module):
             # this path. A corrupt or maliciously-crafted .pt can also fail the safe load and reach
             # here, and weights_only=False unpickling then carries a CWE-502 arbitrary-code-
             # execution risk, so only ever call load_model on checkpoints you trust.
+            # TODO: to remove this execution path on October 2026
             # nosemgrep: trailofbits.python.pickles-in-pytorch.pickles-in-pytorch
             legacy = torch.load(path, weights_only=False)
             state_dict = legacy.state_dict() if not isinstance(legacy, dict) else legacy
