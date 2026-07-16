@@ -2,6 +2,10 @@ import torch
 import torch.nn as nn
 from transformers import PreTrainedModel
 from transformers.modeling_outputs import MaskedLMOutput
+from helical.utils.transformer_encoder import (
+    TransformerEncoder,
+    TransformerEncoderLayer,
+)
 from .configuration_nicheformer import NicheformerConfig
 from .masking import complete_masking
 import math
@@ -47,8 +51,10 @@ class NicheformerModel(NicheformerPreTrainedModel):
     def __init__(self, config: NicheformerConfig):
         super().__init__(config)
 
-        # Core transformer components
-        self.encoder_layer = nn.TransformerEncoderLayer(
+        # Core transformer components. Built from the shared TransformerEncoder/
+        # TransformerEncoderLayer (not stock nn.TransformerEncoderLayer) so that
+        # self_attn.out_proj is LoRA-compatible -- see helicalAI/bio-agent#1015.
+        self.encoder_layer = TransformerEncoderLayer(
             d_model=config.dim_model,
             nhead=config.nheads,
             dim_feedforward=config.dim_feedforward,
@@ -56,7 +62,7 @@ class NicheformerModel(NicheformerPreTrainedModel):
             dropout=config.dropout,
             layer_norm_eps=1e-12,
         )
-        self.encoder = nn.TransformerEncoder(
+        self.encoder = TransformerEncoder(
             encoder_layer=self.encoder_layer,
             num_layers=config.nlayers,
             enable_nested_tensor=False,
