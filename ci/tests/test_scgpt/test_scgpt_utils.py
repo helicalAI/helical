@@ -18,8 +18,8 @@ TransformerModel(\n\
   (transformer_encoder): TransformerEncoder(\n\
     (layers): ModuleList(\n\
       (0-11): 12 x TransformerEncoderLayer(\n\
-        (self_attn): MultiheadAttention(\n\
-          (out_proj): NonDynamicallyQuantizableLinear(in_features=512, out_features=512, bias=True)\n\
+        (self_attn): LoraCompatibleSelfAttention(\n\
+          (out_proj): Linear(in_features=512, out_features=512, bias=True)\n\
         )\n\
         (linear1): Linear(in_features=512, out_features=512, bias=True)\n\
         (dropout): Dropout(p=0.2, inplace=False)\n\
