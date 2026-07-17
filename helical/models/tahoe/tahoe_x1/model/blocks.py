@@ -454,8 +454,8 @@ class ChemEncoder(nn.Module):
             # Safe: np.load only runs once at construction to read a .npy fingerprint
             # file into a tensor; it is not part of forward() and does not affect ONNX
             # tracing or runtime efficiency (helicalAI/dashboard#1154).
-            # nosemgrep: trailofbits.python.numpy-in-pytorch-modules.numpy-in-pytorch-modules
             drug_fps = torch.as_tensor(
+                # nosemgrep: trailofbits.python.numpy-in-pytorch-modules.numpy-in-pytorch-modules
                 np.load(drug_fps_path),
                 dtype=torch.float32,
             )
