@@ -12,3 +12,16 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+
+  # Weekly Docker base-image patch PRs — SOC 2 patch management (helicalAI/dashboard#1147).
+  # Base images are digest-pinned in the Dockerfiles, so Dependabot proposes updated
+  # digests (OS security patches) on the same tag — a reviewable, timestamped audit trail.
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
