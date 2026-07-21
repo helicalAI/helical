@@ -15,6 +15,7 @@ updates:
       - "bputzeys"
       - "jonAtHelical"
       - "priyankvyas"
+      - "dmiv-helical"
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
