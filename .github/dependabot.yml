@@ -9,6 +9,12 @@ updates:
     # be vetted. Security updates are not affected by cooldown.
     cooldown:
       default-days: 7
+    assignees:
+      - "oriolpetithelical"
+      - "BrianNejati"
+      - "bputzeys"
+      - "jonAtHelical"
+      - "priyankvyas"
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
