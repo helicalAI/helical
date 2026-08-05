@@ -122,7 +122,7 @@ class TestGenePTGeneIdentifiers:
 
     def test_raises_when_nothing_maps(self, model):
         # Filler is unmappable Ensembl IDs too, so genuinely nothing resolves.
-        with pytest.raises(ValueError, match="None of the Ensembl IDs"):
+        with pytest.raises(ValueError, match="could be mapped to gene symbols"):
             model.process_data(_adata([UNKNOWN], filler="ENSG9999999{i:04d}"))
 
     def test_gene_names_column_is_honoured(self, model):

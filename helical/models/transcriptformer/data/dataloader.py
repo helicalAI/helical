@@ -9,7 +9,7 @@ import torch
 from scipy.sparse import csc_matrix, csr_matrix
 from torch import tensor
 from torch.utils.data import Dataset
-from helical.utils.mapping import map_gene_symbols_to_ensembl_ids
+from helical.utils.mapping import ensembl_id_mask, map_gene_symbols_to_ensembl_ids
 from helical.models.transcriptformer.data.dataclasses import BatchData
 from helical.models.transcriptformer.tokenizer.tokenizer import (
     BatchGeneTokenizer,
@@ -35,7 +35,10 @@ def load_gene_features(adata, gene_col_name, species: str = "hsapiens"):
         message = f"Gene column '{gene_col_name}' not found in adata.var.columns. Available columns: {adata.var.columns}. Modify config accordingly."
         logging.error(message)
         raise ValueError(message)
-    if adata.var[gene_col_name].str.contains("ENS", na=False).mean() <= 0.5:
+    # Anchored per-entry check rather than a substring `contains("ENS")`, which
+    # also matches real gene symbols (ENSA) and transcript/protein IDs
+    # (helicalAI/bio-agent#1123).
+    if ensembl_id_mask(adata.var[gene_col_name]).mean() <= 0.5:
         adata = map_gene_symbols_to_ensembl_ids(adata, gene_names=gene_col_name, species=species)
         gene_names = np.array(list(adata.var["ensembl_id"].values))
     else:

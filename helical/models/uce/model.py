@@ -9,6 +9,7 @@ import torch
 from accelerate import Accelerator
 from helical.models.uce.uce_config import UCEConfig
 from helical.models.base_models import HelicalRNAModel
+from helical.utils.mapping import ensure_gene_symbols
 from helical.models.uce.uce_utils import (
     get_ESM2_embeddings,
     get_positions,
@@ -127,6 +128,11 @@ class UCE(HelicalRNAModel):
 
         LOGGER.info(f"Processing data for UCE.")
         self.ensure_rna_data_validity(adata, gene_names, use_raw_counts)
+
+        # UCE looks genes up by symbol in its protein-embedding table, so an
+        # Ensembl-indexed AnnData matched nothing and hit the "no matching genes"
+        # error in gene_embeddings.py (helicalAI/bio-agent#1117).
+        adata = ensure_gene_symbols(adata, gene_names, model="UCE")
 
         if gene_names != "index":
             adata.var.index = adata.var[gene_names]

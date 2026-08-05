@@ -4,15 +4,12 @@ import numpy as np
 from anndata import AnnData
 from helical.utils.downloader import Downloader
 from helical.models.genept.genept_config import GenePTConfig
-from helical.utils.mapping import convert_list_ensembl_ids_to_gene_symbols
+from helical.utils.mapping import ensure_gene_symbols
 import scanpy as sc
 import torch
 import json
 
 LOGGER = logging.getLogger(__name__)
-
-# Ensembl gene IDs, optionally version-suffixed (ENSG00000141510.17).
-_ENSEMBL_GENE_ID_PATTERN = r"^ENS[A-Z]{0,4}G\d{11}(\.\d+)?$"
 
 
 class GenePT(HelicalRNAModel):
@@ -89,78 +86,12 @@ class GenePT(HelicalRNAModel):
         # Ensembl IDs raised an error telling the caller to set the flag they had
         # just set, and the default gene_names="index" skipped mapping altogether
         # and looked Ensembl IDs up in a symbol-keyed table (bio-agent#1117).
-        # Matched per entry with an anchored Ensembl *gene* ID pattern rather than
-        # `.startswith("ENS")`, which also matches real gene symbols (ENSA) and
-        # transcript/protein IDs (ENST.., ENSP..), and rather than `.all()`, which
-        # would skip a var index that is only mostly Ensembl IDs.
-        identifiers = adata.var[gene_names].astype(str)
-        is_ensembl = identifiers.str.match(_ENSEMBL_GENE_ID_PATTERN).fillna(False)
-        if is_ensembl.any():
-            # The mapping table is keyed on bare gene IDs, so the version suffix
-            # the pattern above accepts has to come off before lookup -- versioned
-            # IDs (ENSG00000141510.17) are the GENCODE/CellRanger default, and
-            # looking them up verbatim resolves nothing. Only Ensembl entries are
-            # stripped: real gene symbols contain dots too (AC000068.10).
-            bare = identifiers.str.split(".").str[0].where(is_ensembl, identifiers)
-            to_convert = sorted(set(bare[is_ensembl]))
-            symbols = convert_list_ensembl_ids_to_gene_symbols(to_convert)
-            # Excludes unmapped ids rather than keeping a None value, so no entry
-            # can later resolve through a bogus key.
-            mapping = {
-                ensembl_id: symbol
-                for ensembl_id, symbol in zip(to_convert, symbols)
-                if symbol
-            }
-            # Ensembl entries become their symbol; anything already a symbol is
-            # kept as-is, so a mixed var index does not lose its symbols.
-            resolved = [
-                mapping.get(bare_id) if flag else original
-                for bare_id, flag, original in zip(bare, is_ensembl, identifiers)
-            ]
-
-            # Ensembl -> symbol is many-to-one: 10616 of the 48698 symbol-bearing
-            # rows in hsapiens_pybiomart.csv share a gene_name (3369 symbols
-            # carried by >=2 ids, e.g. PRPF31, 5S_rRNA, Y_RNA). Without collapsing
-            # them the var index comes out non-unique and the `adata[:, genes_names]`
-            # subset below raises InvalidIndexError. Of a colliding set keep the
-            # copy carrying the most counts, so an all-zero alt-scaffold copy can
-            # never displace the expressed one (which picking positionally would).
-            totals = np.asarray(adata.X.sum(axis=0)).ravel()
-            best_for_symbol: dict = {}
-            for index, symbol in enumerate(resolved):
-                if symbol is None:
-                    continue
-                incumbent = best_for_symbol.get(symbol)
-                if incumbent is None or totals[index] > totals[incumbent]:
-                    best_for_symbol[symbol] = index
-            kept_indices = set(best_for_symbol.values())
-            keep = np.array(
-                [
-                    symbol is not None and index in kept_indices
-                    for index, symbol in enumerate(resolved)
-                ]
-            )
-
-            if not keep.any():
-                message = (
-                    "None of the Ensembl IDs could be mapped to gene symbols, which "
-                    "GenePT's embeddings are keyed on. Please check the gene "
-                    "identifiers in .var of the anndata input object."
-                )
-                LOGGER.error(message)
-                raise ValueError(message)
-
-            n_unmapped = sum(1 for symbol in resolved if symbol is None)
-            n_duplicate = int((~keep).sum()) - n_unmapped
-            if n_unmapped or n_duplicate:
-                LOGGER.info(
-                    f"Mapped Ensembl IDs to gene symbols for GenePT: "
-                    f"{len(resolved)} gene(s) in -> {int(keep.sum())} out "
-                    f"({n_unmapped} dropped with no symbol, "
-                    f"{n_duplicate} dropped as duplicate symbols)."
-                )
-            adata = adata[:, keep].copy()
-            adata.var_names = [symbol for symbol, kept in zip(resolved, keep) if kept]
+        # GenePT's embedding table is keyed on gene symbols, so Ensembl IDs must be
+        # mapped *to* symbols -- the opposite direction from the Ensembl-keyed
+        # models. The guard here used to read `== "ensembl_id"` (copied from
+        # Geneformer, which needs `!=`), which made the mapping unreachable on
+        # every input where it would have been correct (helicalAI/bio-agent#1117).
+        adata = ensure_gene_symbols(adata, gene_names, model="GenePT")
 
         sc.pp.highly_variable_genes(adata, flavor="seurat_v3")
         sc.pp.normalize_total(adata, target_sum=1e4)
