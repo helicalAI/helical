@@ -321,7 +321,32 @@ def ensure_gene_symbols(
     looked up by symbol. Ensembl gene IDs are translated per entry; identifiers
     that are already symbols are left untouched, so a mixed index keeps both.
     Genes with no symbol, and duplicates after translation, are dropped with the
-    counts logged. Returns the input unchanged when nothing is an Ensembl ID.
+    counts logged.
+
+    What it writes
+    --------------
+    **``var_names`` is always set to the resolved symbols -- including when
+    ``gene_names`` names a column rather than the index.** That is deliberate, and
+    worth spelling out because it is the surprising part: symbol-keyed models do
+    not agree on which identifiers they read. scGPT reads ``var[gene_names]``, but
+    GenePT looks its embeddings up on ``var_names`` (``get_text_embeddings``) no
+    matter what ``gene_names`` was -- so leaving the index alone would silently
+    match nothing there. Normalising both is what makes one result usable by any of
+    them.
+
+    It therefore also:
+
+    * sets ``var[gene_names]`` to the same resolved symbols when that column
+      exists, so the column and the index cannot disagree. Callers run
+      ``ensure_rna_data_validity`` first, which materialises ``var["index"]`` from
+      the *pre-conversion* index, and a lookup reading that stale column would
+      otherwise match nothing;
+    * records the pre-conversion identifiers in ``var["original_gene_id"]``, so the
+      caller's own names stay recoverable after the rewrite;
+    * drops genes, so ``n_vars`` can shrink and ``X`` is subset alongside ``var``.
+
+    Returns the input object **unchanged and uncopied** when no identifier is an
+    Ensembl gene ID; otherwise returns a new object, leaving the caller's untouched.
     """
     identifiers = _identifiers_of(adata, gene_names)
     reject_null_identifiers(identifiers)

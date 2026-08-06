@@ -121,6 +121,30 @@ class TestEnsureGeneSymbols:
         column = list(out.var_names).index("PRPF31")
         assert out.X.toarray()[:, column].sum() == expected
 
+    def test_rewrites_var_names_even_when_gene_names_is_a_column(self):
+        # The surprising part, so pinned explicitly: symbol-keyed models disagree
+        # about which identifiers they read -- scGPT reads var[gene_names], GenePT
+        # reads var_names regardless -- so both are normalised. The caller's own
+        # identifiers stay recoverable via original_gene_id.
+        adata = _adata([TP53, ACTB])
+        adata.var_names = ["row0", "row1"]
+        adata.var["my_ids"] = [TP53, ACTB]
+
+        out = ensure_gene_symbols(adata, "my_ids")
+
+        assert list(out.var_names) == ["TP53", "ACTB"]
+        assert list(out.var["my_ids"]) == ["TP53", "ACTB"]
+        assert list(out.var["original_gene_id"]) == [TP53, ACTB]
+
+    def test_leaves_the_callers_object_untouched(self):
+        adata = _adata([TP53, ACTB])
+        before = list(adata.var_names)
+
+        out = ensure_gene_symbols(adata)
+
+        assert out is not adata
+        assert list(adata.var_names) == before
+
     def test_keeps_the_named_column_in_step_with_var_names(self):
         # Callers run ensure_rna_data_validity first, which materialises
         # var["index"] from the pre-conversion index; a lookup reading that column
