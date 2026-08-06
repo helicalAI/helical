@@ -8,6 +8,7 @@ from anndata import AnnData
 from scipy.sparse import csr_matrix
 
 from helical.models.tahoe import Tahoe, TahoeConfig
+from helical.utils.mapping import ensure_ensembl_ids
 from helical.models.tahoe.tahoe_x1.model import TXModel
 from helical.models.tahoe.tahoe_x1.tokenizer import GeneVocab
 
@@ -138,14 +139,11 @@ class TestTahoeModel:
             tahoe.collator_cfg = {"pad_token_id": 1}
             tahoe.config = {"batch_size": 2}
 
-            # Mock map_gene_symbols_to_ensembl_ids to set all as NaN
-            with patch("helical.models.tahoe.model.map_gene_symbols_to_ensembl_ids") as mock_map:
-                data_copy = data.copy()
-                data_copy.var["ensembl_id"] = [None, None]
-                mock_map.return_value = data_copy
-
-                with pytest.raises(ValueError, match="All gene symbols could not be mapped"):
-                    tahoe.process_data(data, gene_names="gene_symbols")
+            # UNKNOWN1/UNKNOWN2 are genuinely unmappable, so the behaviour under
+            # test needs no mock of an internal helper -- which also means it keeps
+            # working when that helper changes.
+            with pytest.raises(ValueError, match="could be resolved to Ensembl"):
+                tahoe.process_data(data, gene_names="gene_symbols")
 
     def test_state_dict_prefix_removal(self):
         """Test that 'model.' prefix is correctly removed from state dict."""
@@ -284,20 +282,32 @@ class TestTahoeModel:
             with pytest.raises(KeyError):
                 tahoe.ensure_rna_data_validity(data, gene_names="missing_column", use_raw_counts=True)
 
-    def test_gene_mapping_ensembl_warning(self, mocker):
-        """Test warning when ensembl IDs are passed but gene_names != 'ensembl_id'."""
+    def test_ensembl_ids_in_a_named_column_are_used_directly(self):
+        """Ensembl IDs are accepted, not refused.
+
+        This used to assert `pytest.raises(ValueError, match="ensemble ids")`: a
+        column of Ensembl IDs with gene_names != "ensembl_id" was rejected outright,
+        which made an Ensembl-indexed AnnData unusable from any caller that cannot
+        set gene_names. Tahoe's vocabulary *is* Ensembl-keyed, so those identifiers
+        are now used as they are -- deliberately with no symbol round trip, which
+        would drop every gene that has no gene symbol.
+
+        Asserted on the reconciliation rather than the whole pipeline: the old test
+        never reached the rest of `process_data` either, since it always raised
+        first, and the hand-built config here has none of what tokenization needs.
+        """
         data = AnnData(X=csr_matrix(np.array([[1.0, 2.0]])))
         data.var["gene_symbols"] = ["ENSG00000187634", "ENSG00000188290"]
         data.obs["cell_type"] = ["CD4 T cells"]
 
-        with patch.object(Tahoe, "__init__", lambda x, configurer: None):
-            tahoe = Tahoe.__new__(Tahoe)
-            tahoe.vocab = {"ENSG00000187634": 2}
-            tahoe.collator_cfg = {"pad_token_id": 1}
-            tahoe.config = {"batch_size": 2}
+        out = ensure_ensembl_ids(data, "gene_symbols")
 
-            with pytest.raises(ValueError, match="ensemble ids"):
-                tahoe.process_data(data, gene_names="gene_symbols")
+        assert list(out.var["ensembl_id"]) == [
+            "ENSG00000187634",
+            "ENSG00000188290",
+        ]
+        # var_names are the caller's, untouched.
+        assert list(out.var_names) == list(data.var_names)
 
 
 class TestTXModelFromHF:

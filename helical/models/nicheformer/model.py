@@ -1,7 +1,7 @@
 from helical.models.base_models import HelicalRNAModel
 from helical.models.nicheformer.nicheformer_config import NicheformerConfig
 from helical.utils.downloader import Downloader
-from helical.utils.mapping import map_gene_symbols_to_ensembl_ids
+from helical.utils.mapping import ensembl_id_mask, map_gene_symbols_to_ensembl_ids
 from anndata import AnnData
 from datasets import Dataset
 from helical.models.nicheformer.modeling_nicheformer import NicheformerForMaskedLM
@@ -132,7 +132,10 @@ class Nicheformer(HelicalRNAModel):
 
         if gene_names != "ensembl_id":
             col = adata.var[gene_names]
-            if not col.str.startswith("ENS").all():
+            # Per entry against an anchored gene-ID pattern: `startswith("ENS")`
+            # also matches real symbols (ENSA) and transcript/protein IDs, and
+            # `.all()` skips a var index that is only mostly Ensembl IDs.
+            if not ensembl_id_mask(col).all():
                 adata = map_gene_symbols_to_ensembl_ids(
                     adata, gene_names if gene_names != "index" else None
                 )

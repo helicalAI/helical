@@ -1,6 +1,8 @@
 import logging
+import re
 from typing import List, Optional, Sequence
 from helical.utils.downloader import Downloader
+import numpy as np
 import pandas as pd
 from anndata import AnnData
 from pathlib import Path
@@ -154,3 +156,317 @@ def convert_list_gene_symbols_to_ensembl_ids(
         df = _get_ensembl_mart_df(species=species)
     mapping = df.drop_duplicates(subset="gene_name").set_index("gene_name")["ensembl_id"]
     return list(pd.Series(list(gene_symbols), dtype="object").map(mapping).where(pd.notna, None))
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Gene-identifier system: detection and normalisation
+#
+# Models key their vocabularies on one of two systems -- gene symbols (scGPT, UCE,
+# GenePT, C2S) or Ensembl gene IDs (Geneformer, Tahoe, Nicheformer,
+# Transcriptformer) -- and a dataset in the other system overlaps by exactly zero
+# genes. Each model's process_data reconciles this itself; the primitives live here
+# so the same subtle bug is not written five times.
+# ──────────────────────────────────────────────────────────────────────────────
+
+#: Ensembl **gene** IDs, optionally version-suffixed (ENSG00000141510.17).
+#: Deliberately narrower than `startswith("ENS")`, which also matches real gene
+#: symbols (ENSA) and transcript/protein IDs (ENST.., ENSP..).
+ENSEMBL_GENE_ID_PATTERN = r"^ENS[A-Z]{0,4}G\d{11}(\.\d+)?$"
+_ENSEMBL_GENE_ID_RE = re.compile(ENSEMBL_GENE_ID_PATTERN)
+
+#: Values that mean "an upstream mapping already failed here", not a gene name.
+#: Matched exactly rather than by prefix, so a real gene whose symbol merely starts
+#: with these letters (NANOS1, NAT1) is unaffected.
+_NULL_IDENTIFIERS = frozenset({"none", "nan", "na", "null", ""})
+
+
+def is_ensembl_gene_id(value: object) -> bool:
+    """Is ``value`` an Ensembl gene ID (version suffix allowed)?"""
+    return bool(_ENSEMBL_GENE_ID_RE.match(str(value)))
+
+
+def ensembl_id_mask(values: Sequence[object]) -> "pd.Series":
+    """Per-entry mask of which ``values`` are Ensembl gene IDs.
+
+    Per entry rather than `.all()`/`.any()` over the column: a var index that is
+    only *mostly* Ensembl IDs must convert the Ensembl entries and leave real
+    symbols alone, which neither aggregate can express.
+    """
+    return pd.Series([is_ensembl_gene_id(v) for v in values], dtype=bool)
+
+
+def strip_ensembl_version(value: object) -> str:
+    """``ENSG00000141510.17`` -> ``ENSG00000141510``; anything else untouched.
+
+    Applied only to Ensembl-matching values: real gene symbols contain dots too
+    (``AC000068.10``), and truncating those would silently corrupt them. The
+    mapping tables are keyed on bare IDs, so skipping this step makes every
+    versioned ID -- the GENCODE/CellRanger default -- resolve to None and be
+    dropped as "unmapped".
+    """
+    text = str(value)
+    return text.split(".", 1)[0] if is_ensembl_gene_id(text) else text
+
+
+def reject_null_identifiers(identifiers: Sequence[object]) -> None:
+    """Raise if any identifier is a null sentinel rather than a gene name.
+
+    A literal ``"None"`` in a gene column means an earlier mapping step already
+    failed and wrote its failure into the data. Converting around it would silently
+    drop those genes, hiding the original problem, so refuse the input instead.
+    """
+    n_null = sum(
+        1 for value in identifiers if str(value).strip().lower() in _NULL_IDENTIFIERS
+    )
+    if n_null:
+        message = (
+            f"{n_null} gene identifier(s) are null placeholders ('None'/'nan'/empty) "
+            f"rather than gene names, so an earlier mapping step has already failed. "
+            f"Remove or repair those entries before processing the data."
+        )
+        LOGGER.error(message)
+        raise ValueError(message)
+
+
+def require_vocabulary_overlap(identifiers: Sequence[object], vocabulary) -> None:
+    """Raise when no identifier is in ``vocabulary``.
+
+    Catches the case the old namespace guards caught by accident: identifiers that
+    are structurally valid but from the wrong annotation entirely -- mouse Ensembl
+    IDs against a human vocabulary, say. Checking membership rather than *shape*
+    means genuinely usable Ensembl input is accepted while unusable input still
+    fails loudly, instead of silently tokenizing to nothing.
+    """
+    if not any(value and value in vocabulary for value in identifiers):
+        message = (
+            f"None of the gene identifiers are in the model's vocabulary "
+            f"({len(vocabulary)} entries). They are well-formed, so this usually "
+            f"means they are from a different annotation or species than the model "
+            f"was trained on. Check .var of the anndata input object."
+        )
+        LOGGER.error(message)
+        raise ValueError(message)
+
+
+def _identifiers_of(adata: AnnData, gene_names: str) -> "pd.Series":
+    """The identifier column named by ``gene_names``, as strings."""
+    if gene_names == "index":
+        return pd.Series(list(adata.var_names), dtype=object).astype(str)
+    return adata.var[gene_names].astype(str).reset_index(drop=True)
+
+
+def _collapse_duplicates(resolved: List[Optional[str]], adata: AnnData) -> "pd.Series":
+    """Boolean keep-mask: drop unmapped entries and collapse duplicate names.
+
+    Symbol collisions are real and common -- 10616 of the 48698 symbol-bearing rows
+    in the bundled mapping table share a gene_name (3369 symbols carried by >=2
+    ids). A non-unique var index breaks downstream indexing outright, so one column
+    per name has to win.
+
+    Of a colliding set, keep the column carrying the most counts. Choosing
+    positionally lets an all-zero alt-scaffold copy displace the expressed one,
+    after which the gene reads as unexpressed with no error anywhere. ``X`` is only
+    touched when a name is actually claimed twice, since a backed AnnData exposes
+    it as a dataset with no ``.sum`` and the common case must not pay for totals it
+    would never consult.
+    """
+    counts: dict = {}
+    for name in resolved:
+        if name:
+            counts[name] = counts.get(name, 0) + 1
+
+    totals = None
+    if any(count > 1 for count in counts.values()):
+        matrix = adata.to_memory().X if adata.isbacked else adata.X
+        totals = np.asarray(matrix.sum(axis=0)).ravel()
+
+    best: dict = {}
+    for index, name in enumerate(resolved):
+        if not name:
+            continue
+        incumbent = best.get(name)
+        if incumbent is None or (
+            totals is not None and totals[index] > totals[incumbent]
+        ):
+            best[name] = index
+
+    winners = set(best.values())
+    return pd.Series(
+        [bool(name) and index in winners for index, name in enumerate(resolved)],
+        dtype=bool,
+    )
+
+
+def _log_accounting(resolved: List[Optional[str]], keep: "pd.Series") -> None:
+    n_in = len(resolved)
+    n_out = int(keep.sum())
+    n_unmapped = sum(1 for name in resolved if not name)
+    LOGGER.info(
+        "Gene identifiers: %d in -> %d out (%d dropped with no match, "
+        "%d dropped as duplicate names).",
+        n_in,
+        n_out,
+        n_unmapped,
+        n_in - n_out - n_unmapped,
+    )
+
+
+def ensure_gene_symbols(
+    adata: AnnData,
+    gene_names: str = "index",
+    species: str = "hsapiens",
+) -> AnnData:
+    """Return ``adata`` with ``var_names`` guaranteed to be gene symbols.
+
+    For the symbol-keyed models (scGPT, UCE, GenePT, C2S), whose vocabularies are
+    looked up by symbol. Ensembl gene IDs are translated per entry; identifiers
+    that are already symbols are left untouched, so a mixed index keeps both.
+    Genes with no symbol, and duplicates after translation, are dropped with the
+    counts logged.
+
+    What it writes
+    --------------
+    **``var_names`` is always set to the resolved symbols -- including when
+    ``gene_names`` names a column rather than the index.** That is deliberate, and
+    worth spelling out because it is the surprising part: symbol-keyed models do
+    not agree on which identifiers they read. scGPT reads ``var[gene_names]``, but
+    GenePT looks its embeddings up on ``var_names`` (``get_text_embeddings``) no
+    matter what ``gene_names`` was -- so leaving the index alone would silently
+    match nothing there. Normalising both is what makes one result usable by any of
+    them.
+
+    It therefore also:
+
+    * sets ``var[gene_names]`` to the same resolved symbols when that column
+      exists, so the column and the index cannot disagree. Callers run
+      ``ensure_rna_data_validity`` first, which materialises ``var["index"]`` from
+      the *pre-conversion* index, and a lookup reading that stale column would
+      otherwise match nothing;
+    * records the pre-conversion identifiers in ``var["original_gene_id"]``, so the
+      caller's own names stay recoverable after the rewrite;
+    * drops genes, so ``n_vars`` can shrink and ``X`` is subset alongside ``var``.
+
+    Returns the input object **unchanged and uncopied** when no identifier is an
+    Ensembl gene ID; otherwise returns a new object, leaving the caller's untouched.
+
+    Note the deliberate asymmetry with :func:`ensure_ensembl_ids`, which writes a
+    column and never touches ``var_names``. Each helper performs the minimum
+    mutation its consumers require, and the Ensembl-keyed models happen to need
+    less; see that function's docstring for why.
+    """
+    identifiers = _identifiers_of(adata, gene_names)
+    reject_null_identifiers(identifiers)
+    is_ensembl = ensembl_id_mask(identifiers)
+    if not is_ensembl.any():
+        return adata
+
+    bare = sorted({strip_ensembl_version(v) for v in identifiers[is_ensembl]})
+    symbols = convert_list_ensembl_ids_to_gene_symbols(bare, species=species)
+    lookup = {
+        ensembl_id: symbol
+        for ensembl_id, symbol in zip(bare, symbols)
+        if symbol  # excludes None *and* blank, so no entry resolves via a bogus key
+    }
+    resolved = [
+        lookup.get(strip_ensembl_version(value)) if flag else value
+        for value, flag in zip(identifiers, is_ensembl)
+    ]
+
+    keep = _collapse_duplicates(resolved, adata)
+    _log_accounting(resolved, keep)
+    if not keep.any():
+        message = (
+            f"None of the Ensembl gene IDs could be mapped to gene symbols, which "
+            f"this model's vocabulary is keyed on. Check the identifiers in .var of "
+            f"the anndata input object, and that species={species!r} matches the data."
+        )
+        LOGGER.error(message)
+        raise ValueError(message)
+
+    out = adata[:, keep.to_numpy()]
+    out = out.to_memory() if adata.isbacked else out.copy()
+    kept_names = [name for name, kept in zip(resolved, keep) if kept]
+    out.var["original_gene_id"] = [
+        value for value, kept in zip(identifiers, keep) if kept
+    ]
+    out.var_names = kept_names
+    # Keep the caller's chosen identifier column in step with var_names. Callers
+    # run `ensure_rna_data_validity` first, which materialises var["index"] from
+    # the *pre-conversion* index, so a lookup that reads that column instead of
+    # var_names would otherwise still see the old identifiers and match nothing.
+    if gene_names in out.var.columns:
+        out.var[gene_names] = kept_names
+    return out
+
+
+def ensure_ensembl_ids(
+    adata: AnnData,
+    gene_names: str = "index",
+    species: str = "hsapiens",
+) -> AnnData:
+    """Return ``adata`` with a ``var["ensembl_id"]`` column, from either system.
+
+    For the Ensembl-keyed models (Geneformer, Tahoe, Nicheformer,
+    Transcriptformer). Identifiers that are already Ensembl gene IDs are used
+    **directly** -- crucially *not* round-tripped through symbols, which would
+    drop every gene that has no symbol (~44% of the mapping table's rows) and can
+    land others on a different in-vocabulary ID entirely. Gene symbols are
+    translated; unmapped entries get an empty string, never None, so they simply
+    fail the vocabulary lookup instead of resolving through a bogus key.
+
+    Why this writes a column while :func:`ensure_gene_symbols` writes the index
+    -------------------------------------------------------------------------
+    The two are deliberately asymmetric, because their consumers are. Each performs
+    the **minimum mutation its consumers require**:
+
+    * Ensembl-keyed models read the *column*. Geneformer's tokenizer reads
+      ``data.var.ensembl_id`` and Tahoe reads ``var[gene_id_key]``; neither uses
+      ``var_names`` to identify a gene. So writing the column is sufficient here.
+    * Symbol-keyed models disagree with each other, and between them cover both
+      surfaces -- GenePT and UCE read ``var_names``, scGPT reads
+      ``var[gene_names]`` -- so :func:`ensure_gene_symbols` has to normalise both.
+
+    ``var_names`` are therefore left alone here, and that is not merely incidental:
+    it keeps the caller's identifiers addressable, which is what token-to-gene
+    reverse lookups and caller-supplied gene lists rely on
+    downstream. Rewriting the index to Ensembl IDs would also silently change the
+    identifier system of anything reported by a consumer -- an in-silico
+    perturbation run would come back keyed on Ensembl IDs even when the caller
+    supplied symbols.
+    """
+    identifiers = _identifiers_of(adata, gene_names)
+    reject_null_identifiers(identifiers)
+    is_ensembl = ensembl_id_mask(identifiers)
+
+    to_convert = sorted({v for v, flag in zip(identifiers, is_ensembl) if not flag})
+    lookup = {}
+    if to_convert:
+        mapped = convert_list_gene_symbols_to_ensembl_ids(to_convert, species=species)
+        lookup = {
+            symbol: ensembl_id
+            for symbol, ensembl_id in zip(to_convert, mapped)
+            if ensembl_id
+        }
+
+    resolved = [
+        strip_ensembl_version(value) if flag else lookup.get(value, "")
+        for value, flag in zip(identifiers, is_ensembl)
+    ]
+    if not any(resolved):
+        message = (
+            f"None of the gene identifiers could be resolved to Ensembl gene IDs, "
+            f"which this model's vocabulary is keyed on. Check the identifiers in "
+            f".var of the anndata input object, and that species={species!r} matches."
+        )
+        LOGGER.error(message)
+        raise ValueError(message)
+
+    LOGGER.info(
+        "Gene identifiers: %d already Ensembl IDs, %d mapped from symbols, "
+        "%d unresolved.",
+        int(is_ensembl.sum()),
+        int((~is_ensembl).sum()) - resolved.count(""),
+        resolved.count(""),
+    )
+    out = adata if not adata.isbacked else adata.to_memory()
+    out.var["ensembl_id"] = resolved
+    return out

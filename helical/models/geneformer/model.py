@@ -9,7 +9,7 @@ from transformers import BertForMaskedLM
 from helical.models.geneformer.geneformer_utils import get_embs, quant_layers
 from helical.models.geneformer.geneformer_tokenizer import TranscriptomeTokenizer
 from helical.models.geneformer.geneformer_config import GeneformerConfig
-from helical.utils.mapping import map_gene_symbols_to_ensembl_ids
+from helical.utils.mapping import ensure_ensembl_ids, require_vocabulary_overlap
 from datasets import Dataset
 from typing import Optional
 
@@ -183,23 +183,21 @@ class Geneformer(HelicalRNAModel):
         """
         LOGGER.info(f"Processing data for Geneformer.")
         self.ensure_rna_data_validity(adata, gene_names, use_raw_counts)
-        # map gene symbols to ensemble ids if provided
+        # Populate var["ensembl_id"] from whichever system the caller used.
+        # Identifiers that are already Ensembl gene IDs are taken directly rather
+        # than round-tripped through symbols: Geneformer's vocabulary is
+        # Ensembl-keyed and contains genes with no gene symbol at all (e.g.
+        # ENSG00000159239), which a round trip would drop. This used to raise
+        # outright whenever every identifier looked Ensembl-like, making an
+        # Ensembl-indexed AnnData unusable from any caller that cannot set
+        # gene_names.
         if gene_names != "ensembl_id":
-            if (adata.var[gene_names].str.startswith("ENS").all()) or (
-                adata.var[gene_names].str.startswith("None").any()
-            ):
-                message = (
-                    "It seems an anndata with 'ensemble ids' and/or 'None' was passed. "
-                    "Please set gene_names='ensembl_id' and remove 'None's to skip mapping."
-                )
-                LOGGER.info(message)
-                raise ValueError(message)
-            adata = map_gene_symbols_to_ensembl_ids(adata, gene_names)
+            adata = ensure_ensembl_ids(adata, gene_names)
 
-            if adata.var["ensembl_id"].isnull().all():
-                message = "All gene symbols could not be mapped to Ensembl IDs. Please check the input data."
-                LOGGER.info(message)
-                raise ValueError(message)
+        # Accepting Ensembl input means shape alone no longer tells us the data is
+        # usable, so check vocabulary membership instead -- well-formed IDs from
+        # another species would otherwise tokenize to nothing, silently.
+        require_vocabulary_overlap(adata.var["ensembl_id"], self.tk.gene_token_dict)
 
         tokenized_cells, cell_metadata = self.tk.tokenize_anndata(adata)
         tokenized_dataset = self.tk.create_dataset(
