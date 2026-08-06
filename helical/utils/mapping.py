@@ -164,7 +164,7 @@ def convert_list_gene_symbols_to_ensembl_ids(
 # GenePT, C2S) or Ensembl gene IDs (Geneformer, Tahoe, Nicheformer,
 # Transcriptformer) -- and a dataset in the other system overlaps by exactly zero
 # genes. Each model's process_data reconciles this itself; the primitives live here
-# so the same subtle bug is not written five times (helicalAI/bio-agent#1117, #1123).
+# so the same subtle bug is not written five times.
 # ──────────────────────────────────────────────────────────────────────────────
 
 #: Ensembl **gene** IDs, optionally version-suffixed (ENSG00000141510.17).
@@ -426,12 +426,12 @@ def ensure_ensembl_ids(
       ``var[gene_names]`` -- so :func:`ensure_gene_symbols` has to normalise both.
 
     ``var_names`` are therefore left alone here, and that is not merely incidental:
-    it keeps the caller's identifiers addressable, which is what ``id_to_gene``
+    it keeps the caller's identifiers addressable, which is what token-to-gene
     reverse lookups and caller-supplied gene lists rely on
-    (helicalAI/bio-agent#1128, #1120). Rewriting the index to Ensembl IDs would
-    also silently change the identifier system of anything reported downstream --
-    an ISP run would come back keyed on Ensembl IDs even when the caller supplied
-    symbols.
+    downstream. Rewriting the index to Ensembl IDs would also silently change the
+    identifier system of anything reported by a consumer -- an in-silico
+    perturbation run would come back keyed on Ensembl IDs even when the caller
+    supplied symbols.
     """
     identifiers = _identifiers_of(adata, gene_names)
     reject_null_identifiers(identifiers)

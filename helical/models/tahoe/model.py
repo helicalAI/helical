@@ -141,7 +141,7 @@ class Tahoe(HelicalRNAModel):
 
         # Populate var["ensembl_id"] from whichever system the caller used; see
         # Geneformer for why Ensembl input is used directly rather than
-        # round-tripped through symbols (helicalAI/bio-agent#1117).
+        # round-tripped through symbols.
         if gene_names != "ensembl_id":
             adata = ensure_ensembl_ids(adata, gene_names)
 

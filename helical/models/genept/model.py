@@ -85,12 +85,12 @@ class GenePT(HelicalRNAModel):
         # input where it would have been correct: gene_names="ensembl_id" with real
         # Ensembl IDs raised an error telling the caller to set the flag they had
         # just set, and the default gene_names="index" skipped mapping altogether
-        # and looked Ensembl IDs up in a symbol-keyed table (bio-agent#1117).
+        # and looked Ensembl IDs up in a symbol-keyed table.
         # GenePT's embedding table is keyed on gene symbols, so Ensembl IDs must be
         # mapped *to* symbols -- the opposite direction from the Ensembl-keyed
         # models. The guard here used to read `== "ensembl_id"` (copied from
         # Geneformer, which needs `!=`), which made the mapping unreachable on
-        # every input where it would have been correct (helicalAI/bio-agent#1117).
+        # every input where it would have been correct.
         adata = ensure_gene_symbols(adata, gene_names)
 
         sc.pp.highly_variable_genes(adata, flavor="seurat_v3")

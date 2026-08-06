@@ -365,9 +365,8 @@ class scGPT(HelicalRNAModel):
         self.ensure_data_validity(adata, gene_names, use_batch_labels, use_raw_counts)
 
         # scGPT's vocabulary is keyed on gene symbols, so an Ensembl-indexed
-        # AnnData used to filter to zero genes and raise below
-        # (helicalAI/bio-agent#1117). Ensembl IDs are translated per entry, so a
-        # symbol-keyed or mixed index is unaffected.
+        # AnnData used to filter to zero genes and raise below. Ensembl IDs are
+        # translated per entry, so a symbol-keyed or mixed index is unaffected.
         adata = ensure_gene_symbols(adata, gene_names)
 
         self.gene_names = gene_names

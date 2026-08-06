@@ -190,7 +190,7 @@ class Geneformer(HelicalRNAModel):
         # ENSG00000159239), which a round trip would drop. This used to raise
         # outright whenever every identifier looked Ensembl-like, making an
         # Ensembl-indexed AnnData unusable from any caller that cannot set
-        # gene_names (helicalAI/bio-agent#1117).
+        # gene_names.
         if gene_names != "ensembl_id":
             adata = ensure_ensembl_ids(adata, gene_names)
 

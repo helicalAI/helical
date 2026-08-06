@@ -7,7 +7,7 @@ to be mapped *to* symbols -- the opposite direction from the Ensembl-keyed model
 The guard used to read `if gene_names == "ensembl_id":`, copied from Geneformer
 where the correct comparison is `!=`. That made `map_ensembl_ids_to_gene_symbols`
 unreachable on every input where it would have been correct, and there was no
-test directory for GenePT at all, so nothing caught it (bio-agent#1117).
+test directory for GenePT at all, so nothing caught it.
 
 `GenePT.__new__` is used to skip `__init__`, which would download the embedding
 table; `process_data` needs no instance state beyond the inherited validity check.

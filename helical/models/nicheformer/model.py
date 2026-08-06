@@ -134,8 +134,7 @@ class Nicheformer(HelicalRNAModel):
             col = adata.var[gene_names]
             # Per entry against an anchored gene-ID pattern: `startswith("ENS")`
             # also matches real symbols (ENSA) and transcript/protein IDs, and
-            # `.all()` skips a var index that is only mostly Ensembl IDs
-            # (helicalAI/bio-agent#1123).
+            # `.all()` skips a var index that is only mostly Ensembl IDs.
             if not ensembl_id_mask(col).all():
                 adata = map_gene_symbols_to_ensembl_ids(
                     adata, gene_names if gene_names != "index" else None

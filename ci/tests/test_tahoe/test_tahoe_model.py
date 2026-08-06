@@ -141,7 +141,7 @@ class TestTahoeModel:
 
             # UNKNOWN1/UNKNOWN2 are genuinely unmappable, so the behaviour under
             # test needs no mock of an internal helper -- which also means it keeps
-            # working when that helper changes (helicalAI/bio-agent#1122).
+            # working when that helper changes.
             with pytest.raises(ValueError, match="could be resolved to Ensembl"):
                 tahoe.process_data(data, gene_names="gene_symbols")
 
@@ -290,7 +290,7 @@ class TestTahoeModel:
         which made an Ensembl-indexed AnnData unusable from any caller that cannot
         set gene_names. Tahoe's vocabulary *is* Ensembl-keyed, so those identifiers
         are now used as they are -- deliberately with no symbol round trip, which
-        would drop every gene that has no gene symbol (helicalAI/bio-agent#1122).
+        would drop every gene that has no gene symbol.
 
         Asserted on the reconciliation rather than the whole pipeline: the old test
         never reached the rest of `process_data` either, since it always raised

@@ -36,8 +36,7 @@ def load_gene_features(adata, gene_col_name, species: str = "hsapiens"):
         logging.error(message)
         raise ValueError(message)
     # Anchored per-entry check rather than a substring `contains("ENS")`, which
-    # also matches real gene symbols (ENSA) and transcript/protein IDs
-    # (helicalAI/bio-agent#1123).
+    # also matches real gene symbols (ENSA) and transcript/protein IDs.
     if ensembl_id_mask(adata.var[gene_col_name]).mean() <= 0.5:
         adata = map_gene_symbols_to_ensembl_ids(adata, gene_names=gene_col_name, species=species)
         gene_names = np.array(list(adata.var["ensembl_id"].values))

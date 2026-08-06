@@ -1,4 +1,4 @@
-"""Gene-identifier detection and normalisation primitives (helicalAI/bio-agent#1123).
+"""Gene-identifier detection and normalisation primitives.
 
 These replace five inlined copies of `startswith("ENS")` across the models. All
 three of the following were live bugs in that expression, so each has a test here:
@@ -179,8 +179,9 @@ class TestEnsureEnsemblIds:
         assert list(out.var["ensembl_id"]) == [TP53]
 
     def test_unmapped_symbols_become_empty_not_none(self):
-        # A None reaching a dict key or an `in` check is the aliasing trap from
-        # bio-agent#1112; an empty string simply fails the vocabulary lookup.
+        # A None reaching a dict key or an `in` check silently aliases every
+        # unmapped entry onto one arbitrary gene; an empty string simply fails
+        # the vocabulary lookup.
         out = ensure_ensembl_ids(_adata(["TP53", "NOT_A_REAL_GENE_XYZ"]))
         assert list(out.var["ensembl_id"]) == [TP53, ""]
 
