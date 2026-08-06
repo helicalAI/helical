@@ -347,6 +347,11 @@ def ensure_gene_symbols(
 
     Returns the input object **unchanged and uncopied** when no identifier is an
     Ensembl gene ID; otherwise returns a new object, leaving the caller's untouched.
+
+    Note the deliberate asymmetry with :func:`ensure_ensembl_ids`, which writes a
+    column and never touches ``var_names``. Each helper performs the minimum
+    mutation its consumers require, and the Ensembl-keyed models happen to need
+    less; see that function's docstring for why.
     """
     identifiers = _identifiers_of(adata, gene_names)
     reject_null_identifiers(identifiers)
@@ -408,9 +413,25 @@ def ensure_ensembl_ids(
     translated; unmapped entries get an empty string, never None, so they simply
     fail the vocabulary lookup instead of resolving through a bogus key.
 
-    ``var_names`` are left alone: the caller's identifiers stay addressable, which
-    is what ``id_to_gene``-style reverse lookups and caller-supplied gene lists
-    need (helicalAI/bio-agent#1128).
+    Why this writes a column while :func:`ensure_gene_symbols` writes the index
+    -------------------------------------------------------------------------
+    The two are deliberately asymmetric, because their consumers are. Each performs
+    the **minimum mutation its consumers require**:
+
+    * Ensembl-keyed models read the *column*. Geneformer's tokenizer reads
+      ``data.var.ensembl_id`` and Tahoe reads ``var[gene_id_key]``; neither uses
+      ``var_names`` to identify a gene. So writing the column is sufficient here.
+    * Symbol-keyed models disagree with each other, and between them cover both
+      surfaces -- GenePT and UCE read ``var_names``, scGPT reads
+      ``var[gene_names]`` -- so :func:`ensure_gene_symbols` has to normalise both.
+
+    ``var_names`` are therefore left alone here, and that is not merely incidental:
+    it keeps the caller's identifiers addressable, which is what ``id_to_gene``
+    reverse lookups and caller-supplied gene lists rely on
+    (helicalAI/bio-agent#1128, #1120). Rewriting the index to Ensembl IDs would
+    also silently change the identifier system of anything reported downstream --
+    an ISP run would come back keyed on Ensembl IDs even when the caller supplied
+    symbols.
     """
     identifiers = _identifiers_of(adata, gene_names)
     reject_null_identifiers(identifiers)
