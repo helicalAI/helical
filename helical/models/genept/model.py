@@ -4,7 +4,7 @@ import numpy as np
 from anndata import AnnData
 from helical.utils.downloader import Downloader
 from helical.models.genept.genept_config import GenePTConfig
-from helical.utils.mapping import map_ensembl_ids_to_gene_symbols
+from helical.utils.mapping import ensure_gene_symbols
 import scanpy as sc
 import torch
 import json
@@ -56,19 +56,17 @@ class GenePT(HelicalRNAModel):
         Parameters
         ----------
         adata : AnnData
-            The AnnData object containing the data to be processed. GenePT uses Ensembl IDs to identify genes
-            and currently supports only human genes. If the AnnData object already has an 'ensembl_id' column,
-            the mapping step can be skipped.
+            The AnnData object containing the data to be processed. GenePT identifies genes by
+            **gene symbol** -- its embedding table is keyed on symbols (see `get_text_embeddings`)
+            -- and currently supports only human genes. Ensembl gene IDs are mapped to symbols
+            automatically.
         gene_names : str, optional, default="index"
-            The column in `adata.var` that contains the gene names. If set to a value other than "ensembl_id",
-            the gene symbols in that column will be mapped to Ensembl IDs using the 'pyensembl' package,
-            which retrieves mappings from the Ensembl FTP server and loads them into a local database.
-            - If set to "index", the index of the AnnData object will be used and mapped to Ensembl IDs.
-            - If set to "ensembl_id", no mapping will occur.
-            Special case:
-                If the index of `adata` already contains Ensembl IDs, setting this to "index" will result in
-                invalid mappings. In such cases, create a new column containing Ensembl IDs and pass "ensembl_id"
-                as the value of `gene_names`.
+            The column in `adata.var` that holds the gene identifiers.
+            - "index" (default): the index of the AnnData object is used.
+            - any other column name: that column is used.
+            Either way, if the identifiers are Ensembl gene IDs they are mapped to gene symbols
+            and `var_names` is set to the result; genes with no symbol are dropped. Identifiers
+            that are already symbols are left untouched.
         use_raw_counts : bool, optional, default=True
             Determines whether raw counts should be used.
 
@@ -80,18 +78,20 @@ class GenePT(HelicalRNAModel):
         LOGGER.info("Processing data for GenePT.")
         self.ensure_rna_data_validity(adata, gene_names, use_raw_counts)
 
-        # map gene symbols to ensemble ids if provided
-        if gene_names == "ensembl_id":
-            if (adata.var[gene_names].str.startswith("ENS").all()) or (
-                adata.var[gene_names].str.startswith("None").any()
-            ):
-                message = (
-                    "It seems an anndata with 'ensemble ids' and/or 'None' was passed. "
-                    "Please set gene_names='ensembl_id' and remove 'None's to skip mapping."
-                )
-                LOGGER.info(message)
-                raise ValueError(message)
-            adata = map_ensembl_ids_to_gene_symbols(adata, gene_names)
+        # GenePT's embedding table is keyed on gene symbols, so Ensembl IDs have to
+        # be mapped *to* symbols -- the opposite direction from the Ensembl-keyed
+        # models. This condition used to read `== "ensembl_id"` (copied from
+        # Geneformer, which needs `!=`), which made the mapping unreachable on every
+        # input where it would have been correct: gene_names="ensembl_id" with real
+        # Ensembl IDs raised an error telling the caller to set the flag they had
+        # just set, and the default gene_names="index" skipped mapping altogether
+        # and looked Ensembl IDs up in a symbol-keyed table.
+        # GenePT's embedding table is keyed on gene symbols, so Ensembl IDs must be
+        # mapped *to* symbols -- the opposite direction from the Ensembl-keyed
+        # models. The guard here used to read `== "ensembl_id"` (copied from
+        # Geneformer, which needs `!=`), which made the mapping unreachable on
+        # every input where it would have been correct.
+        adata = ensure_gene_symbols(adata, gene_names)
 
         sc.pp.highly_variable_genes(adata, flavor="seurat_v3")
         sc.pp.normalize_total(adata, target_sum=1e4)
