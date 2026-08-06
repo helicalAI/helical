@@ -2,6 +2,7 @@ import logging
 import re
 from typing import List, Optional, Sequence
 from helical.utils.downloader import Downloader
+import numpy as np
 import pandas as pd
 from anndata import AnnData
 from pathlib import Path
@@ -272,8 +273,6 @@ def _collapse_duplicates(resolved: List[Optional[str]], adata: AnnData) -> "pd.S
     it as a dataset with no ``.sum`` and the common case must not pay for totals it
     would never consult.
     """
-    import numpy as np
-
     counts: dict = {}
     for name in resolved:
         if name:
