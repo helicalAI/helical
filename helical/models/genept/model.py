@@ -91,7 +91,7 @@ class GenePT(HelicalRNAModel):
         # models. The guard here used to read `== "ensembl_id"` (copied from
         # Geneformer, which needs `!=`), which made the mapping unreachable on
         # every input where it would have been correct (helicalAI/bio-agent#1117).
-        adata = ensure_gene_symbols(adata, gene_names, model="GenePT")
+        adata = ensure_gene_symbols(adata, gene_names)
 
         sc.pp.highly_variable_genes(adata, flavor="seurat_v3")
         sc.pp.normalize_total(adata, target_sum=1e4)

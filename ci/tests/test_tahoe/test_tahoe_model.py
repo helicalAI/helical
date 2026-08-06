@@ -300,7 +300,7 @@ class TestTahoeModel:
         data.var["gene_symbols"] = ["ENSG00000187634", "ENSG00000188290"]
         data.obs["cell_type"] = ["CD4 T cells"]
 
-        out = ensure_ensembl_ids(data, "gene_symbols", model="Tahoe")
+        out = ensure_ensembl_ids(data, "gene_symbols")
 
         assert list(out.var["ensembl_id"]) == [
             "ENSG00000187634",

@@ -192,14 +192,12 @@ class Geneformer(HelicalRNAModel):
         # Ensembl-indexed AnnData unusable from any caller that cannot set
         # gene_names (helicalAI/bio-agent#1117).
         if gene_names != "ensembl_id":
-            adata = ensure_ensembl_ids(adata, gene_names, model="Geneformer")
+            adata = ensure_ensembl_ids(adata, gene_names)
 
         # Accepting Ensembl input means shape alone no longer tells us the data is
         # usable, so check vocabulary membership instead -- well-formed IDs from
         # another species would otherwise tokenize to nothing, silently.
-        require_vocabulary_overlap(
-            adata.var["ensembl_id"], self.tk.gene_token_dict, model="Geneformer"
-        )
+        require_vocabulary_overlap(adata.var["ensembl_id"], self.tk.gene_token_dict)
 
         tokenized_cells, cell_metadata = self.tk.tokenize_anndata(adata)
         tokenized_dataset = self.tk.create_dataset(

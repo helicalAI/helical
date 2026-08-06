@@ -207,9 +207,7 @@ def strip_ensembl_version(value: object) -> str:
     return text.split(".", 1)[0] if is_ensembl_gene_id(text) else text
 
 
-def reject_null_identifiers(
-    identifiers: Sequence[object], model: str = "model"
-) -> None:
+def reject_null_identifiers(identifiers: Sequence[object]) -> None:
     """Raise if any identifier is a null sentinel rather than a gene name.
 
     A literal ``"None"`` in a gene column means an earlier mapping step already
@@ -223,15 +221,13 @@ def reject_null_identifiers(
         message = (
             f"{n_null} gene identifier(s) are null placeholders ('None'/'nan'/empty) "
             f"rather than gene names, so an earlier mapping step has already failed. "
-            f"Remove or repair those entries before passing the data to {model}."
+            f"Remove or repair those entries before processing the data."
         )
         LOGGER.error(message)
         raise ValueError(message)
 
 
-def require_vocabulary_overlap(
-    identifiers: Sequence[object], vocabulary, model: str = "model"
-) -> None:
+def require_vocabulary_overlap(identifiers: Sequence[object], vocabulary) -> None:
     """Raise when no identifier is in ``vocabulary``.
 
     Catches the case the old namespace guards caught by accident: identifiers that
@@ -242,7 +238,7 @@ def require_vocabulary_overlap(
     """
     if not any(value and value in vocabulary for value in identifiers):
         message = (
-            f"None of the gene identifiers are in {model}'s vocabulary "
+            f"None of the gene identifiers are in the model's vocabulary "
             f"({len(vocabulary)} entries). They are well-formed, so this usually "
             f"means they are from a different annotation or species than the model "
             f"was trained on. Check .var of the anndata input object."
@@ -300,16 +296,13 @@ def _collapse_duplicates(resolved: List[Optional[str]], adata: AnnData) -> "pd.S
     )
 
 
-def _log_accounting(
-    model: str, resolved: List[Optional[str]], keep: "pd.Series"
-) -> None:
+def _log_accounting(resolved: List[Optional[str]], keep: "pd.Series") -> None:
     n_in = len(resolved)
     n_out = int(keep.sum())
     n_unmapped = sum(1 for name in resolved if not name)
     LOGGER.info(
-        "%s gene identifiers: %d in -> %d out (%d dropped with no match, "
+        "Gene identifiers: %d in -> %d out (%d dropped with no match, "
         "%d dropped as duplicate names).",
-        model,
         n_in,
         n_out,
         n_unmapped,
@@ -321,7 +314,6 @@ def ensure_gene_symbols(
     adata: AnnData,
     gene_names: str = "index",
     species: str = "hsapiens",
-    model: str = "model",
 ) -> AnnData:
     """Return ``adata`` with ``var_names`` guaranteed to be gene symbols.
 
@@ -332,7 +324,7 @@ def ensure_gene_symbols(
     counts logged. Returns the input unchanged when nothing is an Ensembl ID.
     """
     identifiers = _identifiers_of(adata, gene_names)
-    reject_null_identifiers(identifiers, model)
+    reject_null_identifiers(identifiers)
     is_ensembl = ensembl_id_mask(identifiers)
     if not is_ensembl.any():
         return adata
@@ -350,12 +342,12 @@ def ensure_gene_symbols(
     ]
 
     keep = _collapse_duplicates(resolved, adata)
-    _log_accounting(model, resolved, keep)
+    _log_accounting(resolved, keep)
     if not keep.any():
         message = (
             f"None of the Ensembl gene IDs could be mapped to gene symbols, which "
-            f"{model}'s vocabulary is keyed on. Check the identifiers in .var of the "
-            f"anndata input object, and that species={species!r} matches the data."
+            f"this model's vocabulary is keyed on. Check the identifiers in .var of "
+            f"the anndata input object, and that species={species!r} matches the data."
         )
         LOGGER.error(message)
         raise ValueError(message)
@@ -380,7 +372,6 @@ def ensure_ensembl_ids(
     adata: AnnData,
     gene_names: str = "index",
     species: str = "hsapiens",
-    model: str = "model",
 ) -> AnnData:
     """Return ``adata`` with a ``var["ensembl_id"]`` column, from either system.
 
@@ -397,7 +388,7 @@ def ensure_ensembl_ids(
     need (helicalAI/bio-agent#1128).
     """
     identifiers = _identifiers_of(adata, gene_names)
-    reject_null_identifiers(identifiers, model)
+    reject_null_identifiers(identifiers)
     is_ensembl = ensembl_id_mask(identifiers)
 
     to_convert = sorted({v for v, flag in zip(identifiers, is_ensembl) if not flag})
@@ -417,16 +408,15 @@ def ensure_ensembl_ids(
     if not any(resolved):
         message = (
             f"None of the gene identifiers could be resolved to Ensembl gene IDs, "
-            f"which {model}'s vocabulary is keyed on. Check the identifiers in .var "
-            f"of the anndata input object, and that species={species!r} matches."
+            f"which this model's vocabulary is keyed on. Check the identifiers in "
+            f".var of the anndata input object, and that species={species!r} matches."
         )
         LOGGER.error(message)
         raise ValueError(message)
 
     LOGGER.info(
-        "%s gene identifiers: %d already Ensembl IDs, %d mapped from symbols, "
+        "Gene identifiers: %d already Ensembl IDs, %d mapped from symbols, "
         "%d unresolved.",
-        model,
         int(is_ensembl.sum()),
         int((~is_ensembl).sum()) - resolved.count(""),
         resolved.count(""),

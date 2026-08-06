@@ -132,7 +132,7 @@ class UCE(HelicalRNAModel):
         # UCE looks genes up by symbol in its protein-embedding table, so an
         # Ensembl-indexed AnnData matched nothing and hit the "no matching genes"
         # error in gene_embeddings.py (helicalAI/bio-agent#1117).
-        adata = ensure_gene_symbols(adata, gene_names, model="UCE")
+        adata = ensure_gene_symbols(adata, gene_names)
 
         if gene_names != "index":
             adata.var.index = adata.var[gene_names]

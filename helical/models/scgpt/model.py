@@ -368,7 +368,7 @@ class scGPT(HelicalRNAModel):
         # AnnData used to filter to zero genes and raise below
         # (helicalAI/bio-agent#1117). Ensembl IDs are translated per entry, so a
         # symbol-keyed or mixed index is unaffected.
-        adata = ensure_gene_symbols(adata, gene_names, model="scGPT")
+        adata = ensure_gene_symbols(adata, gene_names)
 
         self.gene_names = gene_names
         if fine_tuning:

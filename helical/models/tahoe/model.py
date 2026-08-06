@@ -143,13 +143,13 @@ class Tahoe(HelicalRNAModel):
         # Geneformer for why Ensembl input is used directly rather than
         # round-tripped through symbols (helicalAI/bio-agent#1117).
         if gene_names != "ensembl_id":
-            adata = ensure_ensembl_ids(adata, gene_names, model="Tahoe")
+            adata = ensure_ensembl_ids(adata, gene_names)
 
         gene_id_key = "ensembl_id"
 
         # Membership, not shape, is what tells us the identifiers are usable now
         # that Ensembl input is accepted.
-        require_vocabulary_overlap(adata.var[gene_id_key], self.vocab, model="Tahoe")
+        require_vocabulary_overlap(adata.var[gene_id_key], self.vocab)
 
         # Map genes to vocabulary
         adata.var["id_in_vocab"] = [

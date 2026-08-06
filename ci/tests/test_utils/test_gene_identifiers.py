@@ -185,11 +185,11 @@ class TestGuards:
         # What the removed namespace guards caught by accident: well-formed IDs
         # from the wrong annotation would otherwise tokenize to nothing, silently.
         with pytest.raises(ValueError, match="vocabulary"):
-            require_vocabulary_overlap([MOUSE], {TP53: 1, ACTB: 2}, model="test")
+            require_vocabulary_overlap([MOUSE], {TP53: 1, ACTB: 2})
 
     def test_vocabulary_overlap_accepts_a_partial_match(self):
-        require_vocabulary_overlap([MOUSE, TP53], {TP53: 1}, model="test")
+        require_vocabulary_overlap([MOUSE, TP53], {TP53: 1})
 
     def test_vocabulary_overlap_ignores_unresolved_entries(self):
         with pytest.raises(ValueError, match="vocabulary"):
-            require_vocabulary_overlap(["", ""], {TP53: 1}, model="test")
+            require_vocabulary_overlap(["", ""], {TP53: 1})
