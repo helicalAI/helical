@@ -6,7 +6,7 @@ import torch
 from typing import Union, List
 from torch.utils.data import DataLoader
 from helical.models.tahoe.tahoe_config import TahoeConfig
-from helical.utils.mapping import map_gene_symbols_to_ensembl_ids
+from helical.utils.mapping import ensure_ensembl_ids, require_vocabulary_overlap
 import pandas as pd
 from helical.models.tahoe.tahoe_x1.model import TXModel
 from helical.models.tahoe.tahoe_x1.utils import loader_from_adata
@@ -139,25 +139,17 @@ class Tahoe(HelicalRNAModel):
         LOGGER.info("Processing data for Tahoe.")
         self.ensure_rna_data_validity(adata, gene_names, use_raw_counts)
 
-        # Map gene symbols to Ensembl IDs if provided
+        # Populate var["ensembl_id"] from whichever system the caller used; see
+        # Geneformer for why Ensembl input is used directly rather than
+        # round-tripped through symbols.
         if gene_names != "ensembl_id":
-            if (adata.var[gene_names].str.startswith("ENS").all()) or (
-                adata.var[gene_names].str.startswith("None").any()
-            ):
-                message = (
-                    "It seems an anndata with 'ensemble ids' and/or 'None' was passed. "
-                    "Please set gene_names='ensembl_id' and remove 'None's to skip mapping."
-                )
-                LOGGER.error(message)
-                raise ValueError(message)
-            adata = map_gene_symbols_to_ensembl_ids(adata, gene_names)
-
-            if adata.var["ensembl_id"].isnull().all():
-                message = "All gene symbols could not be mapped to Ensembl IDs. Please check the input data."
-                LOGGER.error(message)
-                raise ValueError(message)
+            adata = ensure_ensembl_ids(adata, gene_names)
 
         gene_id_key = "ensembl_id"
+
+        # Membership, not shape, is what tells us the identifiers are usable now
+        # that Ensembl input is accepted.
+        require_vocabulary_overlap(adata.var[gene_id_key], self.vocab)
 
         # Map genes to vocabulary
         adata.var["id_in_vocab"] = [

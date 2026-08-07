@@ -4,6 +4,7 @@ import scanpy as sc
 from helical.models.base_models import HelicalRNAModel
 from helical.models.scgpt.scgpt_config import scGPTConfig
 import numpy as np
+from helical.utils.mapping import ensure_gene_symbols
 import pandas as pd
 from anndata import AnnData
 import logging
@@ -362,6 +363,11 @@ class scGPT(HelicalRNAModel):
 
         LOGGER.info(f"Processing data for scGPT.")
         self.ensure_data_validity(adata, gene_names, use_batch_labels, use_raw_counts)
+
+        # scGPT's vocabulary is keyed on gene symbols, so an Ensembl-indexed
+        # AnnData used to filter to zero genes and raise below. Ensembl IDs are
+        # translated per entry, so a symbol-keyed or mixed index is unaffected.
+        adata = ensure_gene_symbols(adata, gene_names)
 
         self.gene_names = gene_names
         if fine_tuning:
