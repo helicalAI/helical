@@ -244,3 +244,11 @@ jobs:
       - name: Run Notebooks
         run: |
           pytest --durations=0 --nbmake ./examples/notebooks/*.ipynb
+
+  ci:
+    needs: [tests, integration-tests, flash-attn-integration, notebooks]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

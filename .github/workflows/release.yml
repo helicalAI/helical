@@ -310,3 +310,10 @@ jobs:
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
 
+  ci:
+    needs: [fresh-install, tests, integration-tests, flash-attn-integration, notebooks]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
