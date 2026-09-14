@@ -43,4 +43,4 @@ class Logger:
             )
 
         else:
-            logging.disable = True
+            logging.getLogger("helical").setLevel(logging.CRITICAL + 1)
