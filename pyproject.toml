@@ -30,7 +30,7 @@ dependencies = [
     # Pinned exact: prebuilt flash-attn/mamba/causal-conv1d wheels only reach
     # torch 2.10, and only as cu13+cp312 builds. Bump deliberately (needs new
     # accelerator wheels + matching CUDA 13 / Python 3.12), not incidentally.
-    'torch==2.10.0',
+    'torch==2.13.0',
     'accelerate==1.14.0',
     'transformers>=5.3.0',  # security floor: clears CVE-2026-4372 (fixed 5.3.0)
     'scikit-misc>=0.5.2',
@@ -80,7 +80,7 @@ evo-2 = [
 [tool.hatch.metadata]
 allow-direct-references = true # Allows installing package from git
 
-# Default PyPI torch==2.10.0 is a cu12 build (pins cuda-bindings==12.9.4), which
+# Default PyPI torch==2.13.0 is a cu12 build (pins cuda-bindings==12.9.4), which
 # collides with the cu13 RAPIDS/cuda-python stack. Pull torch from the cu130
 # index so it resolves to its CUDA 13 build (cuda-bindings 13.x); the nvidia
 # index supplies the cu13 nvidia-*/cuda-bindings deps that build pulls in.
