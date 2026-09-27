@@ -96,6 +96,23 @@ class TestGeneformerTokenizer:
             assert isinstance(result, AnnData)
             assert result.shape == expected_shape
 
+    def test_sum_ensembl_ids_collapsed_keeps_ensembl_id(self):
+        # When IDs are collapsed, the result must still carry var["ensembl_id"]
+        # (holding the collapsed IDs): tokenize_anndata reads that column next.
+        adata = AnnData(X=sp.csr_matrix([[1, 2, 3, 7], [4, 5, 6, 8]]))
+        adata.var["ensembl_id"] = ["ENSG1", "ENSG2", "ENSG3", "ENSG3"]
+        gene_mapping_dict = {"ENSG1": "Gene1", "ENSG2": "Gene2", "ENSG3": "Gene2"}
+        gene_token_dict = {"Gene1": 1, "Gene2": 2}
+
+        result = sum_ensembl_ids(adata, True, gene_mapping_dict, gene_token_dict)
+
+        assert "ensembl_id" in result.var.columns
+        assert list(result.var["ensembl_id"]) == list(result.var_names)
+        assert set(result.var["ensembl_id"]) == {"Gene1", "Gene2"}
+        summed = result[:, result.var["ensembl_id"] == "Gene2"].X
+        summed = summed.toarray() if sp.issparse(summed) else np.asarray(summed)
+        np.testing.assert_array_equal(summed.ravel(), [2 + 3 + 7, 5 + 6 + 8])
+
     def test_tokenize_anndata_sparse_matrix(self, tokenizer_v1):
         # Create a test AnnData object
         adata = AnnData(X=sp.csr_matrix([[1, 2, 3], [4, 5, 6]]))
