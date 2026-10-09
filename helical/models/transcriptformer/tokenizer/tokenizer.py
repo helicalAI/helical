@@ -7,13 +7,22 @@ class BatchGeneTokenizer:
     def __init__(self, gene_vocab):
         self.gene_vocab = gene_vocab
         self.unknown_token = gene_vocab["unknown"]
-        self.gene_map = np.vectorize(self.gene_map)
 
     def gene_map(self, x):
         return self.gene_vocab.get(x, self.unknown_token)
 
-    def __call__(self, gene_names):
-        toks = torch.tensor(self.gene_map(gene_names))
+    def __call__(self, gene_names, index=None):
+        """Map gene names to tokens.
+
+        With ``index``, return ``tokens[index]``: the names are looked up once
+        each and the result is gathered, instead of one dict lookup per
+        position of a cells x genes grid.
+        """
+        toks = torch.tensor(
+            [self.gene_map(x) for x in np.ravel(gene_names)], dtype=torch.long
+        ).reshape(np.shape(gene_names))
+        if index is not None:
+            toks = toks[index]
         unknown_mask = toks == self.unknown_token
         if unknown_mask.any():
             n_unknown = unknown_mask.sum().item()
