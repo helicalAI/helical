@@ -11,11 +11,16 @@ from pathlib import Path
 from tqdm import tqdm
 from helical.constants.paths import CACHE_DIR_HELICAL
 import hashlib
+from typing import Optional
 
 LOGGER = logging.getLogger(__name__)
 INTERVAL = 1000
 CHUNK_SIZE = 1024 * 1024 * 10
 LOADING_BAR_LENGTH = 50
+
+# Files already checked against S3 in this process. Checking costs a HEAD
+# request and, for a single-part upload, an MD5 of the whole file.
+_VALIDATED_FILES: set = set()
 
 
 class Downloader(Logger):
@@ -71,9 +76,19 @@ class Downloader(Logger):
         output = Path(CACHE_DIR_HELICAL) / name
         url = f"https://{bucket_name}.s3.{region}.amazonaws.com/{s3_key}"
 
+        if output in _VALIDATED_FILES and output.is_file():
+            return
+
         output.parent.mkdir(parents=True, exist_ok=True)
 
-        if not self.check_file_valid(url, output):
+        valid = self._validate(url, output)
+        if valid is None and output.is_file():
+            # S3 could not be asked. The cached copy may well be fine, and
+            # deleting it would leave nothing to fall back on.
+            LOGGER.warning(
+                f"Could not check '{output}' against the remote copy. Using the cached file."
+            )
+        elif not valid:
             if output.is_file():
                 LOGGER.warning(
                     f"File '{output}' is corrupted or invalid. Deleting and re-downloading."
@@ -90,17 +105,29 @@ class Downloader(Logger):
                 LOGGER.info(f"File saved to: '{output}'")
         else:
             LOGGER.debug(f"File '{output}' already exists and is valid.")
+        _VALIDATED_FILES.add(output)
 
     def check_file_valid(self, url: str, file_path: Path) -> bool:
         """
         Validates a local file against the remote object's ETag or Content-Length.
         Returns True if file exists and is considered valid.
         """
-        try:
-            if not file_path.is_file():
-                return False
+        return self._validate(url, file_path) is True
 
+    def _validate(self, url: str, file_path: Path) -> Optional[bool]:
+        """Like ``check_file_valid``, but returns None when the remote object
+        could not be checked: the request failed or returned an error status.
+        """
+        if not file_path.is_file():
+            return False
+        try:
             head = self.session.head(url)
+            head.raise_for_status()
+        except Exception as e:
+            LOGGER.warning(f"Could not reach '{url}' to validate {file_path}: {e}")
+            return None
+
+        try:
             etag = head.headers.get("ETag", "").strip('"')
             remote_size = int(head.headers.get("Content-Length", 0))
             local_size = file_path.stat().st_size
