@@ -36,7 +36,7 @@ dependencies = [
     'scikit-misc>=0.5.2',
     'einops==0.8.1',
     'omegaconf==2.3.0',
-    'hydra-core==1.3.2',
+    'hydra-core==1.3.4',
     'pybiomart',
     'datasets==3.6.0',
     'sentencepiece>=0.2.0',
