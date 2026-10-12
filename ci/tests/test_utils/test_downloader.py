@@ -24,7 +24,7 @@ def _response(status=200, content=CONTENT):
 @pytest.fixture
 def cache(tmp_path, monkeypatch):
     monkeypatch.setattr(downloader_module, "CACHE_DIR_HELICAL", str(tmp_path))
-    monkeypatch.setattr(downloader_module, "_VALIDATED_FILES", set())
+    monkeypatch.setattr(Downloader, "_validated", set())
     return tmp_path
 
 
@@ -77,6 +77,7 @@ def test_validated_file_deleted_later_is_downloaded_again(cache):
     "head",
     [
         mock.Mock(side_effect=requests.ConnectionError("offline")),
+        mock.Mock(side_effect=requests.Timeout("dropped")),
         # S3 error bodies carry no ETag and their own length.
         mock.Mock(return_value=_response(status=403, content=b"<Error/>")),
     ],
@@ -148,3 +149,29 @@ def test_static_ensembl_table_is_parsed_once(tmp_path, monkeypatch):
         assert downloader_cls.call_count == 1
     finally:
         mapping_module._load_static_ensembl_df.cache_clear()
+
+
+def test_check_has_a_timeout(cache):
+    _write(cache)
+    head = mock.Mock(return_value=_response())
+    _downloader(head).download_via_name(NAME)
+    assert head.call_args.kwargs["timeout"] == downloader_module.HEAD_TIMEOUT_SECONDS
+
+
+def test_file_that_could_not_be_checked_is_checked_again(cache):
+    _write(cache)
+    head = mock.Mock(side_effect=[requests.ConnectionError("offline"), _response()])
+    downloader = _downloader(head)
+
+    downloader.download_via_name(NAME)  # remote unreachable: not marked checked
+    downloader.download_via_name(NAME)  # checked now
+    downloader.download_via_name(NAME)  # already checked
+
+    assert head.call_count == 2
+
+
+def test_error_other_than_a_request_failure_is_raised(cache):
+    _write(cache)
+    downloader = _downloader(mock.Mock(side_effect=ValueError("bug")))
+    with pytest.raises(ValueError, match="bug"):
+        downloader.download_via_name(NAME)
