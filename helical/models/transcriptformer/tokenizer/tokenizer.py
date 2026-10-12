@@ -11,7 +11,9 @@ class BatchGeneTokenizer:
     def gene_map(self, x):
         return self.gene_vocab.get(x, self.unknown_token)
 
-    def __call__(self, gene_names, index=None):
+    def __call__(
+        self, gene_names: np.ndarray, index: torch.Tensor | None = None
+    ) -> torch.Tensor:
         """Map gene names to tokens.
 
         With ``index``, return ``tokens[index]``: the names are looked up once
