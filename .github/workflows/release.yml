@@ -267,8 +267,19 @@ jobs:
     needs: notebooks
     runs-on: self-hosted
     steps:
+      # GITHUB_TOKEN cannot push v* tags (helical-release-tags ruleset). Checkout stores
+      # this token, so the tag push uses it.
+      - name: Get helical-release-bot token
+        id: release-bot
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0
+        with:
+          client-id: ${{ vars.RELEASE_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+
       - name: Checkout repository
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5
+        with:
+          token: ${{ steps.release-bot.outputs.token }}
 
       - name: setup python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
