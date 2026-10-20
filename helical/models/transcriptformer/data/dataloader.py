@@ -141,7 +141,7 @@ def process_batch(
 
     # Tokenize gene names
     gene_names_batch = gene_names[ids_batch.numpy()]
-    gene_tokens_batch = gene_tokenizer(gene_names_batch)
+    gene_tokens_batch = gene_tokenizer(gene_names, index=ids_batch)
 
     # Apply padding and normalization
     if pad_zeros:
