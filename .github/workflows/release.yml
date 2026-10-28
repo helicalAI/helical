@@ -5,6 +5,12 @@ on:
     branches:
       - release
 
+# A new push to a PR cancels the run still going on its previous commit, to free
+# the self-hosted runners.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
