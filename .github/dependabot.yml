@@ -2,6 +2,8 @@ version: 2
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
+    # Open GitHub Actions update PRs against main (the default branch is release).
+    target-branch: "main"
     schedule:
       interval: "weekly"
     # Wait 7 days before proposing updates to newly published versions so
