@@ -1,20 +1,81 @@
 import functools
+import io
 import logging
 import re
+import time
 from typing import List, Optional, Sequence
 from helical.utils.downloader import Downloader
 import numpy as np
 import pandas as pd
+import requests
 from anndata import AnnData
 from pathlib import Path
 from helical.constants.paths import CACHE_DIR_HELICAL
 
 LOGGER = logging.getLogger(__name__)
 
+_BIOMART_URL = "https://www.ensembl.org/biomart/martservice"
+_BIOMART_HEADER = "Gene stable ID\tGene name\n"
+_BIOMART_COMPLETION_STAMP = "[success]\n"
+_BIOMART_ATTEMPTS = 5
+_BIOMART_BACKOFF_SECONDS = 2
 
-def _get_ensembl_mart_df(species: str = "hsapiens") -> pd.DataFrame:
+
+class _BiomartUnavailable(Exception):
+    """A BioMart response that a later attempt may get right."""
+
+
+def _query_biomart(dataset: str) -> str:
     """
-    Fetch a (species)_gene_ensembl table via pybiomart.
+    Return the ensembl_gene_id / external_gene_name TSV for `dataset`, retrying with
+    exponential backoff.
+
+    Ensembl's outage page comes back as HTTP 200, so a response only counts when it
+    starts with the TSV header and ends with BioMart's completion stamp.
+    """
+    query = (
+        '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE Query>'
+        '<Query virtualSchemaName="default" formatter="TSV" header="1" uniqueRows="1" '
+        'completionStamp="1" datasetConfigVersion="0.6">'
+        f'<Dataset name="{dataset}" interface="default">'
+        '<Attribute name="ensembl_gene_id"/><Attribute name="external_gene_name"/>'
+        "</Dataset></Query>"
+    )
+    for attempt in range(1, _BIOMART_ATTEMPTS + 1):
+        try:
+            response = requests.get(_BIOMART_URL, params={"query": query}, timeout=(10, 300))
+            text = response.text
+            # A usage error (e.g. an unknown dataset) fails the same way on every attempt;
+            # other "Query ERROR"s can be server faults.
+            if text.startswith("Query ERROR") and "Exception::Usage" in text:
+                raise ValueError(f"Ensembl BioMart refused the query for {dataset}: {text.strip()}")
+            if 400 <= response.status_code < 500 and response.status_code != 429:
+                raise RuntimeError(f"Ensembl BioMart returned HTTP {response.status_code} for {dataset}.")
+            if not (
+                response.status_code == 200
+                and text.startswith(_BIOMART_HEADER)
+                and text.endswith(_BIOMART_COMPLETION_STAMP)
+            ):
+                raise _BiomartUnavailable(f"HTTP {response.status_code}, not a complete TSV")
+            return text[: -len(_BIOMART_COMPLETION_STAMP)]
+        except (requests.RequestException, _BiomartUnavailable) as error:
+            if attempt == _BIOMART_ATTEMPTS:
+                raise RuntimeError(
+                    f"Ensembl BioMart is unavailable after {attempt} attempts: {error}"
+                ) from error
+            delay = _BIOMART_BACKOFF_SECONDS * 2 ** (attempt - 1)
+            LOGGER.warning("Ensembl BioMart attempt %d failed (%s); retrying in %ds.", attempt, error, delay)
+            time.sleep(delay)
+
+
+# `species` is positional-only so that every call shares one lru_cache key.
+@functools.lru_cache(maxsize=None)
+def _get_ensembl_mart_df(species: str = "hsapiens", /) -> pd.DataFrame:
+    """
+    Fetch a (species)_gene_ensembl table from Ensembl BioMart.
+
+    The table is fetched once per species and process and shared between callers,
+    so callers must not modify it in place.
 
     Parameters
     ----------
@@ -25,11 +86,19 @@ def _get_ensembl_mart_df(species: str = "hsapiens") -> pd.DataFrame:
     -------
     pandas.DataFrame
         DataFrame with columns "ensembl_id" and "gene_name".
+
+    Raises
+    ------
+    ValueError
+        If `species` is malformed or BioMart has no dataset for it.
+    RuntimeError
+        If BioMart does not return the table after all retries.
     """
-    import pybiomart
-    server = pybiomart.Server(host="http://www.ensembl.org")
-    dataset = server.marts["ENSEMBL_MART_ENSEMBL"].datasets[f"{species}_gene_ensembl"]
-    df = dataset.query(attributes=["ensembl_gene_id", "external_gene_name"])
+    # `species` is placed inside the query XML.
+    if not re.fullmatch(r"[a-z0-9_]+", species):
+        raise ValueError(f"Invalid species {species!r}: expected an Ensembl prefix such as 'mmusculus'.")
+    tsv = _query_biomart(f"{species}_gene_ensembl")
+    df = pd.read_csv(io.StringIO(tsv), sep="\t")
     df = df.rename(columns={"Gene stable ID": "ensembl_id", "Gene name": "gene_name"})
     return df.sort_values(by="ensembl_id")
 
@@ -38,7 +107,7 @@ def map_gene_symbols_to_ensembl_ids(
     adata: AnnData, gene_names: Optional[str] = None, species: str = "hsapiens"
 ) -> AnnData:
     """
-    Map gene symbols to Ensembl Gene IDs using pybiomart.
+    Map gene symbols to Ensembl Gene IDs using Ensembl BioMart.
 
     Due to duplication events, some symbols map to multiple Ensembl IDs; we take
     the first occurrence after de-duplication.
@@ -68,7 +137,7 @@ def map_ensembl_ids_to_gene_symbols(
     adata: AnnData, ensembl_id_key: str = "ensembl_id", species: str = "hsapiens"
 ) -> AnnData:
     """
-    Map Ensembl Gene IDs to gene symbols using pybiomart.
+    Map Ensembl Gene IDs to gene symbols using Ensembl BioMart.
 
     Parameters
     ----------
@@ -93,7 +162,7 @@ def map_ensembl_ids_to_gene_symbols(
 def _load_static_ensembl_df() -> pd.DataFrame:
     """
     Load a static mapping table between gene names and ensembl ids for 'hsapiens'.
-    This avoids having to call an unstable API endpoint from pybiomart.
+    This avoids having to call the unstable Ensembl BioMart endpoint.
     Instead load a static csv from helical.
 
     The table is loaded once per process and shared between callers, so
@@ -115,7 +184,7 @@ def convert_list_ensembl_ids_to_gene_symbols(
     ensembl_ids: Sequence[str], species: str = "hsapiens"
 ) -> List[Optional[str]]:
     """
-    Map a list/sequence of Ensembl Gene IDs to gene symbols using pybiomart.
+    Map a list/sequence of Ensembl Gene IDs to gene symbols using Ensembl BioMart.
 
     Parameters
     ----------
@@ -132,7 +201,7 @@ def convert_list_ensembl_ids_to_gene_symbols(
     if species == "hsapiens":
         df = _load_static_ensembl_df()
     else:
-        df = _get_ensembl_mart_df(species=species)
+        df = _get_ensembl_mart_df(species)
     mapping = df.drop_duplicates(subset="ensembl_id").set_index("ensembl_id")["gene_name"]
     return list(pd.Series(list(ensembl_ids), dtype="object").map(mapping).where(pd.notna, None))
 
@@ -141,7 +210,7 @@ def convert_list_gene_symbols_to_ensembl_ids(
     gene_symbols: Sequence[str], species: str = "hsapiens"
 ) -> List[Optional[str]]:
     """
-    Map a list/sequence of gene symbols to Ensembl Gene IDs using pybiomart.
+    Map a list/sequence of gene symbols to Ensembl Gene IDs using Ensembl BioMart.
 
     Parameters
     ----------
@@ -158,7 +227,7 @@ def convert_list_gene_symbols_to_ensembl_ids(
     if species == "hsapiens":
         df = _load_static_ensembl_df()
     else:
-        df = _get_ensembl_mart_df(species=species)
+        df = _get_ensembl_mart_df(species)
     mapping = df.drop_duplicates(subset="gene_name").set_index("gene_name")["ensembl_id"]
     return list(pd.Series(list(gene_symbols), dtype="object").map(mapping).where(pd.notna, None))
 
