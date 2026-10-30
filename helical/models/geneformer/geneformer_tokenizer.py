@@ -179,6 +179,9 @@ def sum_ensembl_ids(
             data_dedup = data[:, ~data.var.index.isin(dup_genes)]  # Deduplicated data
             data_dedup = sc.concat([data_dedup, processed_genes], axis=1)
             data_dedup.obs = data.obs
+            # sc.concat keeps only the var columns shared by both parts, which drops
+            # "ensembl_id"; tokenize_anndata reads it, so restore it with the collapsed IDs.
+            data_dedup.var["ensembl_id"] = data_dedup.var_names
             return data_dedup
     else:
         raise ValueError(
