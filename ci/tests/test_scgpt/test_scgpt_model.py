@@ -54,6 +54,32 @@ class TestSCGPTModel:
         assert self.scgpt.gene_names == "index"
         assert self.scgpt.gene_names in self.data.var
 
+    @pytest.mark.parametrize(
+        "genes, expected_ids",
+        [
+            (["SAMD11", "SAMD11", "HES4"], [0, 0, 2]),
+            (["SAMD11", "HES4", "SAMD11"], [0, 2, 0]),
+        ],
+        ids=["adjacent", "separated"],
+    )
+    def test_process_data_keeps_duplicate_genes_aligned(self, genes, expected_ids):
+        # Regression test for #377: repeated gene symbols must keep one gene ID
+        # per column of X, so every count stays paired with its own gene.
+        data = AnnData(X=np.array([[0, 3, 5], [7, 0, 9]], dtype=np.float32))
+        data.var["gene_names"] = genes
+
+        dataset = self.scgpt.process_data(data, gene_names="gene_names")
+
+        np.testing.assert_array_equal(dataset.gene_ids, expected_ids)
+        cls_id = self.vocab["<cls>"]
+        pad_value = self.scgpt.config["pad_value"]
+        for row, cols in [(0, [1, 2]), (1, [0, 2])]:
+            item = dataset[row]
+            assert item["genes"].tolist() == [cls_id] + [expected_ids[c] for c in cols]
+            assert item["expressions"].tolist() == [pad_value] + [
+                data.X[row, c] for c in cols
+            ]
+
     dummy_data = ad.read_h5ad("ci/tests/data/cell_type_sample.h5ad")
 
     @pytest.mark.parametrize(

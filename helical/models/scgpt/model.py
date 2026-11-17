@@ -400,15 +400,9 @@ class scGPT(HelicalRNAModel):
         # no need to set default index when we load it from static file always
         # self.vocab.set_default_index(self.vocab["<pad>"])
 
-        present_gene_names = adata.var[self.gene_names].tolist()
-        present_gene_vocab = {key: self.vocab[key] for key in present_gene_names}
-        gene_ids = np.array(list(present_gene_vocab.values()), dtype=int)
-
-        # gene_ids = np.array(self.vocab(genes), dtype=int)
+        # One vocab ID per column of X; duplicate symbols are kept.
+        gene_ids = adata.var["id_in_vocab"].to_numpy(dtype=int)
         count_matrix = adata.X
-        # gene vocabulary ids
-        if gene_ids is None:
-            gene_ids = np.array(adata.var["id_in_vocab"])
         assert np.all(gene_ids >= 0)
 
         if use_batch_labels:
