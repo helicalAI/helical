@@ -6,6 +6,10 @@ from scanpy.readwrite import _check_datafile_present_and_download
 
 PathLike = os.PathLike | str
 
+# Without a region the client first calls S3 in the default region, which
+# may not be reachable (e.g. from JupyterHub notebooks).
+CZI_S3_REGION = "us-west-2"
+
 
 def tabula_sapiens(
     tissue: Literal[
@@ -165,6 +169,7 @@ def bgee_testis_evolution(
         file_type="h5ad",
         backup_url=urls[organism],
         bucket_name="cz-benchmarks-data",
+        bucket_region=CZI_S3_REGION,
         force_download=force_download,
         **kwargs,
     )
@@ -206,7 +211,9 @@ def download_all_embeddings(
 
     bucket_name = "czi-transcriptformer"
     backup_url = "weights/" + file_name
-    s3_client = boto3.client("s3", config=Config(signature_version=UNSIGNED))
+    s3_client = boto3.client(
+        "s3", region_name=CZI_S3_REGION, config=Config(signature_version=UNSIGNED)
+    )
 
     # Create directory if it doesn't exist
     os.makedirs(path, exist_ok=True)
@@ -260,6 +267,7 @@ def _load_dataset_from_url(
     *,
     backup_url: str,
     bucket_name: str | None = None,
+    bucket_region: str | None = None,
     force_download: bool = False,
     **kwargs: Any,
 ) -> ad.AnnData:
@@ -276,7 +284,9 @@ def _load_dataset_from_url(
         from botocore import UNSIGNED
         from botocore.config import Config
 
-        s3_client = boto3.client("s3", config=Config(signature_version=UNSIGNED))
+        s3_client = boto3.client(
+            "s3", region_name=bucket_region, config=Config(signature_version=UNSIGNED)
+        )
         if not os.path.exists(fpath):
             os.makedirs(os.path.dirname(fpath), exist_ok=True)
             # Download the file
